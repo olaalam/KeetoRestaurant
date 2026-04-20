@@ -8,7 +8,7 @@ export const useLogin = () => {
 
     return useMutation({
         mutationFn: async (credentials) => {
-            const { data } = await api.post('/api/superadmin/auth/login', credentials);
+            const { data } = await api.post('/api/restaurant/auth/login', credentials);
             // لاحظ هنا أن axios بترجع data، والـ API بتاعك جواه برضه data
             return data;
         },

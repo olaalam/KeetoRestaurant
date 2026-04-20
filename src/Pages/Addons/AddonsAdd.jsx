@@ -14,7 +14,7 @@ const AddonsAdd = () => {
     const { data: selectData } = useQuery({
         queryKey: ['addonsSelectData'],
         queryFn: async () => {
-            const res = await api.get('/api/superadmin/addons/select');
+            const res = await api.get('/api/restaurant/addons/select');
             return res.data.data.data;
         }
     });
@@ -26,7 +26,7 @@ const AddonsAdd = () => {
     const { data: addonData, isLoading: isFetching } = useQuery({
         queryKey: ['addon', id],
         queryFn: async () => {
-            const { data } = await api.get(`/api/superadmin/addons/${id}`);
+            const { data } = await api.get(`/api/restaurant/addons/${id}`);
             return data.data.data;
         },
         enabled: !!id && !state?.addonData,
@@ -75,7 +75,7 @@ const AddonsAdd = () => {
     return (
         <AddPage
             title="Modifier"
-            apiUrl="/api/superadmin/addons"
+            apiUrl="/api/restaurant/addons"
             queryKey="addons"
             fields={fields}
             initialData={initialData}

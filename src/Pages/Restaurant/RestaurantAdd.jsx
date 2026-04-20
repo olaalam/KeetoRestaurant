@@ -17,7 +17,7 @@ const RestaurantAdd = () => {
     const { data: selectData, isLoading: isLoadingSelect } = useQuery({
         queryKey: ['restaurantSelectData'],
         queryFn: async () => {
-            const res = await api.get('/api/superadmin/restaurants/select');
+            const res = await api.get('/api/restaurant/restaurants/select');
             return res.data.data.data;
         }
     });
@@ -26,7 +26,7 @@ const RestaurantAdd = () => {
     const { data: fetchedData, isLoading: isFetching } = useQuery({
         queryKey: ['restaurant', id],
         queryFn: async () => {
-            const { data } = await api.get(`/api/superadmin/restaurants/${id}`);
+            const { data } = await api.get(`/api/restaurant/restaurants/${id}`);
             const raw = data.data.data;
             // تنسيق البيانات لتناسب النموذج
             return {
@@ -96,7 +96,7 @@ const RestaurantAdd = () => {
 
         <AddPage
             title="Restaurant"
-            apiUrl="/api/superadmin/restaurants"
+            apiUrl="/api/restaurant/restaurants"
             queryKey="restaurants"
             fields={fields}
             initialData={initialData}

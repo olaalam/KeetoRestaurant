@@ -10,7 +10,7 @@ export default function Country() {
     const { data: countries = [], isLoading } = useQuery({
         queryKey: ['countries'],
         queryFn: async () => {
-            const res = await api.get('/api/superadmin/countries');
+            const res = await api.get('/api/restaurant/countries');
             return res.data.data.data; // بناءً على هيكل الـ Response الخاص بكِ
         }
     });
@@ -38,7 +38,7 @@ export default function Country() {
                 data={countries}
                 isLoading={isLoading}
                 queryKey="countries"
-                deleteApiUrl="/api/superadmin/countries"
+                deleteApiUrl="/api/restaurant/countries"
                 onAdd={() => navigate("/countries/add")}
                 onEdit={(country) => navigate(`/countries/edit/${country.id}`)}
             />

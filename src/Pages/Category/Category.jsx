@@ -10,7 +10,7 @@ export default function Category() {
     const { data: categories = [], isLoading } = useQuery({
         queryKey: ['categories'],
         queryFn: async () => {
-            const res = await api.get('/api/superadmin/categories');
+            const res = await api.get('/api/restaurant/categories');
             return res.data.data.data; // بناءً على هيكل الـ Response الخاص بكِ
         }
     });
@@ -65,7 +65,7 @@ export default function Category() {
                 data={categories}
                 isLoading={isLoading}
                 queryKey="categories"
-                deleteApiUrl="/api/superadmin/categories"
+                deleteApiUrl="/api/restaurant/categories"
                 onAdd={() => navigate("/categories/add")}
                 onEdit={(category) => navigate(`/categories/edit/${category.id}`)}
             />

@@ -12,7 +12,7 @@ export default function Wallet() {
     const { data: wallets = [], isLoading } = useQuery({
         queryKey: ['wallets'],
         queryFn: async () => {
-            const res = await api.get('/api/superadmin/wallets');
+            const res = await api.get('/api/restaurant/wallets');
             return res.data.data.data;
         }
     });

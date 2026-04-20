@@ -14,7 +14,7 @@ const CountryAdd = () => {
     const { data: countryData, isLoading: isFetching } = useQuery({
         queryKey: ['country', id],
         queryFn: async () => {
-            const { data } = await api.get(`/api/superadmin/countries/${id}`);
+            const { data } = await api.get(`/api/restaurant/countries/${id}`);
             console.log(data.data.data);
             return data.data.data;
         },
@@ -35,7 +35,7 @@ const CountryAdd = () => {
     return (
         <AddPage
             title="country"
-            apiUrl="/api/superadmin/countries" // هذا هو الـ Base URL
+            apiUrl="/api/restaurant/countries" // هذا هو الـ Base URL
             queryKey="countries"
             fields={countryFields}
             initialData={initialData} // المكون سيفهم أن هناك id وسينادي useUpdate

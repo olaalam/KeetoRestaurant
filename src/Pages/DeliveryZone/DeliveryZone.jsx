@@ -10,7 +10,7 @@ export default function DeliveryZone() {
     const { data: DeliveryZone = [], isLoading } = useQuery({
         queryKey: ['DeliveryZone'],
         queryFn: async () => {
-            const res = await api.get('/api/superadmin/zone-delivery-fees');
+            const res = await api.get('/api/restaurant/restaurant-zone-delivery-fees');
             return res.data.data.data; // بناءً على هيكل الـ Response الخاص بكِ
         }
     });
@@ -40,7 +40,7 @@ export default function DeliveryZone() {
                 data={DeliveryZone}
                 isLoading={isLoading}
                 queryKey="DeliveryZone"
-                deleteApiUrl="/api/superadmin/zone-delivery-fees"
+                deleteApiUrl="/api/restaurant/restaurant-zone-delivery-fees"
                 onAdd={() => navigate("/delivery-zones/add")}
                 onEdit={(city) => navigate(`/delivery-zones/edit/${city.id}`)}
             />

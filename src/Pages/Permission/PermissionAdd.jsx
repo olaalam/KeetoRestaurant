@@ -11,7 +11,7 @@ export default function PermissionAdd({ initialData }) {
         queryKey: ['permissions-schema'],
         queryFn: async () => {
             // ⚠️ استبدلي هذا الرابط برابط الـ API الفعلي الخاص بك
-            const response = await fetch('/api/superadmin/permissions-list');
+            const response = await fetch('/api/restaurant/permissions-list');
             if (!response.ok) throw new Error('Failed to fetch permissions schema');
             return response.json();
         }
@@ -98,7 +98,7 @@ export default function PermissionAdd({ initialData }) {
         <div className="p-6">
             <AddPage
                 title="Role"
-                apiUrl="/api/superadmin/roles"
+                apiUrl="/api/restaurant/roles"
                 queryKey="roles"
                 initialData={initialData}
                 fields={[

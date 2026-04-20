@@ -12,7 +12,7 @@ const SettingAdd = () => {
     const { data: fullData, isLoading: isFetching } = useQuery({
         queryKey: ['setting', id],
         queryFn: async () => {
-            const { data } = await api.get(`/api/superadmin/restaurantsetting/${id}`);
+            const { data } = await api.get(`/api/restaurant/restaurantsetting/${id}`);
             return data.data;
         },
         enabled: !!id && !state?.settingData,
@@ -56,7 +56,7 @@ const SettingAdd = () => {
     return (
         <AddPage
             title="Restaurant Settings"
-            apiUrl={`/api/superadmin/restaurantsetting/${id}`} // نرسل الـ ID في الـ URL عند التحديث
+            apiUrl={`/api/restaurant/restaurantsetting/${id}`} // نرسل الـ ID في الـ URL عند التحديث
             queryKey="setting"
             fields={settingFields}
             initialData={initialData}

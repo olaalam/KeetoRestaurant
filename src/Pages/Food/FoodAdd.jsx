@@ -31,7 +31,7 @@ const FoodAdd = () => {
     const { data: selectOptions, isLoading: isSelectLoading } = useQuery({
         queryKey: ['food-select-options'],
         queryFn: async () => {
-            const response = await api.get('/api/superadmin/food/select');
+            const response = await api.get('/api/restaurant/food/select');
             return response.data?.data?.data || {};
         }
     });
@@ -40,15 +40,15 @@ const FoodAdd = () => {
     const { data: foodData, isLoading: isFetching } = useQuery({
         queryKey: ['food', id],
         queryFn: async () => {
-            const { data } = await api.get(`/api/superadmin/food/${id}`);
+            const { data } = await api.get(`/api/restaurant/food/${id}`);
             const raw = data.data.data;
 
             // تحويل البيانات لتكون متوافقة مع الـ Selects والـ FieldArray
             return {
                 ...raw,
                 restaurantid: String(raw.restaurantid || raw.restaurant?.id || ""),
-                categoryid: String(raw.categoryid || raw.category?.id || ""),
-                subcategoryid: String(raw.subcategoryid || raw.subcategory?.id || ""),
+                categoryid: String(raw.categoryid || raw.categories?.id || raw.category?.id || ""),
+                subcategoryid: String(raw.subcategoryid || raw.subcategories?.id || raw.subcategory?.id || ""),
                 price: raw.price ? String(raw.price) : "",
                 // التأكد من تنسيق الإضافات (Variations)
                 variations: raw.variations?.map(v => ({
@@ -72,7 +72,7 @@ const FoodAdd = () => {
     return (
         <AddPage
             title="Food Item"
-            apiUrl="/api/superadmin/food"
+            apiUrl="/api/restaurant/food"
             queryKey={['foods']}
             fields={[]}
             initialData={initialData}
@@ -166,27 +166,7 @@ const FoodAdd = () => {
                                     </div>
                                 </div>
 
-                                {/* Restaurant Select */}
-                                <div className="space-y-2">
-                                    <Label>Restaurant *</Label>
-                                    <Controller
-                                        name="restaurantid"
-                                        control={control}
-                                        rules={{ required: "Restaurant is required" }}
-                                        render={({ field }) => (
-                                            <Select onValueChange={field.onChange} value={field.value}>
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Select Restaurant" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {selectOptions?.allRestaurants?.map(res => (
-                                                        <SelectItem key={res.id} value={String(res.id)}>{res.name}</SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                        )}
-                                    />
-                                </div>
+
 
                                 {/* Category Select */}
                                 <div className="space-y-2">
@@ -207,7 +187,7 @@ const FoodAdd = () => {
                                                     <SelectValue placeholder="Select Category" />
                                                 </SelectTrigger>
                                                 <SelectContent>
-                                                    {selectOptions?.allCategories?.map(cat => (
+                                                    {selectOptions?.categories?.map(cat => (
                                                         <SelectItem key={cat.id} value={String(cat.id)}>{cat.name}</SelectItem>
                                                     ))}
                                                 </SelectContent>
@@ -229,7 +209,7 @@ const FoodAdd = () => {
                                                     <SelectValue placeholder="Select Sub Category" />
                                                 </SelectTrigger>
                                                 <SelectContent>
-                                                    {selectOptions?.allSubcategories
+                                                    {selectOptions?.subcategories
                                                         ?.filter(sub => String(sub.categoryId) === String(selectedCategoryId))
                                                         ?.map(sub => (
                                                             <SelectItem key={sub.id} value={String(sub.id)}>{sub.name}</SelectItem>

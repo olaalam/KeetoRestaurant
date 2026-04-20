@@ -13,7 +13,7 @@ export default function Order() {
     const { data: orders = [], isLoading } = useQuery({
         queryKey: ['orders'],
         queryFn: async () => {
-            const res = await api.get(`/api/superadmin/order/${restaurantId}`);
+            const res = await api.get(`/api/restaurant/order/${restaurantId}`);
             return res.data.data.data;
         }
     });

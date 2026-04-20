@@ -10,7 +10,7 @@ export default function SubCategory() {
     const { data: subcategories = [], isLoading } = useQuery({
         queryKey: ['subcategories'],
         queryFn: async () => {
-            const res = await api.get('/api/superadmin/subcategories');
+            const res = await api.get('/api/restaurant/subcategories');
             return res.data.data.data; // بناءً على هيكل الـ Response الخاص بكِ
         }
     });
@@ -43,7 +43,7 @@ export default function SubCategory() {
                 data={subcategories}
                 isLoading={isLoading}
                 queryKey="subcategories"
-                deleteApiUrl="/api/superadmin/subcategories"
+                deleteApiUrl="/api/restaurant/subcategories"
                 onAdd={() => navigate("/sub-categories/add")}
                 onEdit={(city) => navigate(`/sub-categories/edit/${city.id}`)}
             />

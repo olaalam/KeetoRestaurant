@@ -17,11 +17,11 @@ const WalletR = () => {
     // 1. جلب بيانات المحفظة (استخدام useGet)
     const { data: walletData, isLoading } = useGet(
         ['wallet', id],
-        `/api/superadmin/wallets/restaurant/${id}`
+        `/api/restaurant/wallets/restaurant/${id}`
     );
 
     // 2. إعداد الـ Update Mutation للتحصيل (استخدام useUpdate)
-    const collectMutation = useUpdate(`/api/superadmin/wallets/collect`, ['wallet', id]);
+    const collectMutation = useUpdate(`/api/restaurant/wallets/collect`, ['wallet', id]);
 
     const { register, handleSubmit, reset, formState: { errors } } = useForm();
 

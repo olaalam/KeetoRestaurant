@@ -13,7 +13,7 @@ const BusinessPlanAdd = () => {
     const { data: restaurants = [], isLoading: isRestaurantsLoading } = useQuery({
         queryKey: ['restaurants-list'],
         queryFn: async () => {
-            const res = await api.get('/api/superadmin/restaurants');
+            const res = await api.get('/api/restaurant/restaurants');
             return res.data?.data?.data || [];
         }
     });
@@ -21,7 +21,7 @@ const BusinessPlanAdd = () => {
     const { data: planData, isLoading: isFetching } = useQuery({
         queryKey: ['business-plan', id],
         queryFn: async () => {
-            const { data } = await api.get(`/api/superadmin/businessplans/${id}`);
+            const { data } = await api.get(`/api/restaurant/businessplans/${id}`);
             return data.data.data;
         },
         enabled: !!id && !state?.planData,
@@ -71,7 +71,7 @@ const BusinessPlanAdd = () => {
     return (
         <AddPage
             title="Business Plan"
-            apiUrl="/api/superadmin/businessplans"
+            apiUrl="/api/restaurant/businessplans"
             queryKey="business-plans"
             fields={businessPlanFields}
             initialData={initialData}

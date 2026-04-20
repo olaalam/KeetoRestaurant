@@ -14,7 +14,7 @@ const FoodListDialog = ({ restaurantId, isOpen, onClose }) => {
     const { data: foodItems = [], isLoading } = useQuery({
         queryKey: ['restaurant-food', restaurantId],
         queryFn: async () => {
-            const res = await api.get(`/api/superadmin/food/restaurant/${restaurantId}`);
+            const res = await api.get(`/api/restaurant/food/restaurant/${restaurantId}`);
             // لاحظي هنا الوصول للبيانات قد يكون res.data.data.data حسب هيكل الـ API لديكِ
             return res.data?.data?.data || res.data?.data || [];
         },

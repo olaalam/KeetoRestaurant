@@ -11,7 +11,7 @@ export default function Permission() {
     // جلب البيانات (استبدليها بالـ hook الخاص بك)
     const { data: roles = [], isLoading } = useQuery({
         queryKey: ['roles'],
-        queryFn: () => fetch('/api/superadmin/roles').then(res => res.json())
+        queryFn: () => fetch('/api/restaurant/roles').then(res => res.json())
     });
 
     const columns = [
@@ -43,7 +43,7 @@ export default function Permission() {
                 data={roles}
                 isLoading={isLoading}
                 queryKey="roles"
-                deleteApiUrl="/api/superadmin/roles" // رابط الحذف
+                deleteApiUrl="/api/restaurant/roles" // رابط الحذف
                 onAdd={() => navigate('/permissions/add')} // توجيه لصفحة الإضافة
                 onEdit={(row) => navigate(`/permissions/edit/${row.id}`)} // توجيه لصفحة التعديل
             />

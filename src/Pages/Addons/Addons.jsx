@@ -10,7 +10,7 @@ export default function Addons() {
     const { data: addons = [], isLoading } = useQuery({
         queryKey: ['addons'],
         queryFn: async () => {
-            const res = await api.get('/api/superadmin/addons');
+            const res = await api.get('/api/restaurant/addons');
             return res.data.data.data;
         }
     });
@@ -41,7 +41,7 @@ export default function Addons() {
                 data={addons}
                 isLoading={isLoading}
                 queryKey="addons"
-                deleteApiUrl="/api/superadmin/addons"
+                deleteApiUrl="/api/restaurant/addons"
                 onAdd={() => navigate("/addons/add")}
                 onEdit={(addon) => navigate(`/addons/edit/${addon.id}`)}
             />

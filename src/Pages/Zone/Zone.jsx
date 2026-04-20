@@ -10,7 +10,7 @@ export default function Zone() {
     const { data: zones = [], isLoading } = useQuery({
         queryKey: ['zones'],
         queryFn: async () => {
-            const res = await api.get('/api/superadmin/zones');
+            const res = await api.get('/api/restaurant/zones');
             return res.data.data.data; // بناءً على هيكل الـ Response الخاص بكِ
         }
     });
@@ -41,7 +41,7 @@ export default function Zone() {
                 data={zones}
                 isLoading={isLoading}
                 queryKey="zones"
-                deleteApiUrl="/api/superadmin/zones"
+                deleteApiUrl="/api/restaurant/zones"
                 onAdd={() => navigate("/zones/add")}
                 onEdit={(zone) => navigate(`/zones/edit/${zone.id}`)}
             />

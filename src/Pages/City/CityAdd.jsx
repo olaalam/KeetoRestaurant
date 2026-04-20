@@ -12,7 +12,7 @@ const CityAdd = () => {
     const { data: countries = [], isLoading } = useQuery({
         queryKey: ['countries'],
         queryFn: async () => {
-            const res = await api.get('/api/superadmin/cities/countries/active');
+            const res = await api.get('/api/restaurant/cities/countries/active');
             return res.data.data.data; // بناءً على هيكل الـ Response الخاص بكِ
         }
     });
@@ -22,7 +22,7 @@ const CityAdd = () => {
     const { data: cityData, isLoading: isFetching } = useQuery({
         queryKey: ['city', id],
         queryFn: async () => {
-            const { data } = await api.get(`/api/superadmin/cities/${id}`);
+            const { data } = await api.get(`/api/restaurant/cities/${id}`);
             console.log(data.data.data);
             return data.data.data;
         },
@@ -64,7 +64,7 @@ const CityAdd = () => {
     return (
         <AddPage
             title="city"
-            apiUrl="/api/superadmin/cities" // هذا هو الـ Base URL
+            apiUrl="/api/restaurant/cities" // هذا هو الـ Base URL
             queryKey="cities"
             fields={cityFields}
             initialData={initialData} // المكون سيفهم أن هناك id وسينادي useUpdate

@@ -14,7 +14,7 @@ export default function BusinessPlan() {
     const { data: plans = [], isLoading } = useQuery({
         queryKey: ['business-plans'],
         queryFn: async () => {
-            const res = await api.get(`/api/superadmin/businessplans/restaurant/${restaurantId}`);
+            const res = await api.get(`/api/restaurant/businessplans/restaurant/${restaurantId}`);
             return res.data?.data?.data || res.data?.data || [];
         }
     });
@@ -23,7 +23,7 @@ export default function BusinessPlan() {
     // const updateStatusMutation = useMutation({
     //     mutationFn: async ({ id, currentStatus }) => {
     //         // استخدام الـ API الذي حددتِه (patch)
-    //         return await api.patch(`/api/superadmin/basiccampaign/${id}/status`);
+    //         return await api.patch(`/api/restaurant/basiccampaign/${id}/status`);
     //     },
     //     onSuccess: () => {
     //         toast.success("Status updated successfully");
@@ -81,7 +81,7 @@ export default function BusinessPlan() {
                 data={plans}
                 isLoading={isLoading}
                 queryKey="business-plans"
-                deleteApiUrl="/api/superadmin/businessplans"
+                deleteApiUrl="/api/restaurant/businessplans"
                 onAdd={() => navigate(`/restaurants/business-plans/add`)}
                 onEdit={(plan) => navigate(`/restaurants/business-plans/edit/${plan.id}`)}
             />

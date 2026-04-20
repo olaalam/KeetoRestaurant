@@ -14,7 +14,7 @@ const PaymentMethodAdd = () => {
     const { data: paymentMethodData, isLoading: isFetching } = useQuery({
         queryKey: ['paymentMethod', id],
         queryFn: async () => {
-            const { data } = await api.get(`/api/superadmin/payment-methods/${id}`);
+            const { data } = await api.get(`/api/restaurant/payment-methods/${id}`);
             console.log(data.data.data);
             return data.data.data;
         },
@@ -40,7 +40,7 @@ const PaymentMethodAdd = () => {
     return (
         <AddPage
             title="paymentMethod"
-            apiUrl="/api/superadmin/payment-methods" // هذا هو الـ Base URL
+            apiUrl="/api/restaurant/payment-methods" // هذا هو الـ Base URL
             queryKey="paymentMethods"
             fields={paymentMethodFields}
             initialData={initialData} // المكون سيفهم أن هناك id وسينادي useUpdate

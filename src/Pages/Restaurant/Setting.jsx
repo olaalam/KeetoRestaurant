@@ -12,7 +12,7 @@ export default function Setting() {
         // استخدام مفتاح فريد يعتمد على الـ id لتجنب تداخل البيانات في الكاش
         queryKey: ['restaurant-settings', id],
         queryFn: async () => {
-            const res = await api.get(`/api/superadmin/restaurantsetting/${id}`);
+            const res = await api.get(`/api/restaurant/restaurantsetting/${id}`);
 
             // الوصول إلى الكائن داخل data.settings حسب الـ Response الخاص بكِ
             const settingsData = res.data?.data?.settings;

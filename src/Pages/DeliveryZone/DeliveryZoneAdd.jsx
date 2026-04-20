@@ -12,7 +12,7 @@ const DeliveryZoneAdd = () => {
     const { data: DeliveryZone = [], isLoading } = useQuery({
         queryKey: ['DeliveryZone'],
         queryFn: async () => {
-            const res = await api.get('/api/superadmin/zone-delivery-fees/all');
+            const res = await api.get('/api/restaurant/restaurant-zone-delivery-fees/select');
             // تأكد هنا: هل هي res.data.data أم res.data.data.data؟
             // حسب الصورة، res.data هي الكائن اللي فيه success و data
             // إذن res.data.data هي المصفوفة
@@ -25,7 +25,7 @@ const DeliveryZoneAdd = () => {
     const { data: zoneDeliveryData, isLoading: isFetching } = useQuery({
         queryKey: ['DeliveryZone', id],
         queryFn: async () => {
-            const { data } = await api.get(`/api/superadmin/zone-delivery-fees/${id}`);
+            const { data } = await api.get(`/api/restaurant/restaurant-zone-delivery-fees/${id}`);
             console.log(data.data.data);
             return data.data.data;
         },
@@ -77,7 +77,7 @@ const DeliveryZoneAdd = () => {
     return (
         <AddPage
             title="DeliveryZone"
-            apiUrl="/api/superadmin/zone-delivery-fees" // هذا هو الـ Base URL
+            apiUrl="/api/restaurant/restaurant-zone-delivery-fees" // هذا هو الـ Base URL
             queryKey="DeliveryZone"
             fields={zoneDeliveryFields}
             initialData={initialData} // المكون سيفهم أن هناك id وسينادي useUpdate

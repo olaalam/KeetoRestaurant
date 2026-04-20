@@ -14,7 +14,7 @@ export default function Transaction() {
     const { data: transactions = [], isLoading } = useQuery({
         queryKey: ['transactions'],
         queryFn: async () => {
-            const res = await api.get(`/api/superadmin/wallets/transactions/${restaurantId}`);
+            const res = await api.get(`/api/restaurant/wallets/transactions/${restaurantId}`);
             return res.data?.data?.data || res.data?.data || [];
         }
     });
@@ -23,7 +23,7 @@ export default function Transaction() {
     // const updateStatusMutation = useMutation({
     //     mutationFn: async ({ id, currentStatus }) => {
     //         // استخدام الـ API الذي حددتِه (patch)
-    //         return await api.patch(`/api/superadmin/basiccampaign/${id}/status`);
+    //         return await api.patch(`/api/restaurant/basiccampaign/${id}/status`);
     //     },
     //     onSuccess: () => {
     //         toast.success("Status updated successfully");
@@ -81,7 +81,7 @@ export default function Transaction() {
                 data={transactions}
                 isLoading={isLoading}
                 queryKey="transactions"
-            // deleteApiUrl="/api/superadmin/wallets/transactions"
+            // deleteApiUrl="/api/restaurant/wallets/transactions"
             // onAdd={() => navigate(`/restaurants/transaction/${restaurantId}/add`)}
             // onEdit={(transaction) => navigate(`/restaurants/transaction/${restaurantId}/edit`)}
             />

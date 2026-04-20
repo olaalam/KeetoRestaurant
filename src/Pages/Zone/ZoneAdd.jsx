@@ -18,7 +18,7 @@ const ZoneAdd = () => {
     const { data: cities = [], isLoading: isLoadingCities } = useQuery({
         queryKey: ['cities'],
         queryFn: async () => {
-            const res = await api.get('/api/superadmin/zones/cities/active');
+            const res = await api.get('/api/restaurant/zones/cities/active');
             return res.data.data.data;
         }
     });
@@ -27,7 +27,7 @@ const ZoneAdd = () => {
     const { data: fetchedData, isLoading: isFetching } = useQuery({
         queryKey: ['zone', id],
         queryFn: async () => {
-            const { data } = await api.get(`/api/superadmin/zones/${id}`);
+            const { data } = await api.get(`/api/restaurant/zones/${id}`);
             const raw = data.data.data;
             return {
                 ...raw,
@@ -80,7 +80,7 @@ const ZoneAdd = () => {
     return (
         <AddPage
             title="Zone"
-            apiUrl="/api/superadmin/zones"
+            apiUrl="/api/restaurant/zones"
             queryKey="zones"
             fields={fields}
             initialData={initialData}

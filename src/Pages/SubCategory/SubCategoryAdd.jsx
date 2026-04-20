@@ -12,7 +12,7 @@ const SubCategoryAdd = () => {
     const { data: categories = [], isLoading } = useQuery({
         queryKey: ['categories'],
         queryFn: async () => {
-            const res = await api.get('/api/superadmin/subcategories/select');
+            const res = await api.get('/api/restaurant/subcategories/select');
             return res.data.data.data; // بناءً على هيكل الـ Response الخاص بكِ
         }
     });
@@ -22,7 +22,7 @@ const SubCategoryAdd = () => {
     const { data: subcategoryData, isLoading: isFetching } = useQuery({
         queryKey: ['subcategory', id],
         queryFn: async () => {
-            const { data } = await api.get(`/api/superadmin/subcategories/${id}`);
+            const { data } = await api.get(`/api/restaurant/subcategories/${id}`);
             console.log(data.data.data);
             return data.data.data;
         },
@@ -72,7 +72,7 @@ const SubCategoryAdd = () => {
     return (
         <AddPage
             title="subcategory"
-            apiUrl="/api/superadmin/subcategories" // هذا هو الـ Base URL
+            apiUrl="/api/restaurant/subcategories" // هذا هو الـ Base URL
             queryKey="subcategories"
             fields={subcategoryFields}
             initialData={initialData} // المكون سيفهم أن هناك id وسينادي useUpdate

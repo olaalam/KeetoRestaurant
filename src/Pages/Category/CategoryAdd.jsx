@@ -14,7 +14,7 @@ const CategoryAdd = () => {
     const { data: categoryData, isLoading: isFetching } = useQuery({
         queryKey: ['category', id],
         queryFn: async () => {
-            const { data } = await api.get(`/api/superadmin/categories/${id}`);
+            const { data } = await api.get(`/api/restaurant/categories/${id}`);
             console.log(data.data.data);
             return data.data.data;
         },
@@ -50,7 +50,7 @@ const CategoryAdd = () => {
     return (
         <AddPage
             title="category"
-            apiUrl="/api/superadmin/categories" // هذا هو الـ Base URL
+            apiUrl="/api/restaurant/categories" // هذا هو الـ Base URL
             queryKey="categories"
             fields={categoryFields}
             initialData={initialData} // المكون سيفهم أن هناك id وسينادي useUpdate

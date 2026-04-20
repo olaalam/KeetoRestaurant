@@ -10,7 +10,7 @@ export default function City() {
     const { data: cities = [], isLoading } = useQuery({
         queryKey: ['cities'],
         queryFn: async () => {
-            const res = await api.get('/api/superadmin/cities');
+            const res = await api.get('/api/restaurant/cities');
             return res.data.data.data; // بناءً على هيكل الـ Response الخاص بكِ
         }
     });
@@ -41,7 +41,7 @@ export default function City() {
                 data={cities}
                 isLoading={isLoading}
                 queryKey="cities"
-                deleteApiUrl="/api/superadmin/cities"
+                deleteApiUrl="/api/restaurant/cities"
                 onAdd={() => navigate("/cities/add")}
                 onEdit={(city) => navigate(`/cities/edit/${city.id}`)}
             />

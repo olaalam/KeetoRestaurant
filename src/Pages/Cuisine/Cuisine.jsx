@@ -10,7 +10,7 @@ export default function Cuisine() {
     const { data: cuisines = [], isLoading } = useQuery({
         queryKey: ['cuisines'],
         queryFn: async () => {
-            const res = await api.get('/api/superadmin/cuisines');
+            const res = await api.get('/api/restaurant/cuisines');
             return res.data.data.data; // بناءً على هيكل الـ Response الخاص بكِ
         }
     });
@@ -66,7 +66,7 @@ export default function Cuisine() {
                 data={cuisines}
                 isLoading={isLoading}
                 queryKey="cuisines"
-                deleteApiUrl="/api/superadmin/cuisines"
+                deleteApiUrl="/api/restaurant/cuisines"
                 onAdd={() => navigate("/cuisines/add")}
                 onEdit={(cuisine) => navigate(`/cuisines/edit/${cuisine.id}`)}
             />

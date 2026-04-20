@@ -15,7 +15,7 @@ const Foods = () => {
     const { data: foods = [], isLoading } = useQuery({
         queryKey: ['foods'],
         queryFn: async () => {
-            const res = await api.get('/api/superadmin/food');
+            const res = await api.get('/api/restaurant/food');
             // التوجيه الصحيح للبيانات بناءً على الـ JSON المرفق
             return res.data.data.data;
         }
@@ -57,13 +57,7 @@ const Foods = () => {
                 </span>
             )
         },
-        {
-            accessorKey: 'restaurant',
-            header: 'Restaurant',
-            cell: ({ row }) => (
-                <span>{row.original.restaurant?.name || '-'}</span>
-            )
-        },
+
         {
             accessorKey: 'category',
             header: 'Category',
@@ -113,7 +107,7 @@ const Foods = () => {
                 data={foods || []}
                 isLoading={isLoading}
                 queryKey={['foods']}
-                deleteApiUrl="/api/superadmin/food"
+                deleteApiUrl="/api/restaurant/food"
 
                 onAdd={() => navigate('/foods/add')}
                 onEdit={(row) => navigate(`/foods/edit/${row.id}`)}

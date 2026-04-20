@@ -13,7 +13,7 @@ const AddonsCatAdd = () => {
     const { data: addonsCategoriesData, isLoading: isFetching } = useQuery({
         queryKey: ['addonsCategories', id],
         queryFn: async () => {
-            const { data } = await api.get(`/api/superadmin/adonescategory/${id}`);
+            const { data } = await api.get(`/api/restaurant/adonescategory/${id}`);
             return data.data.data;
         },
         enabled: !!id && !state?.addonsCategoriesData,
@@ -33,7 +33,7 @@ const AddonsCatAdd = () => {
     return (
         <AddPage
             title="Addon Category"
-            apiUrl="/api/superadmin/adonescategory"
+            apiUrl="/api/restaurant/adonescategory"
             queryKey="addonsCategories"
             fields={fields}
             initialData={initialData}

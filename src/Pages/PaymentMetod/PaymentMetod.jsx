@@ -10,7 +10,7 @@ export default function PaymentMethod() {
     const { data: paymentMethods = [], isLoading } = useQuery({
         queryKey: ['payment-methods'],
         queryFn: async () => {
-            const res = await api.get('/api/superadmin/payment-methods');
+            const res = await api.get('/api/restaurant/payment-methods');
             return res.data.data.data; // بناءً على هيكل الـ Response الخاص بكِ
         }
     });
@@ -55,7 +55,7 @@ export default function PaymentMethod() {
                 data={paymentMethods}
                 isLoading={isLoading}
                 queryKey="paymentMethods"
-                deleteApiUrl="/api/superadmin/payment-methods"
+                deleteApiUrl="/api/restaurant/payment-methods"
                 onAdd={() => navigate("/payment-methods/add")}
                 onEdit={(paymentMethod) => navigate(`/payment-methods/edit/${paymentMethod.id}`)}
             />

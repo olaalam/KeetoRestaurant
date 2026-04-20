@@ -14,7 +14,7 @@ const CuisineAdd = () => {
     const { data: cuisineData, isLoading: isFetching } = useQuery({
         queryKey: ['cuisine', id],
         queryFn: async () => {
-            const { data } = await api.get(`/api/superadmin/cuisines/${id}`);
+            const { data } = await api.get(`/api/restaurant/cuisines/${id}`);
             console.log(data.data.data);
             return data.data.data;
         },
@@ -41,7 +41,7 @@ const CuisineAdd = () => {
     return (
         <AddPage
             title="cuisine"
-            apiUrl="/api/superadmin/cuisines" // هذا هو الـ Base URL
+            apiUrl="/api/restaurant/cuisines" // هذا هو الـ Base URL
             queryKey="cuisines"
             fields={cuisineFields}
             initialData={initialData} // المكون سيفهم أن هناك id وسينادي useUpdate
