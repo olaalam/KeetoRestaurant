@@ -14,19 +14,20 @@ const RestaurantAdd = () => {
     const isEdit = !!id;
 
     // 1. جلب بيانات القوائم المنسدلة
-    const { data: selectData, isLoading: isLoadingSelect } = useQuery({
-        queryKey: ['restaurantSelectData'],
+    const { data: zones = [], isLoading: isLoadingSelect } = useQuery({
+        queryKey: ['branchSelectData'],
         queryFn: async () => {
-            const res = await api.get('/api/restaurant/restaurants/select');
-            return res.data.data.data;
+            const res = await api.get('/api/restaurant/branches/zone');
+            // الوصول للمصفوفة مباشرة بناءً على الريسبونس: res.data (axios) -> data -> data (array)
+            return res.data.data.data || [];
         }
     });
 
     // 2. جلب بيانات المطعم في حالة التعديل
     const { data: fetchedData, isLoading: isFetching } = useQuery({
-        queryKey: ['restaurant', id],
+        queryKey: ['branch', id],
         queryFn: async () => {
-            const { data } = await api.get(`/api/restaurant/restaurants/${id}`);
+            const { data } = await api.get(`/api/restaurant/branches/${id}`);
             const raw = data.data.data;
             // تنسيق البيانات لتناسب النموذج
             return {
@@ -38,10 +39,10 @@ const RestaurantAdd = () => {
                 // lng: String(raw.lng || ""),
             };
         },
-        enabled: !!id && !state?.restaurantData,
+        enabled: !!id && !state?.branchData,
     });
 
-    const initialData = state?.restaurantData || fetchedData;
+    const initialData = state?.branchData || fetchedData;
 
     // إعدادات الخريطة (منطق منفصل)
     // const [location, setLocation] = useState({ lat: 31.2001, lng: 29.9187 });
@@ -59,35 +60,21 @@ const RestaurantAdd = () => {
 
     // تعريف الحقول لـ AddPage
     const fields = [
-        { name: 'name', label: 'Restaurant Name', required: true },
+        { name: 'name', label: 'Branch Name', required: true },
         { name: 'nameAr', label: 'nameAr', required: true },
         { name: 'nameFr', label: 'nameFr', required: true },
-        { name: 'email', label: 'Email Address', type: 'email', required: true },
-        ...(!isEdit ? [{ name: 'password', label: 'Password', type: 'password', required: true }] : []),
-        {
-            name: 'cuisineId',
-            label: 'Cuisine Type',
-            type: 'select',
-            required: true,
-            options: selectData?.allCuisines?.map(c => ({ label: c.name, value: c.id }))
-        },
-        { name: 'logo', label: 'Logo Image', type: 'file', required: true },
-        { name: 'cover', label: 'Cover Image', type: 'file', required: true },
-        { name: 'taxCertificate', label: 'Tax Certificate', type: 'file', required: true },
-        { name: 'ownerFirstName', label: 'Owner First Name', required: true },
-        { name: 'ownerLastName', label: 'Owner Last Name', required: true },
-        { name: 'ownerPhone', label: 'Owner Phone', required: true },
-        { name: 'minDeliveryTime', label: 'Min Delivery (Mins)', type: 'number', required: true },
-        { name: 'maxDeliveryTime', label: 'Max Delivery (Mins)', type: 'number', required: true },
-        { name: 'taxNumber', label: 'Tax Number', required: true },
-        { name: 'taxExpireDate', label: 'Tax Expire Date', type: 'date', required: true },
-        { name: 'tags', label: 'Tags (comma separated)', required: false },
+        { name: 'phoneNumber', label: 'Phone Number', type: 'text', required: true },
+        { name: 'address', label: 'Address', type: 'text', required: true },
         {
             name: 'zoneId',
             label: 'Zone',
             type: 'select',
             required: true,
-            options: selectData?.allZones?.map(z => ({ label: z.name, value: z.id }))
+            // بما أن zones أصبحت مصفوفة الآن، نقوم بعمل map مباشرة عليها
+            options: zones.map(z => ({
+                label: z.name, // سيظهر "sidi gaber"
+                value: z.id    // سيُرسل الـ "id" للباك
+            }))
         },
         // { name: 'address', label: 'Detailed Address', required: true },
     ];
@@ -95,9 +82,9 @@ const RestaurantAdd = () => {
     return (
 
         <AddPage
-            title="Restaurant"
-            apiUrl="/api/restaurant/restaurants"
-            queryKey="restaurants"
+            title="Branch"
+            apiUrl="/api/restaurant/branches"
+            queryKey="branches"
             fields={fields}
             initialData={initialData}
             onSuccessAction={() => navigate(-1)}

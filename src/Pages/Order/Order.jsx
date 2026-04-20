@@ -2,18 +2,17 @@ import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/api/axios';
 import GenericDataTable from '@/components/GenericDataTable';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { DollarSign, Wallet, ArrowDownCircle, BadgeCheck } from "lucide-react";
 
 export default function Order() {
     const navigate = useNavigate();
-    const { id: restaurantId } = useParams();
 
     // 1. جلب بيانات الطلبات (استخدام useQuery العادي)
     const { data: orders = [], isLoading } = useQuery({
         queryKey: ['orders'],
         queryFn: async () => {
-            const res = await api.get(`/api/restaurant/order/${restaurantId}`);
+            const res = await api.get(`/api/restaurant/order`);
             return res.data.data.data;
         }
     });

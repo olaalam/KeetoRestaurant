@@ -16,10 +16,10 @@ export default function Restaurant() {
         setIsDialogOpen(true);
     };
 
-    const { data: restaurants = [], isLoading } = useQuery({
-        queryKey: ['restaurants'],
+    const { data: branches = [], isLoading } = useQuery({
+        queryKey: ['branches'],
         queryFn: async () => {
-            const res = await api.get('/api/restaurant/restaurants');
+            const res = await api.get('/api/restaurant/branches');
             return res.data.data.data; // بناءً على هيكل الـ Response الخاص بكِ
         }
     });
@@ -28,7 +28,7 @@ export default function Restaurant() {
     const columns = [
         {
             accessorKey: "name",
-            header: "Restaurant Name",
+            header: "Branch Name",
             cell: ({ row }) => (
                 <button
                     onClick={() => navigate(`/restaurants/setting/${row.original.id}`)}
@@ -66,14 +66,14 @@ export default function Restaurant() {
             )
         },
         {
-            accessorKey: "business_plan",
-            header: "Business Plan",
+            accessorKey: "branch_menu",
+            header: "Branch Menu",
             cell: ({ row }) => (
                 <button
-                    onClick={() => navigate(`business-plans/${row.original.id}`)}
+                    onClick={() => navigate(`branch_menu/${row.original.id}`)}
                     className="text-blue-600 hover:underline font-medium text-left"
                 >
-                    View Plans
+                    Branch Menu
                 </button>
             )
         },
@@ -128,14 +128,14 @@ export default function Restaurant() {
     return (
         <div className="container mx-auto py-10">
             <GenericDataTable
-                title="restaurants"
+                title="branches"
                 columns={columns}
-                data={restaurants}
+                data={branches}
                 isLoading={isLoading}
-                queryKey="restaurants"
-                deleteApiUrl="/api/restaurant/restaurants"
+                queryKey="branches"
+                deleteApiUrl="/api/restaurant/branches"
                 onAdd={() => navigate("/restaurants/add")}
-                onEdit={(restaurant) => navigate(`/restaurants/edit/${restaurant.id}`)}
+                onEdit={(branch) => navigate(`/restaurants/edit/${branch.id}`)}
             />
             {isDialogOpen && (
                 <FoodListDialog

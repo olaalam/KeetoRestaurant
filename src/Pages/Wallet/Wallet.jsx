@@ -2,11 +2,12 @@ import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/api/axios';
 import GenericDataTable from '@/components/GenericDataTable';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { DollarSign, Wallet, ArrowDownCircle, BadgeCheck } from "lucide-react";
 
 export default function Wallet() {
     const navigate = useNavigate();
+    const { id } = useParams();
 
     // 1. جلب بيانات المحافظ (استخدام useQuery العادي)
     const { data: wallets = [], isLoading } = useQuery({

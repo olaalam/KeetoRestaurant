@@ -17,8 +17,8 @@ import CategoryAdd from "./Pages/Category/CategoryAdd";
 import Category from "./Pages/Category/Category";
 import SubCategoryAdd from "./Pages/SubCategory/SubCategoryAdd";
 import SubCategory from "./Pages/SubCategory/SubCategory";
-import Restaurant from "./Pages/Restaurant/Restaurant";
-import RestaurantAdd from "./Pages/Restaurant/RestaurantAdd";
+import Branches from "./Pages/Branches/Branches";
+import BranchesAdd from "./Pages/Branches/BranchesAdd";
 import Addons from "./Pages/Addons/Addons";
 import AddonsAdd from "./Pages/Addons/AddonsAdd";
 import AddonsCat from "./Pages/AddonsCat/AddonsCat";
@@ -27,19 +27,19 @@ import DeliveryZone from "./Pages/DeliveryZone/DeliveryZone";
 import DeliveryZoneAdd from "./Pages/DeliveryZone/DeliveryZoneAdd";
 import Food from "./Pages/Food/Food";
 import FoodAdd from "./Pages/Food/FoodAdd";
-import Setting from "./Pages/Restaurant/Setting";
-import SettingAdd from "./Pages/Restaurant/SettingAdd";
+import Setting from "./Pages/Branches/Setting";
+import SettingAdd from "./Pages/Branches/SettingAdd";
 import Cuisine from "./Pages/Cuisine/Cuisine";
 import CuisineAdd from "./Pages/Cuisine/CuisineAdd";
-import BusinessPlan from "./Pages/BusinessPlan/BusinessPlan";
-import BusinessPlanAdd from "./Pages/BusinessPlan/BusinessPlanAdd";
+import BrancheMenu from "./Pages/BrancheMenu/BrancheMenu";
+import BrancheMenuAdd from "./Pages/BrancheMenu/BrancheMenuAdd";
 import Permission from "./Pages/Permission/Permission";
 import PermissionAdd from "./Pages/Permission/PermissionAdd";
 import PaymentMetod from "./Pages/PaymentMetod/PaymentMetod";
 import PaymentMetodAdd from "./Pages/PaymentMetod/PaymentMetodAdd";
 import Transaction from "./Pages/Transaction/Transaction";
 import Order from "./Pages/Order/Order";
-import WalletR from "./Pages/Restaurant/WalletR";
+import WalletR from "./Pages/Branches/WalletR";
 
 
 const router = createBrowserRouter([
@@ -132,23 +132,23 @@ const router = createBrowserRouter([
                 element: <SubCategoryAdd />,
             },
             {
-                path: "restaurants",
-                element: <Restaurant />,
+                path: "branches",
+                element: <Branches />,
             },
             {
-                path: "restaurants/add",
-                element: <RestaurantAdd />,
+                path: "branches/add",
+                element: <BranchesAdd />,
             },
             {
-                path: "restaurants/edit/:id",
-                element: <RestaurantAdd />,
+                path: "branches/edit/:id",
+                element: <BranchesAdd />,
             },
             {
-                path: "restaurants/setting/:id",
+                path: "branches/setting/:id",
                 element: <Setting />,
             },
             {
-                path: "restaurants/setting/edit/:id",
+                path: "branches/setting/edit/:id",
                 element: <SettingAdd />,
             },
             {
@@ -212,16 +212,16 @@ const router = createBrowserRouter([
                 element: <CuisineAdd />,
             },
             {
-                path: "restaurants/business-plans/:restaurantId",
-                element: <BusinessPlan />,
+                path: "branches/branch_menu/:restaurantId",
+                element: <BrancheMenu />,
             },
             {
-                path: "restaurants/business-plans/add",
-                element: <BusinessPlanAdd />,
+                path: "branches/branch_menu/add",
+                element: <BrancheMenuAdd />,
             },
             {
-                path: "restaurants/business-plans/edit/:id",
-                element: <BusinessPlanAdd />,
+                path: "branches/branch_menu/edit/:id",
+                element: <BrancheMenuAdd />,
             },
             {
                 path: "permissions",
@@ -256,7 +256,7 @@ const router = createBrowserRouter([
                 element: <Order />,
             },
             {
-                path: "restaurants/wallet/:restaurantId",
+                path: "branches/wallet/:restaurantId",
                 element: <WalletR />,
             },
 

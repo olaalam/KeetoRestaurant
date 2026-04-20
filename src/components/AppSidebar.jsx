@@ -36,20 +36,12 @@ import { Link } from "react-router-dom"
 const items = [
     { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
     { title: "Admins", url: "/admins", icon: UserCog }, // تغيير من Users لـ UserCog (إدارة)
-    { title: "Countries", url: "/countries", icon: Globe }, // أيقونة العالم للبلاد
-    { title: "Cities", url: "/cities", icon: MapPin }, // دبوس الخريطة للمدن
-    { title: "Zones", url: "/zones", icon: Map }, // خريطة للمناطق
-    { title: "Categories", url: "/categories", icon: Layers }, // طبقات للتصنيفات
     { title: "SubCategories", url: "/sub-categories", icon: Library }, // مكتبة أو تفريعة
-    { title: "Restaurants", url: "/restaurants", icon: Utensils }, // شوكة وسكينة (أنظف)
-    { title: "Addon Categories", url: "/addons-categories", icon: PlusSquare }, // إضافة تصنيف
+    { title: "Branches", url: "/branches", icon: Utensils }, // شوكة وسكينة (أنظف)
     { title: "Modifier", url: "/addons", icon: Settings2 }, // إعدادات الإضافات
     { title: "Delivery Zones", url: "/delivery-zones", icon: Truck }, // سيارة شحن للتوصيل
     { title: "Foods", url: "/foods", icon: Beef }, // أيقونة طعام (لحم/برجر)
-    { title: "Cuisines", url: "/cuisines", icon: ChefHat }, // قبعة طباخ لأنواع المطبخ
-    { title: "Business Plans", url: "/business-plans", icon: Briefcase }, // حقيبة عمل للخطط
     { title: "Permissions", url: "/permissions", icon: ShieldCheck }, // درع للصلاحيات
-    { title: "Payment Methods", url: "/payment-methods", icon: ShieldCheck }, // درع للصلاحيات
 ];
 
 export function AppSidebar() {
