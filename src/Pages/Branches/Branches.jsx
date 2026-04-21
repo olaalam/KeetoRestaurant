@@ -31,7 +31,7 @@ export default function Restaurant() {
             header: "Branch Name",
             cell: ({ row }) => (
                 <button
-                    onClick={() => navigate(`/restaurants/setting/${row.original.id}`)}
+                    onClick={() => navigate(`/branches/setting/${row.original.id}`)}
                     className="text-blue-600 hover:underline font-medium text-left"
                 >
                     {row.getValue("name")}
@@ -134,8 +134,8 @@ export default function Restaurant() {
                 isLoading={isLoading}
                 queryKey="branches"
                 deleteApiUrl="/api/restaurant/branches"
-                onAdd={() => navigate("/restaurants/add")}
-                onEdit={(branch) => navigate(`/restaurants/edit/${branch.id}`)}
+                onAdd={() => navigate("/branches/add")}
+                onEdit={(branch) => navigate(`/branches/edit/${branch.id}`)}
             />
             {isDialogOpen && (
                 <FoodListDialog

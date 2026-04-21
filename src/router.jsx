@@ -248,11 +248,11 @@ const router = createBrowserRouter([
                 element: <PaymentMetodAdd />,
             },
             {
-                path: "restaurants/transaction/:restaurantId",
+                path: "transaction/:restaurantId",
                 element: <Transaction />,
             },
             {
-                path: "restaurants/order/:restaurantId",
+                path: "order/:restaurantId",
                 element: <Order />,
             },
             {
@@ -267,5 +267,7 @@ const router = createBrowserRouter([
         path: "*",
         element: <NotFound />,
     },
-]);
+], {
+    basename: "/restaurant"
+});
 export default router;
