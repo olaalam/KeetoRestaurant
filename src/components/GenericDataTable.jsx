@@ -14,33 +14,40 @@ import DeleteDialog from './DeleteDialog';
 import LoadingSpinner from './LoadingSpinner';
 
 export default function GenericDataTable({
-    columns, data, title, onAdd, onEdit, deleteApiUrl, queryKey, isLoading
+    columns, data, title, onAdd, onEdit, deleteApiUrl, queryKey, isLoading, actions = true
 }) {
     const [globalFilter, setGlobalFilter] = useState('');
     const [deleteId, setDeleteId] = useState(null);
 
     // إضافة عمود العمليات تلقائياً
-    const tableColumns = useMemo(() => [
-        ...columns,
-        {
-            id: 'actions',
-            header: 'Actions',
-            cell: ({ row }) => (
-                <div className="flex items-center gap-2">
-                    {onEdit && (
-                        <Button variant="ghost" size="icon" onClick={() => onEdit(row.original)}>
-                            <Pencil className="h-4 w-4 text-blue-600" />
-                        </Button>
-                    )}
-                    {deleteApiUrl && (
-                        <Button variant="ghost" size="icon" onClick={() => setDeleteId(row.original.id)}>
-                            <Trash2 className="h-4 w-4 text-red-600" />
-                        </Button>
-                    )}
-                </div>
-            ),
+    const tableColumns = useMemo(() => {
+        // 1. نبدأ بالأعمدة الأساسية المرسلة عبر الـ props
+        const baseColumns = [...columns];
+
+        // 2. إذا كانت actions تساوي true، نضيف عمود العمليات للمصفوفة
+        if (actions) {
+            baseColumns.push({
+                id: 'actions',
+                header: 'Actions',
+                cell: ({ row }) => (
+                    <div className="flex items-center gap-2">
+                        {onEdit && (
+                            <Button variant="ghost" size="icon" onClick={() => onEdit(row.original)}>
+                                <Pencil className="h-4 w-4 text-blue-600" />
+                            </Button>
+                        )}
+                        {deleteApiUrl && (
+                            <Button variant="ghost" size="icon" onClick={() => setDeleteId(row.original.id)}>
+                                <Trash2 className="h-4 w-4 text-red-600" />
+                            </Button>
+                        )}
+                    </div>
+                ),
+            });
         }
-    ], [columns, onEdit, deleteApiUrl]);
+
+        return baseColumns;
+    }, [columns, onEdit, deleteApiUrl, actions]);
 
     const table = useReactTable({
         data,

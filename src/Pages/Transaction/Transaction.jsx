@@ -1,89 +1,84 @@
 import React from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import api from '@/api/axios';
 import GenericDataTable from '@/components/GenericDataTable';
-import { useNavigate, useParams } from 'react-router-dom';
-import { Switch } from "@/components/ui/switch"; // تأكدي من مسار المكون في مشروعك
+import { useParams } from 'react-router-dom';
+import { Badge } from "@/components/ui/badge"; // اختياري لشكل أجمل
 
 export default function Transaction() {
-    const navigate = useNavigate();
-    const queryClient = useQueryClient();
     const { restaurantId } = useParams();
 
-    // 1. جلب البيانات
+    // 1. جلب البيانات بناءً على هيكلة الريسبونس data.data.data
     const { data: transactions = [], isLoading } = useQuery({
-        queryKey: ['transactions'],
+        queryKey: ['transactions', restaurantId],
         queryFn: async () => {
             const res = await api.get(`/api/restaurant/wallets/transactions`);
-            return res.data?.data?.data || res.data?.data || [];
+            // بناءً على الـ JSON: res.data هي الكائن الكبير، جواه data، وجواها data المصفوفة
+            return res.data?.data?.data || [];
         }
     });
 
-    // 2. دالة تحديث الحالة (Mutation)
-    // const updateStatusMutation = useMutation({
-    //     mutationFn: async ({ id, currentStatus }) => {
-    //         // استخدام الـ API الذي حددتِه (patch)
-    //         return await api.patch(`/api/restaurant/basiccampaign/${id}/status`);
-    //     },
-    //     onSuccess: () => {
-    //         toast.success("Status updated successfully");
-    //         // إعادة جلب البيانات لتحديث الجدول
-    //         queryClient.invalidateQueries(['business-plans']);
-    //     },
-    //     onError: () => {
-    //         toast.error("Failed to update status");
-    //     }
-    // });
-
     const columns = [
-        { accessorKey: '    restaurant.name', header: 'Restaurant' },
-        { accessorKey: 'restaurant.nameAr', header: 'Restaurant (Arabic)' },
-        { accessorKey: 'restaurant.nameFr', header: 'Restaurant (Franko)' },
-        { accessorKey: 'platformType', header: 'Platform' },
-        { accessorKey: 'commissionRate', header: 'Commission (%)' },
-        { accessorKey: 'serviceFee', header: 'Service Fee' },
         {
-            accessorKey: 'isMonthlyActive',
-            header: 'Monthly',
-            cell: ({ row }) => (row.original.isMonthlyActive ? '✅' : '❌')
+            accessorKey: 'reference',
+            header: 'Reference'
         },
-        // عمود الحالة الجديد مع الـ Switch
-        // {
-        //     accessorKey: 'status',
-        //     header: 'Status',
-        //     cell: ({ row }) => (
-        //         <div className="flex items-center justify-center">
-        //             <Switch
-        //                 checked={row.original.status === 'active' || row.original.status === true}
-        //                 onCheckedChange={() =>
-        //                     updateStatusMutation.mutate({
-        //                         id: row.original.id,
-        //                         currentStatus: row.original.status
-        //                     })
-        //                 }
-        //                 disabled={updateStatusMutation.isPending}
-        //             />
-        //         </div>
-        //     )
-        // },
         {
-            accessorKey: 'isQuarterlyActive',
-            header: 'Quarterly',
-            cell: ({ row }) => (row.original.isQuarterlyActive ? '✅' : '❌')
+            accessorKey: 'type',
+            header: 'Type',
+            cell: ({ row }) => {
+                const type = row.original.type;
+                // تنسيق النص ليظهر بشكل أفضل (مثال: Cash Collection)
+                return <span className="capitalize">{type.replace('_', ' ')}</span>;
+            }
+        },
+        {
+            accessorKey: 'amount',
+            header: 'Amount',
+            cell: ({ row }) => (
+                <span className={parseFloat(row.original.amount) >= 0 ? "text-green-600 font-medium" : "text-red-600 font-medium"}>
+                    {row.original.amount}
+                </span>
+            )
+        },
+        {
+            accessorKey: 'balanceBefore',
+            header: 'Before'
+        },
+        {
+            accessorKey: 'balanceAfter',
+            header: 'After'
+        },
+        {
+            accessorKey: 'method',
+            header: 'Method',
+            cell: ({ row }) => <Badge variant="outline">{row.original.method}</Badge>
+        },
+        {
+            accessorKey: 'createdAt',
+            header: 'Date',
+            cell: ({ row }) => new Date(row.original.createdAt).toLocaleString('en-GB', {
+                dateStyle: 'short',
+                timeStyle: 'short'
+            })
+        },
+        {
+            accessorKey: 'note',
+            header: 'Note',
+            cell: ({ row }) => <span className="text-xs text-muted-foreground">{row.original.note}</span>
         },
     ];
 
     return (
         <div className="container mx-auto py-10">
             <GenericDataTable
-                title="Transactions"
+                title="Wallet Transactions"
                 columns={columns}
                 data={transactions}
                 isLoading={isLoading}
                 queryKey="transactions"
-            // deleteApiUrl="/api/restaurant/wallets/transactions"
-            // onAdd={() => navigate(`/restaurants/transaction/${restaurantId}/add`)}
-            // onEdit={(transaction) => navigate(`/restaurants/transaction/${restaurantId}/edit`)}
+                // المعاملات المالية غالباً لا تحذف ولا تعدل يدوياً، لذا نغلق الأكشنز
+                actions={false}
             />
         </div>
     );

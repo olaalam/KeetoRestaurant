@@ -26,11 +26,7 @@ export default function Addons() {
             header: 'Category',
             cell: ({ row }) => row.original.adonescategory?.name || 'N/A'
         },
-        {
-            accessorKey: 'restaurant.name',
-            header: 'Restaurant',
-            cell: ({ row }) => row.original.restaurant?.name || 'N/A'
-        },
+
     ];
 
     return (

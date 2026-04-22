@@ -164,7 +164,8 @@ export default function Order() {
                 data={orders}
                 isLoading={isLoading}
                 queryKey="orders"
-                onEdit={(row) => navigate(`/branches/order/edit/${row.id}`)}
+                onEdit={false}
+                actions={false}
             />
 
             <Dialog open={cancelDialogOpen} onOpenChange={(open) => {
