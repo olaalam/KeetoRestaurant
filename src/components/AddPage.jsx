@@ -16,13 +16,13 @@ const AddPage = ({
     title,
     apiUrl,
     queryKey,
-    // شيلنا الـ control من الـ props لأنه بيتم تعريفه بالأسفل
+    method,
     fields = [],
     initialData,
     onSuccessAction,
     children
 }) => {
-    const isEdit = !!initialData?.id;
+    const isEdit = method === 'PUT' || !!initialData?.id;
     const formMethods = useForm({
         defaultValues: initialData || {}
     });

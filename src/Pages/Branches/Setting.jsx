@@ -83,7 +83,7 @@ export default function Setting() {
                 isLoading={isLoading}
                 queryKey={['restaurant-settings', id]}
                 // عند الضغط على تعديل، نتوجه لصفحة التعديل الخاصة بهذا المطعم
-                onEdit={() => navigate(`/restaurants/setting/edit/${id}`)}
+                onEdit={() => navigate(`/branches/setting/edit/${id}`)}
             />
         </div>
     );

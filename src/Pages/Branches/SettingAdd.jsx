@@ -1,5 +1,5 @@
 import React from 'react';
-import { useParams, useLocation } from 'react-router-dom';
+import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import AddPage from '@/components/AddPage';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/api/axios';
@@ -8,11 +8,12 @@ import LoadingSpinner from '@/components/LoadingSpinner';
 const SettingAdd = () => {
     const { id } = useParams();
     const { state } = useLocation();
+    const navigate = useNavigate();
 
     const { data: fullData, isLoading: isFetching } = useQuery({
         queryKey: ['setting', id],
         queryFn: async () => {
-            const { data } = await api.get(`/api/restaurant/restaurantsetting/${id}`);
+            const { data } = await api.get(`/api/restaurant/restaurantsetting`);
             return data.data;
         },
         enabled: !!id && !state?.settingData,
@@ -23,11 +24,12 @@ const SettingAdd = () => {
     const initialData = React.useMemo(() => {
         if (!rawData) return null;
 
-        // الـ AddPage يحتاج البيانات مسطحة (Flat) ليعبئ الـ Form
-        // لذا ندمج محتويات settings لتكون مباشرة في initialData
+        // نقوم بتفكيك (Destructure) الـ settings ونستخرج الـ id في متغير منفصل 
+        // لكي لا يتم تمريره مع بقية البيانات
+        const { id, ...settingsWithoutId } = rawData.settings || {};
+
         return {
-            ...rawData.settings,
-            // إذا كنتِ ستحتاجين الـ schedules لاحقاً يمكن تمريرها هنا
+            ...settingsWithoutId, // نمرر البيانات بدون الـ id
             schedules: rawData.schedules
         };
     }, [rawData]);
@@ -56,13 +58,15 @@ const SettingAdd = () => {
     return (
         <AddPage
             title="Restaurant Settings"
-            apiUrl={`/api/restaurant/restaurantsetting/${id}`} // نرسل الـ ID في الـ URL عند التحديث
+            apiUrl={`/api/restaurant/restaurantsetting`}
+            method="PUT"
             queryKey="setting"
             fields={settingFields}
             initialData={initialData}
             onSuccessAction={() => {
                 // يمكنك إظهار رسالة نجاح هنا
                 console.log("Updated Successfully");
+                navigate(`/branches/setting/${id}`);
             }}
         />
     );

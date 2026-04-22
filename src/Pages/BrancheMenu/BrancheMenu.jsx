@@ -14,7 +14,7 @@ export default function BrancheMenu() {
     const { data: branchemenu = [], isLoading } = useQuery({
         queryKey: ['branchemenu'],
         queryFn: async () => {
-            const res = await api.get(`/api/restaurant/branchemenu`);
+            const res = await api.get(`/api/restaurant/branchemenu/${restaurantId}`);
             return res.data?.data?.data || res.data?.data || [];
         }
     });
@@ -36,8 +36,8 @@ export default function BrancheMenu() {
     });
 
     const columns = [
-        { accessorKey: 'branchId', header: 'Branch' },
-        { accessorKey: 'foodId', header: 'Food' },
+        // { accessorKey: 'branchId', header: 'Branch' },
+        { accessorKey: 'name', header: 'Food' },
         { accessorKey: 'price', header: 'Price' },
         { accessorKey: 'stockType', header: 'Stock Type' },
         { accessorKey: 'stockQty', header: 'Stock Qty' },
@@ -72,7 +72,7 @@ export default function BrancheMenu() {
                 queryKey="branchemenu"
                 deleteApiUrl="/api/restaurant/branchemenu"
                 onAdd={() => navigate(`/branches/branch_menu/add`)}
-                onEdit={(plan) => navigate(`/branches/branch_menu/edit/${plan.id}`)}
+                onEdit={() => navigate(`/branches/branch_menu/edit/${restaurantId}`)}
             />
         </div>
     );

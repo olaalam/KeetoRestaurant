@@ -6,83 +6,74 @@ import api from '@/api/axios';
 import LoadingSpinner from '@/components/LoadingSpinner';
 
 const DeliveryZoneAdd = () => {
-    const { id } = useParams(); // الحصول على الـ id من الـ URL في حالة التعديل
+    const { id } = useParams();
     const { state } = useLocation();
 
-    const { data: DeliveryZone = [], isLoading } = useQuery({
-        queryKey: ['DeliveryZone'],
+    // جلب قائمة المناطق للـ Select Options
+    const { data: zonesList = [], isLoading: isLoadingZones } = useQuery({
+        queryKey: ['DeliveryZonesSelect'],
         queryFn: async () => {
             const res = await api.get('/api/restaurant/restaurant-zone-delivery-fees/select');
-            // تأكد هنا: هل هي res.data.data أم res.data.data.data؟
-            // حسب الصورة، res.data هي الكائن اللي فيه success و data
-            // إذن res.data.data هي المصفوفة
-            return Array.isArray(res.data.data.data) ? res.data.data.data : [];
+            // التعديل هنا: الوصول للمصفوفة بناءً على هيكلة data.data.data المتوقعة
+            return res.data?.data?.data || res.data?.data || [];
         }
     });
 
-    // 1. إذا كانت البيانات موجودة في الـ state (مثلاً ضغطنا تعديل من جدول) نستخدمها فوراً
-    // 2. إذا لم تكن موجودة، يمكننا عمل Query لجلب بيانات هذا المشرف تحديداً
-    const { data: zoneDeliveryData, isLoading: isFetching } = useQuery({
+    // جلب بيانات العنصر المحدد في حالة التعديل
+    const { data: fetchedData, isLoading: isFetchingItem } = useQuery({
         queryKey: ['DeliveryZone', id],
         queryFn: async () => {
             const { data } = await api.get(`/api/restaurant/restaurant-zone-delivery-fees/${id}`);
-            console.log(data.data.data);
+            // بناءً على الصورة: data.data.data هو الكائن الذي يحتوي id, deliveryFee, zone
             return data.data.data;
         },
-        enabled: !!id && !state?.zoneDeliveryData, // لا يتم التفعيل إلا لو فيه id ومافيش بيانات جاهزة
+        enabled: !!id && !state?.zoneDeliveryData,
     });
 
-    const rawData = state?.zoneDeliveryData || zoneDeliveryData;
+    const rawData = state?.zoneDeliveryData || fetchedData;
 
+    // تحويل البيانات لتناسب الفورم (Mapping)
     const initialData = React.useMemo(() => {
         if (!rawData) return null;
 
         return {
             ...rawData,
-            // هنا بنخرج الـ id من جوه كائن الـ country ونحطه في countryId 
-            // عشان الـ AddPage والـ Select يحسوا بيه
-            fromZoneId: rawData.fromZoneId || rawData.fromZone?.id,
-            toZoneId: rawData.toZoneId || rawData.toZone?.id,
-            fee: rawData.fee || rawData.fee
+            // نربط id المنطقة بـ zoneId ليظهر في الـ Select
+            zoneId: rawData.zone?.id || rawData.zoneId,
+            // نستخدم deliveryFee حسب المسمى في الريسبونس
+            deliveryFee: rawData.deliveryFee
         };
     }, [rawData]);
 
     const zoneDeliveryFields = [
         {
-            name: 'fromZoneId',
-            label: 'From Zone',
+            name: 'zoneId',
+            label: 'Zone',
             required: true,
             type: 'select',
-            // أضفنا علامة الاستفهام أو المصفوفة الفارغة كحماية
-            options: DeliveryZone.map(c => ({
-                value: String(c.id),
-                label: c.name // تأكد أن السيرفر يرسل 'name' وليس 'displayName' كما في الصورة
+            options: zonesList.map(z => ({
+                value: String(z.id),
+                label: z.name
             }))
         },
         {
-            name: 'toZoneId',
-            label: 'To Zone',
+            name: 'deliveryFee',
+            label: 'Delivery Fee',
             required: true,
-            type: 'select',
-            options: (Array.isArray(DeliveryZone) ? DeliveryZone : []).map(c => ({
-                value: String(c.id),
-                label: c.name
-            }))
+            type: 'number'
         },
-        { name: 'fee', label: 'Fee', required: true, type: 'number' },
     ];
 
-    if (isLoading || (id && isFetching)) return <LoadingSpinner />;
+    if (isLoadingZones || (id && isFetchingItem)) return <LoadingSpinner />;
 
     return (
         <AddPage
-            title="DeliveryZone"
-            apiUrl="/api/restaurant/restaurant-zone-delivery-fees" // هذا هو الـ Base URL
+            title="Delivery Zone Fee"
+            apiUrl="/api/restaurant/restaurant-zone-delivery-fees"
             queryKey="DeliveryZone"
             fields={zoneDeliveryFields}
-            initialData={initialData} // المكون سيفهم أن هناك id وسينادي useUpdate
+            initialData={initialData}
             onSuccessAction={() => {
-                // مثلاً الرجوع للخلف أو لجدول المديرين
                 window.history.back();
             }}
         />

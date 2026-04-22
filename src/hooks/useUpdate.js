@@ -18,7 +18,8 @@ export const useUpdate = (url, onSuccessKey) => {
             toast.success("success");
         },
         onError: (error) => {
-            toast.error(error?.response?.data?.message || 'error');
+            console.log(error);
+            toast.error(error?.response?.data?.error?.message || 'error');
         },
     });
 };

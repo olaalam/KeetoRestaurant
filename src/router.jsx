@@ -40,6 +40,7 @@ import PaymentMetodAdd from "./Pages/PaymentMetod/PaymentMetodAdd";
 import Transaction from "./Pages/Transaction/Transaction";
 import Order from "./Pages/Order/Order";
 import WalletR from "./Pages/Branches/WalletR";
+import OrderAdd from "./Pages/Order/OrderAdd";
 
 
 const router = createBrowserRouter([
@@ -248,12 +249,16 @@ const router = createBrowserRouter([
                 element: <PaymentMetodAdd />,
             },
             {
-                path: "transaction/:restaurantId",
+                path: "branches/transaction/:restaurantId",
                 element: <Transaction />,
             },
             {
-                path: "order/:restaurantId",
+                path: "branches/order/:restaurantId",
                 element: <Order />,
+            },
+            {
+                path: "branches/order/edit/:id",
+                element: <OrderAdd />,
             },
             {
                 path: "branches/wallet/:restaurantId",

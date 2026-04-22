@@ -1,14 +1,28 @@
-import React from 'react';
-import { useQuery } from '@tanstack/react-query';
+import React, { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/api/axios';
 import GenericDataTable from '@/components/GenericDataTable';
 import { useNavigate } from 'react-router-dom';
-import { DollarSign, Wallet, ArrowDownCircle, BadgeCheck } from "lucide-react";
+import { Wallet, User, Phone, Loader2 } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from 'sonner';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 
 export default function Order() {
     const navigate = useNavigate();
+    const queryClient = useQueryClient();
 
-    // 1. جلب بيانات الطلبات (استخدام useQuery العادي)
+    const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+    const [cancelReason, setCancelReason] = useState("");
+    const [selectedOrderId, setSelectedOrderId] = useState(null);
+
+    const orderStatuses = [
+        "pending", "accepted", "preparing", "out_for_delivery",
+        "delivered", "cancelled", "rejected", "refund"
+    ];
+
     const { data: orders = [], isLoading } = useQuery({
         queryKey: ['orders'],
         queryFn: async () => {
@@ -17,38 +31,91 @@ export default function Order() {
         }
     });
 
-    // 2. تعريف أعمدة الجدول
+    const updateStatusMutation = useMutation({
+        mutationFn: async ({ orderId, status, reason }) => {
+            const payload = { status };
+            if (reason) payload.cancelReason = reason;
+            const { data } = await api.put(`/api/restaurant/order/${orderId}`, payload);
+            return data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries(['orders']);
+            toast.success("Order status updated successfully");
+            setCancelDialogOpen(false);
+            setCancelReason("");
+            setSelectedOrderId(null);
+        },
+        onError: (error) => {
+            // التعديل هنا لقراءة الرسالة من كائن error القادم من الباك إند
+            const serverErrorMessage = error?.response?.data?.error?.message || "Failed to update status";
+            toast.error(serverErrorMessage);
+            console.error("Update Error:", error);
+        }
+    });
+
+    const handleStatusChange = (orderId, newStatus) => {
+        if (newStatus === 'cancelled') {
+            setSelectedOrderId(orderId);
+            setCancelDialogOpen(true);
+        } else {
+            updateStatusMutation.mutate({ orderId, status: newStatus });
+        }
+    };
+
+    const handleConfirmCancel = () => {
+        if (!cancelReason.trim()) {
+            toast.error("Please provide a reason for cancellation");
+            return;
+        }
+        updateStatusMutation.mutate({
+            orderId: selectedOrderId,
+            status: 'cancelled',
+            reason: cancelReason
+        });
+    };
+
     const columns = [
         {
-            accessorKey: "order_number",
+            accessorKey: "orderNumber",
             header: "Order Number",
             cell: ({ row }) => (
-                <button
-                    onClick={() => navigate(`/orders/edit/${row.original.id}`)}
-                    className="text-blue-600 hover:underline font-medium text-left"
-                >
-                    {row.getValue("order_number")}
-                </button>
+                <span className="font-medium text-gray-700">
+                    {row.getValue("orderNumber")}
+                </span>
             )
         },
         {
-            accessorKey: "restaurant.name",
-            header: "Restaurant Name",
+            accessorKey: "customerName",
+            header: "Customer Info",
             cell: ({ row }) => (
-                <button
-                    onClick={() => navigate(`/restaurants/setting/${row.original.restaurant_id}`)}
-                    className="text-blue-600 hover:underline font-medium text-left"
-                >
-                    {row.getValue("restaurant.name")}
-                </button>
+                <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-1 font-medium text-gray-800">
+                        <User size={14} className="text-gray-500" />
+                        {row.original.customerName}
+                    </div>
+                    <div className="flex items-center gap-1 text-xs text-gray-500">
+                        <Phone size={12} />
+                        {row.original.customerPhone}
+                    </div>
+                </div>
             )
         },
         {
-            accessorKey: "total_amount",
+            accessorKey: "orderType",
+            header: "Order Type",
+            cell: ({ row }) => (
+                <span className={`px-2 py-1 rounded-full text-xs capitalize ${row.original.orderType === 'delivery' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'
+                    }`}>
+                    {row.original.orderType}
+                </span>
+            )
+        },
+        {
+            accessorKey: "totalAmount",
             header: "Total Amount",
             cell: ({ row }) => (
                 <span className="font-semibold text-green-600">
-                    {row.getValue("total_amount")} E£
+                    {row.getValue("totalAmount")} E£
                 </span>
             )
         },
@@ -56,57 +123,94 @@ export default function Order() {
             accessorKey: "status",
             header: "Status",
             cell: ({ row }) => (
-                <span className={`px-2 py-1 rounded-full text-xs ${row.original.status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
-                    {row.original.status}
-                </span>
+                <Select
+                    defaultValue={row.original.status}
+                    onValueChange={(value) => handleStatusChange(row.original.id, value)}
+                    disabled={updateStatusMutation.isPending && selectedOrderId === row.original.id}
+                >
+                    <SelectTrigger className="w-[160px] h-9">
+                        <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {orderStatuses.map((status) => (
+                            <SelectItem key={status} value={status} className="capitalize">
+                                {status.replace(/_/g, ' ')}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
             )
         },
         {
-            accessorKey: "payment_status",
-            header: "Payment Status",
-            cell: ({ row }) => (
-                <span className={`px-2 py-1 rounded-full text-xs ${row.original.payment_status === 'paid' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                    {row.original.payment_status}
-                </span>
-            )
-        },
-        {
-            accessorKey: "created_at",
-            header: "Created At",
-            cell: ({ row }) => (
-                new Date(row.original.created_at).toLocaleDateString()
-            )
-        },
-        {
-            id: "actions",
-            header: "Actions",
-            cell: ({ row }) => (
-                <div className="flex items-center gap-2">
-                    {/* زر عرض الطلب (نفس منطق زر الـ Food) */}
-                    <button
-                        onClick={() => navigate(`/orders/edit/${row.original.id}`)}
-                        className="flex items-center gap-1 px-3 py-1 bg-orange-100 text-orange-600 rounded-md hover:bg-orange-200 transition-colors"
-                    >
-                        <Wallet size={16} />
-                        View Order
-                    </button>
-                </div>
-            )
+            accessorKey: "createdAt",
+            header: "Date & Time",
+            cell: ({ row }) => {
+                const date = new Date(row.original.createdAt);
+                return (
+                    <div className="flex flex-col text-sm">
+                        <span>{date.toLocaleDateString()}</span>
+                        <span className="text-xs text-gray-500">{date.toLocaleTimeString()}</span>
+                    </div>
+                );
+            }
         },
     ];
 
     return (
         <div className="container mx-auto py-10">
             <GenericDataTable
-                title="Orders"
+                title="Orders Management"
                 columns={columns}
                 data={orders}
                 isLoading={isLoading}
                 queryKey="orders"
-                // لا يوجد زر إضافة (لأن الطلبات تُنشأ من التطبيق)
-                // لا يوجد delete
-                onEdit={false}
+                onEdit={(row) => navigate(`/branches/order/edit/${row.id}`)}
             />
+
+            <Dialog open={cancelDialogOpen} onOpenChange={(open) => {
+                if (!open) {
+                    setCancelDialogOpen(false);
+                    setCancelReason("");
+                    setSelectedOrderId(null);
+                }
+            }}>
+                <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                        <DialogTitle>Cancel Order</DialogTitle>
+                        <DialogDescription>
+                            Please provide a reason for cancelling this order. This action will notify the customer.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <Textarea
+                            placeholder="Enter cancellation reason here..."
+                            value={cancelReason}
+                            onChange={(e) => setCancelReason(e.target.value)}
+                            className="min-h-[100px]"
+                        />
+                    </div>
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            onClick={() => setCancelDialogOpen(false)}
+                            disabled={updateStatusMutation.isPending}
+                        >
+                            Back
+                        </Button>
+                        <Button
+                            variant="destructive"
+                            onClick={handleConfirmCancel}
+                            disabled={updateStatusMutation.isPending}
+                        >
+                            {updateStatusMutation.isPending ? (
+                                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Processing</>
+                            ) : (
+                                "Confirm Cancellation"
+                            )}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

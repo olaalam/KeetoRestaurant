@@ -14,7 +14,7 @@ export default function Transaction() {
     const { data: transactions = [], isLoading } = useQuery({
         queryKey: ['transactions'],
         queryFn: async () => {
-            const res = await api.get(`/api/restaurant/wallets/transactions/${restaurantId}`);
+            const res = await api.get(`/api/restaurant/wallets/transactions`);
             return res.data?.data?.data || res.data?.data || [];
         }
     });
