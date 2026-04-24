@@ -41,6 +41,11 @@ import Transaction from "./Pages/Transaction/Transaction";
 import Order from "./Pages/Order/Order";
 import WalletR from "./Pages/Branches/WalletR";
 import OrderAdd from "./Pages/Order/OrderAdd";
+import IngredientCategory from "./Pages/IngredientCategory/IngredientCategory";
+import IngredientCategoryAdd from "./Pages/IngredientCategory/IngredientCategoryAdd";
+import Ingredients from "./Pages/Ingredients/Ingredients";
+import IngredientsAdd from "./Pages/Ingredients/IngredientsAdd";
+import IngredientsFoods from "./Pages/IngredientCategory/IngredientsFoods";
 
 
 const router = createBrowserRouter([
@@ -263,6 +268,34 @@ const router = createBrowserRouter([
             {
                 path: "branches/wallet/:restaurantId",
                 element: <WalletR />,
+            },
+            {
+                path: "ingredient-category",
+                element: <IngredientCategory />,
+            },
+            {
+                path: "ingredient-category/add",
+                element: <IngredientCategoryAdd />,
+            },
+            {
+                path: "ingredient-category/edit/:id",
+                element: <IngredientCategoryAdd />,
+            },
+            {
+                path: "ingredients",
+                element: <Ingredients />,
+            },
+            {
+                path: "ingredients/add",
+                element: <IngredientsAdd />,
+            },
+            {
+                path: "ingredients/edit/:id",
+                element: <IngredientsAdd />,
+            },
+            {
+                path: "ingredients/food/:categoryId",
+                element: <IngredientsFoods />,
             },
 
 

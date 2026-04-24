@@ -16,6 +16,8 @@ import {
     ShieldCheck,
     LogOut,
 
+
+
 } from "lucide-react";
 
 import {
@@ -42,6 +44,8 @@ const items = [
     { title: "Delivery Zones", url: "/delivery-zones", icon: Truck }, // سيارة شحن للتوصيل
     { title: "Foods", url: "/foods", icon: Beef }, // أيقونة طعام (لحم/برجر)
     { title: "Permissions", url: "/permissions", icon: ShieldCheck }, // درع للصلاحيات
+    { title: "Ingredient Category", url: "/ingredient-category", icon: ShieldCheck }, // درع للصلاحيات
+    { title: "Ingredients", url: "/ingredients", icon: ShieldCheck }, // درع للصلاحيات
 ];
 
 export function AppSidebar() {
