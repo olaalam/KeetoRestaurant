@@ -24,7 +24,7 @@ export default function Ingredients() {
     const updateStockMutation = useMutation({
         mutationFn: async ({ id, inStockValue }) => {
             // هنا نرسل الطلب بالشكل المطلوب { "inStock": false/true }
-            return await api.patch(`/api/restaurant/ingredients/stock/${id}`, {
+            return await api.put(`/api/restaurant/ingredients/stock/${id}`, {
                 inStock: inStockValue
             });
         },
