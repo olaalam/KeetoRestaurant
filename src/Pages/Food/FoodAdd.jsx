@@ -202,7 +202,7 @@ const FoodAdd = () => {
                                     <Controller
                                         name="subcategoryid"
                                         control={control}
-                                        rules={{ required: "Subcategory is required" }}
+                                        rules={{ required: false }}
                                         render={({ field }) => (
                                             <Select onValueChange={field.onChange} value={field.value}>
                                                 <SelectTrigger>
@@ -332,6 +332,14 @@ const VariationsSection = ({ control, register }) => {
                             <Label>Variation Name</Label>
                             <Input {...register(`variations.${index}.name`)} placeholder="e.g. Sauce" />
                         </div>
+                        <div className="space-y-2">
+                            <Label>Variation Name Ar</Label>
+                            <Input {...register(`variations.${index}.nameAr`)} placeholder="e.g. Sauce" />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Variation NameFr</Label>
+                            <Input {...register(`variations.${index}.nameFr`)} placeholder="e.g. Sauce" />
+                        </div>
 
                         <div className="space-y-2">
                             <Label>Selection Type</Label>
@@ -386,6 +394,14 @@ const OptionsSection = ({ nestIndex, control, register }) => {
                     <div className="flex-1 space-y-1">
                         <Label className="text-xs">Option Name</Label>
                         <Input {...register(`variations.${nestIndex}.options.${k}.optionName`)} className="bg-white" />
+                    </div>
+                    <div className="flex-1 space-y-1">
+                        <Label className="text-xs">Option Name Ar</Label>
+                        <Input {...register(`variations.${nestIndex}.options.${k}.optionNameAr`)} className="bg-white" />
+                    </div>
+                    <div className="flex-1 space-y-1">
+                        <Label className="text-xs">Option Name Fr</Label>
+                        <Input {...register(`variations.${nestIndex}.options.${k}.optionNameFr`)} className="bg-white" />
                     </div>
                     <div className="w-32 space-y-1">
                         <Label className="text-xs">Extra Price</Label>
