@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/api/axios';
 import GenericDataTable from '@/components/GenericDataTable';
-import { useNavigate } from 'react-router-dom';
-import { Wallet, User, Phone, Loader2 } from "lucide-react";
+import { Link, useNavigate } from 'react-router-dom';
+import { Wallet, User, Phone, Loader2, Eye } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
@@ -154,6 +154,28 @@ export default function Order() {
                 );
             }
         },
+        {
+            id: "actions",
+            header: "Actions",
+            cell: ({ row }) => {
+                const orderId = row.original.id;
+
+                return (
+                    <div className="flex items-center justify-center">
+                        {/* زر العين فقط للتوجيه لصفحة التفاصيل */}
+                        <Button
+                            size="sm"
+                            variant="ghost"
+                            className="hover:bg-primary/10 text-primary"
+                            onClick={() => navigate(`/orders/details/${orderId}`)}
+                        >
+                            <Eye size={18} />
+                        </Button>
+                    </div>
+                );
+
+            }
+        }
     ];
 
     return (

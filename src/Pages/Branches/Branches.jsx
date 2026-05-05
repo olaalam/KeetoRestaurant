@@ -89,18 +89,7 @@ export default function Restaurant() {
                 </button>
             )
         },
-        {
-            accessorKey: "order",
-            header: "Order",
-            cell: ({ row }) => (
-                <button
-                    onClick={() => navigate(`order/${row.original.id}`)}
-                    className="text-blue-600 hover:underline font-medium text-left"
-                >
-                    Order
-                </button>
-            )
-        },
+
         {
             accessorKey: "wallet",
             header: "Wallet",

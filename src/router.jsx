@@ -39,6 +39,14 @@ import PaymentMetod from "./Pages/PaymentMetod/PaymentMetod";
 import PaymentMetodAdd from "./Pages/PaymentMetod/PaymentMetodAdd";
 import Transaction from "./Pages/Transaction/Transaction";
 import Order from "./Pages/Order/Order";
+import Pending from "./Pages/Order/Pending";
+import Accepted from "./Pages/Order/Accepted";
+import Preparing from "./Pages/Order/Preparing";
+import Delivered from "./Pages/Order/Delivered";
+import OutDelivery from "./Pages/Order/OutDelivery";
+import Cancelled from "./Pages/Order/Cancelled";
+import Rejected from "./Pages/Order/Rejected";
+import Refuned from "./Pages/Order/Refuned";
 import WalletR from "./Pages/Branches/WalletR";
 import OrderAdd from "./Pages/Order/OrderAdd";
 import IngredientCategory from "./Pages/IngredientCategory/IngredientCategory";
@@ -46,6 +54,7 @@ import IngredientCategoryAdd from "./Pages/IngredientCategory/IngredientCategory
 import Ingredients from "./Pages/Ingredients/Ingredients";
 import IngredientsAdd from "./Pages/Ingredients/IngredientsAdd";
 import IngredientsFoods from "./Pages/IngredientCategory/IngredientsFoods";
+import OrderDetails from "./Pages/Order/OrderDetails";
 
 
 const router = createBrowserRouter([
@@ -258,11 +267,47 @@ const router = createBrowserRouter([
                 element: <Transaction />,
             },
             {
-                path: "branches/order/:restaurantId",
+                path: "orders",
                 element: <Order />,
             },
             {
-                path: "branches/order/edit/:id",
+                path: "orders/details/:orderId",
+                element: <OrderDetails />,
+            },
+            {
+                path: "orders/pending",
+                element: <Pending />,
+            },
+            {
+                path: "orders/accepted",
+                element: <Accepted />,
+            },
+            {
+                path: "orders/preparing",
+                element: <Preparing />,
+            },
+            {
+                path: "orders/delivered",
+                element: <Delivered />,
+            },
+            {
+                path: "orders/out-delivery",
+                element: <OutDelivery />,
+            },
+            {
+                path: "orders/cancelled",
+                element: <Cancelled />,
+            },
+            {
+                path: "orders/rejected",
+                element: <Rejected />,
+            },
+            {
+                path: "orders/refuned",
+                element: <Refuned />,
+            },
+            {
+                path: "orders/edit/:id",
                 element: <OrderAdd />,
             },
             {

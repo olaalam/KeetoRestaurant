@@ -15,9 +15,15 @@ import {
     Briefcase,
     ShieldCheck,
     LogOut,
-
-
-
+    ShoppingBag,
+    ChevronDown,
+    Clock,
+    CheckCircle2,
+    Package,
+    CheckCheck,
+    XCircle,
+    Ban,
+    Undo2
 } from "lucide-react";
 
 import {
@@ -30,28 +36,51 @@ import {
     SidebarMenu,
     SidebarMenuItem,
     SidebarMenuButton,
-    useSidebar, // 1. لازم تستورد الـ Hook ده
+    useSidebar,
+    SidebarMenuSub,
+    SidebarMenuSubItem,
+    SidebarMenuSubButton,
 } from "@/components/ui/sidebar"
 import useAuthStore from "@/store/useAuthStore"
 import { Link } from "react-router-dom"
+import {
+    Collapsible,
+    CollapsibleContent,
+    CollapsibleTrigger,
+} from "@/components/ui/collapsible"
 
 const items = [
     { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
-    { title: "Admins", url: "/admins", icon: UserCog }, // تغيير من Users لـ UserCog (إدارة)
-    { title: "SubCategories", url: "/sub-categories", icon: Library }, // مكتبة أو تفريعة
-    { title: "Branches", url: "/branches", icon: Utensils }, // شوكة وسكينة (أنظف)
-    { title: "Modifier", url: "/addons", icon: Settings2 }, // إعدادات الإضافات
-    { title: "Delivery Zones", url: "/delivery-zones", icon: Truck }, // سيارة شحن للتوصيل
-    { title: "Foods", url: "/foods", icon: Beef }, // أيقونة طعام (لحم/برجر)
-    { title: "Permissions", url: "/permissions", icon: ShieldCheck }, // درع للصلاحيات
-    { title: "Ingredient Category", url: "/ingredient-category", icon: ShieldCheck }, // درع للصلاحيات
-    { title: "Ingredients", url: "/ingredients", icon: ShieldCheck }, // درع للصلاحيات
+    { title: "Admins", url: "/admins", icon: UserCog },
+    { title: "SubCategories", url: "/sub-categories", icon: Library },
+    { title: "Branches", url: "/branches", icon: Utensils },
+    { title: "Modifier", url: "/addons", icon: Settings2 },
+    { title: "Delivery Zones", url: "/delivery-zones", icon: Truck },
+    { title: "Foods", url: "/foods", icon: Beef },
+    { title: "Permissions", url: "/permissions", icon: ShieldCheck },
+    { title: "Ingredient Category", url: "/ingredient-category", icon: ShieldCheck },
+    { title: "Ingredients", url: "/ingredients", icon: ShieldCheck },
+    {
+        title: "Orders",
+        url: "/orders",
+        icon: ShoppingBag,
+        subItems: [
+            { title: "All Orders", url: "/orders", icon: ShoppingBag },
+            { title: "Pending", url: "/orders/pending", icon: Clock },
+            { title: "Accepted", url: "/orders/accepted", icon: CheckCircle2 },
+            { title: "Preparing", url: "/orders/preparing", icon: Package },
+            { title: "Out for Delivery", url: "/orders/out-for-delivery", icon: Truck },
+            { title: "Delivered", url: "/orders/delivered", icon: CheckCheck },
+            { title: "Cancelled", url: "/orders/cancelled", icon: XCircle },
+            { title: "Rejected", url: "/orders/rejected", icon: Ban },
+            { title: "Refund", url: "/orders/refund", icon: Undo2 },
+        ]
+    },
 ];
 
 export function AppSidebar() {
     const setLogout = useAuthStore((state) => state.setLogout);
 
-    // 2. لازم تعرف المتغير open من الـ Hook هنا
     const { open } = useSidebar();
 
     return (
@@ -69,17 +98,52 @@ export function AppSidebar() {
                 <SidebarGroup>
                     <SidebarGroupContent>
                         <SidebarMenu>
-                            {items.map((item) => (
-                                <SidebarMenuItem key={item.title}>
-                                    <SidebarMenuButton asChild tooltip={item.title}>
-                                        <Link to={item.url} className="flex items-center gap-3">
-                                            <item.icon size={20} />
-                                            {/* لو حابب تخفي الكتابة في حالة القفل وتظهر الـ Tooltip بس */}
-                                            {open && <span>{item.title}</span>}
-                                        </Link>
-                                    </SidebarMenuButton>
-                                </SidebarMenuItem>
-                            ))}
+                            {items.map((item) => {
+                                if (item.subItems) {
+                                    return (
+                                        <Collapsible key={item.title} className="group/collapsible">
+                                            <SidebarMenuItem>
+                                                <CollapsibleTrigger asChild>
+                                                    <SidebarMenuButton tooltip={item.title}>
+                                                        <item.icon size={20} />
+                                                        {open && (
+                                                            <>
+                                                                <span>{item.title}</span>
+                                                                <ChevronDown className="ml-auto transition-transform group-data-[state=open]/collapsible:rotate-180" />
+                                                            </>
+                                                        )}
+                                                    </SidebarMenuButton>
+                                                </CollapsibleTrigger>
+                                                <CollapsibleContent>
+                                                    <SidebarMenuSub>
+                                                        {item.subItems.map((sub) => (
+                                                            <SidebarMenuSubItem key={sub.title}>
+                                                                <SidebarMenuSubButton asChild>
+                                                                    <Link to={sub.url} className="flex items-center gap-2">
+                                                                        <sub.icon size={16} />
+                                                                        <span>{sub.title}</span>
+                                                                    </Link>
+                                                                </SidebarMenuSubButton>
+                                                            </SidebarMenuSubItem>
+                                                        ))}
+                                                    </SidebarMenuSub>
+                                                </CollapsibleContent>
+                                            </SidebarMenuItem>
+                                        </Collapsible>
+                                    )
+                                }
+
+                                return (
+                                    <SidebarMenuItem key={item.title}>
+                                        <SidebarMenuButton asChild tooltip={item.title}>
+                                            <Link to={item.url} className="flex items-center gap-3">
+                                                <item.icon size={20} />
+                                                {open && <span>{item.title}</span>}
+                                            </Link>
+                                        </SidebarMenuButton>
+                                    </SidebarMenuItem>
+                                )
+                            })}
                         </SidebarMenu>
                     </SidebarGroupContent>
                 </SidebarGroup>
