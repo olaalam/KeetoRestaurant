@@ -1,25 +1,22 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import api from '@/api/axios';
 import GenericDataTable from '@/components/GenericDataTable';
-import { Link, Navigate, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { User, Phone, Eye } from "lucide-react";
 import { Button } from '@/components/ui/button';
 
-
-export default function Pending() {
+// بنستقبل الـ status كـ Prop
+export default function OrdersList({ status }) {
     const navigate = useNavigate();
 
-
-
-
-    const { data: pendingOrders = [], isLoading } = useQuery({
-        queryKey: ['orders-pending'],
+    // استخدمنا الـ status عشان نخلي الـ Query Key والـ API Endpoint ديناميك
+    const { data: orders = [], isLoading } = useQuery({
+        queryKey: ['orders', status],
         queryFn: async () => {
-            const res = await api.get(`/api/restaurant/order/pending`);
+            const res = await api.get(`/api/restaurant/order/${status}`);
             return res.data.data.data;
         }
     });
-
 
     const columns = [
         {
@@ -70,7 +67,7 @@ export default function Pending() {
             accessorKey: "status",
             header: "Status",
             cell: ({ row }) => (
-                <span className={`px-2 py-1 rounded-full text-xs capitalize ${row.original.status === 'pending' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'
+                <span className={`px-2 py-1 rounded-full text-xs capitalize ${row.original.status === 'pending' ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700'
                     }`}>
                     {row.original.status.replace(/_/g, ' ')}
                 </span>
@@ -97,7 +94,6 @@ export default function Pending() {
 
                 return (
                     <div className="flex items-center justify-center">
-                        {/* زر العين فقط للتوجيه لصفحة التفاصيل */}
                         <Button
                             size="sm"
                             variant="ghost"
@@ -112,14 +108,17 @@ export default function Pending() {
         }
     ];
 
+    // تظبيط اسم الجدول عشان يبدأ بحرف كابيتال (مثلاً: Pending Orders)
+    const tableTitle = `${status.charAt(0).toUpperCase() + status.slice(1)} Orders`;
+
     return (
         <div className="container mx-auto py-10">
             <GenericDataTable
-                title="Pending Orders"
+                title={tableTitle}
                 columns={columns}
-                data={pendingOrders}
+                data={orders}
                 isLoading={isLoading}
-                queryKey="orders-pending"
+                queryKey={`orders-${status}`}
                 onEdit={false}
                 actions={false}
             />

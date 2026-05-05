@@ -69,11 +69,12 @@ const items = [
             { title: "Pending", url: "/orders/pending", icon: Clock },
             { title: "Accepted", url: "/orders/accepted", icon: CheckCircle2 },
             { title: "Preparing", url: "/orders/preparing", icon: Package },
-            { title: "Out for Delivery", url: "/orders/out-for-delivery", icon: Truck },
+            // تأكد أن الرابط هنا يطابق الـ path في الـ Routes
+            { title: "Out for Delivery", url: "/orders/out-delivery", icon: Truck },
             { title: "Delivered", url: "/orders/delivered", icon: CheckCheck },
             { title: "Cancelled", url: "/orders/cancelled", icon: XCircle },
             { title: "Rejected", url: "/orders/rejected", icon: Ban },
-            { title: "Refund", url: "/orders/refund", icon: Undo2 },
+            { title: "Refund", url: "/orders/refunded", icon: Undo2 },
         ]
     },
 ];

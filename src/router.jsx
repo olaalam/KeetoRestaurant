@@ -55,6 +55,7 @@ import Ingredients from "./Pages/Ingredients/Ingredients";
 import IngredientsAdd from "./Pages/Ingredients/IngredientsAdd";
 import IngredientsFoods from "./Pages/IngredientCategory/IngredientsFoods";
 import OrderDetails from "./Pages/Order/OrderDetails";
+import OrdersList from "./Pages/Order/OrdersList";
 
 
 const router = createBrowserRouter([
@@ -276,35 +277,36 @@ const router = createBrowserRouter([
             },
             {
                 path: "orders/pending",
-                element: <Pending />,
+                element: <OrdersList status="pending" />,
             },
             {
                 path: "orders/accepted",
-                element: <Accepted />,
+                element: <OrdersList status="accepted" />,
             },
             {
                 path: "orders/preparing",
-                element: <Preparing />,
+                element: <OrdersList status="preparing" />,
             },
             {
                 path: "orders/delivered",
-                element: <Delivered />,
+                element: <OrdersList status="delivered" />,
             },
             {
                 path: "orders/out-delivery",
-                element: <OutDelivery />,
+                // ملحوظة: اتأكد إن الـ API بياخدها "out-delivery" بالشرطة ولا "out_delivery" وعدلها في الـ status على أساسه
+                element: <OrdersList status="out-delivery" />,
             },
             {
                 path: "orders/cancelled",
-                element: <Cancelled />,
+                element: <OrdersList status="cancelled" />,
             },
             {
                 path: "orders/rejected",
-                element: <Rejected />,
+                element: <OrdersList status="rejected" />,
             },
             {
-                path: "orders/refuned",
-                element: <Refuned />,
+                path: "orders/refunded", // تم تعديل الإسبيلنج من refuned لـ refunded
+                element: <OrdersList status="refunded" />,
             },
             {
                 path: "orders/edit/:id",
