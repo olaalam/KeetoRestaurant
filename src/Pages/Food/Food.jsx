@@ -35,8 +35,7 @@ const Foods = () => {
         queryKey: ['ingredients-select'],
         queryFn: async () => {
             const res = await api.get('/api/restaurant/food/select');
-            // الوصول للمكونات داخل data.data.ingredients
-            console.log(res.data.data.data.ingredients);
+
 
             return res.data.data.data.ingredients || [];
         }
