@@ -1,174 +1,178 @@
 import {
-    LayoutDashboard,
-    UserCog,
-    Globe,
-    MapPin,
-    Map,
-    Layers,
-    Library,
-    Utensils,
-    PlusSquare,
-    Settings2,
-    Truck,
-    Beef,
-    ChefHat,
-    Briefcase,
-    ShieldCheck,
-    LogOut,
-    ShoppingBag,
-    ChevronDown,
-    Clock,
-    CheckCircle2,
-    Package,
-    CheckCheck,
-    XCircle,
-    Ban,
-    Undo2
-} from "lucide-react";
-
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarHeader,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarMenuButton,
+  useSidebar,
+} from "@/components/ui/sidebar";
+import { Link, useLocation } from "react-router-dom";
+import useSidebarStore from "@/store/useSidebarStore";
+import useAuthStore from "@/store/useAuthStore";
+import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { useState } from "react";
 import {
-    Sidebar,
-    SidebarContent,
-    SidebarFooter,
-    SidebarHeader,
-    SidebarGroup,
-    SidebarGroupContent,
-    SidebarMenu,
-    SidebarMenuItem,
-    SidebarMenuButton,
-    useSidebar,
-    SidebarMenuSub,
-    SidebarMenuSubItem,
-    SidebarMenuSubButton,
-} from "@/components/ui/sidebar"
-import useAuthStore from "@/store/useAuthStore"
-import { Link } from "react-router-dom"
-import {
-    Collapsible,
-    CollapsibleContent,
-    CollapsibleTrigger,
-} from "@/components/ui/collapsible"
-
-const items = [
-    { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
-    { title: "Admins", url: "/admins", icon: UserCog },
-    { title: "SubCategories", url: "/sub-categories", icon: Library },
-    { title: "Branches", url: "/branches", icon: Utensils },
-    { title: "Modifier", url: "/addons", icon: Settings2 },
-    { title: "Delivery Zones", url: "/delivery-zones", icon: Truck },
-    { title: "Foods", url: "/foods", icon: Beef },
-    { title: "Permissions", url: "/permissions", icon: ShieldCheck },
-    { title: "Ingredient Category", url: "/ingredient-category", icon: ShieldCheck },
-    { title: "Ingredients", url: "/ingredients", icon: ShieldCheck },
-    {
-        title: "Orders",
-        url: "/orders",
-        icon: ShoppingBag,
-        subItems: [
-            { title: "All Orders", url: "/orders", icon: ShoppingBag },
-            { title: "Pending", url: "/orders/pending", icon: Clock },
-            { title: "Accepted", url: "/orders/accepted", icon: CheckCircle2 },
-            { title: "Preparing", url: "/orders/preparing", icon: Package },
-            // تأكد أن الرابط هنا يطابق الـ path في الـ Routes
-            { title: "Out for Delivery", url: "/orders/out-delivery", icon: Truck },
-            { title: "Delivered", url: "/orders/delivered", icon: CheckCheck },
-            { title: "Cancelled", url: "/orders/cancelled", icon: XCircle },
-            { title: "Rejected", url: "/orders/rejected", icon: Ban },
-            { title: "Refund", url: "/orders/refunded", icon: Undo2 },
-        ]
-    },
-];
+  LogOut,
+  HelpCircle,
+  ChevronDown,
+  ChevronRight,
+  Home,
+} from "lucide-react"; // استيراد الأيقونات الأساسية فقط
 
 export function AppSidebar() {
-    const setLogout = useAuthStore((state) => state.setLogout);
+  const { open } = useSidebar();
+  const location = useLocation();
 
-    const { open } = useSidebar();
+  const activeModule = useSidebarStore((s) => s.activeModule);
+  //const setLogout = useAuthStore((state) => state.setLogout);
+  const navigate = useNavigate();
+  const [openMenus, setOpenMenus] = useState([]);
+  // إذا لم يكن هناك موديول نشط، لا تظهر الـ Sidebar
 
-    return (
-        <Sidebar variant="sidebar" collapsible="icon">
-            <SidebarHeader className="flex items-center justify-center p-4">
-                {/* الآن open ستعمل بشكل صحيح */}
-                {open ? (
-                    <h2 className="text-2xl font-black text-primary transition-all">Keeto</h2>
-                ) : (
-                    <h2 className="text-2xl font-black text-primary transition-all">K</h2>
-                )}
-            </SidebarHeader>
+  const toggleMenu = (title) => {
+    setOpenMenus((prev) =>
+      prev.includes(title)
+        ? prev.filter((item) => item !== title)
+        : [...prev, title],
+    );
+  };
 
-            <SidebarContent>
-                <SidebarGroup>
-                    <SidebarGroupContent>
-                        <SidebarMenu>
-                            {items.map((item) => {
-                                if (item.subItems) {
-                                    return (
-                                        <Collapsible key={item.title} className="group/collapsible">
-                                            <SidebarMenuItem>
-                                                <CollapsibleTrigger asChild>
-                                                    <SidebarMenuButton tooltip={item.title}>
-                                                        <item.icon size={20} />
-                                                        {open && (
-                                                            <>
-                                                                <span>{item.title}</span>
-                                                                <ChevronDown className="ml-auto transition-transform group-data-[state=open]/collapsible:rotate-180" />
-                                                            </>
-                                                        )}
-                                                    </SidebarMenuButton>
-                                                </CollapsibleTrigger>
-                                                <CollapsibleContent>
-                                                    <SidebarMenuSub>
-                                                        {item.subItems.map((sub) => (
-                                                            <SidebarMenuSubItem key={sub.title}>
-                                                                <SidebarMenuSubButton asChild>
-                                                                    <Link to={sub.url} className="flex items-center gap-2">
-                                                                        <sub.icon size={16} />
-                                                                        <span>{sub.title}</span>
-                                                                    </Link>
-                                                                </SidebarMenuSubButton>
-                                                            </SidebarMenuSubItem>
-                                                        ))}
-                                                    </SidebarMenuSub>
-                                                </CollapsibleContent>
-                                            </SidebarMenuItem>
-                                        </Collapsible>
-                                    )
-                                }
+  if (!activeModule) return null;
 
-                                return (
-                                    <SidebarMenuItem key={item.title}>
-                                        <SidebarMenuButton asChild tooltip={item.title}>
-                                            <Link to={item.url} className="flex items-center gap-3">
-                                                <item.icon size={20} />
-                                                {open && <span>{item.title}</span>}
-                                            </Link>
-                                        </SidebarMenuButton>
-                                    </SidebarMenuItem>
-                                )
-                            })}
-                        </SidebarMenu>
-                    </SidebarGroupContent>
-                </SidebarGroup>
-            </SidebarContent>
-            <SidebarFooter className="p-2">
-                <SidebarMenu>
+  return (
+    <Sidebar variant="sidebar" collapsible="icon">
+      <SidebarHeader className="flex justify-center py-5">
+        <h2 className="text-2xl font-black text-primary">
+          {/* عرض الاسم كاملاً أو الحرف الأول بناءً على حالة الفتح[cite: 1] */}
+          {open ? activeModule.name : activeModule.name?.[0] || ""}
+        </h2>
+      </SidebarHeader>
+
+      <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupContent>
+            <SidebarMenu className="space-y-1 px-2">
+              {activeModule.items.map((item) => {
+                const active = location.pathname === item.url;
+                const IconComponent = item.icon;
+                const hasSubItems = item.subItems?.length > 0;
+                const isOpen = openMenus.includes(item.title);
+
+                return (
+                  <div key={item.title}>
+                    {/* Main Item */}
                     <SidebarMenuItem>
-                        <SidebarMenuButton
-                            asChild
-                            tooltip="Logout"
-                            className="text-red-500 hover:text-red-600 hover:bg-red-50 transition-colors"
+                      <SidebarMenuButton
+                        tooltip={item.title}
+                        onClick={() => {
+                          if (hasSubItems) {
+                            toggleMenu(item.title);
+                          } else {
+                            navigate(item.url);
+                          }
+                        }}
+                      >
+                        <div
+                          className={`flex items-center w-full gap-3 px-3 py-2 rounded-xl transition-all duration-200 cursor-pointer ${
+                            open
+                              ? "gap-3 px-3 py-2 justify-start"
+                              : "justify-center py-2"
+                          } ${
+                            active
+                              ? "bg-primary text-white shadow-md"
+                              : "text-gray-600 hover:bg-gray-200"
+                          }`}
                         >
-                            <button
-                                onClick={setLogout}
-                                className="flex items-center w-full"
-                            >
-                                <LogOut size={20} className="shrink-0" />
-                                {/* لن يظهر النص إلا إذا كان الـ Sidebar مفتوحاً، مما يمنع خروج الحرف عن الإطار */}
-                                {open && <span className="ml-3 font-medium">Logout</span>}
-                            </button>
-                        </SidebarMenuButton>
+                          {IconComponent ? (
+                            <IconComponent size={20} />
+                          ) : (
+                            <HelpCircle size={20} />
+                          )}
+
+                          {open && (
+                            <>
+                              <span className="text-sm font-medium">
+                                {item.title}
+                              </span>
+
+                              {hasSubItems && (
+                                <span className="ml-auto">
+                                  {isOpen ? (
+                                    <ChevronDown size={18} />
+                                  ) : (
+                                    <ChevronRight size={18} />
+                                  )}
+                                </span>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      </SidebarMenuButton>
                     </SidebarMenuItem>
-                </SidebarMenu>
-            </SidebarFooter>
-        </Sidebar>
-    )
+
+                    {/* Sub Items */}
+                    {hasSubItems && isOpen && open && (
+                      <div className="ml-6 mt-1 space-y-1 overflow-hidden transition-all">
+                        {item.subItems.map((subItem) => {
+                          const isSubActive = location.pathname === subItem.url;
+
+                          const SubIcon = subItem.icon;
+
+                          return (
+                            <SidebarMenuItem key={subItem.title}>
+                              <SidebarMenuButton asChild>
+                                <Link
+                                  to={subItem.url}
+                                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all ${
+                                    isSubActive
+                                      ? "bg-primary text-white"
+                                      : "text-gray-500 hover:bg-gray-100"
+                                  }`}
+                                >
+                                  {SubIcon && <SubIcon size={16} />}
+                                  <span>{subItem.title}</span>
+                                </Link>
+                              </SidebarMenuButton>
+                            </SidebarMenuItem>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarContent>
+
+      <SidebarFooter className="p-2">
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              asChild
+              tooltip="Home"
+              className="text-red-500 hover:text-red-600 hover:bg-red-50 transition-colors"
+            >
+              <div className="w-full">
+                <Button
+                  onClick={() => navigate("/")}
+                  className={`w-full ${!open ? "px-2 justify-center" : ""}`}
+                >
+                  <Home size={18} />
+
+                  {open && <span className="ml-2">Back to home</span>}
+                </Button>
+              </div>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarFooter>
+    </Sidebar>
+  );
 }
