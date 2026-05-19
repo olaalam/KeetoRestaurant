@@ -92,7 +92,7 @@ export default function Layout() {
                 <button onClick={() => navigate("/")}>
                   <img
                     className="w-30 h-15"
-                    src="src/assets/logo.webp"
+                    src="/public/logo.webp"
                     alt="Logo"
                   />
                 </button>

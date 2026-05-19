@@ -48,303 +48,303 @@ import IngredientsAdd from "./Pages/Ingredients/IngredientsAdd";
 import IngredientsFoods from "./Pages/IngredientCategory/IngredientsFoods";
 import OrderDetails from "./Pages/Order/OrderDetails";
 import OrdersList from "./Pages/Order/OrdersList";
-
+import Mykeeto from "./Pages/Mykeeto/mykeeto";
 
 const router = createBrowserRouter([
-    {
-        path: "/login",
-        element: <Login />,
-    },
-    {
-        path: "/",
-        element: (
-            <ProtectedRoute>
-                <Layout /> {/* استخدمي Layout هنا بدلاً من Home لتنظيم الصفحة */}
-            </ProtectedRoute>
-        ),
-        children: [
-            {
-                index: true, // ليعرض صفحة Home عند الدخول على "/" مباشرة
-                element: <Home />,
-            },
-            {
-                path: "admins",
-                element: <Admin />,
-            },
-            {
-                path: "admins/add",
-                element: <AdminAdd />,
-            },
-            {
-                path: "admins/edit/:id",
-                element: <AdminAdd />,
-            },
-            {
-                path: "countries",
-                element: <Country />,
-            },
-            {
-                path: "countries/add",
-                element: <CountryAdd />,
-            },
-            {
-                path: "countries/edit/:id",
-                element: <CountryAdd />,
-            },
-            {
-                path: "cities",
-                element: <City />,
-            },
-            {
-                path: "cities/add",
-                element: <CityAdd />,
-            },
-            {
-                path: "cities/edit/:id",
-                element: <CityAdd />,
-            },
-            {
-                path: "zones",
-                element: <Zone />,
-            },
-            {
-                path: "zones/add",
-                element: <ZoneAdd />,
-            },
-            {
-                path: "zones/edit/:id",
-                element: <ZoneAdd />,
-            },
-            {
-                path: "categories",
-                element: <Category />,
-            },
-            {
-                path: "categories/add",
-                element: <CategoryAdd />,
-            },
-            {
-                path: "categories/edit/:id",
-                element: <CategoryAdd />,
-            },
-            {
-                path: "sub-categories",
-                element: <SubCategory />,
-            },
-            {
-                path: "sub-categories/add",
-                element: <SubCategoryAdd />,
-            },
-            {
-                path: "sub-categories/edit/:id",
-                element: <SubCategoryAdd />,
-            },
-            {
-                path: "branches",
-                element: <Branches />,
-            },
-            {
-                path: "branches/add",
-                element: <BranchesAdd />,
-            },
-            {
-                path: "branches/edit/:id",
-                element: <BranchesAdd />,
-            },
-            {
-                path: "branches/setting/:id",
-                element: <Setting />,
-            },
-            {
-                path: "branches/setting/edit/:id",
-                element: <SettingAdd />,
-            },
-            {
-                path: "addons",
-                element: <Addons />,
-            },
-            {
-                path: "addons/add",
-                element: <AddonsAdd />,
-            },
-            {
-                path: "addons/edit/:id",
-                element: <AddonsAdd />,
-            },
-            {
-                path: "addons-categories",
-                element: <AddonsCat />,
-            },
-            {
-                path: "addons-categories/add",
-                element: <AddonsCatAdd />,
-            },
-            {
-                path: "addons-categories/edit/:id",
-                element: <AddonsCatAdd />,
-            },
-            {
-                path: "delivery-zones",
-                element: <DeliveryZone />,
-            },
-            {
-                path: "delivery-zones/add",
-                element: <DeliveryZoneAdd />,
-            },
-            {
-                path: "delivery-zones/edit/:id",
-                element: <DeliveryZoneAdd />,
-            },
-            {
-                path: "foods",
-                element: <Food />,
-            },
-            {
-                path: "foods/add",
-                element: <FoodAdd />,
-            },
-            {
-                path: "foods/edit/:id",
-                element: <FoodAdd />,
-            },
-            {
-                path: "cuisines",
-                element: <Cuisine />,
-            },
-            {
-                path: "cuisines/add",
-                element: <CuisineAdd />,
-            },
-            {
-                path: "cuisines/edit/:id",
-                element: <CuisineAdd />,
-            },
-            {
-                path: "branches/branch_menu/:restaurantId",
-                element: <BrancheMenu />,
-            },
-            {
-                path: "branches/branch_menu/add",
-                element: <BrancheMenuAdd />,
-            },
-            {
-                path: "branches/branch_menu/edit/:id",
-                element: <BrancheMenuAdd />,
-            },
-            {
-                path: "permissions",
-                element: <Permission />,
-            },
-            {
-                path: "permissions/add",
-                element: <PermissionAdd />,
-            },
-            {
-                path: "permissions/edit/:id",
-                element: <PermissionAdd />,
-            },
-            {
-                path: "payment-methods",
-                element: <PaymentMetod />,
-            },
-            {
-                path: "payment-methods/add",
-                element: <PaymentMetodAdd />,
-            },
-            {
-                path: "payment-methods/edit/:id",
-                element: <PaymentMetodAdd />,
-            },
-            {
-                path: "branches/transaction/:restaurantId",
-                element: <Transaction />,
-            },
-            {
-                path: "orders",
-                element: <Order />,
-            },
-            {
-                path: "orders/details/:orderId",
-                element: <OrderDetails />,
-            },
-            {
-                path: "orders/pending",
-                element: <OrdersList status="pending" />,
-            },
-            {
-                path: "orders/accepted",
-                element: <OrdersList status="accepted" />,
-            },
-            {
-                path: "orders/preparing",
-                element: <OrdersList status="preparing" />,
-            },
-            {
-                path: "orders/delivered",
-                element: <OrdersList status="delivered" />,
-            },
-            {
-                path: "orders/out-delivery",
-                // ملحوظة: اتأكد إن الـ API بياخدها "out-delivery" بالشرطة ولا "out_delivery" وعدلها في الـ status على أساسه
-                element: <OrdersList status="out-delivery" />,
-            },
-            {
-                path: "orders/cancelled",
-                element: <OrdersList status="cancelled" />,
-            },
-            {
-                path: "orders/rejected",
-                element: <OrdersList status="rejected" />,
-            },
-            {
-                path: "orders/refunded", // تم تعديل الإسبيلنج من refuned لـ refunded
-                element: <OrdersList status="refunded" />,
-            },
-            {
-                path: "orders/edit/:id",
-                element: <OrderAdd />,
-            },
-            {
-                path: "branches/wallet/:restaurantId",
-                element: <WalletR />,
-            },
-            {
-                path: "ingredient-category",
-                element: <IngredientCategory />,
-            },
-            {
-                path: "ingredient-category/add",
-                element: <IngredientCategoryAdd />,
-            },
-            {
-                path: "ingredient-category/edit/:id",
-                element: <IngredientCategoryAdd />,
-            },
-            {
-                path: "ingredients",
-                element: <Ingredients />,
-            },
-            {
-                path: "ingredients/add",
-                element: <IngredientsAdd />,
-            },
-            {
-                path: "ingredients/edit/:id",
-                element: <IngredientsAdd />,
-            },
-            {
-                path: "ingredients/food/:categoryId",
-                element: <IngredientsFoods />,
-            },
-
-
-        ],
-    },
-    {
-        path: "*",
-        element: <NotFound />,
-    },
-], {
-    basename: "/restaurant"
-});
+  {
+    path: "/login",
+    element: <Login />,
+  },
+  {
+    path: "/",
+    element: (
+      <ProtectedRoute>
+        <Layout /> {/* استخدمي Layout هنا بدلاً من Home لتنظيم الصفحة */}
+      </ProtectedRoute>
+    ),
+    children: [
+      {
+        index: true, // ليعرض صفحة Home عند الدخول على "/" مباشرة
+        element: <Home />,
+      },
+      {
+        path: "admins",
+        element: <Admin />,
+      },
+      {
+        path: "admins/add",
+        element: <AdminAdd />,
+      },
+      {
+        path: "admins/edit/:id",
+        element: <AdminAdd />,
+      },
+      {
+        path: "countries",
+        element: <Country />,
+      },
+      {
+        path: "countries/add",
+        element: <CountryAdd />,
+      },
+      {
+        path: "countries/edit/:id",
+        element: <CountryAdd />,
+      },
+      {
+        path: "cities",
+        element: <City />,
+      },
+      {
+        path: "cities/add",
+        element: <CityAdd />,
+      },
+      {
+        path: "cities/edit/:id",
+        element: <CityAdd />,
+      },
+      {
+        path: "zones",
+        element: <Zone />,
+      },
+      {
+        path: "zones/add",
+        element: <ZoneAdd />,
+      },
+      {
+        path: "zones/edit/:id",
+        element: <ZoneAdd />,
+      },
+      {
+        path: "categories",
+        element: <Category />,
+      },
+      {
+        path: "categories/add",
+        element: <CategoryAdd />,
+      },
+      {
+        path: "categories/edit/:id",
+        element: <CategoryAdd />,
+      },
+      {
+        path: "sub-categories",
+        element: <SubCategory />,
+      },
+      {
+        path: "sub-categories/add",
+        element: <SubCategoryAdd />,
+      },
+      {
+        path: "sub-categories/edit/:id",
+        element: <SubCategoryAdd />,
+      },
+      {
+        path: "branches",
+        element: <Branches />,
+      },
+      {
+        path: "branches/add",
+        element: <BranchesAdd />,
+      },
+      {
+        path: "branches/edit/:id",
+        element: <BranchesAdd />,
+      },
+      {
+        path: "branches/setting/:id",
+        element: <Setting />,
+      },
+      {
+        path: "branches/setting/edit/:id",
+        element: <SettingAdd />,
+      },
+      {
+        path: "addons",
+        element: <Addons />,
+      },
+      {
+        path: "addons/add",
+        element: <AddonsAdd />,
+      },
+      {
+        path: "addons/edit/:id",
+        element: <AddonsAdd />,
+      },
+      {
+        path: "addons-categories",
+        element: <AddonsCat />,
+      },
+      {
+        path: "addons-categories/add",
+        element: <AddonsCatAdd />,
+      },
+      {
+        path: "addons-categories/edit/:id",
+        element: <AddonsCatAdd />,
+      },
+      {
+        path: "mykeeto",
+        element: <Mykeeto />,
+      },
+      {
+        path: "delivery-zones",
+        element: <DeliveryZone />,
+      },
+      {
+        path: "delivery-zones/add",
+        element: <DeliveryZoneAdd />,
+      },
+      {
+        path: "delivery-zones/edit/:id",
+        element: <DeliveryZoneAdd />,
+      },
+      {
+        path: "foods",
+        element: <Food />,
+      },
+      {
+        path: "foods/add",
+        element: <FoodAdd />,
+      },
+      {
+        path: "foods/edit/:id",
+        element: <FoodAdd />,
+      },
+      {
+        path: "cuisines",
+        element: <Cuisine />,
+      },
+      {
+        path: "cuisines/add",
+        element: <CuisineAdd />,
+      },
+      {
+        path: "cuisines/edit/:id",
+        element: <CuisineAdd />,
+      },
+      {
+        path: "branches/branch_menu/:restaurantId",
+        element: <BrancheMenu />,
+      },
+      {
+        path: "branches/branch_menu/add",
+        element: <BrancheMenuAdd />,
+      },
+      {
+        path: "branches/branch_menu/edit/:id",
+        element: <BrancheMenuAdd />,
+      },
+      {
+        path: "permissions",
+        element: <Permission />,
+      },
+      {
+        path: "permissions/add",
+        element: <PermissionAdd />,
+      },
+      {
+        path: "permissions/edit/:id",
+        element: <PermissionAdd />,
+      },
+      {
+        path: "payment-methods",
+        element: <PaymentMetod />,
+      },
+      {
+        path: "payment-methods/add",
+        element: <PaymentMetodAdd />,
+      },
+      {
+        path: "payment-methods/edit/:id",
+        element: <PaymentMetodAdd />,
+      },
+      {
+        path: "branches/transaction/:restaurantId",
+        element: <Transaction />,
+      },
+      {
+        path: "orders",
+        element: <Order />,
+      },
+      {
+        path: "orders/details/:orderId",
+        element: <OrderDetails />,
+      },
+      {
+        path: "orders/pending",
+        element: <OrdersList status="pending" />,
+      },
+      {
+        path: "orders/accepted",
+        element: <OrdersList status="accepted" />,
+      },
+      {
+        path: "orders/preparing",
+        element: <OrdersList status="preparing" />,
+      },
+      {
+        path: "orders/delivered",
+        element: <OrdersList status="delivered" />,
+      },
+      {
+        path: "orders/out-delivery",
+        // ملحوظة: اتأكد إن الـ API بياخدها "out-delivery" بالشرطة ولا "out_delivery" وعدلها في الـ status على أساسه
+        element: <OrdersList status="out-delivery" />,
+      },
+      {
+        path: "orders/cancelled",
+        element: <OrdersList status="cancelled" />,
+      },
+      {
+        path: "orders/rejected",
+        element: <OrdersList status="rejected" />,
+      },
+      {
+        path: "orders/refunded", // تم تعديل الإسبيلنج من refuned لـ refunded
+        element: <OrdersList status="refunded" />,
+      },
+      {
+        path: "orders/edit/:id",
+        element: <OrderAdd />,
+      },
+      {
+        path: "branches/wallet/:restaurantId",
+        element: <WalletR />,
+      },
+      {
+        path: "ingredient-category",
+        element: <IngredientCategory />,
+      },
+      {
+        path: "ingredient-category/add",
+        element: <IngredientCategoryAdd />,
+      },
+      {
+        path: "ingredient-category/edit/:id",
+        element: <IngredientCategoryAdd />,
+      },
+      {
+        path: "ingredients",
+        element: <Ingredients />,
+      },
+      {
+        path: "ingredients/add",
+        element: <IngredientsAdd />,
+      },
+      {
+        path: "ingredients/edit/:id",
+        element: <IngredientsAdd />,
+      },
+      {
+        path: "ingredients/food/:categoryId",
+        element: <IngredientsFoods />,
+      },
+    ],
+  },
+  {
+    path: "*",
+    element: <NotFound />,
+  },
+]);
 export default router;

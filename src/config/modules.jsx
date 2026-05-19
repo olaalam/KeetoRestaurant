@@ -16,6 +16,14 @@ import {
   Ban,
   Undo2,
 } from "lucide-react";
+import keetoImage from "../../public/WhatsApp Image 2026-05-18 at 11.27.30 AM.jpeg";
+const KeetoIcon = (props) => (
+  <img
+    src={keetoImage}
+    alt="Keeto"
+    className={`object-contain rounded-sm ${props.className || "w-5 h-5"}`}
+  />
+);
 export const modules = [
   {
     name: "Dashboard",
@@ -74,6 +82,9 @@ export const modules = [
   {
     name: "Business",
     key: "business",
-    items: [{ title: "Modifier", url: "/addons", icon: Settings2 }],
+    items: [
+      { title: "Modifier", url: "/addons", icon: Settings2 },
+      { title: "MyKeeto Report", url: "/mykeeto", icon: KeetoIcon },
+    ],
   },
 ];
