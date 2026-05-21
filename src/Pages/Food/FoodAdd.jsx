@@ -27,6 +27,30 @@ const toBase64 = (file) =>
     reader.onerror = (error) => reject(error);
   });
 
+// All allergen options
+const ALLERGEN_OPTIONS = [
+  "Dairy",
+  "Gluten",
+  "Eggs",
+  "Nuts",
+  "Peanuts",
+  "Soy",
+  "Fish",
+  "Shellfish",
+  "Sesame",
+  "Wheat",
+];
+
+// Helper: parse "Dairy | Gluten" string → ["Dairy", "Gluten"]
+const parseAllergens = (val) => {
+  if (!val) return [];
+  if (Array.isArray(val)) return val;
+  return val.split("|").map((s) => s.trim()).filter(Boolean);
+};
+
+// Helper: ["Dairy", "Gluten"] → "Dairy | Gluten"
+const serializeAllergens = (arr) => arr.join(" | ");
+
 const FoodAdd = () => {
   const { id } = useParams();
   const { state } = useLocation();
@@ -47,35 +71,34 @@ const FoodAdd = () => {
       const raw = data.data.data;
 
       return {
-        ...raw,
-        addons_id: raw.addons_id || null, // Safely fallback to null for backend verification
-        restaurantid: String(raw.restaurantid || raw.restaurant?.id || ""),
-        categoryid: String(
-          raw.categoryid || raw.categories?.id || raw.category?.id || "",
-        ),
-        subcategoryid: String(
-          raw.subcategoryid ||
-            raw.subcategories?.id ||
-            raw.subcategory?.id ||
-            "",
-        ),
-        name_ar: raw.name_ar || raw.nameAr || "",
-        name_fr: raw.name_fr || raw.nameFr || "",
-        description_ar: raw.description_ar || raw.descriptionAr || "",
-        description_fr: raw.description_fr || raw.descriptionFr || "",
-        nutrition: raw.nutrition || raw.Nutrition || "",
-        start_time: raw.start_time || raw.startTime || "",
-        end_time: raw.end_time || raw.endTime || "",
+        // All keys in camelCase to match API payload exactly
+        name: raw.name || "",
+        nameAr: raw.nameAr || raw.name_ar || "",
+        nameFr: raw.nameFr || raw.name_fr || "",
+        description: raw.description || "",
+        descriptionAr: raw.descriptionAr || raw.description_ar || "",
+        descriptionFr: raw.descriptionFr || raw.description_fr || "",
+        image: raw.image || "",
+        categoryid: String(raw.categoryid || raw.categories?.id || raw.category?.id || ""),
+        subcategoryid: String(raw.subcategoryid || raw.subcategories?.id || raw.subcategory?.id || ""),
+        foodtype: raw.foodtype || "",
+        Nutrition: raw.Nutrition || raw.nutrition || "",
+        allergen_ingredients: parseAllergens(raw.allergen_ingredients),
+        is_Halal: Boolean(raw.is_Halal),
+        startTime: raw.startTime || raw.start_time || "",
+        endTime: raw.endTime || raw.end_time || "",
+        search_tags: raw.search_tags || "",
         price: raw.price ? Number(raw.price) : "",
+        discount_type: raw.discount_type || "none",
         discount_value: raw.discount_value ? Number(raw.discount_value) : 0,
-        Maximum_Purchase: raw.Maximum_Purchase
-          ? Number(raw.Maximum_Purchase)
-          : 5,
+        Maximum_Purchase: raw.Maximum_Purchase ? Number(raw.Maximum_Purchase) : 5,
+        stock_type: raw.stock_type || "unlimited",
+        status: raw.status || "active",
         variations:
           raw.variations?.map((v) => ({
             name: v.name || "",
-            name_ar: v.name_ar || v.nameAr || "",
-            name_fr: v.name_fr || v.nameFr || "",
+            nameAr: v.nameAr || "",
+            nameFr: v.nameFr || "",
             isRequired: Boolean(v.isRequired),
             selectionType: v.selectionType || "single",
             min: v.min ? Number(v.min) : 1,
@@ -83,11 +106,9 @@ const FoodAdd = () => {
             options:
               v.options?.map((o) => ({
                 optionName: o.optionName || "",
-                option_name_ar: o.option_name_ar || o.optionNameAr || "",
-                option_name_fr: o.option_name_fr || o.optionNameFr || "",
-                additionalPrice: o.additionalPrice
-                  ? Number(o.additionalPrice)
-                  : 0,
+                optionNameAr: o.optionNameAr || "",
+                optionNameFr: o.optionNameFr || "",
+                additionalPrice: o.additionalPrice ? Number(o.additionalPrice) : 0,
               })) || [],
           })) || [],
       };
@@ -100,22 +121,36 @@ const FoodAdd = () => {
     return <LoadingSpinner />;
   }
 
+  // Transform form data before submit: allergens array → string
+  const transformBeforeSubmit = (formData) => ({
+    ...formData,
+    allergen_ingredients: Array.isArray(formData.allergen_ingredients)
+      ? serializeAllergens(formData.allergen_ingredients)
+      : formData.allergen_ingredients,
+  });
+
   return (
     <AddPage
       title="Food Item"
       apiUrl="/api/restaurant/food"
       queryKey={["foods"]}
       fields={[]}
-      initialData={{
-        addons_id: null, // Fixed: set to null so database handles it as SQL NULL
-        foodtype: "", 
-        ...initialData,
-      }}
+      initialData={initialData}
+      transformData={transformBeforeSubmit}
       onSuccessAction={() => navigate("/foods")}
     >
       {({ register, control, formState: { errors }, setValue, watch }) => {
         const imagePreview = watch("image");
         const selectedCategoryId = watch("categoryid");
+        const selectedAllergens = watch("allergen_ingredients") || [];
+
+        const toggleAllergen = (allergen) => {
+          const current = Array.isArray(selectedAllergens) ? selectedAllergens : [];
+          const updated = current.includes(allergen)
+            ? current.filter((a) => a !== allergen)
+            : [...current, allergen];
+          setValue("allergen_ingredients", updated);
+        };
 
         return (
           <Tabs defaultValue="basic" className="w-full mt-4">
@@ -137,41 +172,31 @@ const FoodAdd = () => {
                     className={errors.name ? "border-destructive" : ""}
                   />
                   {errors.name && (
-                    <span className="text-destructive text-xs">
-                      {errors.name.message}
-                    </span>
+                    <span className="text-destructive text-xs">{errors.name.message}</span>
                   )}
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Food Name Ar *</Label>
+                  <Label>Food Name (AR) *</Label>
                   <Input
-                    {...register("name_ar", {
-                      required: "Arabic name is required",
-                    })}
+                    {...register("nameAr", { required: "Arabic name is required" })}
                     placeholder="مثال: برجر بالجبنة"
-                    className={errors.name_ar ? "border-destructive" : ""}
+                    className={errors.nameAr ? "border-destructive" : ""}
                   />
-                  {errors.name_ar && (
-                    <span className="text-destructive text-xs">
-                      {errors.name_ar.message}
-                    </span>
+                  {errors.nameAr && (
+                    <span className="text-destructive text-xs">{errors.nameAr.message}</span>
                   )}
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Food Name Fr *</Label>
+                  <Label>Food Name (FR) *</Label>
                   <Input
-                    {...register("name_fr", {
-                      required: "French name is required",
-                    })}
+                    {...register("nameFr", { required: "French name is required" })}
                     placeholder="e.g. Burger au fromage"
-                    className={errors.name_fr ? "border-destructive" : ""}
+                    className={errors.nameFr ? "border-destructive" : ""}
                   />
-                  {errors.name_fr && (
-                    <span className="text-destructive text-xs">
-                      {errors.name_fr.message}
-                    </span>
+                  {errors.nameFr && (
+                    <span className="text-destructive text-xs">{errors.nameFr.message}</span>
                   )}
                 </div>
               </div>
@@ -180,35 +205,29 @@ const FoodAdd = () => {
                 <div className="space-y-2">
                   <Label>Description *</Label>
                   <Input
-                    {...register("description", {
-                      required: "Description is required",
-                    })}
+                    {...register("description", { required: "Description is required" })}
                     placeholder="Brief description..."
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Description Ar *</Label>
+                  <Label>Description (AR) *</Label>
                   <Input
-                    {...register("description_ar", {
-                      required: "Arabic description is required",
-                    })}
+                    {...register("descriptionAr", { required: "Arabic description is required" })}
                     placeholder="وصف قصير..."
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Description Fr *</Label>
+                  <Label>Description (FR) *</Label>
                   <Input
-                    {...register("description_fr", {
-                      required: "French description is required",
-                    })}
+                    {...register("descriptionFr", { required: "French description is required" })}
                     placeholder="Description brève..."
                   />
                 </div>
               </div>
 
-              <div className="space-y-2 col-span-full">
+              <div className="space-y-2">
                 <Label>Food Image</Label>
                 <div className="flex items-center gap-4">
                   <Input
@@ -223,12 +242,8 @@ const FoodAdd = () => {
                     }}
                   />
                   {imagePreview && (
-                    <div className="w-16 h-16 border rounded overflow-hidden mt-2">
-                      <img
-                        src={imagePreview}
-                        alt="Preview"
-                        className="w-full h-full object-cover"
-                      />
+                    <div className="w-16 h-16 border rounded overflow-hidden shrink-0">
+                      <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
                     </div>
                   )}
                 </div>
@@ -270,18 +285,13 @@ const FoodAdd = () => {
                     name="subcategoryid"
                     control={control}
                     render={({ field }) => (
-                      <Select
-                        onValueChange={field.onChange}
-                        value={field.value}
-                      >
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <SelectTrigger>
                           <SelectValue placeholder="Select Sub Category" />
                         </SelectTrigger>
                         <SelectContent>
                           {selectOptions?.subcategories
-                            ?.filter(
-                              (sub) => sub.categoryId === selectedCategoryId,
-                            )
+                            ?.filter((sub) => sub.categoryId === selectedCategoryId)
                             ?.map((sub) => (
                               <SelectItem key={sub.id} value={String(sub.id)}>
                                 {sub.name}
@@ -298,26 +308,32 @@ const FoodAdd = () => {
             {/* Tab 2: Details */}
             <TabsContent value="details" className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Nutrition Data</Label>
-                  <Input
-                    {...register("nutrition")}
-                    placeholder="e.g. 500 kcal - 20g Protein"
-                  />
-                </div>
+
+                {/* Food Type: veg / non-veg select */}
                 <div className="space-y-2">
                   <Label>Food Type</Label>
-                  <Input
-                    {...register("foodtype")}
-                    placeholder="veg / non-veg"
+                  <Controller
+                    name="foodtype"
+                    control={control}
+                    render={({ field }) => (
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select food type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="veg">🟢 Veg</SelectItem>
+                          <SelectItem value="non-veg">🔴 Non-Veg</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Allergen Ingredients</Label>
+                  <Label>Nutrition</Label>
                   <Input
-                    {...register("allergen_ingredients")}
-                    placeholder="Dairy | Gluten"
+                    {...register("Nutrition")}
+                    placeholder="e.g. 500 kcal - 20g Protein"
                   />
                 </div>
 
@@ -331,12 +347,12 @@ const FoodAdd = () => {
 
                 <div className="space-y-2">
                   <Label>Start Time</Label>
-                  <Input type="time" {...register("start_time")} />
+                  <Input type="time" {...register("startTime")} />
                 </div>
 
                 <div className="space-y-2">
                   <Label>End Time</Label>
-                  <Input type="time" {...register("end_time")} />
+                  <Input type="time" {...register("endTime")} />
                 </div>
 
                 <div className="space-y-2 flex items-center pt-8 gap-3">
@@ -344,14 +360,41 @@ const FoodAdd = () => {
                     name="is_Halal"
                     control={control}
                     render={({ field }) => (
-                      <Switch
-                        checked={!!field.value}
-                        onCheckedChange={field.onChange}
-                      />
+                      <Switch checked={!!field.value} onCheckedChange={field.onChange} />
                     )}
                   />
                   <Label>Is Halal?</Label>
                 </div>
+              </div>
+
+              {/* Allergens multi-select as toggle buttons */}
+              <div className="space-y-2">
+                <Label>Allergen Ingredients</Label>
+                <div className="flex flex-wrap gap-2 mt-1">
+                  {ALLERGEN_OPTIONS.map((allergen) => {
+                    const isSelected = Array.isArray(selectedAllergens) &&
+                      selectedAllergens.includes(allergen);
+                    return (
+                      <button
+                        key={allergen}
+                        type="button"
+                        onClick={() => toggleAllergen(allergen)}
+                        className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
+                          isSelected
+                            ? "bg-orange-500 text-white border-orange-500"
+                            : "bg-white text-gray-600 border-gray-300 hover:border-orange-400"
+                        }`}
+                      >
+                        {allergen}
+                      </button>
+                    );
+                  })}
+                </div>
+                {Array.isArray(selectedAllergens) && selectedAllergens.length > 0 && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Selected: {selectedAllergens.join(", ")}
+                  </p>
+                )}
               </div>
             </TabsContent>
 
@@ -362,10 +405,7 @@ const FoodAdd = () => {
                   <Label>Base Price *</Label>
                   <Input
                     type="number"
-                    {...register("price", {
-                      required: true,
-                      valueAsNumber: true,
-                    })}
+                    {...register("price", { required: true, valueAsNumber: true })}
                   />
                 </div>
 
@@ -375,10 +415,7 @@ const FoodAdd = () => {
                     name="discount_type"
                     control={control}
                     render={({ field }) => (
-                      <Select
-                        onValueChange={field.onChange}
-                        value={field.value}
-                      >
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <SelectTrigger>
                           <SelectValue placeholder="No Discount" />
                         </SelectTrigger>
@@ -414,13 +451,8 @@ const FoodAdd = () => {
                     name="stock_type"
                     control={control}
                     render={({ field }) => (
-                      <Select
-                        onValueChange={field.onChange}
-                        value={field.value}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="unlimited">Unlimited</SelectItem>
                           <SelectItem value="limited">Limited</SelectItem>
@@ -436,13 +468,8 @@ const FoodAdd = () => {
                     name="status"
                     control={control}
                     render={({ field }) => (
-                      <Select
-                        onValueChange={field.onChange}
-                        value={field.value}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="active">Active</SelectItem>
                           <SelectItem value="inactive">Inactive</SelectItem>
@@ -485,20 +512,13 @@ const VariationsSection = ({ control, register, setValue, watch }) => {
           onClick={() =>
             append({
               name: "",
-              name_ar: "", 
-              name_fr: "", 
+              nameAr: "",
+              nameFr: "",
               isRequired: false,
               selectionType: "single",
               min: 1,
               max: 1,
-              options: [
-                {
-                  optionName: "",
-                  option_name_ar: "", 
-                  option_name_fr: "", 
-                  additionalPrice: 0,
-                },
-              ],
+              options: [{ optionName: "", optionNameAr: "", optionNameFr: "", additionalPrice: 0 }],
             })
           }
           className="bg-orange-500 hover:bg-orange-600"
@@ -511,10 +531,7 @@ const VariationsSection = ({ control, register, setValue, watch }) => {
         const selectionType = watch(`variations.${index}.selectionType`);
 
         return (
-          <div
-            key={item.id}
-            className="p-6 border-2 rounded-xl bg-white relative space-y-4 shadow-sm"
-          >
+          <div key={item.id} className="p-6 border-2 rounded-xl bg-white relative space-y-4 shadow-sm">
             <Button
               type="button"
               variant="ghost"
@@ -527,24 +544,15 @@ const VariationsSection = ({ control, register, setValue, watch }) => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label>Variation Name (EN)</Label>
-                <Input
-                  {...register(`variations.${index}.name`)}
-                  placeholder="e.g. Size"
-                />
+                <Input {...register(`variations.${index}.name`)} placeholder="e.g. Size" />
               </div>
               <div className="space-y-2">
                 <Label>Variation Name (AR)</Label>
-                <Input
-                  {...register(`variations.${index}.name_ar`)} 
-                  placeholder="مثال: الحجم"
-                />
+                <Input {...register(`variations.${index}.nameAr`)} placeholder="مثال: الحجم" />
               </div>
               <div className="space-y-2">
                 <Label>Variation Name (FR)</Label>
-                <Input
-                  {...register(`variations.${index}.name_fr`)} 
-                  placeholder="e.g. Taille"
-                />
+                <Input {...register(`variations.${index}.nameFr`)} placeholder="e.g. Taille" />
               </div>
 
               <div className="space-y-2">
@@ -563,14 +571,10 @@ const VariationsSection = ({ control, register, setValue, watch }) => {
                       }}
                       value={field.value}
                     >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="single">Single (Radio)</SelectItem>
-                        <SelectItem value="multiple">
-                          Multiple (Checkbox)
-                        </SelectItem>
+                        <SelectItem value="multiple">Multiple (Checkbox)</SelectItem>
                       </SelectContent>
                     </Select>
                   )}
@@ -582,10 +586,7 @@ const VariationsSection = ({ control, register, setValue, watch }) => {
                   name={`variations.${index}.isRequired`}
                   control={control}
                   render={({ field }) => (
-                    <Switch
-                      checked={!!field.value}
-                      onCheckedChange={field.onChange}
-                    />
+                    <Switch checked={!!field.value} onCheckedChange={field.onChange} />
                   )}
                 />
                 <Label>Required?</Label>
@@ -598,29 +599,21 @@ const VariationsSection = ({ control, register, setValue, watch }) => {
                   <Label>Min Selection</Label>
                   <Input
                     type="number"
-                    {...register(`variations.${index}.min`, {
-                      valueAsNumber: true,
-                    })}
+                    {...register(`variations.${index}.min`, { valueAsNumber: true })}
                   />
                 </div>
                 <div className="space-y-2">
                   <Label>Max Selection</Label>
                   <Input
                     type="number"
-                    {...register(`variations.${index}.max`, {
-                      valueAsNumber: true,
-                    })}
+                    {...register(`variations.${index}.max`, { valueAsNumber: true })}
                   />
                 </div>
               </div>
             )}
 
             <div className="mt-4 pt-4 border-t">
-              <OptionsSection
-                nestIndex={index}
-                control={control}
-                register={register}
-              />
+              <OptionsSection nestIndex={index} control={control} register={register} />
             </div>
           </div>
         );
@@ -639,10 +632,7 @@ const OptionsSection = ({ nestIndex, control, register }) => {
     <div className="space-y-3">
       <Label className="text-blue-600 font-bold">Options & Pricing</Label>
       {fields.map((item, k) => (
-        <div
-          key={item.id}
-          className="flex items-end gap-4 bg-slate-50 p-3 rounded-lg"
-        >
+        <div key={item.id} className="flex items-end gap-4 bg-slate-50 p-3 rounded-lg">
           <div className="flex-1 space-y-1">
             <Label className="text-xs">Option Name</Label>
             <Input
@@ -651,16 +641,16 @@ const OptionsSection = ({ nestIndex, control, register }) => {
             />
           </div>
           <div className="flex-1 space-y-1">
-            <Label className="text-xs">Option Name Ar</Label>
+            <Label className="text-xs">Option Name (AR)</Label>
             <Input
-              {...register(`variations.${nestIndex}.options.${k}.option_name_ar`)} 
+              {...register(`variations.${nestIndex}.options.${k}.optionNameAr`)}
               className="bg-white"
             />
           </div>
           <div className="flex-1 space-y-1">
-            <Label className="text-xs">Option Name Fr</Label>
+            <Label className="text-xs">Option Name (FR)</Label>
             <Input
-              {...register(`variations.${nestIndex}.options.${k}.option_name_fr`)} 
+              {...register(`variations.${nestIndex}.options.${k}.optionNameFr`)}
               className="bg-white"
             />
           </div>
@@ -668,12 +658,9 @@ const OptionsSection = ({ nestIndex, control, register }) => {
             <Label className="text-xs">Extra Price</Label>
             <Input
               type="number"
-              {...register(
-                `variations.${nestIndex}.options.${k}.additionalPrice`,
-                {
-                  valueAsNumber: true,
-                },
-              )}
+              {...register(`variations.${nestIndex}.options.${k}.additionalPrice`, {
+                valueAsNumber: true,
+              })}
               className="bg-white"
             />
           </div>
@@ -692,14 +679,7 @@ const OptionsSection = ({ nestIndex, control, register }) => {
         type="button"
         variant="outline"
         size="sm"
-        onClick={() =>
-          append({
-            optionName: "",
-            option_name_ar: "", 
-            option_name_fr: "", 
-            additionalPrice: 0,
-          })
-        }
+        onClick={() => append({ optionName: "", optionNameAr: "", optionNameFr: "", additionalPrice: 0 })}
         className="mt-2 text-blue-600 border-blue-600"
       >
         + Add Option
