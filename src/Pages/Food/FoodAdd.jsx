@@ -27,28 +27,6 @@ const toBase64 = (file) =>
     reader.onerror = (error) => reject(error);
   });
 
-// All allergen options
-const ALLERGEN_OPTIONS = [
-  "Dairy",
-  "Gluten",
-  "Eggs",
-  "Nuts",
-  "Peanuts",
-  "Soy",
-  "Fish",
-  "Shellfish",
-  "Sesame",
-  "Wheat",
-];
-
-// Helper: parse "Dairy | Gluten" string → ["Dairy", "Gluten"]
-const parseAllergens = (val) => {
-  if (!val) return [];
-  if (Array.isArray(val)) return val;
-  return val.split("|").map((s) => s.trim()).filter(Boolean);
-};
-
-// Helper: ["Dairy", "Gluten"] → "Dairy | Gluten"
 const serializeAllergens = (arr) => arr.join(" | ");
 
 const FoodAdd = () => {
@@ -71,7 +49,6 @@ const FoodAdd = () => {
       const raw = data.data.data;
 
       return {
-        // All keys in camelCase to match API payload exactly
         name: raw.name || "",
         nameAr: raw.nameAr || raw.name_ar || "",
         nameFr: raw.nameFr || raw.name_fr || "",
@@ -79,11 +56,17 @@ const FoodAdd = () => {
         descriptionAr: raw.descriptionAr || raw.description_ar || "",
         descriptionFr: raw.descriptionFr || raw.description_fr || "",
         image: raw.image || "",
-        categoryid: String(raw.categoryid || raw.categories?.id || raw.category?.id || ""),
-        subcategoryid: String(raw.subcategoryid || raw.subcategories?.id || raw.subcategory?.id || ""),
+        categoryid: String(
+          raw.categoryid || raw.categories?.id || raw.category?.id || "",
+        ),
+        subcategoryid: String(
+          raw.subcategoryid ||
+            raw.subcategories?.id ||
+            raw.subcategory?.id ||
+            "",
+        ),
         foodtype: raw.foodtype || "",
         Nutrition: raw.Nutrition || raw.nutrition || "",
-        allergen_ingredients: parseAllergens(raw.allergen_ingredients),
         is_Halal: Boolean(raw.is_Halal),
         startTime: raw.startTime || raw.start_time || "",
         endTime: raw.endTime || raw.end_time || "",
@@ -91,7 +74,9 @@ const FoodAdd = () => {
         price: raw.price ? Number(raw.price) : "",
         discount_type: raw.discount_type || "none",
         discount_value: raw.discount_value ? Number(raw.discount_value) : 0,
-        Maximum_Purchase: raw.Maximum_Purchase ? Number(raw.Maximum_Purchase) : 5,
+        Maximum_Purchase: raw.Maximum_Purchase
+          ? Number(raw.Maximum_Purchase)
+          : 5,
         stock_type: raw.stock_type || "unlimited",
         status: raw.status || "active",
         variations:
@@ -108,8 +93,15 @@ const FoodAdd = () => {
                 optionName: o.optionName || "",
                 optionNameAr: o.optionNameAr || "",
                 optionNameFr: o.optionNameFr || "",
-                additionalPrice: o.additionalPrice ? Number(o.additionalPrice) : 0,
+                additionalPrice: o.additionalPrice
+                  ? Number(o.additionalPrice)
+                  : 0,
               })) || [],
+          })) || [],
+        addon:
+          raw.addon?.map((a) => ({
+            addonsId: String(a.addonsId || a.id || ""),
+            status: a.status || "active",
           })) || [],
       };
     },
@@ -117,16 +109,20 @@ const FoodAdd = () => {
   });
 
   const initialData = state?.foodData || foodData;
-  if (isSelectLoading || (id && isFetching)) {
+
+  if (isSelectLoading || (id && isFetching || !initialData))  {
     return <LoadingSpinner />;
   }
 
-  // Transform form data before submit: allergens array → string
   const transformBeforeSubmit = (formData) => ({
     ...formData,
     allergen_ingredients: Array.isArray(formData.allergen_ingredients)
       ? serializeAllergens(formData.allergen_ingredients)
       : formData.allergen_ingredients,
+    addon: formData.addon?.map((a) => ({
+      ...a,
+      addonsId: Number(a.addonsId),
+    })),
   });
 
   return (
@@ -142,23 +138,15 @@ const FoodAdd = () => {
       {({ register, control, formState: { errors }, setValue, watch }) => {
         const imagePreview = watch("image");
         const selectedCategoryId = watch("categoryid");
-        const selectedAllergens = watch("allergen_ingredients") || [];
-
-        const toggleAllergen = (allergen) => {
-          const current = Array.isArray(selectedAllergens) ? selectedAllergens : [];
-          const updated = current.includes(allergen)
-            ? current.filter((a) => a !== allergen)
-            : [...current, allergen];
-          setValue("allergen_ingredients", updated);
-        };
 
         return (
           <Tabs defaultValue="basic" className="w-full mt-4">
-            <TabsList className="grid w-full grid-cols-4 mb-6">
+            <TabsList className="grid w-full grid-cols-5 mb-6">
               <TabsTrigger value="basic">Basic Info</TabsTrigger>
               <TabsTrigger value="details">Details</TabsTrigger>
               <TabsTrigger value="pricing">Pricing & Stock</TabsTrigger>
               <TabsTrigger value="variations">Variations</TabsTrigger>
+              <TabsTrigger value="addon">Addons</TabsTrigger>
             </TabsList>
 
             {/* Tab 1: Basic Info */}
@@ -172,32 +160,26 @@ const FoodAdd = () => {
                     className={errors.name ? "border-destructive" : ""}
                   />
                   {errors.name && (
-                    <span className="text-destructive text-xs">{errors.name.message}</span>
+                    <span className="text-destructive text-xs">
+                      {errors.name.message}
+                    </span>
                   )}
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Food Name (AR) *</Label>
+                  <Label>Food Name (AR)</Label>
                   <Input
-                    {...register("nameAr", { required: "Arabic name is required" })}
+                    {...register("nameAr", { required: false })}
                     placeholder="مثال: برجر بالجبنة"
-                    className={errors.nameAr ? "border-destructive" : ""}
                   />
-                  {errors.nameAr && (
-                    <span className="text-destructive text-xs">{errors.nameAr.message}</span>
-                  )}
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Food Name (FR) *</Label>
+                  <Label>Food Name (FR)</Label>
                   <Input
-                    {...register("nameFr", { required: "French name is required" })}
+                    {...register("nameFr", { required: false })}
                     placeholder="e.g. Burger au fromage"
-                    className={errors.nameFr ? "border-destructive" : ""}
                   />
-                  {errors.nameFr && (
-                    <span className="text-destructive text-xs">{errors.nameFr.message}</span>
-                  )}
                 </div>
               </div>
 
@@ -205,23 +187,31 @@ const FoodAdd = () => {
                 <div className="space-y-2">
                   <Label>Description *</Label>
                   <Input
-                    {...register("description", { required: "Description is required" })}
+                    {...register("description", {
+                      required: "Description is required",
+                    })}
                     placeholder="Brief description..."
+                    className={errors.description ? "border-destructive" : ""}
                   />
+                  {errors.description && (
+                    <span className="text-destructive text-xs">
+                      {errors.description.message}
+                    </span>
+                  )}
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Description (AR) *</Label>
+                  <Label>Description (AR)</Label>
                   <Input
-                    {...register("descriptionAr", { required: "Arabic description is required" })}
+                    {...register("descriptionAr", { required: false })}
                     placeholder="وصف قصير..."
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Description (FR) *</Label>
+                  <Label>Description (FR)</Label>
                   <Input
-                    {...register("descriptionFr", { required: "French description is required" })}
+                    {...register("descriptionFr", { required: false })}
                     placeholder="Description brève..."
                   />
                 </div>
@@ -243,7 +233,11 @@ const FoodAdd = () => {
                   />
                   {imagePreview && (
                     <div className="w-16 h-16 border rounded overflow-hidden shrink-0">
-                      <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+                      <img
+                        src={imagePreview}
+                        alt="Preview"
+                        className="w-full h-full object-cover"
+                      />
                     </div>
                   )}
                 </div>
@@ -264,7 +258,11 @@ const FoodAdd = () => {
                         }}
                         value={field.value}
                       >
-                        <SelectTrigger>
+                        <SelectTrigger
+                          className={
+                            errors.categoryid ? "border-destructive" : ""
+                          }
+                        >
                           <SelectValue placeholder="Select Category" />
                         </SelectTrigger>
                         <SelectContent>
@@ -277,6 +275,11 @@ const FoodAdd = () => {
                       </Select>
                     )}
                   />
+                  {errors.categoryid && (
+                    <span className="text-destructive text-xs">
+                      {errors.categoryid.message}
+                    </span>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -285,13 +288,18 @@ const FoodAdd = () => {
                     name="subcategoryid"
                     control={control}
                     render={({ field }) => (
-                      <Select onValueChange={field.onChange} value={field.value}>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
                         <SelectTrigger>
                           <SelectValue placeholder="Select Sub Category" />
                         </SelectTrigger>
                         <SelectContent>
                           {selectOptions?.subcategories
-                            ?.filter((sub) => sub.categoryId === selectedCategoryId)
+                            ?.filter(
+                              (sub) => sub.categoryId === selectedCategoryId,
+                            )
                             ?.map((sub) => (
                               <SelectItem key={sub.id} value={String(sub.id)}>
                                 {sub.name}
@@ -308,19 +316,22 @@ const FoodAdd = () => {
             {/* Tab 2: Details */}
             <TabsContent value="details" className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
-
-                {/* Food Type: veg / non-veg select */}
                 <div className="space-y-2">
                   <Label>Food Type</Label>
                   <Controller
                     name="foodtype"
                     control={control}
+                    defaultValue="none"
                     render={({ field }) => (
-                      <Select onValueChange={field.onChange} value={field.value}>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value || "none"}
+                      >
                         <SelectTrigger>
                           <SelectValue placeholder="Select food type" />
                         </SelectTrigger>
                         <SelectContent>
+                          <SelectItem value="none">⚪ None</SelectItem>
                           <SelectItem value="veg">🟢 Veg</SelectItem>
                           <SelectItem value="non-veg">🔴 Non-Veg</SelectItem>
                         </SelectContent>
@@ -346,13 +357,35 @@ const FoodAdd = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Start Time</Label>
-                  <Input type="time" {...register("startTime")} />
+                  <Label>Start Time *</Label>
+                  <Input
+                    type="time"
+                    {...register("startTime", {
+                      required: "Start time is required",
+                    })}
+                    className={errors.startTime ? "border-destructive" : ""}
+                  />
+                  {errors.startTime && (
+                    <span className="text-destructive text-xs">
+                      {errors.startTime.message}
+                    </span>
+                  )}
                 </div>
 
                 <div className="space-y-2">
-                  <Label>End Time</Label>
-                  <Input type="time" {...register("endTime")} />
+                  <Label>End Time *</Label>
+                  <Input
+                    type="time"
+                    {...register("endTime", {
+                      required: "End time is required",
+                    })}
+                    className={errors.endTime ? "border-destructive" : ""}
+                  />
+                  {errors.endTime && (
+                    <span className="text-destructive text-xs">
+                      {errors.endTime.message}
+                    </span>
+                  )}
                 </div>
 
                 <div className="space-y-2 flex items-center pt-8 gap-3">
@@ -360,41 +393,21 @@ const FoodAdd = () => {
                     name="is_Halal"
                     control={control}
                     render={({ field }) => (
-                      <Switch checked={!!field.value} onCheckedChange={field.onChange} />
+                      <Switch
+                        checked={!!field.value}
+                        onCheckedChange={field.onChange}
+                      />
                     )}
                   />
                   <Label>Is Halal?</Label>
                 </div>
               </div>
-
-              {/* Allergens multi-select as toggle buttons */}
               <div className="space-y-2">
                 <Label>Allergen Ingredients</Label>
-                <div className="flex flex-wrap gap-2 mt-1">
-                  {ALLERGEN_OPTIONS.map((allergen) => {
-                    const isSelected = Array.isArray(selectedAllergens) &&
-                      selectedAllergens.includes(allergen);
-                    return (
-                      <button
-                        key={allergen}
-                        type="button"
-                        onClick={() => toggleAllergen(allergen)}
-                        className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
-                          isSelected
-                            ? "bg-orange-500 text-white border-orange-500"
-                            : "bg-white text-gray-600 border-gray-300 hover:border-orange-400"
-                        }`}
-                      >
-                        {allergen}
-                      </button>
-                    );
-                  })}
-                </div>
-                {Array.isArray(selectedAllergens) && selectedAllergens.length > 0 && (
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Selected: {selectedAllergens.join(", ")}
-                  </p>
-                )}
+                <Input
+                  {...register("allergen_ingredients")}
+                  placeholder="Dairy | Gluten"
+                />
               </div>
             </TabsContent>
 
@@ -405,8 +418,17 @@ const FoodAdd = () => {
                   <Label>Base Price *</Label>
                   <Input
                     type="number"
-                    {...register("price", { required: true, valueAsNumber: true })}
+                    {...register("price", {
+                      required: "Price is required",
+                      valueAsNumber: true,
+                    })}
+                    className={errors.price ? "border-destructive" : ""}
                   />
+                  {errors.price && (
+                    <span className="text-destructive text-xs">
+                      {errors.price.message}
+                    </span>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -415,7 +437,10 @@ const FoodAdd = () => {
                     name="discount_type"
                     control={control}
                     render={({ field }) => (
-                      <Select onValueChange={field.onChange} value={field.value}>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
                         <SelectTrigger>
                           <SelectValue placeholder="No Discount" />
                         </SelectTrigger>
@@ -451,8 +476,13 @@ const FoodAdd = () => {
                     name="stock_type"
                     control={control}
                     render={({ field }) => (
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="unlimited">Unlimited</SelectItem>
                           <SelectItem value="limited">Limited</SelectItem>
@@ -468,8 +498,13 @@ const FoodAdd = () => {
                     name="status"
                     control={control}
                     render={({ field }) => (
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="active">Active</SelectItem>
                           <SelectItem value="inactive">Inactive</SelectItem>
@@ -488,6 +523,15 @@ const FoodAdd = () => {
                 register={register}
                 setValue={setValue}
                 watch={watch}
+              />
+            </TabsContent>
+
+            {/* Tab 5: Addons */}
+            <TabsContent value="addon">
+              <AddonsSection
+                control={control}
+                register={register}
+                selectOptions={selectOptions}
               />
             </TabsContent>
           </Tabs>
@@ -518,7 +562,14 @@ const VariationsSection = ({ control, register, setValue, watch }) => {
               selectionType: "single",
               min: 1,
               max: 1,
-              options: [{ optionName: "", optionNameAr: "", optionNameFr: "", additionalPrice: 0 }],
+              options: [
+                {
+                  optionName: "",
+                  optionNameAr: "",
+                  optionNameFr: "",
+                  additionalPrice: 0,
+                },
+              ],
             })
           }
           className="bg-orange-500 hover:bg-orange-600"
@@ -531,7 +582,10 @@ const VariationsSection = ({ control, register, setValue, watch }) => {
         const selectionType = watch(`variations.${index}.selectionType`);
 
         return (
-          <div key={item.id} className="p-6 border-2 rounded-xl bg-white relative space-y-4 shadow-sm">
+          <div
+            key={item.id}
+            className="p-6 border-2 rounded-xl bg-white relative space-y-4 shadow-sm"
+          >
             <Button
               type="button"
               variant="ghost"
@@ -544,15 +598,24 @@ const VariationsSection = ({ control, register, setValue, watch }) => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label>Variation Name (EN)</Label>
-                <Input {...register(`variations.${index}.name`)} placeholder="e.g. Size" />
+                <Input
+                  {...register(`variations.${index}.name`)}
+                  placeholder="e.g. Size"
+                />
               </div>
               <div className="space-y-2">
                 <Label>Variation Name (AR)</Label>
-                <Input {...register(`variations.${index}.nameAr`)} placeholder="مثال: الحجم" />
+                <Input
+                  {...register(`variations.${index}.nameAr`)}
+                  placeholder="مثال: الحجم"
+                />
               </div>
               <div className="space-y-2">
                 <Label>Variation Name (FR)</Label>
-                <Input {...register(`variations.${index}.nameFr`)} placeholder="e.g. Taille" />
+                <Input
+                  {...register(`variations.${index}.nameFr`)}
+                  placeholder="e.g. Taille"
+                />
               </div>
 
               <div className="space-y-2">
@@ -571,10 +634,14 @@ const VariationsSection = ({ control, register, setValue, watch }) => {
                       }}
                       value={field.value}
                     >
-                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="single">Single (Radio)</SelectItem>
-                        <SelectItem value="multiple">Multiple (Checkbox)</SelectItem>
+                        <SelectItem value="multiple">
+                          Multiple (Checkbox)
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                   )}
@@ -586,7 +653,10 @@ const VariationsSection = ({ control, register, setValue, watch }) => {
                   name={`variations.${index}.isRequired`}
                   control={control}
                   render={({ field }) => (
-                    <Switch checked={!!field.value} onCheckedChange={field.onChange} />
+                    <Switch
+                      checked={!!field.value}
+                      onCheckedChange={field.onChange}
+                    />
                   )}
                 />
                 <Label>Required?</Label>
@@ -599,21 +669,29 @@ const VariationsSection = ({ control, register, setValue, watch }) => {
                   <Label>Min Selection</Label>
                   <Input
                     type="number"
-                    {...register(`variations.${index}.min`, { valueAsNumber: true })}
+                    {...register(`variations.${index}.min`, {
+                      valueAsNumber: true,
+                    })}
                   />
                 </div>
                 <div className="space-y-2">
                   <Label>Max Selection</Label>
                   <Input
                     type="number"
-                    {...register(`variations.${index}.max`, { valueAsNumber: true })}
+                    {...register(`variations.${index}.max`, {
+                      valueAsNumber: true,
+                    })}
                   />
                 </div>
               </div>
             )}
 
             <div className="mt-4 pt-4 border-t">
-              <OptionsSection nestIndex={index} control={control} register={register} />
+              <OptionsSection
+                nestIndex={index}
+                control={control}
+                register={register}
+              />
             </div>
           </div>
         );
@@ -632,7 +710,10 @@ const OptionsSection = ({ nestIndex, control, register }) => {
     <div className="space-y-3">
       <Label className="text-blue-600 font-bold">Options & Pricing</Label>
       {fields.map((item, k) => (
-        <div key={item.id} className="flex items-end gap-4 bg-slate-50 p-3 rounded-lg">
+        <div
+          key={item.id}
+          className="flex items-end gap-4 bg-slate-50 p-3 rounded-lg"
+        >
           <div className="flex-1 space-y-1">
             <Label className="text-xs">Option Name</Label>
             <Input
@@ -658,9 +739,10 @@ const OptionsSection = ({ nestIndex, control, register }) => {
             <Label className="text-xs">Extra Price</Label>
             <Input
               type="number"
-              {...register(`variations.${nestIndex}.options.${k}.additionalPrice`, {
-                valueAsNumber: true,
-              })}
+              {...register(
+                `variations.${nestIndex}.options.${k}.additionalPrice`,
+                { valueAsNumber: true },
+              )}
               className="bg-white"
             />
           </div>
@@ -679,11 +761,123 @@ const OptionsSection = ({ nestIndex, control, register }) => {
         type="button"
         variant="outline"
         size="sm"
-        onClick={() => append({ optionName: "", optionNameAr: "", optionNameFr: "", additionalPrice: 0 })}
+        onClick={() =>
+          append({
+            optionName: "",
+            optionNameAr: "",
+            optionNameFr: "",
+            additionalPrice: 0,
+          })
+        }
         className="mt-2 text-blue-600 border-blue-600"
       >
         + Add Option
       </Button>
+    </div>
+  );
+};
+
+/* --- Addons Section: select from pre-existing addons, sends addonsId --- */
+const AddonsSection = ({ control, selectOptions }) => {
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: "addon",
+  });
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center border-b pb-4">
+        <h3 className="text-lg font-semibold">Product Addons</h3>
+        <Button
+          type="button"
+          onClick={() => append({ addonsId: "", status: "active" })}
+          className="bg-blue-600 hover:bg-blue-700 text-white"
+        >
+          + Add Addon
+        </Button>
+      </div>
+
+      {fields.length === 0 && (
+        <p className="text-sm text-muted-foreground text-center py-4">
+          No addons added yet. Click "+ Add Addon" to configure item enhancements.
+        </p>
+      )}
+
+      <div className="space-y-3">
+        {fields.map((item, index) => (
+          <div
+            key={item.id}
+            className="flex flex-col md:flex-row items-end gap-4 bg-slate-50 p-4 border rounded-xl relative shadow-sm"
+          >
+            {/* Addon selector */}
+            <div className="flex-1 space-y-1">
+              <Label className="text-xs font-semibold">Addon</Label>
+              <Controller
+                name={`addon.${index}.addonsId`}
+                control={control}
+                rules={{ required: "Please select an addon" }}
+                render={({ field, fieldState }) => (
+                  <>
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value ? String(field.value) : ""}
+                    >
+                      <SelectTrigger
+                        className={`bg-white ${fieldState.error ? "border-destructive" : ""}`}
+                      >
+                        <SelectValue placeholder="Select addon..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {selectOptions?.addons?.map((a) => (
+                          <SelectItem key={a.id} value={String(a.id)}>
+                            {a.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {fieldState.error && (
+                      <span className="text-destructive text-xs">
+                        {fieldState.error.message}
+                      </span>
+                    )}
+                  </>
+                )}
+              />
+            </div>
+
+            {/* Status selector */}
+            <div className="w-full md:w-36 space-y-1">
+              <Label className="text-xs font-semibold">Status</Label>
+              <Controller
+                name={`addon.${index}.status`}
+                control={control}
+                defaultValue="active"
+                render={({ field }) => (
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <SelectTrigger className="bg-white">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="active">Active</SelectItem>
+                      <SelectItem value="inactive">Inactive</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+            </div>
+
+            <Button
+              type="button"
+              variant="destructive"
+              size="icon"
+              onClick={() => remove(index)}
+              className="shrink-0"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
