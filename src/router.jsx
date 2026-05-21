@@ -49,11 +49,16 @@ import IngredientsFoods from "./Pages/IngredientCategory/IngredientsFoods";
 import OrderDetails from "./Pages/Order/OrderDetails";
 import OrdersList from "./Pages/Order/OrdersList";
 import Mykeeto from "./Pages/Mykeeto/mykeeto";
+import PublicRoute from "./components/PublicRoute";
 
 const router = createBrowserRouter([
   {
     path: "/login",
-    element: <Login />,
+    element: (
+      <PublicRoute>
+        <Login />
+      </PublicRoute>
+    )
   },
   {
     path: "/",

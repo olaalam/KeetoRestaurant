@@ -6,49 +6,67 @@ import api from '@/api/axios';
 import LoadingSpinner from '@/components/LoadingSpinner';
 
 const AdminAdd = () => {
-    const { id } = useParams(); // الحصول على الـ id من الـ URL في حالة التعديل
+    const { id } = useParams();
     const { state } = useLocation();
 
-    // 1. إذا كانت البيانات موجودة في الـ state (مثلاً ضغطنا تعديل من جدول) نستخدمها فوراً
-    // 2. إذا لم تكن موجودة، يمكننا عمل Query لجلب بيانات هذا المشرف تحديداً
     const { data: adminData, isLoading: isFetching } = useQuery({
         queryKey: ['admin', id],
         queryFn: async () => {
             const { data } = await api.get(`/api/restaurant/restaurantadmin/${id}`);
-            console.log(data.data.data);
             return data.data.data;
         },
-        enabled: !!id && !state?.adminData, // لا يتم التفعيل إلا لو فيه id ومافيش بيانات جاهزة
+        enabled: !!id && !state?.adminData,
     });
 
+    const { data: branches = [], isLoading: isBranchesLoading } = useQuery({
+        queryKey: ['branches'],
+        queryFn: async () => {
+            const { data } = await api.get('/api/restaurant/branches');
+            return data.data.data;
+        },
+    });
 
     const rawData = state?.adminData || adminData;
-    const initialData = rawData ? {
-        ...rawData,
-        // هنا نستخرج الـ id من كائن role ونضعه في roleId ليطابق اسم الحقل في الفورم
-    } : null;
+    const initialData = rawData ? { ...rawData } : null;
+
+    // ✅ Use "none" string instead of empty string
+    const branchOptions = [
+        { value: 'none', label: 'None' },
+        ...branches.map((branch) => ({
+            value: branch.id,
+            label: branch.name,
+        })),
+    ];
+
     const adminFields = [
         { name: 'name', label: 'name', required: true },
         { name: 'nameAr', label: 'nameAr', required: true },
         { name: 'nameFr', label: 'nameFr', required: true },
         { name: 'email', label: 'email', type: 'email', required: true },
         { name: 'phoneNumber', label: 'phoneNumber', required: true },
-        // الباسورد يظهر فقط عند الإضافة
-        ...(!id ? [{ name: 'password', label: 'password', type: 'password', required: true }] : [])
+        ...(!id ? [{ name: 'password', label: 'password', type: 'password', required: true }] : []),
+        {
+            name: 'branchId',
+            label: 'Branch Permission',
+            type: 'select',
+            required: false,
+            options: branchOptions,
+            // ✅ Convert "none" back to null before sending to API
+            transform: (value) => (value === 'none' ? null : value),
+        },
     ];
 
-    if ((id && isFetching)) return <LoadingSpinner />;
+    if (id && isFetching) return <LoadingSpinner />;
+    if (isBranchesLoading) return <LoadingSpinner />;
+
     return (
         <AddPage
             title="admin"
-            apiUrl="/api/restaurant/restaurantadmin" // هذا هو الـ Base URL
+            apiUrl="/api/restaurant/restaurantadmin"
             queryKey="admins"
             fields={adminFields}
-            initialData={initialData} // المكون سيفهم أن هناك id وسينادي useUpdate
-            onSuccessAction={() => {
-                // مثلاً الرجوع للخلف أو لجدول المديرين
-                window.history.back();
-            }}
+            initialData={initialData}
+            onSuccessAction={() => window.history.back()}
         />
     );
 };

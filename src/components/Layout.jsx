@@ -26,11 +26,12 @@ export default function Layout() {
 
   // وظيفة الرجوع للخلف
   const handleBack = () => {
-    if (window.history.state && window.history.state.idx === 0) {
+    // If there's no history history entry behind us, or if we want a safe exit
+    if (window.history.length <= 2) {
       navigate("/");
       setActiveModule(null);
     } else {
-      navigate(-1);
+      navigate(-1); // Safe to go back if we are deep in nested routes
     }
   };
 
@@ -90,11 +91,7 @@ export default function Layout() {
               {/* Logo */}
               <div>
                 <button onClick={() => navigate("/")}>
-                  <img
-                    className="w-30 h-15"
-                    src="/public/logo.webp"
-                    alt="Logo"
-                  />
+                  <img className="w-30 h-15" src="/logo.webp" alt="Logo" />
                 </button>
               </div>
 
