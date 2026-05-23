@@ -71,6 +71,7 @@ const FoodAdd = () => {
       const raw = data.data.data;
 
       return {
+        id: raw.id,
         name: raw.name || "",
 
         nameAr: raw.nameAr || raw.name_ar || "",
@@ -161,12 +162,12 @@ const FoodAdd = () => {
       };
     },
 
-    enabled: !!id && !state?.foodData,
+    enabled: !!id,
   });
 
-  const initialData = state?.foodData || foodData;
+  const initialData = foodData;
 
-  if (isSelectLoading || (id && isFetching) ) {
+  if (isSelectLoading || (id && (isFetching || !foodData))) {
     return <LoadingSpinner />;
   }
 
@@ -382,9 +383,10 @@ const FoodAdd = () => {
                           {selectOptions?.subcategories
 
                             ?.filter(
-                              (sub) => sub.categoryId === selectedCategoryId,
+                              (sub) =>
+                                String(sub.categoryId) ===
+                                String(selectedCategoryId),
                             )
-
                             ?.map((sub) => (
                               <SelectItem key={sub.id} value={String(sub.id)}>
                                 {sub.name}
