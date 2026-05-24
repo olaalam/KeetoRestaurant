@@ -19,7 +19,7 @@ const AddonsAdd = () => {
         }
     });
 
-    const restaurants = selectData?.allRestaurants || [];
+   // const restaurants = selectData?.allRestaurants || [];
     const categories = selectData?.allAddons || [];
 
     // 3. Fetch addon data if editing
@@ -50,7 +50,7 @@ const AddonsAdd = () => {
                 { label: 'Daily', value: 'daily' },
             ]
         },
-        {
+        /* {
             name: 'restaurantid',
             label: 'Restaurant',
             type: 'select',
@@ -58,7 +58,7 @@ const AddonsAdd = () => {
             options: Array.isArray(restaurants)
                 ? restaurants.map(r => ({ label: r.name, value: r.id }))
                 : []
-        },
+        }, */
         {
             name: 'adonescategoryid',
             label: 'Addon Category',
