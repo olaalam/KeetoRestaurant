@@ -9,13 +9,15 @@ const SubCategoryAdd = () => {
     const { id } = useParams(); // الحصول على الـ id من الـ URL في حالة التعديل
     const { state } = useLocation();
 
-    const { data: categories = [], isLoading } = useQuery({
+    const { data: lookups = [], isLoading } = useQuery({
         queryKey: ['categories'],
         queryFn: async () => {
             const res = await api.get('/api/restaurant/subcategories/select');
             return res.data.data.data; // بناءً على هيكل الـ Response الخاص بكِ
         }
     });
+    const categories = lookups
+    const addons = lookups?.addons || [];
 
     // 1. إذا كانت البيانات موجودة في الـ state (مثلاً ضغطنا تعديل من جدول) نستخدمها فوراً
     // 2. إذا لم تكن موجودة، يمكننا عمل Query لجلب بيانات هذا المشرف تحديداً
@@ -54,6 +56,15 @@ const SubCategoryAdd = () => {
             // التأكد من أن الـ options بتستخدم الـ id والـ name الصح
             options: categories.map(c => ({ value: c.id, label: c.name }))
         },
+                {
+            name: 'addonsIds',
+            label: 'Addons',
+            required: true,
+            type: 'multi-select',
+            // التأكد من أن الـ options بتستخدم الـ id والـ name الصح
+            options: addons.map(a => ({ value: a.id, label: a.name }))
+        },
+
         {
             name: 'priority',
             label: 'priority',

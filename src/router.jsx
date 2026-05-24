@@ -50,6 +50,8 @@ import OrderDetails from "./Pages/Order/OrderDetails";
 import OrdersList from "./Pages/Order/OrdersList";
 import Mykeeto from "./Pages/Mykeeto/mykeeto";
 import PublicRoute from "./components/PublicRoute";
+import QR from "./Pages/QR/QR";
+import QRAdd from "./Pages/QR/QRAdd";
 
 const router = createBrowserRouter([
   {
@@ -345,6 +347,19 @@ const router = createBrowserRouter([
         path: "ingredients/food/:categoryId",
         element: <IngredientsFoods />,
       },
+      {
+        path: "qr",
+        element: <QR />,
+      },
+      {
+        path: "qr/add",
+        element: <QRAdd />,
+      },
+      {
+        path: "qr/edit/:id",
+        element: <QRAdd />,
+      },
+
     ],
   },
   {

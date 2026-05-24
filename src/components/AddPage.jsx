@@ -20,22 +20,23 @@ const AddPage = ({
     fields = [],
     initialData,
     onSuccessAction,
-    children
+    children,
+    transformPayload,
 }) => {
     const isEdit = method === 'PUT' || !!initialData?.id;
     const formMethods = useForm({
         defaultValues: initialData || {}
     });
-    const { control, handleSubmit, register, reset, formState: { errors, dirtyFields } } = formMethods;
+    const { control, handleSubmit, register, reset, formState: { errors } } = formMethods;
     const postMutation = usePost(apiUrl, 'post', queryKey);
     const updateMutation = useUpdate(apiUrl, queryKey);
+    
     const toBase64 = (file) => new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.readAsDataURL(file);
         reader.onload = () => resolve(reader.result);
         reader.onerror = error => reject(error);
     });
-
 
     useEffect(() => {
         if (initialData) {
@@ -56,16 +57,17 @@ const AddPage = ({
             reset(formattedData, { keepDirtyValues: true });
         }
     }, [initialData, reset, fields]);
+
     const onSubmit = (data) => {
+        const payloadToSend = transformPayload ? transformPayload(data) : data;
         // 1. لو إحنا في حالة تعديل
         if (isEdit) {
-            // ابعت الـ data اللي جاية من البرامتر فوراً
             updateMutation.mutate(
-                { id: initialData.id, payload: data },
+                { id: initialData.id, payload: payloadToSend }, // 👈 نرسل الـ payload المُعدل هنا
                 { onSuccess: () => onSuccessAction?.() }
             );
         } else {
-            postMutation.mutate(data, {
+            postMutation.mutate(payloadToSend, { // 👈 ونرسله هنا أيضاً في الـ Post لو احتجتِ
                 onSuccess: () => onSuccessAction?.()
             });
         }
@@ -95,7 +97,7 @@ const AddPage = ({
                                 {field.type === 'select' ? (
                                     <Controller
                                         name={field.name}
-                                        control={control} // 2. سيستخدم الـ control المُعرف في السطر 31
+                                        control={control} // 2. سيستخدم الـ control المُعرف في الأعلى
                                         defaultValue={initialData?.[field.name] || ""}
                                         rules={{ required: field.required }}
                                         render={({ field: { onChange, value } }) => (
@@ -105,7 +107,9 @@ const AddPage = ({
                                                 value={value ? String(value) : ""}
                                             >
                                                 <SelectTrigger className={errors[field.name] ? "border-destructive" : ""}>
-                                                    <SelectValue placeholder={`Select ${field.label}`} />
+                                                    <SelectTrigger className={errors[field.name] ? "border-destructive" : ""}>
+                                                         <SelectValue placeholder={`Select ${field.label}`} />
+                                                    </SelectTrigger>
                                                 </SelectTrigger>
                                                 <SelectContent>
                                                     {field.options?.map((option) => (
@@ -116,6 +120,85 @@ const AddPage = ({
                                                 </SelectContent>
                                             </Select>
                                         )}
+                                    />
+                                ) : field.type === 'multi-select' ? (
+                                    <Controller
+                                        name={field.name}
+                                        control={control}
+                                        defaultValue={initialData?.[field.name] || []} // القيمة الافتراضية يجب أن تكون مصفوفة []
+                                        rules={{ required: field.required }}
+                                        render={({ field: { onChange, value = [] } }) => {
+                                            // للتأكد من أن القيمة دائماً مصفوفة لتجنب الأخطاء
+                                            const safeValue = Array.isArray(value) ? value : [];
+
+                                            const handleToggleOption = (optionValue) => {
+                                                const stringValue = String(optionValue);
+                                                if (safeValue.includes(stringValue)) {
+                                                    // إذا كانت موجودة، نقوم بإزالتها عند الضغط عليها مرة أخرى
+                                                    onChange(safeValue.filter(v => v !== stringValue));
+                                                } else {
+                                                    // إذا لم تكن موجودة، نقوم بإضافتها للمصفوفة
+                                                    onChange([...safeValue, stringValue]);
+                                                }
+                                            };
+
+                                            return (
+                                                <div className="space-y-2">
+                                                    {/* القائمة المنسدلة الخيارات */}
+                                                    <Select onValueChange={handleToggleOption} value="">
+                                                        <SelectTrigger className={errors[field.name] ? "border-destructive w-full" : "w-full"}>
+                                                            <SelectValue placeholder={`Select ${field.label}...`} />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            {field.options?.map((option) => {
+                                                                const isSelected = safeValue.includes(String(option.value));
+                                                                return (
+                                                                    <SelectItem 
+                                                                        key={option.value} 
+                                                                        value={String(option.value)}
+                                                                        className={isSelected ? "bg-accent text-accent-foreground font-medium" : ""}
+                                                                    >
+                                                                        <div className="flex items-center gap-2">
+                                                                            <input 
+                                                                                type="checkbox" 
+                                                                                checked={isSelected} 
+                                                                                readOnly 
+                                                                                className="rounded border-gray-300 text-primary focus:ring-primary h-3 w-3"
+                                                                            />
+                                                                            {option.label}
+                                                                        </div>
+                                                                    </SelectItem>
+                                                                );
+                                                            })}
+                                                        </SelectContent>
+                                                    </Select>
+
+                                                    {/* عرض العناصر المحددة على شكل Badges أنيقة تحت الـ Select */}
+                                                    {safeValue.length > 0 && (
+                                                        <div className="flex flex-wrap gap-1.5 p-2 border rounded-md bg-muted/30">
+                                                            {safeValue.map((val) => {
+                                                                const option = field.options?.find(o => String(o.value) === String(val));
+                                                                return (
+                                                                    <span 
+                                                                        key={val} 
+                                                                        className="inline-flex items-center gap-1 bg-primary text-primary-foreground text-xs font-medium px-2 py-1 rounded-sm shadow-sm"
+                                                                    >
+                                                                        {option ? option.label : val}
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => onChange(safeValue.filter(v => v !== val))}
+                                                                            className="hover:bg-primary-foreground/20 rounded-full w-3 h-3 inline-flex items-center justify-center text-[10px] font-bold"
+                                                                        >
+                                                                            ×
+                                                                        </button>
+                                                                    </span>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            );
+                                        }}
                                     />
                                 ) : field.type === 'file' ? (
                                     <Controller
@@ -192,7 +275,7 @@ const AddPage = ({
                                 <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> saving...</>
                             ) : (
                                 <><Save className="mr-2 h-4 w-4" /> {isEdit ? 'update' : 'save'}</>
-                            )}
+                            ) }
                         </Button>
                     </div>
                 </form>

@@ -85,6 +85,7 @@ export const modules = [
     items: [
       { title: "Modifier", url: "/addons", icon: Settings2 },
       { title: "MyKeeto Report", url: "/mykeeto", icon: KeetoIcon },
+      { title: "QR", url: "/qr", icon: ShoppingBag },
     ],
   },
 ];
