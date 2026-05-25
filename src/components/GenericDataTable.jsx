@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   useReactTable,
@@ -16,6 +16,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import {
   Pencil,
@@ -27,11 +28,10 @@ import {
 } from "lucide-react";
 import DeleteDialog from "./DeleteDialog";
 import LoadingSpinner from "./LoadingSpinner";
-import clsx from "clsx";
 
 export default function GenericDataTable({
   columns,
-  data,
+  data = [],
   title,
   onAdd,
   onEdit,
@@ -43,13 +43,46 @@ export default function GenericDataTable({
   const [globalFilter, setGlobalFilter] = useState("");
   const [deleteId, setDeleteId] = useState(null);
   const navigate = useNavigate();
+  const [highlightedId, setHighlightedId] = useState(null);
 
-  // إضافة عمود العمليات تلقائياً
+  // Pre-process and sort data to append newly added items at the very end
+  const sortedData = useMemo(() => {
+    if (!Array.isArray(data)) return [];
+    return [...data].sort((a, b) => {
+      const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return bTime - aTime; // newest first → newly added at top
+    });
+  }, [data]);
+
+  // إضافة عمود الترقيم التلقائي وعمود العمليات
   const tableColumns = useMemo(() => {
-    // 1. نبدأ بالأعمدة الأساسية المرسلة عبر الـ props
-    const baseColumns = [...columns];
+    // 1. نبدأ بعمود الترقيم التسلسلي في بداية الجدول
+    const baseColumns = [
+      {
+        id: "rowNumber",
+        header: "#",
+        cell: ({ row, table }) => {
+          const pageIndex = table.getState().pagination.pageIndex;
+          const pageSize = table.getState().pagination.pageSize;
 
-    // 2. إذا كانت actions تساوي true، نضيف عمود العمليات للمصفوفة
+          // 👇 الحل المضمون: إيجاد مكان الصف الفعلي داخل الصفحة الحالية فقط
+          const indexInCurrentPage = table
+            .getRowModel()
+            .rows.findIndex((r) => r.id === row.id);
+
+          return (
+            <span className="font-mono text-gray-500">
+              {pageIndex * pageSize + indexInCurrentPage + 1}
+            </span>
+          );
+        },
+        size: 50,
+      },
+      ...columns,
+    ];
+
+    // 2. إذا كانت actions تساوي true، نضيف عمود العمليات لنهاية المصفوفة
     if (actions) {
       baseColumns.push({
         id: "actions",
@@ -83,13 +116,18 @@ export default function GenericDataTable({
   }, [columns, onEdit, deleteApiUrl, actions]);
 
   const table = useReactTable({
-    data,
+    data: sortedData, // Using the custom sorted array wrapper here
     columns: tableColumns,
     state: { globalFilter },
     onGlobalFilterChange: setGlobalFilter,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
+    initialState: {
+      pagination: {
+        pageSize: 15,
+      },
+    },
   });
 
   return (
@@ -99,7 +137,6 @@ export default function GenericDataTable({
         <div className="flex items-center gap-3">
           {/* Icon */}
           <div className="h-10 w-10 flex items-center justify-center rounded-xl bg-primary/10 text-primary">
-            {/* ممكن تغير الأيقونة حسب الصفحة */}
             <span className="text-lg font-bold">{title?.[0]}</span>
           </div>
 
