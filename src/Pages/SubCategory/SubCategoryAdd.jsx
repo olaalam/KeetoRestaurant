@@ -9,14 +9,16 @@ const SubCategoryAdd = () => {
     const { id } = useParams(); // الحصول على الـ id من الـ URL في حالة التعديل
     const { state } = useLocation();
 
-    const { data: lookups = [], isLoading } = useQuery({
-        queryKey: ['categories'],
+    const { data: lookups, isLoading: isSelectLoading } = useQuery({
+        queryKey: ["food-select-options"],
+
         queryFn: async () => {
-            const res = await api.get('/api/restaurant/subcategories/select');
-            return res.data.data.data; // بناءً على هيكل الـ Response الخاص بكِ
-        }
+            const response = await api.get("/api/restaurant/food/select");
+
+            return response.data?.data?.data || {};
+        },
     });
-    const categories = lookups
+    const categories = lookups?.categories || [];
     const addons = lookups?.addons || [];
 
     // 1. إذا كانت البيانات موجودة في الـ state (مثلاً ضغطنا تعديل من جدول) نستخدمها فوراً
@@ -56,7 +58,7 @@ const SubCategoryAdd = () => {
             // التأكد من أن الـ options بتستخدم الـ id والـ name الصح
             options: categories.map(c => ({ value: c.id, label: c.name }))
         },
-                {
+        {
             name: 'addonsIds',
             label: 'Addons',
             required: true,
@@ -64,6 +66,8 @@ const SubCategoryAdd = () => {
             // التأكد من أن الـ options بتستخدم الـ id والـ name الصح
             options: addons.map(a => ({ value: a.id, label: a.name }))
         },
+        { name: 'order_level', label: 'order_level', required: true , type: 'number' },
+
 
         {
             name: 'priority',
@@ -78,7 +82,7 @@ const SubCategoryAdd = () => {
         },
     ];
 
-    if (id && isFetching) return <LoadingSpinner />;
+    if (isSelectLoading || (id && isFetching)) return <LoadingSpinner />;
 
     return (
         <AddPage

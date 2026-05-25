@@ -23,6 +23,7 @@ export default function SubCategory() {
         { accessorKey: 'nameFr', header: 'nameFr' },
         { accessorKey: 'category.name', header: 'category' },
         { accessorKey: 'priority', header: 'priority' },
+        {accessorKey:'addons',header : "addons"},
 
         // {
         //     accessorKey: 'status',
