@@ -120,7 +120,7 @@ export default function OrderDetails() {
                             <div className="flex justify-between">
                                 <span className="text-muted-foreground">{t("paymentMethod")}</span>
                                 <span className="font-medium flex items-center gap-1">
-                                    <CreditCard size={14} /> {order.paymentMethod?.name}
+                                    <CreditCard size={14} /> {order.paymentMethod}
                                 </span>
                             </div>
                         </CardContent>

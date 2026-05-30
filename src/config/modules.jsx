@@ -52,6 +52,25 @@ export const getModules = (t) => [
       { title: t("branches"), url: "/branches", icon: Utensils },
       { title: t("ingredientCategories"), url: "/ingredient-category", icon: ShieldCheck },
       { title: t("ingredients"), url: "/ingredients", icon: ShieldCheck },
+
+    ],
+  },
+  {
+    name: t("business"),
+    key: "business",
+    items: [
+      { title: t("addons"), url: "/addons", icon: Settings2 },
+      { title: t("myKeeto"), url: "/mykeeto", icon: KeetoIcon },
+      { title: t("invoice"), url: "/invoice", icon: KeetoIcon },
+      { title: t("qr"), url: "/qr", icon: ShoppingBag },
+      { title: t("image"), url: "/image", icon: ShoppingBag },
+      { title: t("social"), url: "/social", icon: ShoppingBag },
+    ],
+  },
+    {
+    name: t("order management"),
+    key: "order",
+    items: [
       {
         title: t("orders"),
         url: "/orders",
@@ -68,18 +87,6 @@ export const getModules = (t) => [
           { title: t("refund"), url: "/orders/refunded", icon: Undo2 },
         ],
       },
-    ],
-  },
-  {
-    name: t("business"),
-    key: "business",
-    items: [
-      { title: t("addons"), url: "/addons", icon: Settings2 },
-      { title: t("myKeeto"), url: "/mykeeto", icon: KeetoIcon },
-      { title: t("invoice"), url: "/invoice", icon: KeetoIcon },
-      { title: t("qr"), url: "/qr", icon: ShoppingBag },
-      { title: t("image"), url: "/image", icon: ShoppingBag },
-      { title: t("social"), url: "/social", icon: ShoppingBag },
     ],
   },
 ];

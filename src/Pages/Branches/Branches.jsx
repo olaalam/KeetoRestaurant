@@ -41,15 +41,15 @@ export default function Restaurant() {
         },
         { accessorKey: 'nameAr', header: t('nameAr') },
         { accessorKey: 'nameFr', header: t('nameFr') },
-        {
-            accessorKey: "logo",
-            header: t('logo'),
-            cell: ({ row }) => (
-                <div className="w-10 h-10 border rounded-full overflow-hidden">
-                    <img src={row.getValue("logo")} alt="logo" className="w-full h-full object-cover" />
-                </div>
-            )
-        },
+        // {
+        //     accessorKey: "logo",
+        //     header: t('logo'),
+        //     cell: ({ row }) => (
+        //         <div className="w-10 h-10 border rounded-full overflow-hidden">
+        //             <img src={row.getValue("logo")} alt="logo" className="w-full h-full object-cover" />
+        //         </div>
+        //     )
+        // },
         { accessorKey: "zone.name", header: t('zoneColumn') },
         {
             accessorKey: "view_food",

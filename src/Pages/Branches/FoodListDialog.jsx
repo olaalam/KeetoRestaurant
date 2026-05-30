@@ -11,7 +11,7 @@ const FoodListDialog = ({ restaurantId, isOpen, onClose }) => {
     const { data: foodItems = [], isLoading } = useQuery({
         queryKey: ['restaurant-food', restaurantId],
         queryFn: async () => {
-            const res = await api.get(`/api/restaurant/food/restaurant/${restaurantId}`);
+            const res = await api.get(`/api/restaurant/food/${restaurantId}`);
             return res.data?.data?.data || res.data?.data || [];
         },
         enabled: !!restaurantId && isOpen,
