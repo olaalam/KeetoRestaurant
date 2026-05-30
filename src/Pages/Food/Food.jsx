@@ -7,13 +7,15 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { ListTree, PlusCircle, CheckCircle2 } from "lucide-react";
-import { usePost } from '@/hooks/usePost'; //[cite: 2]
+import { usePost } from '@/hooks/usePost';
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { useTranslation } from "@/hooks/useTranslation";
 
 const Foods = () => {
     const navigate = useNavigate();
+    const { t } = useTranslation();
     const [selectedVariations, setSelectedVariations] = useState(null);
 
     // حالات إدارة المكونات
@@ -76,7 +78,7 @@ const Foods = () => {
     const columns = [
         {
             accessorKey: 'image',
-            header: 'Image',
+            header: t('image'),
             cell: ({ row }) => {
                 const imageUrl = row.original.image;
                 return (
@@ -84,7 +86,7 @@ const Foods = () => {
                         {imageUrl ? (
                             <img src={imageUrl} alt={row.original.name} className="w-full h-full object-cover" />
                         ) : (
-                            <div className="flex items-center justify-center w-full h-full text-xs text-gray-400">No Img</div>
+                            <div className="flex items-center justify-center w-full h-full text-xs text-gray-400">{t('noImg')}</div>
                         )}
                     </div>
                 );
@@ -92,16 +94,14 @@ const Foods = () => {
         },
         {
             accessorKey: 'name',
-            header: 'Food Name',
+            header: t('foodName'),
             cell: ({ row }) => (
                 <span className="capitalize font-medium">{row.original.name}</span>
             )
         },
-        { accessorKey: 'nameAr', header: 'nameAr' },
-        { accessorKey: 'nameFr', header: 'nameFr' },
         {
             accessorKey: 'price',
-            header: 'Price',
+            header: t('price'),
             cell: ({ row }) => (
                 <span className="font-medium text-green-600">
                     {row.original.price} EGP
@@ -110,24 +110,22 @@ const Foods = () => {
         },
         {
             accessorKey: 'category',
-            header: 'Category',
+            header: t('category'),
             cell: ({ row }) => (
                 <Badge variant="secondary" className="capitalize">
                     {row.original.category?.name || '-'}
                 </Badge>
             )
         },
-        // عمود المكونات الجديد
         {
             accessorKey: 'assign_ingredients',
-            header: 'Ingredients',
+            header: t('ingredients'),
             cell: ({ row }) => (
                 <Button
                     variant="outline"
                     size="sm"
                     onClick={() => {
                         setCurrentFoodId(row.original.id);
-                        // استخراج المكونات الحالية إذا كانت مسجلة مسبقاً في الـ food
                         const existing = row.original.ingredients?.map(ing => ({
                             ingredientId: ing.id,
                             isRemovable: ing.pivot?.isRemovable ?? true
@@ -138,13 +136,13 @@ const Foods = () => {
                     className="flex items-center gap-2 border-primary text-primary hover:bg-primary/5"
                 >
                     <PlusCircle className="h-4 w-4" />
-                    Assign
+                    {t('assign')}
                 </Button>
             )
         },
         {
             accessorKey: 'variations',
-            header: 'Variations',
+            header: t('variations'),
             cell: ({ row }) => {
                 const variations = row.original.variations || [];
                 return (
@@ -155,7 +153,7 @@ const Foods = () => {
                         className="flex items-center gap-2"
                     >
                         <ListTree className="h-4 w-4" />
-                        View ({variations.length})
+                        {t('viewVariations')} ({variations.length})
                     </Button>
                 );
             }
@@ -165,7 +163,7 @@ const Foods = () => {
     return (
         <div className="p-6">
             <GenericDataTable
-                title="Foods Menu"
+                title={t('foodsMenu')}
                 columns={columns}
                 data={foods || []}
                 isLoading={isLoading}
@@ -175,13 +173,13 @@ const Foods = () => {
                 onEdit={(row) => navigate(`/foods/edit/${row.id}`)}
             />
 
-            {/* Dialog عرض الـ Variations[cite: 1] */}
+            {/* Variations Dialog */}
             <Dialog open={!!selectedVariations} onOpenChange={() => setSelectedVariations(null)}>
                 <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
                     <DialogHeader>
-                        <DialogTitle>Product Variations</DialogTitle>
+                        <DialogTitle>{t('productVariationsTitle')}</DialogTitle>
                         <DialogDescription>
-                            Detailed options and pricing for this food item.
+                            {t('variationsDescription')}
                         </DialogDescription>
                     </DialogHeader>
 
@@ -192,7 +190,7 @@ const Foods = () => {
                                     <h4 className="font-bold text-lg">{v.name}</h4>
                                     <div className="flex gap-2">
                                         <Badge>{v.selectionType}</Badge>
-                                        {v.isRequired && <Badge variant="destructive">Required</Badge>}
+                                        {v.isRequired && <Badge variant="destructive">{t('required')}</Badge>}
                                     </div>
                                 </div>
                                 <div className="grid grid-cols-2 gap-2 mt-2">
@@ -207,23 +205,23 @@ const Foods = () => {
                         ))}
                         {(!selectedVariations || selectedVariations.length === 0) && (
                             <p className="text-center text-muted-foreground py-8">
-                                No variations found for this item.
+                                {t('noVariationsFound')}
                             </p>
                         )}
                     </div>
                 </DialogContent>
             </Dialog>
 
-            {/* Dialog تعيين المكونات */}
+            {/* Assign Ingredients Dialog */}
             <Dialog open={ingredientsDialogOpen} onOpenChange={setIngredientsDialogOpen}>
                 <DialogContent className="max-w-md">
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2">
                             <CheckCircle2 className="h-5 w-5 text-primary" />
-                            Assign Ingredients
+                            {t('assignIngredients')}
                         </DialogTitle>
                         <DialogDescription>
-                            Select ingredients and set if they are removable.
+                            {t('assignIngredientsDesc')}
                         </DialogDescription>
                     </DialogHeader>
 
@@ -249,7 +247,7 @@ const Foods = () => {
 
                                         {isSelected && (
                                             <div className="flex items-center gap-2">
-                                                <span className="text-[10px] text-muted-foreground font-bold">REMOVABLE</span>
+                                                <span className="text-[10px] text-muted-foreground font-bold">{t('removable')}</span>
                                                 <Switch
                                                     checked={isSelected.isRemovable}
                                                     onCheckedChange={() => handleRemovableToggle(ing.id)}
@@ -260,19 +258,19 @@ const Foods = () => {
                                 );
                             })
                         ) : (
-                            <p className="text-center text-muted-foreground py-4">No ingredients available.</p>
+                            <p className="text-center text-muted-foreground py-4">{t('noIngredientsAvailable')}</p>
                         )}
                     </div>
 
                     <div className="flex justify-end gap-3 border-t pt-4">
                         <Button variant="outline" onClick={() => setIngredientsDialogOpen(false)}>
-                            Cancel
+                            {t('cancel')}
                         </Button>
                         <Button
                             onClick={handleSaveIngredients}
                             disabled={assignMutation.isPending}
                         >
-                            {assignMutation.isPending ? "Saving..." : "Save Selection"}
+                            {assignMutation.isPending ? t('savingSelection') : t('saveSelection')}
                         </Button>
                     </div>
                 </DialogContent>

@@ -1,13 +1,16 @@
-import { modules } from "@/config/modules";
+import { getModules } from "@/config/modules";
 import useSidebarStore from "@/store/useSidebarStore";
 import { Card, CardContent } from "@/components/ui/card";
-import { ChevronRight, LayoutGrid, Circle, Search } from "lucide-react"; // استيراد Search
-import { Input } from "@/components/ui/input"; // استيراد Input
+import { ChevronRight, LayoutGrid, Circle, Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { useState } from "react";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export default function Home() {
   const setActiveModule = useSidebarStore((s) => s.setActiveModule);
   const [globalFilter, setGlobalFilter] = useState("");
+  const { t } = useTranslation();
+  const modules = getModules(t);
 
   // منطق الفلترة: نبحث في اسم الموديول أو أسماء العناصر الداخلية
   const filteredModules = modules.filter((module) => {

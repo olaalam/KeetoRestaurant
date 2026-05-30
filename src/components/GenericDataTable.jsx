@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   useReactTable,
@@ -16,6 +16,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch"; // استيراد الـ Switch من shadcn
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import {
@@ -28,6 +29,10 @@ import {
 } from "lucide-react";
 import DeleteDialog from "./DeleteDialog";
 import LoadingSpinner from "./LoadingSpinner";
+import { useTranslation } from "@/hooks/useTranslation";
+import { useMutation, useQueryClient } from "@tanstack/react-query"; // استيراد الـ Mutation للتعامل مع السويتش
+import api from "@/api/axios";
+import { toast } from "sonner";
 
 export default function GenericDataTable({
   columns,
@@ -35,6 +40,7 @@ export default function GenericDataTable({
   title,
   onAdd,
   onEdit,
+  editApiUrl,   // تأكدي من تمرير editApiUrl من الشاشات الأساسية لتشغيل الـ Switch
   deleteApiUrl,
   queryKey,
   isLoading,
@@ -43,21 +49,41 @@ export default function GenericDataTable({
   const [globalFilter, setGlobalFilter] = useState("");
   const [deleteId, setDeleteId] = useState(null);
   const navigate = useNavigate();
-  const [highlightedId, setHighlightedId] = useState(null);
+  const { t, isRTL } = useTranslation();
+  const queryClient = useQueryClient();
 
-  // Pre-process and sort data to append newly added items at the very end
+  // 1. Mutation لتحديث الـ Status فوراً عند تغيير السويتش
+  const updateStatusMutation = useMutation({
+    mutationFn: async ({ id, newStatus }) => {
+      // إرسال الـ status الجديدة فقط بناءً على الـ API الخاص بكِ
+      // يتم دمج الـ id في الرابط (مثال: /api/restaurant/image/5)
+      return await api.put(`${editApiUrl}/${id}`, { status: newStatus });
+    },
+    onSuccess: () => {
+      // عمل invalidate للـ queryKey عشان الجدول يعمل ريفريش تلقائي بالبيانات الجديدة
+      if (queryKey) {
+        queryClient.invalidateQueries([queryKey]);
+      }
+      toast.success("updateStatusSuccessfully")
+    },
+    onError: (error) => {
+      console.error("Failed to update status:", error);
+      toast.error(t("updateStatusError") || "Failed to update status");
+    }
+  });
+
+  // Pre-process and sort data
   const sortedData = useMemo(() => {
     if (!Array.isArray(data)) return [];
     return [...data].sort((a, b) => {
       const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
       const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-      return bTime - aTime; // newest first → newly added at top
+      return bTime - aTime;
     });
   }, [data]);
 
-  // إضافة عمود الترقيم التلقائي وعمود العمليات
+  // إضافة عمود الترقيم التلقائي، وعمود العمليات، وتعديل عمود الـ Status ديناميكياً
   const tableColumns = useMemo(() => {
-    // 1. نبدأ بعمود الترقيم التسلسلي في بداية الجدول
     const baseColumns = [
       {
         id: "rowNumber",
@@ -65,37 +91,74 @@ export default function GenericDataTable({
         cell: ({ row, table }) => {
           const pageIndex = table.getState().pagination.pageIndex;
           const pageSize = table.getState().pagination.pageSize;
-
-          // 👇 الحل المضمون: إيجاد مكان الصف الفعلي داخل الصفحة الحالية فقط
           const indexInCurrentPage = table
             .getRowModel()
             .rows.findIndex((r) => r.id === row.id);
 
           return (
-            <span className="font-mono text-gray-500">
+            <span className="font-mono text-xs font-semibold text-slate-400">
               {pageIndex * pageSize + indexInCurrentPage + 1}
             </span>
           );
         },
-        size: 50,
+        size: 60,
       },
-      ...columns,
     ];
 
-    // 2. إذا كانت actions تساوي true، نضيف عمود العمليات لنهاية المصفوفة
+    // المرور على الأعمدة الممررة وفحص إذا كان هناك عمود باسم status
+columns.forEach((col) => {
+  // نقوم بتحويله إلى Switch فقط إذا كان العمود هو status وتوفر رابط التعديل السريع (editApiUrl)
+  if (col.accessorKey === "status" && editApiUrl) {
+    baseColumns.push({
+      ...col,
+      cell: ({ row }) => {
+        const currentStatus = row.getValue("status");
+        const isActive = currentStatus === "active" || currentStatus === "paid" || currentStatus === true || currentStatus === 1;
+        const rowId = row.original.id;
+
+        return (
+          <div className="flex items-center justify-center gap-2">
+            <Switch
+              checked={isActive}
+              disabled={updateStatusMutation.isPending} // تم تعديلها إلى isPending لتوافق الإصدارات الجديدة
+              onCheckedChange={(checked) => {
+                const newStatus = typeof currentStatus === "string" 
+                  ? (currentStatus === "paid" || currentStatus === "unpaid" ? (checked ? "paid" : "unpaid") : (checked ? "active" : "inactive"))
+                  : checked;
+
+                updateStatusMutation.mutate({ id: rowId, newStatus });
+              }}
+            />
+            <span className={cn(
+              "text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded-full",
+              isActive ? "bg-emerald-50 text-emerald-600" : "bg-slate-100 text-slate-500"
+                )}>
+              {isActive ? t("active") : t("inactive")}
+            </span>
+          </div>
+        );
+      }
+    });
+  } else {
+    // إذا لم يتوفر editApiUrl (مثل صفحة الأوردرات)، يتم استخدام الـ cell الأصلية الممررة في الـ columns
+    baseColumns.push(col);
+  }
+});
+
     if (actions) {
       baseColumns.push({
         id: "actions",
-        header: "Actions",
+        header: t("actionsCol"),
         cell: ({ row }) => (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center justify-center gap-1">
             {onEdit && (
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => onEdit(row.original)}
+                className="h-8 w-8 text-slate-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-lg transition-colors"
               >
-                <Pencil className="h-4 w-4 text-blue-600" />
+                <Pencil className="h-4 w-4" />
               </Button>
             )}
             {deleteApiUrl && (
@@ -103,8 +166,9 @@ export default function GenericDataTable({
                 variant="ghost"
                 size="icon"
                 onClick={() => setDeleteId(row.original.id)}
+                className="h-8 w-8 text-slate-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-colors"
               >
-                <Trash2 className="h-4 w-4 text-red-600" />
+                <Trash2 className="h-4 w-4" />
               </Button>
             )}
           </div>
@@ -113,10 +177,10 @@ export default function GenericDataTable({
     }
 
     return baseColumns;
-  }, [columns, onEdit, deleteApiUrl, actions]);
+  }, [columns, onEdit, deleteApiUrl, actions, editApiUrl, updateStatusMutation.isLoading]);
 
   const table = useReactTable({
-    data: sortedData, // Using the custom sorted array wrapper here
+    data: sortedData,
     columns: tableColumns,
     state: { globalFilter },
     onGlobalFilterChange: setGlobalFilter,
@@ -131,126 +195,139 @@ export default function GenericDataTable({
   });
 
   return (
-    <div className="space-y-5 w-full">
+    <div className="space-y-6 w-full">
       {/* HEADER */}
-      <div className="flex items-center justify-between flex-wrap gap-4">
-        <div className="flex items-center gap-3">
-          {/* Icon */}
-          <div className="h-10 w-10 flex items-center justify-center rounded-xl bg-primary/10 text-primary">
-            <span className="text-lg font-bold">{title?.[0]}</span>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2 border-b border-slate-100">
+        <div className="flex items-center gap-4">
+          <div className="h-12 w-12 flex items-center justify-center rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 text-primary shadow-sm border border-primary/10 shrink-0">
+            <span className="text-xl font-black uppercase">{title?.[0]}</span>
           </div>
 
-          {/* Text */}
           <div className="space-y-0.5">
-            <h2 className="text-xl font-semibold text-gray-900 tracking-tight">
+            <h2 className="text-xl font-bold text-slate-800 tracking-tight dark:text-slate-100">
               {title}
             </h2>
-
-            <p className="text-xs text-gray-500">
-              Manage and monitor{" "}
-              <span className="font-medium text-gray-700">{title}</span>
+            <p className="text-xs text-slate-400 font-medium">
+              {t("manageAndMonitor")}{" "}
+              <span className="font-semibold text-primary">{title}</span>
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <div className="relative w-64">
-            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+        {/* Controls Container */}
+        <div className="flex items-center gap-3 self-end sm:self-center w-full sm:w-auto">
+          <div className="relative w-full sm:w-64">
+            <Search className={cn(
+              "absolute top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400",
+              isRTL ? "right-3" : "left-3"
+            )} />
             <Input
-              placeholder="Search..."
+              placeholder={t("searchPlaceholder")}
               value={globalFilter ?? ""}
               onChange={(e) => setGlobalFilter(e.target.value)}
-              className="pl-8 rounded-lg"
+              className={cn(
+                "h-10 rounded-xl border-slate-200 bg-white shadow-sm focus-visible:ring-primary transition-all text-sm",
+                isRTL ? "pr-9 pl-4" : "pl-9 pr-4"
+              )}
             />
           </div>
 
           {onAdd && (
-            <Button onClick={onAdd} className="rounded-lg shadow-sm">
-              <Plus className="mr-2 h-4 w-4" />
-              Add New
+            <Button onClick={onAdd} className="h-10 rounded-xl font-medium shadow-sm hover:opacity-95 bg-primary text-primary-foreground gap-2 shrink-0 transition-all">
+              <Plus className="h-4 w-4" />
+              <span>{t("addNew")}</span>
             </Button>
           )}
         </div>
       </div>
 
-      {/* TABLE */}
-      <div className="rounded-xl border bg-white shadow-sm overflow-hidden">
-        <Table>
-          <TableHeader className="bg-gray-50">
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <TableHead
-                    key={header.id}
-                    className="text-xs uppercase text-gray-500"
-                  >
-                    {flexRender(
-                      header.column.columnDef.header,
-                      header.getContext(),
-                    )}
-                  </TableHead>
-                ))}
-              </TableRow>
-            ))}
-          </TableHeader>
-
-          <TableBody>
-            {isLoading ? (
-              <TableRow>
-                <TableCell
-                  colSpan={tableColumns.length}
-                  className="text-center h-32"
-                >
-                  <LoadingSpinner />
-                </TableCell>
-              </TableRow>
-            ) : table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  className="group hover:bg-gray-50 transition"
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} className="py-3">
+      {/* TABLE BOX */}
+      <div className="rounded-2xl border border-slate-100 bg-white dark:bg-slate-950 shadow-sm overflow-hidden transition-all">
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader className="bg-slate-50/70 dark:bg-slate-900/50 border-b border-slate-100">
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id} className="hover:bg-transparent border-none">
+                  {headerGroup.headers.map((header) => (
+                    <TableHead
+                      key={header.id}
+                      className="h-14 align-middle text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 py-4 px-6 text-center"
+                    >
                       {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext(),
+                        header.column.columnDef.header,
+                        header.getContext(),
                       )}
-                    </TableCell>
+                    </TableHead>
                   ))}
                 </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell
-                  colSpan={tableColumns.length}
-                  className="text-center h-32 text-gray-500"
-                >
-                  No data found.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
+              ))}
+            </TableHeader>
+
+            <TableBody>
+              {isLoading ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={tableColumns.length}
+                    className="text-center h-48"
+                  >
+                    <div className="flex flex-col items-center justify-center gap-2 text-slate-400">
+                      <LoadingSpinner className="h-6 w-6 text-primary" />
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ) : table.getRowModel().rows?.length ? (
+                table.getRowModel().rows.map((row) => (
+                  <TableRow
+                    key={row.id}
+                    className="group border-b border-slate-50 dark:border-slate-900 hover:bg-slate-50/40 dark:hover:bg-slate-900/30 transition-colors"
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell 
+                        key={cell.id} 
+                        className="py-4 px-6 align-middle text-sm text-slate-600 dark:text-slate-300 font-medium text-center"
+                      >
+                        <div className="flex items-center justify-center w-full">
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext(),
+                          )}
+                        </div>
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell
+                    colSpan={tableColumns.length}
+                    className="text-center h-48 text-sm text-slate-400 font-medium"
+                  >
+                    {t("noDataFound")}
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
 
       {/* PAGINATION */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <p className="text-sm text-muted-foreground">
-          Page {table.getState().pagination.pageIndex + 1} of{" "}
-          {table.getPageCount()}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
+        <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 order-2 sm:order-1">
+          {t("pageOf")} <span className="text-slate-700 dark:text-slate-300">{table.getState().pagination.pageIndex + 1}</span> {t("of")}{" "}
+          <span className="text-slate-700 dark:text-slate-300">{table.getPageCount()}</span>
         </p>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 order-1 sm:order-2 w-full sm:w-auto justify-between sm:justify-end">
           <Button
             variant="outline"
             size="sm"
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
-            className="rounded-lg"
+            className="h-9 rounded-xl border-slate-200 hover:bg-slate-50 font-medium text-xs gap-1.5 transition-colors"
           >
-            <ChevronLeft className="h-4 w-4 mr-1" />
-            Prev
+            {isRTL ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronLeft className="h-3.5 w-3.5" />}
+            <span>{t("prev")}</span>
           </Button>
 
           <Button
@@ -258,15 +335,15 @@ export default function GenericDataTable({
             size="sm"
             onClick={() => table.nextPage()}
             disabled={!table.getCanNextPage()}
-            className="rounded-lg"
+            className="h-9 rounded-xl border-slate-200 hover:bg-slate-50 font-medium text-xs gap-1.5 transition-colors"
           >
-            Next
-            <ChevronRight className="h-4 w-4 ml-1" />
+            <span>{t("next")}</span>
+            {isRTL ? <ChevronLeft className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
           </Button>
         </div>
       </div>
 
-      {/* DELETE */}
+      {/* DELETE DIALOG */}
       <DeleteDialog
         isOpen={!!deleteId}
         onClose={() => setDeleteId(null)}

@@ -9,6 +9,7 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useDelete } from "@/hooks/useDelete";
+import { useTranslation } from "@/hooks/useTranslation";
 
 const DeleteDialog = ({
     isOpen,
@@ -16,15 +17,14 @@ const DeleteDialog = ({
     apiUrl,
     onSuccessKey,
     id,
-    title = "are you sure?"
 }) => {
-    // استدعاء الـ Hook الذي قمتِ بكتابته
     const deleteMutation = useDelete(apiUrl, onSuccessKey);
+    const { t } = useTranslation();
 
     const handleConfirm = () => {
         deleteMutation.mutate(id, {
             onSuccess: () => {
-                onClose(); // إغلاق المودال بعد النجاح
+                onClose();
             }
         });
     };
@@ -33,24 +33,24 @@ const DeleteDialog = ({
         <AlertDialog open={isOpen} onOpenChange={onClose}>
             <AlertDialogContent>
                 <AlertDialogHeader>
-                    <AlertDialogTitle>{title}</AlertDialogTitle>
+                    <AlertDialogTitle>{t("areYouSure")}</AlertDialogTitle>
                     <AlertDialogDescription>
-                        you can't undo this action. the data will be deleted permanently from the server.
+                        {t("deleteWarning")}
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                     <AlertDialogCancel disabled={deleteMutation.isPending}>
-                        cancel
+                        {t("cancelBtn")}
                     </AlertDialogCancel>
                     <AlertDialogAction
                         onClick={(e) => {
-                            e.preventDefault(); // نمنع الإغلاق التلقائي لنتحكم فيه بعد نجاح الـ API
+                            e.preventDefault();
                             handleConfirm();
                         }}
                         className="bg-red-600 hover:bg-red-700"
                         disabled={deleteMutation.isPending}
                     >
-                        {deleteMutation.isPending ? "deleting..." : "confirm delete"}
+                        {deleteMutation.isPending ? t("deletingBtn") : t("confirmDelete")}
                     </AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>

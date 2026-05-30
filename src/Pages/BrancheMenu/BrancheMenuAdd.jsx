@@ -4,17 +4,18 @@ import AddPage from '@/components/AddPage';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/api/axios';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import { useTranslation } from "@/hooks/useTranslation"; // استيراد الهوك
 
 const BrancheMenuAdd = () => {
     const { id } = useParams();
     const { state } = useLocation();
+    const { t } = useTranslation(); // تفعيل الهوك
 
     // جلب البيانات (Branches & Foods)
     const { data: selectData, isLoading: isSelectDataLoading } = useQuery({
         queryKey: ['branchemenu-select-data'],
         queryFn: async () => {
             const res = await api.get('/api/restaurant/branchemenu/select-data');
-            // الوصول للبيانات بناءً على هيكلة الـ JSON المرسلة
             return res.data?.data?.data || { branches: [], foods: [] };
         }
     });
@@ -42,10 +43,9 @@ const BrancheMenuAdd = () => {
     const brancheMenuFields = [
         {
             name: 'branchId',
-            label: 'Branch',
+            label: t('branch'),
             required: true,
             type: 'select',
-            // استدعاء الفروع من selectData
             options: (selectData?.branches || []).map(b => ({
                 value: String(b.id),
                 label: b.name
@@ -53,46 +53,44 @@ const BrancheMenuAdd = () => {
         },
         {
             name: 'foodId',
-            label: 'Food',
+            label: t('food'),
             required: true,
             type: 'select',
-            // استدعاء الأطعمة من selectData
             options: (selectData?.foods || []).map(f => ({
                 value: String(f.id),
                 label: f.name
             }))
         },
-        { name: 'price', label: 'Price', type: 'number', required: true },
+        { name: 'price', label: t('price'), type: 'number', required: true },
         {
             name: 'stockType',
-            label: 'Stock Type',
+            label: t('stockType'),
             type: 'select',
             options: [
-                { label: 'Unlimited', value: 'unlimited' },
-                { label: 'Limited', value: 'limited' },
-                { label: 'Daily', value: 'daily' }
+                { label: t('unlimited'), value: 'unlimited' },
+                { label: t('limited'), value: 'limited' },
+                { label: t('daily'), value: 'daily' }
             ],
             required: true
         },
-        { name: 'stockQty', label: 'Stock Qty', type: 'number', required: true },
+        { name: 'stockQty', label: t('stockQty'), type: 'number', required: true },
         {
             name: 'status',
-            label: 'Status',
+            label: t('status'),
             type: 'select',
             options: [
-                { value: 'active', label: 'Active' },
-                { value: 'inactive', label: 'Inactive' }
+                { value: 'active', label: t('active') },
+                { value: 'inactive', label: t('inactive') }
             ],
             required: true
         },
     ];
 
-    // التحقق من حالة التحميل (تم حذف isFoodsLoading لأنه مدمج في isSelectDataLoading)
     if ((id && isFetching) || isSelectDataLoading) return <LoadingSpinner />;
 
     return (
         <AddPage
-            title="Branch Menu"
+            title={t("branchMenu")}
             apiUrl="/api/restaurant/branchemenu"
             queryKey="branchemenu"
             fields={brancheMenuFields}

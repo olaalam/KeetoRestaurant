@@ -5,30 +5,30 @@ import GenericDataTable from '@/components/GenericDataTable';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from "@/hooks/useTranslation"; // استيراد هوك الترجمة
 
-export default function Image() {
+export default function Social() {
     const navigate = useNavigate();
     const { t } = useTranslation(); // تفعيل الهوك
 
-    const { data: image = [], isLoading } = useQuery({
-        queryKey: ['image'],
+    const { data: social = [], isLoading } = useQuery({
+        queryKey: ['social'],
         queryFn: async () => {
-            const res = await api.get('/api/restaurant/image');
-            return res.data.data.data; 
+            const res = await api.get('/api/restaurant/socialmedia/');
+            return res.data.data.data;
         }
     });
 
     const columns = [
         {
-            accessorKey: "img", 
-            header: t("image"),
+            accessorKey: "icon", 
+            header: t("icon"),
             cell: ({ row }) => {
-                const imageStr = row.getValue("img");
+                const imageStr = row.getValue("icon");
                 return (
                     <div className="w-12 h-12 border rounded-md overflow-hidden bg-gray-100">
                         {imageStr ? (
                             <img
                                 src={imageStr}
-                                alt="Restaurant Asset"
+                                alt="Platform Icon"
                                 className="w-full h-full object-cover"
                             />
                         ) : (
@@ -41,23 +41,22 @@ export default function Image() {
             },
         },
         {
-            accessorKey: "periorty",
-            header: t("priority"),
+            accessorKey: "link",
+            header: t("link"),
         },
     ];
 
     return (
         <div className="container mx-auto py-10">
             <GenericDataTable
-                title={t("restaurantImages")}
+                title={t("socialMedia")}
                 columns={columns}
-                data={image}
+                data={social}
                 isLoading={isLoading}
-                queryKey="image"
-                editApiUrl="/api/restaurant/image"
-                deleteApiUrl="/api/restaurant/image"
-                onAdd={() => navigate("/image/add")}
-                onEdit={(image) => navigate(`/image/edit/${image.id}`)}
+                queryKey="social"
+                deleteApiUrl="/api/restaurant/socialmedia/"
+                onAdd={() => navigate("/social/add")}
+                onEdit={(social) => navigate(`/social/edit/${social.id}`)}
             />
         </div>
     );

@@ -24,69 +24,65 @@ const KeetoIcon = (props) => (
     className={`object-contain rounded-sm ${props.className || "w-5 h-5"}`}
   />
 );
-export const modules = [
+export const getModules = (t) => [
   {
-    name: "Dashboard",
+    name: t("dashboard"),
     key: "dashboard",
-    items: [{ title: "Dashboard", url: "/dashboard", icon: LayoutDashboard }],
+    items: [{ title: t("dashboard"), url: "/dashboard", icon: LayoutDashboard }],
   },
   {
-    name: "Management",
+    name: t("management"),
     key: "management",
     items: [
-      { title: "Admins", url: "/admins", icon: UserCog },
+      { title: t("admins"), url: "/admins", icon: UserCog },
       { title: "Permissions", url: "/permissions", icon: ShieldCheck },
     ],
   },
   {
-    name: "Location",
+    name: t("location"),
     key: "location",
-    items: [{ title: "Delivery Zones", url: "/delivery-zones", icon: Truck }],
+    items: [{ title: t("deliveryZones"), url: "/delivery-zones", icon: Truck }],
   },
   {
-    name: "Content",
+    name: t("content"),
     key: "content",
     items: [
-      { title: "Foods", url: "/foods", icon: Beef },
-      { title: "SubCategories", url: "/sub-categories", icon: Library },
-      { title: "Branches", url: "/branches", icon: Utensils },
+      { title: t("foods"), url: "/foods", icon: Beef },
+      { title: t("subCategories"), url: "/sub-categories", icon: Library },
+      { title: t("branches"), url: "/branches", icon: Utensils },
+      { title: t("ingredientCategories"), url: "/ingredient-category", icon: ShieldCheck },
+      { title: t("ingredients"), url: "/ingredients", icon: ShieldCheck },
       {
-        title: "Ingredient Category",
-        url: "/ingredient-category",
-        icon: ShieldCheck,
-      },
-      { title: "Ingredients", url: "/ingredients", icon: ShieldCheck },
-      {
-        title: "Orders",
+        title: t("orders"),
         url: "/orders",
         icon: ShoppingBag,
         subItems: [
-          { title: "All Orders", url: "/orders", icon: ShoppingBag },
-          { title: "Pending", url: "/orders/pending", icon: Clock },
-          { title: "Accepted", url: "/orders/accepted", icon: CheckCircle2 },
-          { title: "Preparing", url: "/orders/preparing", icon: Package },
-          // تأكد أن الرابط هنا يطابق الـ path في الـ Routes
-          {
-            title: "Out for Delivery",
-            url: "/orders/out-delivery",
-            icon: Truck,
-          },
-          { title: "Delivered", url: "/orders/delivered", icon: CheckCheck },
-          { title: "Cancelled", url: "/orders/cancelled", icon: XCircle },
-          { title: "Rejected", url: "/orders/rejected", icon: Ban },
-          { title: "Refund", url: "/orders/refunded", icon: Undo2 },
+          { title: t("allOrders"), url: "/orders", icon: ShoppingBag },
+          { title: t("pending"), url: "/orders/pending", icon: Clock },
+          { title: t("accepted"), url: "/orders/accepted", icon: CheckCircle2 },
+          { title: t("preparing"), url: "/orders/preparing", icon: Package },
+          { title: t("outForDelivery"), url: "/orders/out-delivery", icon: Truck },
+          { title: t("delivered"), url: "/orders/delivered", icon: CheckCheck },
+          { title: t("cancelled"), url: "/orders/cancelled", icon: XCircle },
+          { title: t("rejected"), url: "/orders/rejected", icon: Ban },
+          { title: t("refund"), url: "/orders/refunded", icon: Undo2 },
         ],
       },
     ],
   },
   {
-    name: "Business",
+    name: t("business"),
     key: "business",
     items: [
-      { title: "Modifier", url: "/addons", icon: Settings2 },
-      { title: "MyKeeto Report", url: "/mykeeto", icon: KeetoIcon },
-      { title: "QR", url: "/qr", icon: ShoppingBag },
-      { title: "Image", url: "/image", icon: ShoppingBag },
+      { title: t("addons"), url: "/addons", icon: Settings2 },
+      { title: t("myKeeto"), url: "/mykeeto", icon: KeetoIcon },
+      { title: t("invoice"), url: "/invoice", icon: KeetoIcon },
+      { title: t("qr"), url: "/qr", icon: ShoppingBag },
+      { title: t("image"), url: "/image", icon: ShoppingBag },
+      { title: t("social"), url: "/social", icon: ShoppingBag },
     ],
   },
 ];
+
+// للتوافق مع الكود القديم - بيرجع الـ modules بالإنجليزي كـ default
+export const modules = getModules((key) => key);

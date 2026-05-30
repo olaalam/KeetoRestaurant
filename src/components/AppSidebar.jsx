@@ -22,17 +22,23 @@ import {
   ChevronDown,
   ChevronRight,
   Home,
-} from "lucide-react"; // استيراد الأيقونات الأساسية فقط
+} from "lucide-react";
+import { useTranslation } from "@/hooks/useTranslation";
+import { getModules } from "@/config/modules";
 
-export function AppSidebar() {
+export function AppSidebar({ side = "left" }) {
   const { open } = useSidebar();
   const location = useLocation();
-
-  const activeModule = useSidebarStore((s) => s.activeModule);
-  //const setLogout = useAuthStore((state) => state.setLogout);
+  const storedModule = useSidebarStore((s) => s.activeModule);
   const navigate = useNavigate();
   const [openMenus, setOpenMenus] = useState([]);
-  // إذا لم يكن هناك موديول نشط، لا تظهر الـ Sidebar
+  const { t } = useTranslation();
+
+  // نجيب الـ module بالترجمة الحالية بناءً على الـ key المحفوظ
+  const translatedModules = getModules(t);
+  const activeModule = storedModule
+    ? translatedModules.find((m) => m.key === storedModule.key) || storedModule
+    : null;
 
   const toggleMenu = (title) => {
     setOpenMenus((prev) =>
@@ -45,10 +51,9 @@ export function AppSidebar() {
   if (!activeModule) return null;
 
   return (
-    <Sidebar variant="sidebar" collapsible="icon">
+    <Sidebar side={side} variant="sidebar" collapsible="icon">
       <SidebarHeader className="flex justify-center py-5">
         <h2 className="text-2xl font-black text-primary">
-          {/* عرض الاسم كاملاً أو الحرف الأول بناءً على حالة الفتح[cite: 1] */}
           {open ? activeModule.name : activeModule.name?.[0] || ""}
         </h2>
       </SidebarHeader>
@@ -67,51 +72,45 @@ export function AppSidebar() {
                   <div key={item.title}>
                     {/* Main Item */}
                     <SidebarMenuItem>
-                      <SidebarMenuButton
+                      {/* FIX 1: Added asChild here so it accepts the <Link> or custom wrapper */}
+                      <SidebarMenuButton 
+                        asChild={!hasSubItems} 
                         tooltip={item.title}
-                        onClick={() => {
-                          if (hasSubItems) {
-                            toggleMenu(item.title);
-                          } else {
-                            navigate(item.url);
-                          }
-                        }}
                       >
-                        <div
-                          className={`flex items-center w-full gap-3 px-3 py-2 rounded-xl transition-all duration-200 cursor-pointer ${
-                            open
-                              ? "gap-3 px-3 py-2 justify-start"
-                              : "justify-center py-2"
-                          } ${
-                            active
-                              ? "bg-primary text-white shadow-md"
-                              : "text-gray-600 hover:bg-gray-200"
-                          }`}
-                        >
-                          {IconComponent ? (
-                            <IconComponent size={20} />
-                          ) : (
-                            <HelpCircle size={20} />
-                          )}
-
-                          {open && (
-                            <>
-                              <span className="text-sm font-medium">
-                                {item.title}
-                              </span>
-
-                              {hasSubItems && (
+                        {hasSubItems ? (
+                          /* If it has sub-items, keep it as a button to toggle the dropdown */
+                          <button
+                            onClick={() => toggleMenu(item.title)}
+                            className={`flex items-center w-full gap-3 px-3 py-2 rounded-xl transition-all duration-200 cursor-pointer ${
+                              open ? "gap-3 px-3 py-2 justify-start" : "justify-center py-2"
+                            } ${
+                              active ? "bg-primary text-white shadow-md" : "text-gray-600 hover:bg-gray-200"
+                            }`}
+                          >
+                            {IconComponent ? <IconComponent size={20} /> : <HelpCircle size={20} />}
+                            {open && (
+                              <>
+                                <span className="text-sm font-medium">{item.title}</span>
                                 <span className="ml-auto">
-                                  {isOpen ? (
-                                    <ChevronDown size={18} />
-                                  ) : (
-                                    <ChevronRight size={18} />
-                                  )}
+                                  {isOpen ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
                                 </span>
-                              )}
-                            </>
-                          )}
-                        </div>
+                              </>
+                            )}
+                          </button>
+                        ) : (
+                          /* FIX 2: Wrapped the standalone item inside a native router <Link> */
+                          <Link
+                            to={item.url}
+                            className={`flex items-center w-full gap-3 px-3 py-2 rounded-xl transition-all duration-200 cursor-pointer ${
+                              open ? "gap-3 px-3 py-2 justify-start" : "justify-center py-2"
+                            } ${
+                              active ? "bg-primary text-white shadow-md" : "text-gray-600 hover:bg-gray-200"
+                            }`}
+                          >
+                            {IconComponent ? <IconComponent size={20} /> : <HelpCircle size={20} />}
+                            {open && <span className="text-sm font-medium">{item.title}</span>}
+                          </Link>
+                        )}
                       </SidebarMenuButton>
                     </SidebarMenuItem>
 
@@ -120,7 +119,6 @@ export function AppSidebar() {
                       <div className="ml-6 mt-1 space-y-1 overflow-hidden transition-all">
                         {item.subItems.map((subItem) => {
                           const isSubActive = location.pathname === subItem.url;
-
                           const SubIcon = subItem.icon;
 
                           return (
@@ -129,9 +127,7 @@ export function AppSidebar() {
                                 <Link
                                   to={subItem.url}
                                   className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all ${
-                                    isSubActive
-                                      ? "bg-primary text-white"
-                                      : "text-gray-500 hover:bg-gray-100"
+                                    isSubActive ? "bg-primary text-white" : "text-gray-500 hover:bg-gray-100"
                                   }`}
                                 >
                                   {SubIcon && <SubIcon size={16} />}
@@ -159,16 +155,13 @@ export function AppSidebar() {
               tooltip="Home"
               className="text-red-500 hover:text-red-600 hover:bg-red-50 transition-colors"
             >
-              <div className="w-full">
-                <Button
-                  onClick={() => navigate("/")}
-                  className={`w-full ${!open ? "px-2 justify-center" : ""}`}
-                >
+              {/* BONUS FIX: Also turned "Back to home" into a native link component */}
+              <Link to="/" className="w-full">
+                <Button className={`w-full ${!open ? "px-2 justify-center" : ""}`}>
                   <Home size={18} />
-
-                  {open && <span className="ml-2">Back to home</span>}
+                  {open && <span className="ml-2">{t("backToHome")}</span>}
                 </Button>
-              </div>
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

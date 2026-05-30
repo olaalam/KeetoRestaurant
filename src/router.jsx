@@ -40,7 +40,7 @@ import PaymentMetodAdd from "./Pages/PaymentMetod/PaymentMetodAdd";
 import Transaction from "./Pages/Transaction/Transaction";
 import Order from "./Pages/Order/Order";
 import WalletR from "./Pages/Branches/WalletR";
-import OrderAdd from "./Pages/Order/OrderAdd";
+
 import IngredientCategory from "./Pages/IngredientCategory/IngredientCategory";
 import IngredientCategoryAdd from "./Pages/IngredientCategory/IngredientCategoryAdd";
 import Ingredients from "./Pages/Ingredients/Ingredients";
@@ -54,6 +54,9 @@ import QR from "./Pages/QR/QR";
 import QRAdd from "./Pages/QR/QRAdd";
 import Image from "./Pages/Image/Image";
 import ImageAdd from "./Pages/Image/ImageAdd";
+import Social from "./Pages/Social/Social";
+import SocialAdd from "./Pages/Social/SocialAdd";
+import Invoice from "./Pages/Invoice/Invoice";
 
 const router = createBrowserRouter([
   {
@@ -313,10 +316,7 @@ const router = createBrowserRouter([
         path: "orders/refunded", // تم تعديل الإسبيلنج من refuned لـ refunded
         element: <OrdersList status="refunded" />,
       },
-      {
-        path: "orders/edit/:id",
-        element: <OrderAdd />,
-      },
+
       {
         path: "branches/wallet/:restaurantId",
         element: <WalletR />,
@@ -361,18 +361,34 @@ const router = createBrowserRouter([
         path: "qr/edit/:id",
         element: <QRAdd />,
       },
-            {
+      {
         path: "image",
         element: <Image />,
       },
       {
         path: "image/add",
-        element: <ImageAdd/>,
+        element: <ImageAdd />,
       },
       {
         path: "image/edit/:id",
         element: <ImageAdd />,
       },
+      {
+        path: "social",
+        element: <Social />,
+      },
+      {
+        path: "social/add",
+        element: <SocialAdd />,
+      },
+      {
+        path: "social/edit/:id",
+        element: <SocialAdd />,
+      },
+      {
+        path: "invoice",
+        element: <Invoice />,
+      }
 
     ],
   },

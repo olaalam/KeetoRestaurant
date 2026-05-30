@@ -1,35 +1,33 @@
 import React, { useState } from 'react';
 import GenericDataTable from '@/components/GenericDataTable';
 import ViewPermissionsModal from './ViewPermissionsModal';
-import { useQuery } from '@tanstack/react-query'; // افترض أنك تستخدمين React Query
+import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from "@/hooks/useTranslation";
 
 export default function Permission() {
     const navigate = useNavigate();
+    const { t } = useTranslation();
     const [selectedRole, setSelectedRole] = useState(null);
 
-    // جلب البيانات (استبدليها بالـ hook الخاص بك)
     const { data: roles = [], isLoading } = useQuery({
         queryKey: ['roles'],
         queryFn: () => fetch('/api/restaurant/roles').then(res => res.json())
     });
 
     const columns = [
-        {
-            accessorKey: 'name',
-            header: 'NAME',
-        },
-        { accessorKey: 'nameAr', header: 'nameAr' },
-        { accessorKey: 'nameFr', header: 'nameFr' },
+        { accessorKey: 'name', header: t('name') },
+        { accessorKey: 'nameAr', header: t('nameAr') },
+        { accessorKey: 'nameFr', header: t('nameFr') },
         {
             id: 'view_permissions',
-            header: 'PERMISSIONS',
+            header: t('permissionsColumn'),
             cell: ({ row }) => (
                 <button
                     onClick={() => setSelectedRole(row.original)}
                     className="text-red-600 font-medium hover:underline"
                 >
-                    View
+                    {t('viewBtn')}
                 </button>
             ),
         }
@@ -38,14 +36,14 @@ export default function Permission() {
     return (
         <div className="p-6">
             <GenericDataTable
-                title="Roles Table"
+                title={t('rolesTable')}
                 columns={columns}
                 data={roles}
                 isLoading={isLoading}
                 queryKey="roles"
-                deleteApiUrl="/api/restaurant/roles" // رابط الحذف
-                onAdd={() => navigate('/permissions/add')} // توجيه لصفحة الإضافة
-                onEdit={(row) => navigate(`/permissions/edit/${row.id}`)} // توجيه لصفحة التعديل
+                deleteApiUrl="/api/restaurant/roles"
+                onAdd={() => navigate('/permissions/add')}
+                onEdit={(row) => navigate(`/permissions/edit/${row.id}`)}
             />
 
             <ViewPermissionsModal

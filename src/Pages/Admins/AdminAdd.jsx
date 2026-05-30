@@ -4,11 +4,11 @@ import AddPage from "@/components/AddPage";
 import { useQuery } from "@tanstack/react-query";
 import api from "@/api/axios";
 import LoadingSpinner from "@/components/LoadingSpinner";
-
+import { useTranslation } from "@/hooks/useTranslation";
 const AdminAdd = () => {
   const { id } = useParams();
   const { state } = useLocation();
-
+ const { t } = useTranslation();
   const { data: adminData, isLoading: isFetching } = useQuery({
     queryKey: ["admin", id],
     queryFn: async () => {
@@ -33,31 +33,30 @@ const AdminAdd = () => {
 
   // ✅ Use "none" string instead of empty string for optional branches
   const branchOptions = [
-    { value: "none", label: "None" },
+    { value: "none", label: t("none") },
     ...branches.map((branch) => ({
       value: branch.id,
       label: branch.name,
     })),
   ];
 
-  // ✅ Define system role permission levels
   const roleOptions = [
-    { value: "subadmin", label: "Sub Admin" },
-    { value: "branch_manager", label: "Branch Manager" },
-    { value: "staff", label: "Staff" },
+    { value: "subadmin", label: t("subAdmin") },
+    { value: "branch_manager", label: t("branchManager") },
+    { value: "staff", label: t("staff") },
   ];
 
   const adminFields = [
-    { name: "name", label: "name", required: true },
-    { name: "nameAr", label: "nameAr", required: true },
-    { name: "nameFr", label: "nameFr", required: true },
-    { name: "email", label: "email", type: "email", required: true },
-    { name: "phoneNumber", label: "phoneNumber", required: true },
+    { name: "name", label: t("name"), required: true },
+    { name: "nameAr", label: t("nameAr"), required: true },
+    { name: "nameFr", label: t("nameFr"), required: true },
+    { name: "email", label: t("email"), type: "email", required: true },
+    { name: "phoneNumber", label: t("phoneNumber"), required: true },
     ...(!id
       ? [
           {
             name: "password",
-            label: "password",
+            label: t("password"),
             type: "password",
             required: true,
           },
@@ -65,18 +64,17 @@ const AdminAdd = () => {
       : []),
     {
       name: "type",
-      label: "Admin Role Type",
-      type: "select",
+      label: t("adminRoleType"),
+      type: "combobox",
       required: true,
       options: roleOptions,
     },
     {
       name: "branchId",
-      label: "Branch Permission",
-      type: "select",
+      label: t("branchPermission"),
+      type: "combobox",
       required: false,
       options: branchOptions,
-      // ✅ Convert "none" back to null before sending to API
       transform: (value) => (value === "none" ? null : value),
     },
   ];
@@ -86,7 +84,7 @@ const AdminAdd = () => {
 
   return (
     <AddPage
-      title="admin"
+      title={t("admins")}
       apiUrl="/api/restaurant/restaurantadmin"
       queryKey="admins"
       fields={adminFields}

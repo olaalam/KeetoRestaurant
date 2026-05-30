@@ -1,6 +1,5 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { modules } from "@/config/modules";
 
 const useSidebarStore = create(
   persist(
@@ -14,11 +13,12 @@ const useSidebarStore = create(
         activeModuleKey: state.activeModule?.key || null,
       }),
       merge: (persistedState, currentState) => {
-        const key = persistedState?.activeModuleKey;
-        const module = modules.find((m) => m.key === key) || null;
+        // الـ restore بيحصل في AppSidebar/Layout بعد ما نعرف اللغة الحالية
         return {
           ...currentState,
-          activeModule: module,
+          activeModule: persistedState?.activeModuleKey 
+            ? { key: persistedState.activeModuleKey }
+            : null,
         };
       },
     },

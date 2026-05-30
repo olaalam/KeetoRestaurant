@@ -3,43 +3,53 @@ import { useQuery } from '@tanstack/react-query';
 import api from '@/api/axios';
 import GenericDataTable from '@/components/GenericDataTable';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from "@/hooks/useTranslation";
+import { Badge } from "@/components/ui/badge";
 
 export default function SubCategory() {
     const navigate = useNavigate();
+    const { t } = useTranslation();
 
     const { data: subcategories = [], isLoading } = useQuery({
         queryKey: ['subcategories'],
         queryFn: async () => {
             const res = await api.get('/api/restaurant/subcategories');
-            return res.data.data.data; // بناءً على هيكل الـ Response الخاص بكِ
+            return res.data.data.data;
         }
     });
 
-
-
     const columns = [
-        { accessorKey: 'name', header: 'name' },
-        { accessorKey: 'nameAr', header: 'nameAr' },
-        { accessorKey: 'nameFr', header: 'nameFr' },
-        { accessorKey: 'category.name', header: 'category' },
-        { accessorKey: 'priority', header: 'priority' },
-        {accessorKey:'addons',header : "addons"},
-
-        // {
-        //     accessorKey: 'status',
-        //     header: 'status',
-        //     cell: ({ row }) => (
-        //         <span className={`px-2 py-1 rounded-full text-xs ${row.original.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-        //             {row.original.status}
-        //         </span>
-        //     )
-        // },
+        { accessorKey: 'name', header: t('name') },
+        { accessorKey: 'nameAr', header: t('nameAr') },
+        { accessorKey: 'nameFr', header: t('nameFr') },
+        { accessorKey: 'category.name', header: t('categoryColumn') },
+        { accessorKey: 'priority', header: t('priority') },
+        {
+            accessorKey: 'addons',
+            header: t('addonsColumn'),
+            cell: ({ row }) => {
+                const addons = row.original.addons || [];
+                if (addons.length === 0) {
+                    return <span className="text-gray-400 text-sm">-</span>;
+                }
+                return (
+                    <div className="flex flex-wrap gap-1">
+                        {addons.map((addon) => (
+                            <Badge key={addon.id} variant="outline" className="text-xs">
+                                {addon.name}
+                            </Badge>
+                        ))}
+                    </div>
+                );
+            }
+        },
+        { accessorKey: 'order_level', header: t('orderLevelColumn') },
     ];
 
     return (
         <div className="container mx-auto py-10">
             <GenericDataTable
-                title="subcategories"
+                title={t('subcategoriesTitle')}
                 columns={columns}
                 data={subcategories}
                 isLoading={isLoading}

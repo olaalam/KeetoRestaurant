@@ -4,33 +4,30 @@ import AddPage from '@/components/AddPage';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/api/axios';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import { useTranslation } from "@/hooks/useTranslation";
 
 const SubCategoryAdd = () => {
-    const { id } = useParams(); // الحصول على الـ id من الـ URL في حالة التعديل
+    const { id } = useParams();
     const { state } = useLocation();
+    const { t } = useTranslation();
 
     const { data: lookups, isLoading: isSelectLoading } = useQuery({
         queryKey: ["food-select-options"],
-
         queryFn: async () => {
             const response = await api.get("/api/restaurant/food/select");
-
             return response.data?.data?.data || {};
         },
     });
     const categories = lookups?.categories || [];
     const addons = lookups?.addons || [];
 
-    // 1. إذا كانت البيانات موجودة في الـ state (مثلاً ضغطنا تعديل من جدول) نستخدمها فوراً
-    // 2. إذا لم تكن موجودة، يمكننا عمل Query لجلب بيانات هذا المشرف تحديداً
     const { data: subcategoryData, isLoading: isFetching } = useQuery({
         queryKey: ['subcategory', id],
         queryFn: async () => {
             const { data } = await api.get(`/api/restaurant/subcategories/${id}`);
-            console.log(data.data.data);
             return data.data.data;
         },
-        enabled: !!id && !state?.subcategoryData, // لا يتم التفعيل إلا لو فيه id ومافيش بيانات جاهزة
+        enabled: !!id && !state?.subcategoryData,
     });
 
     const rawData = state?.subcategoryData || subcategoryData;
@@ -38,46 +35,56 @@ const SubCategoryAdd = () => {
     const initialData = React.useMemo(() => {
         if (!rawData) return null;
 
+        let parsedAddonsIds = [];
+        if (rawData.addonsIds) {
+            if (Array.isArray(rawData.addonsIds)) {
+                parsedAddonsIds = rawData.addonsIds;
+            } else if (typeof rawData.addonsIds === 'string') {
+                try {
+                    parsedAddonsIds = JSON.parse(rawData.addonsIds);
+                } catch (e) {
+                    console.error("Error parsing addonsIds:", e);
+                    parsedAddonsIds = [];
+                }
+            }
+        }
+
         return {
             ...rawData,
-            // هنا بنخرج الـ id من جوه كائن الـ country ونحطه في countryId 
-            // عشان الـ AddPage والـ Select يحسوا بيه
-            categoryId: rawData.categoryId || rawData.category?.id
+            categoryId: rawData.categoryId || rawData.category?.id,
+            order_level: rawData.order_level ? Number(rawData.order_level) : 0,
+            addonsIds: parsedAddonsIds.map(id => String(id))
         };
     }, [rawData]);
 
     const subcategoryFields = [
-        { name: 'name', label: 'name', required: true },
-        { name: 'nameAr', label: 'nameAr', required: true },
-        { name: 'nameFr', label: 'nameFr', required: true },
+        { name: 'name', label: t('name'), required: true },
+        { name: 'nameAr', label: t('nameAr'), required: true },
+        { name: 'nameFr', label: t('nameFr'), required: true },
         {
             name: 'categoryId',
-            label: 'Category',
+            label: t('category'),
             required: true,
-            type: 'select',
-            // التأكد من أن الـ options بتستخدم الـ id والـ name الصح
+            type: 'combobox',
             options: categories.map(c => ({ value: c.id, label: c.name }))
         },
         {
             name: 'addonsIds',
-            label: 'Addons',
-            required: true,
+            label: t('addons'),
+            required: false,
             type: 'multi-select',
-            // التأكد من أن الـ options بتستخدم الـ id والـ name الصح
             options: addons.map(a => ({ value: a.id, label: a.name }))
         },
-        { name: 'order_level', label: 'order_level', required: true , type: 'number' },
-
-
+        { name: 'order_level', label: t('orderLevel'), required: true, type: 'number' },
         {
             name: 'priority',
-            label: 'priority',
+            label: t('priority'),
             required: true,
             type: 'select',
             options: [
-                { value: 'low', label: 'low' },
-                { value: 'medium', label: 'medium' },
-                { value: 'high', label: 'high' },
+                { value: 'low', label: t('low') },
+                { value: 'medium', label: t('medium') },
+                { value: 'high', label: t('high') },
             ]
         },
     ];
@@ -86,13 +93,12 @@ const SubCategoryAdd = () => {
 
     return (
         <AddPage
-            title="subcategory"
-            apiUrl="/api/restaurant/subcategories" // هذا هو الـ Base URL
+            title={t('subcategoryTitle')}
+            apiUrl="/api/restaurant/subcategories"
             queryKey="subcategories"
             fields={subcategoryFields}
-            initialData={initialData} // المكون سيفهم أن هناك id وسينادي useUpdate
+            initialData={initialData}
             onSuccessAction={() => {
-                // مثلاً الرجوع للخلف أو لجدول المديرين
                 window.history.back();
             }}
         />

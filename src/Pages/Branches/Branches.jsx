@@ -5,9 +5,11 @@ import GenericDataTable from '@/components/GenericDataTable';
 import { useNavigate } from 'react-router-dom';
 import { Eye } from 'lucide-react';
 import FoodListDialog from './FoodListDialog';
+import { useTranslation } from "@/hooks/useTranslation";
 
 export default function Restaurant() {
     const navigate = useNavigate();
+    const { t } = useTranslation();
     const [selectedRestaurant, setSelectedRestaurant] = useState(null);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
 
@@ -20,15 +22,14 @@ export default function Restaurant() {
         queryKey: ['branches'],
         queryFn: async () => {
             const res = await api.get('/api/restaurant/branches');
-            return res.data.data.data; // بناءً على هيكل الـ Response الخاص بكِ
+            return res.data.data.data;
         }
     });
-
 
     const columns = [
         {
             accessorKey: "name",
-            header: "Branch Name",
+            header: t('branchName'),
             cell: ({ row }) => (
                 <button
                     onClick={() => navigate(`/branches/setting/${row.original.id}`)}
@@ -38,77 +39,73 @@ export default function Restaurant() {
                 </button>
             )
         },
-        { accessorKey: 'nameAr', header: 'nameAr' },
-        { accessorKey: 'nameFr', header: 'nameFr' },
+        { accessorKey: 'nameAr', header: t('nameAr') },
+        { accessorKey: 'nameFr', header: t('nameFr') },
         {
             accessorKey: "logo",
-            header: "Logo",
+            header: t('logo'),
             cell: ({ row }) => (
                 <div className="w-10 h-10 border rounded-full overflow-hidden">
                     <img src={row.getValue("logo")} alt="logo" className="w-full h-full object-cover" />
                 </div>
             )
         },
-
-        // { accessorKey: "ownerPhone", header: "Phone" },
-        { accessorKey: "zone.name", header: "Zone" },
+        { accessorKey: "zone.name", header: t('zoneColumn') },
         {
             accessorKey: "view_food",
-            header: "Food Menu",
+            header: t('foodMenuColumn'),
             cell: ({ row }) => (
                 <button
                     onClick={() => openFoodDialog(row.original.id)}
                     className="flex items-center gap-1 px-3 py-1 bg-orange-100 text-orange-600 rounded-md hover:bg-orange-200 transition-colors"
                 >
                     <Eye size={16} />
-                    View Food
+                    {t('viewFood')}
                 </button>
             )
         },
         {
             accessorKey: "branch_menu",
-            header: "Branch Menu",
+            header: t('branchMenuColumn'),
             cell: ({ row }) => (
                 <button
                     onClick={() => navigate(`branch_menu/${row.original.id}`)}
                     className="text-blue-600 hover:underline font-medium text-left"
                 >
-                    Branch Menu
+                    {t('branchMenuColumn')}
                 </button>
             )
         },
         {
             accessorKey: "transaction",
-            header: "Transaction",
+            header: t('transactionColumn'),
             cell: ({ row }) => (
                 <button
                     onClick={() => navigate(`transaction/${row.original.id}`)}
                     className="text-blue-600 hover:underline font-medium text-left"
                 >
-                    Transaction
+                    {t('transactionColumn')}
                 </button>
             )
         },
-
         {
             accessorKey: "wallet",
-            header: "Wallet",
+            header: t('walletColumn'),
             cell: ({ row }) => (
                 <button
                     onClick={() => navigate(`wallet/${row.original.id}`)}
                     className="text-blue-600 hover:underline font-medium text-left"
                 >
-                    Wallet
+                    {t('walletColumn')}
                 </button>
             )
         },
-
         {
             accessorKey: "status",
-            header: "Status",
+            header: t('status'),
             cell: ({ row }) => (
                 <span className={`px-2 py-1 rounded-full text-xs ${row.original.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                    {row.original.status}
+                    {t(row.original.status)}
                 </span>
             )
         },
@@ -117,12 +114,13 @@ export default function Restaurant() {
     return (
         <div className="container mx-auto py-10">
             <GenericDataTable
-                title="branches"
+                title={t('branchesTitle')}
                 columns={columns}
                 data={branches}
                 isLoading={isLoading}
                 queryKey="branches"
                 deleteApiUrl="/api/restaurant/branches"
+                editApiUrl="/api/restaurant/branches"
                 onAdd={() => navigate("/branches/add")}
                 onEdit={(branch) => navigate(`/branches/edit/${branch.id}`)}
             />

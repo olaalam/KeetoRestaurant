@@ -4,6 +4,11 @@ import { Toaster } from 'sonner'
 import './index.css'
 import App from './App.jsx'
 
+// تطبيق اللغة المحفوظة عند أول تحميل
+const savedLang = JSON.parse(localStorage.getItem("keeto-language") || '{}')?.state?.language || "en";
+document.documentElement.dir = savedLang === "ar" ? "rtl" : "ltr";
+document.documentElement.lang = savedLang;
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {

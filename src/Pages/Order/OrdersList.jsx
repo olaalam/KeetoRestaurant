@@ -1,15 +1,16 @@
+import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/api/axios';
 import GenericDataTable from '@/components/GenericDataTable';
 import { useNavigate } from 'react-router-dom';
-import { User, Phone, Eye } from "lucide-react";
+import { User, Phone, Eye, Printer } from "lucide-react"; 
 import { Button } from '@/components/ui/button';
+import { useTranslation } from "@/hooks/useTranslation"; // استيراد الهوك
 
-// بنستقبل الـ status كـ Prop
 export default function OrdersList({ status }) {
     const navigate = useNavigate();
+    const { t } = useTranslation(); // تفعيل الهوك
 
-    // استخدمنا الـ status عشان نخلي الـ Query Key والـ API Endpoint ديناميك
     const { data: orders = [], isLoading } = useQuery({
         queryKey: ['orders', status],
         queryFn: async () => {
@@ -18,10 +19,33 @@ export default function OrdersList({ status }) {
         }
     });
 
+    const handleDownloadInvoice = async (orderId, orderNumber) => {
+        try {
+            const response = await api.get(`/api/restaurant/order/${orderId}/invoice`, {
+                responseType: 'blob'
+            });
+
+            const blob = new Blob([response.data], { type: 'application/pdf' });
+            const url = window.URL.createObjectURL(blob);
+
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `Invoice-${orderNumber || orderId}.pdf`);
+            document.body.appendChild(link);
+            link.click();
+
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error("Error fetching invoice PDF:", error);
+            alert(t("failedToDownloadInvoice"));
+        }
+    };
+
     const columns = [
         {
             accessorKey: "orderNumber",
-            header: "Order Number",
+            header: t("orderNumber"),
             cell: ({ row }) => (
                 <span className="font-medium text-gray-700">
                     {row.getValue("orderNumber")}
@@ -30,7 +54,7 @@ export default function OrdersList({ status }) {
         },
         {
             accessorKey: "customerName",
-            header: "Customer Info",
+            header: t("customerInfo"),
             cell: ({ row }) => (
                 <div className="flex flex-col gap-1">
                     <div className="flex items-center gap-1 font-medium text-gray-800">
@@ -46,36 +70,38 @@ export default function OrdersList({ status }) {
         },
         {
             accessorKey: "orderType",
-            header: "Order Type",
+            header: t("orderType"),
             cell: ({ row }) => (
-                <span className={`px-2 py-1 rounded-full text-xs capitalize ${row.original.orderType === 'delivery' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'
-                    }`}>
-                    {row.original.orderType}
+                <span className={`px-2 py-1 rounded-full text-xs capitalize ${
+                    row.original.orderType === 'delivery' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'
+                }`}>
+                    {t(row.original.orderType)}
                 </span>
             )
         },
         {
             accessorKey: "totalAmount",
-            header: "Total Amount",
+            header: t("totalAmount"),
             cell: ({ row }) => (
                 <span className="font-semibold text-green-600">
-                    {row.getValue("totalAmount")} E£
+                    {row.getValue("totalAmount")} {t("currency")}
                 </span>
             )
         },
         {
             accessorKey: "status",
-            header: "Status",
+            header: t("status"),
             cell: ({ row }) => (
-                <span className={`px-2 py-1 rounded-full text-xs capitalize ${row.original.status === 'pending' ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700'
-                    }`}>
-                    {row.original.status.replace(/_/g, ' ')}
+                <span className={`px-2 py-1 rounded-full text-xs capitalize ${
+                    row.original.status === 'pending' ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700'
+                }`}>
+                    {t(row.original.status)}
                 </span>
             )
         },
         {
             accessorKey: "createdAt",
-            header: "Date & Time",
+            header: t("dateTime"),
             cell: ({ row }) => {
                 const date = new Date(row.original.createdAt);
                 return (
@@ -88,19 +114,31 @@ export default function OrdersList({ status }) {
         },
         {
             id: "actions",
-            header: "Actions",
+            header: t("actions"),
             cell: ({ row }) => {
                 const orderId = row.original.id;
+                const orderNumber = row.original.orderNumber;
 
                 return (
-                    <div className="flex items-center justify-center">
+                    <div className="flex items-center justify-center gap-2">
                         <Button
                             size="sm"
                             variant="ghost"
                             className="hover:bg-primary/10 text-primary"
                             onClick={() => navigate(`/orders/details/${orderId}`)}
+                            title={t("viewDetails")}
                         >
                             <Eye size={18} />
+                        </Button>
+
+                        <Button
+                            size="sm"
+                            variant="ghost"
+                            className="hover:bg-emerald-50 text-emerald-600"
+                            onClick={() => handleDownloadInvoice(orderId, orderNumber)}
+                            title={t("printInvoice")}
+                        >
+                            <Printer size={18} />
                         </Button>
                     </div>
                 );
@@ -108,8 +146,8 @@ export default function OrdersList({ status }) {
         }
     ];
 
-    // تظبيط اسم الجدول عشان يبدأ بحرف كابيتال (مثلاً: Pending Orders)
-    const tableTitle = `${status.charAt(0).toUpperCase() + status.slice(1)} Orders`;
+    // جعل عنوان الجدول ديناميكي ومترجم بناءً على الـ status الممرر
+    const tableTitle = `${t(status)} ${t("orders")}`;
 
     return (
         <div className="container mx-auto py-10">

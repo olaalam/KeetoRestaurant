@@ -4,10 +4,12 @@ import AddPage from '@/components/AddPage';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/api/axios';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import { useTranslation } from "@/hooks/useTranslation";
 
 const DeliveryZoneAdd = () => {
     const { id } = useParams();
     const { state } = useLocation();
+    const { t } = useTranslation();
 
     // جلب قائمة المناطق للـ Select Options
     const { data: zonesList = [], isLoading: isLoadingZones } = useQuery({
@@ -48,7 +50,7 @@ const DeliveryZoneAdd = () => {
     const zoneDeliveryFields = [
         {
             name: 'zoneId',
-            label: 'Zone',
+            label: t('zone'),
             required: true,
             type: 'select',
             options: zonesList.map(z => ({
@@ -58,7 +60,7 @@ const DeliveryZoneAdd = () => {
         },
         {
             name: 'deliveryFee',
-            label: 'Delivery Fee',
+            label: t('deliveryFee'),
             required: true,
             type: 'number'
         },
@@ -68,7 +70,7 @@ const DeliveryZoneAdd = () => {
 
     return (
         <AddPage
-            title="Delivery Zone Fee"
+            title={t('deliveryZoneFee')}
             apiUrl="/api/restaurant/restaurant-zone-delivery-fees"
             queryKey="DeliveryZone"
             fields={zoneDeliveryFields}
