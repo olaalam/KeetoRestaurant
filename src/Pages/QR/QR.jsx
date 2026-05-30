@@ -87,8 +87,6 @@ export default function QR() {
                 deleteApiUrl="/api/restaurant/restQR"
                 onAdd={() => navigate("/qr/add")}
             />
-            />
-
             {/* 4. الـ Modal الذي يظهر عند الضغط على الصورة */}
             {selectedImg && (
                 <div 
