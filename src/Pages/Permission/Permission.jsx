@@ -4,7 +4,7 @@ import ViewPermissionsModal from './ViewPermissionsModal';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from "@/hooks/useTranslation";
-
+import api from '@/api/axios';
 export default function Permission() {
     const navigate = useNavigate();
     const { t } = useTranslation();
@@ -12,13 +12,17 @@ export default function Permission() {
 
     const { data: roles = [], isLoading } = useQuery({
         queryKey: ['roles'],
-        queryFn: () => fetch('/api/restaurant/roles').then(res => res.json())
+        queryFn: async () => {
+            const res = await api.get('/api/restaurant/roles');
+            console.log(res.data.data.roles)
+            return res.data.data.roles;
+        }
     });
 
     const columns = [
         { accessorKey: 'name', header: t('name') },
-        { accessorKey: 'nameAr', header: t('nameAr') },
-        { accessorKey: 'nameFr', header: t('nameFr') },
+        // { accessorKey: 'nameAr', header: t('nameAr') },
+        // { accessorKey: 'nameFr', header: t('nameFr') },
         {
             id: 'view_permissions',
             header: t('permissionsColumn'),
@@ -42,6 +46,7 @@ export default function Permission() {
                 isLoading={isLoading}
                 queryKey="roles"
                 deleteApiUrl="/api/restaurant/roles"
+                editApiUrl="/api/restaurant/roles"
                 onAdd={() => navigate('/permissions/add')}
                 onEdit={(row) => navigate(`/permissions/edit/${row.id}`)}
             />
