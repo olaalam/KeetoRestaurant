@@ -38,64 +38,62 @@ const FoodAdd = () => {
     },
   });
 
-const { data: foodData, isLoading: isFetching } = useQuery({
-  queryKey: ["food", id],
-  queryFn: async () => {
-    const { data } = await api.get(`/api/restaurant/food/${id}`);
-    const raw = data.data.data;
-    return {
-      id: raw.id,
-      name: raw.name || "",
-      nameAr: raw.nameAr || raw.name_ar || "",
-      nameFr: raw.nameFr || raw.name_fr || "",
-      description: raw.description || "",
-      descriptionAr: raw.descriptionAr || raw.description_ar || "",
-      descriptionFr: raw.descriptionFr || raw.description_fr || "",
-      image: raw.image || "",
-      categoryid: String(raw.categoryid || raw.categories?.id || raw.category?.id || ""),
-      subcategoryid: String(raw.subcategoryid || raw.subcategories?.id || raw.subcategory?.id || ""),
-      foodtype: raw.foodtype || "",
-      Nutrition: raw.Nutrition || raw.nutrition || "",
-      is_Halal: Boolean(raw.is_Halal),
-      startTime: raw.startTime || raw.start_time || "",
-      endTime: raw.endTime || raw.end_time || "",
-      search_tags: raw.search_tags || "",
-      price: raw.price ? Number(raw.price) : "",
-      discount_type: raw.discount_type || "none",
-      discount_value: raw.discount_value ? Number(raw.discount_value) : 0,
-      Maximum_Purchase: raw.Maximum_Purchase ? Number(raw.Maximum_Purchase) : 5,
-      stock_type: raw.stock_type || "unlimited",
-      status: raw.status || "active",
-      
-      // 1. الـ variations نظيفة بدون الـ addonsId اللي كانت محشورة جواها
-      variations:
-        raw.variations?.map((v) => ({
-          name: v.name || "",
-          nameAr: v.nameAr || "",
-          nameFr: v.nameFr || "",
-          isRequired: Boolean(v.isRequired),
-          selectionType: v.selectionType || "single",
-          min: v.min ? Number(v.min) : 1,
-          max: v.max ? Number(v.max) : 1,
-          options:
-            v.options?.map((o) => ({
-              optionName: o.optionName || "",
-              optionNameAr: o.optionNameAr || "",
-              optionNameFr: o.optionNameFr || "",
-              additionalPrice: o.additionalPrice ? Number(o.additionalPrice) : 0,
-            })) || [],
-        })) || [],
+  const { data: foodData, isLoading: isFetching } = useQuery({
+    queryKey: ["food", id],
+    queryFn: async () => {
+      const { data } = await api.get(`/api/restaurant/food/${id}`);
+      const raw = data.data.data;
+      return {
+        id: raw.id,
+        name: raw.name || "",
+        nameAr: raw.nameAr || raw.name_ar || "",
+        nameFr: raw.nameFr || raw.name_fr || "",
+        description: raw.description || "",
+        descriptionAr: raw.descriptionAr || raw.description_ar || "",
+        descriptionFr: raw.descriptionFr || raw.description_fr || "",
+        image: raw.image || "",
+        categoryid: String(raw.categoryid || raw.categories?.id || raw.category?.id || ""),
+        subcategoryid: String(raw.subcategoryid || raw.subcategories?.id || raw.subcategory?.id || ""),
+        foodtype: raw.foodtype || "",
+        Nutrition: raw.Nutrition || raw.nutrition || "",
+        is_Halal: Boolean(raw.is_Halal),
+        startTime: raw.startTime || raw.start_time || "",
+        endTime: raw.endTime || raw.end_time || "",
+        search_tags: raw.search_tags || "",
+        price: raw.price ? Number(raw.price) : "",
+        discount_type: raw.discount_type || "none",
+        discount_value: raw.discount_value ? Number(raw.discount_value) : 0,
+        Maximum_Purchase: raw.Maximum_Purchase ? Number(raw.Maximum_Purchase) : 5,
+        stock_type: raw.stock_type || "unlimited",
+        status: raw.status || "active",
+        
+        variations:
+          raw.variations?.map((v) => ({
+            name: v.name || "",
+            nameAr: v.nameAr || "",
+            nameFr: v.nameFr || "",
+            isRequired: Boolean(v.isRequired),
+            selectionType: v.selectionType || "single",
+            min: v.min ? Number(v.min) : 1,
+            max: v.max ? Number(v.max) : 1,
+            options:
+              v.options?.map((o) => ({
+                optionName: o.optionName || "",
+                optionNameAr: o.optionNameAr || "",
+                optionNameFr: o.optionNameFr || "",
+                additionalPrice: o.additionalPrice ? Number(o.additionalPrice) : 0,
+              })) || [],
+          })) || [],
 
-      // 2. الـ addonsId في مكانها الصحيح (الـ Root) وبتقرأ كـ Objects عشان الـ useFieldArray
-      addonsId:
-        (raw.addonsId || raw.addonsDetails)?.map((addon) => ({
-          // لو الـ عنصر عبارة عن string (id مباشرة) هتاخده، لو object هتاخد الـ id جواه
-          addonsId: typeof addon === "string" ? String(addon) : String(addon.id || ""),
-          status: addon.status || "active",
-        })) || [],
-    };
-  },
-});
+        addonsId:
+          (raw.addonsId || raw.addonsDetails || raw.addon)?.map((addon) => ({
+            addonsId: typeof addon === "string" ? String(addon) : String(addon.id || addon.addonsId || ""),
+            status: addon.status || "active",
+          })) || [],
+      };
+    },
+    enabled: !!id && !state?.foodData,
+  });
 
   const initialData = foodData;
 
@@ -103,17 +101,16 @@ const { data: foodData, isLoading: isFetching } = useQuery({
     return <LoadingSpinner />;
   }
 
- const transformBeforeSubmit = (formData) => {
-  const { addonsId: addonsArr, ...rest } = formData;
-  return {
-    ...rest,
-    allergen_ingredients: Array.isArray(formData.allergen_ingredients)
-      ? serializeAllergens(formData.allergen_ingredients)
-      : formData.allergen_ingredients,
-    // تحويل المصفوفة من Objects إلى مصفوفة Strings (IDs فقط)
-    addonsId: addonsArr?.map((a) => String(a.addonsId || "")).filter(Boolean) || [],
+  const transformBeforeSubmit = (formData) => {
+    const { addonsId: addonsArr, ...rest } = formData;
+    return {
+      ...rest,
+      allergen_ingredients: Array.isArray(formData.allergen_ingredients)
+        ? serializeAllergens(formData.allergen_ingredients)
+        : formData.allergen_ingredients,
+      addonsId: addonsArr?.map((a) => String(a.addonsId || "")).filter(Boolean) || [],
+    };
   };
-};
 
   return (
     <AddPage
@@ -123,7 +120,10 @@ const { data: foodData, isLoading: isFetching } = useQuery({
       fields={[]}
       initialData={initialData}
       transformPayload={transformBeforeSubmit}
-      onSuccessAction={() => navigate("/foods")}
+      onSuccessAction={(res) => {
+        const targetId = String(res?.data?.data?.id || res?.data?.id || res?.id || id);
+        navigate("/foods", { state: { highlightedId: targetId } });
+      }}
     >
       {({ register, control, formState: { errors }, setValue, watch }) => {
         const imagePreview = watch("image");

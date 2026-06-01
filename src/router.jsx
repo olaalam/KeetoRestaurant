@@ -40,7 +40,6 @@ import PaymentMetodAdd from "./Pages/PaymentMetod/PaymentMetodAdd";
 import Transaction from "./Pages/Transaction/Transaction";
 import Order from "./Pages/Order/Order";
 import WalletR from "./Pages/Branches/WalletR";
-
 import IngredientCategory from "./Pages/IngredientCategory/IngredientCategory";
 import IngredientCategoryAdd from "./Pages/IngredientCategory/IngredientCategoryAdd";
 import Ingredients from "./Pages/Ingredients/Ingredients";
@@ -57,7 +56,20 @@ import ImageAdd from "./Pages/Image/ImageAdd";
 import Social from "./Pages/Social/Social";
 import SocialAdd from "./Pages/Social/SocialAdd";
 import Invoice from "./Pages/Invoice/Invoice";
-
+import Profile from "./Pages/Profile/Profile";
+import Discount from "./Pages/Discount/Discount";
+import DiscountAdd from "./Pages/Discount/DiscountAdd";
+import Coupon from "./Pages/Coupon/Coupon";
+import CouponAdd from "./Pages/Coupon/CouponAdd";
+import Rating from "./Pages/Rating/Rating";
+import Popup from "./Pages/Popup/Popup";
+import PopupAdd from "./Pages/Popup/PopupAdd";
+import Slider from "./Pages/Slider/Slider";
+import SliderAdd from "./Pages/Slider/SliderAdd";
+import SettingPage from "./Pages/Setting/Setting";
+import SettingPageAdd from "./Pages/Setting/SettingAdd";
+import Policy from "./Pages/Policy/Policy";
+import PolicyAdd from "./Pages/Policy/PolicyAdd";
 const router = createBrowserRouter([
   {
     path: "/login",
@@ -388,10 +400,87 @@ const router = createBrowserRouter([
       {
         path: "invoice",
         element: <Invoice />,
-      }
-
+      },
+      {
+        path: "profile",
+        element: <Profile />,
+      },
+      {
+        path: "discount",
+        element: <Discount />,
+      },
+      {
+        path: "discount/add",
+        element: <DiscountAdd />,
+      },
+      {
+        path: "discount/edit/:id",
+        element: <DiscountAdd />,
+      },
+      {
+        path: "coupon",
+        element: <Coupon />,
+      },
+      {
+        path: "coupon/add",
+        element: <CouponAdd />,
+      },
+      {
+        path: "coupon/edit/:id",
+        element: <CouponAdd />,
+      },
+      {
+        path: "rating",
+        element: <Rating />,
+      },
+      {
+        path: "popup",
+        element: <Popup />,
+      },
+      {
+        path: "popup/add",
+        element: <PopupAdd />,
+      },
+      {
+        path: "popup/edit/:id",
+        element: <PopupAdd />,
+      },
+      {
+        path: "slider",
+        element: <Slider />,
+      },
+      {
+        path: "slider/add",
+        element: <SliderAdd />,
+      },
+      {
+        path: "slider/edit/:id",
+        element: <SliderAdd />,
+      },
+      {
+        path: "setting",
+        element: <SettingPage/>,
+      },
+      {
+        path: "setting/edit/:id",
+        element: <SettingPageAdd />,
+      },
+            {
+        path: "policy",
+        element: <Policy />,
+      },
+      {
+        path: "policy/add",
+        element: <PolicyAdd />,
+      },
+      {
+        path: "policy/edit/:id",
+        element: <PolicyAdd />,
+      },
     ],
   },
+
+
   {
     path: "*",
     element: <NotFound />,

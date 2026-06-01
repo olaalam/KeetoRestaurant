@@ -1,14 +1,32 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import GenericDataTable from '@/components/GenericDataTable';
 import ViewPermissionsModal from './ViewPermissionsModal';
 import { useQuery } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from "@/hooks/useTranslation";
 import api from '@/api/axios';
 export default function Permission() {
     const navigate = useNavigate();
+    const location = useLocation();
     const { t } = useTranslation();
     const [selectedRole, setSelectedRole] = useState(null);
+        const [highlightedId, setHighlightedId] = useState(null);
+    
+        // 💡 مراقبة ما إذا كنا راجعين من صفحة الحفظ ومعنا المعرف الخاص بالعنصر
+        useEffect(() => {
+            if (location.state?.highlightedId) {
+                setHighlightedId(location.state.highlightedId);
+                
+                // إخفاء الوميض بعد 4 ثوانٍ ليعود الصف لطبيعته
+                const timer = setTimeout(() => {
+                    setHighlightedId(null);
+                    // تفريغ الـ state حتى لا يضيء مجدداً عند عمل ريفريش للصفحة
+                    navigate(location.pathname, { replace: true, state: {} });
+                }, 4000);
+    
+                return () => clearTimeout(timer);
+            }
+        }, [location.state, navigate, location.pathname]);
 
     const { data: roles = [], isLoading } = useQuery({
         queryKey: ['roles'],
@@ -49,6 +67,7 @@ export default function Permission() {
                 editApiUrl="/api/restaurant/roles"
                 onAdd={() => navigate('/permissions/add')}
                 onEdit={(row) => navigate(`/permissions/edit/${row.id}`)}
+                highlightedId={highlightedId}
             />
 
             <ViewPermissionsModal

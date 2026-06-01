@@ -3,34 +3,64 @@ import { useQuery } from '@tanstack/react-query';
 import api from '@/api/axios';
 import GenericDataTable from '@/components/GenericDataTable';
 import { useNavigate } from 'react-router-dom';
-import { MapPin, DollarSign } from "lucide-react";
+import { MapPin } from "lucide-react";
 import { useTranslation } from "@/hooks/useTranslation";
 
 export default function DeliveryZone() {
     const navigate = useNavigate();
-    const { t } = useTranslation();
+    const { t } = useTranslation(); // نأخذ t فقط كما هو معرف داخل الـ hook الخاص بكِ
+
+    // 💡 الحل البديل والأقوى: قراءة اللغة مباشرة من الـ Local Storage الخاص بالتطبيق
+    const getLanguage = () => {
+        try {
+            const keetoLang = localStorage.getItem('keeto-language');
+            if (keetoLang) {
+                const parsed = JSON.parse(keetoLang);
+                return parsed?.state?.language || 'en'; // إذا لم يجدها يجعلها إنجليزية كافتراضي
+            }
+        } catch (e) {
+            console.error("Error parsing language from localStorage", e);
+        }
+        return 'en';
+    };
+
+    // فحص ما إذا كانت اللغة الحالية هي العربية
+    const isArabic = getLanguage() === 'ar';
 
     // 1. جلب بيانات مناطق التوصيل
     const { data: deliveryFees = [], isLoading } = useQuery({
         queryKey: ['DeliveryZone'],
         queryFn: async () => {
             const res = await api.get('/api/restaurant/restaurant-zone-delivery-fees');
-            // بناءً على الـ Response: res.data.data.data
-            return res.data.data.data;
+            return res.data?.data?.data || [];
         }
     });
 
-    // 2. تعريف الأعمدة لتطابق الهيكل الجديد
+    // 2. تعريف الأعمدة لتطابق الهيكل الجديد ودعم اللغات
     const columns = [
+        {
+            accessorKey: 'city.name',
+            header: t('cityname'),
+            // عرض اسم المدينة بناءً على اللغة المختارة
+            cell: ({ row }) => {
+                const city = row.original.city;
+                return <span>{isArabic && city?.nameAr ? city.nameAr : (city?.name || 'N/A')}</span>;
+            }
+        },
         {
             accessorKey: 'zone.name',
             header: t('zoneName'),
-            cell: ({ row }) => (
-                <div className="flex items-center gap-2">
-                    <MapPin size={16} className="text-gray-400" />
-                    <span className="font-medium">{row.original.zone?.name || 'N/A'}</span>
-                </div>
-            )
+            // عرض اسم المنطقة بناءً على اللغة المختارة مع الأيقونة
+            cell: ({ row }) => {
+                const zone = row.original.zone;
+                const zoneName = isArabic && zone?.nameAr ? zone.nameAr : (zone?.name || 'N/A');
+                return (
+                    <div className="flex items-center gap-2">
+                        <MapPin size={16} className="text-gray-400" />
+                        <span className="font-medium">{zoneName}</span>
+                    </div>
+                );
+            }
         },
         {
             accessorKey: 'deliveryFee',
@@ -44,16 +74,8 @@ export default function DeliveryZone() {
         {
             accessorKey: 'status',
             header: t('status'),
-            cell: ({ row }) => (
-                <span className={`px-2 py-1 rounded-full text-xs capitalize ${row.original.status === 'active'
-                    ? 'bg-green-100 text-green-700'
-                    : 'bg-red-100 text-red-700'
-                    }`}>
-                    {t(row.original.status)}
-                </span>
-            )
+            // الجدول العام GenericDataTable سيتولى بناء الـ Switch تلقائياً
         },
-
     ];
 
     return (
@@ -67,7 +89,7 @@ export default function DeliveryZone() {
                 deleteApiUrl="/api/restaurant/restaurant-zone-delivery-fees"
                 editApiUrl="/api/restaurant/restaurant-zone-delivery-fees"
                 onAdd={() => navigate("/delivery-zones/add")}
-                onEdit={(item) => navigate(`/delivery-zones/edit/${item.id}`)}
+                onEdit={(item) => navigate(`/delivery-zones/edit/${item.id}`, { state: { DeliveryZoneData: item } })}
             />
         </div>
     );

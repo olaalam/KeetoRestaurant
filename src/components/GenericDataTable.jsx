@@ -45,26 +45,36 @@ export default function GenericDataTable({
   queryKey,
   isLoading,
   actions = true,
+  highlightedId, 
+  // 💡 تم إضافته هنا كـ Prop يستقبله الجدول لتلوين الصف المعدل
 }) {
   const [globalFilter, setGlobalFilter] = useState("");
   const [deleteId, setDeleteId] = useState(null);
   const navigate = useNavigate();
   const { t, isRTL } = useTranslation();
   const queryClient = useQueryClient();
+  const [pagination, setPagination] = useState({
+    pageIndex: 0,
+    pageSize: 15,
+  });
 
   // 1. Mutation لتحديث الـ Status فوراً عند تغيير السويتش
+// 1. Mutation لتحديث الـ Status فوراً عند تغيير السويتش
   const updateStatusMutation = useMutation({
     mutationFn: async ({ id, newStatus }) => {
-      // إرسال الـ status الجديدة فقط بناءً على الـ API الخاص بكِ
-      // يتم دمج الـ id في الرابط (مثال: /api/restaurant/image/5)
-      return await api.put(`${editApiUrl}/${id}`, { status: newStatus });
+      // 💡 هنا الذكاء: إذا كان الرابط يخص الخصومات، نقوم بتركيبه بالشكل الذي يتوقعه الـ Backend لديكِ
+      const url = editApiUrl.includes("discounts") 
+        ? `${editApiUrl}/${id}/toggle-status` 
+        : `${editApiUrl}/${id}`;
+
+      // نقوم بإرسال الطلب (يمكنك تعديل الـ Body المرسل بناءً على ما يتوقعه الـ API، هنا أرسلنا الحالة الجديدة)
+      return await api.put(url, { status: newStatus });
     },
     onSuccess: () => {
-      // عمل invalidate للـ queryKey عشان الجدول يعمل ريفريش تلقائي بالبيانات الجديدة
       if (queryKey) {
         queryClient.invalidateQueries([queryKey]);
       }
-      toast.success("updateStatusSuccessfully")
+      toast.success("updateStatusSuccessfully");
     },
     onError: (error) => {
       console.error("Failed to update status:", error);
@@ -106,44 +116,42 @@ export default function GenericDataTable({
     ];
 
     // المرور على الأعمدة الممررة وفحص إذا كان هناك عمود باسم status
-columns.forEach((col) => {
-  // نقوم بتحويله إلى Switch فقط إذا كان العمود هو status وتوفر رابط التعديل السريع (editApiUrl)
-  if (col.accessorKey === "status" && editApiUrl) {
-    baseColumns.push({
-      ...col,
-      cell: ({ row }) => {
-        const currentStatus = row.getValue("status");
-        const isActive = currentStatus === "active" || currentStatus === "paid" || currentStatus === true || currentStatus === 1;
-        const rowId = row.original.id;
+    columns.forEach((col) => {
+      if (col.accessorKey === "status" && editApiUrl) {
+        baseColumns.push({
+          ...col,
+          cell: ({ row }) => {
+            const currentStatus = row.getValue("status");
+            const isActive = currentStatus === "active" || currentStatus === "paid" || currentStatus === true || currentStatus === 1;
+            const rowId = row.original.id;
 
-        return (
-          <div className="flex items-center justify-center gap-2">
-            <Switch
-              checked={isActive}
-              disabled={updateStatusMutation.isPending} // تم تعديلها إلى isPending لتوافق الإصدارات الجديدة
-              onCheckedChange={(checked) => {
-                const newStatus = typeof currentStatus === "string" 
-                  ? (currentStatus === "paid" || currentStatus === "unpaid" ? (checked ? "paid" : "unpaid") : (checked ? "active" : "inactive"))
-                  : checked;
+            return (
+              <div className="flex items-center justify-center gap-2">
+                <Switch
+                  checked={isActive}
+                  disabled={updateStatusMutation.isPending}
+                  onCheckedChange={(checked) => {
+                    const newStatus = typeof currentStatus === "string"
+                      ? (currentStatus === "paid" || currentStatus === "unpaid" ? (checked ? "paid" : "unpaid") : (checked ? "active" : "inactive"))
+                      : checked;
 
-                updateStatusMutation.mutate({ id: rowId, newStatus });
-              }}
-            />
-            <span className={cn(
-              "text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded-full",
-              isActive ? "bg-emerald-50 text-emerald-600" : "bg-slate-100 text-slate-500"
+                    updateStatusMutation.mutate({ id: rowId, newStatus });
+                  }}
+                />
+                <span className={cn(
+                  "text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded-full",
+                  isActive ? "bg-emerald-50 text-emerald-600" : "bg-slate-100 text-slate-500"
                 )}>
-              {isActive ? t("active") : t("inactive")}
-            </span>
-          </div>
-        );
+                  {isActive ? t("active") : t("inactive")}
+                </span>
+              </div>
+            );
+          }
+        });
+      } else {
+        baseColumns.push(col);
       }
     });
-  } else {
-    // إذا لم يتوفر editApiUrl (مثل صفحة الأوردرات)، يتم استخدام الـ cell الأصلية الممررة في الـ columns
-    baseColumns.push(col);
-  }
-});
 
     if (actions) {
       baseColumns.push({
@@ -177,13 +185,15 @@ columns.forEach((col) => {
     }
 
     return baseColumns;
-  }, [columns, onEdit, deleteApiUrl, actions, editApiUrl, updateStatusMutation.isLoading]);
+  }, [columns, onEdit, deleteApiUrl, actions, editApiUrl, updateStatusMutation.isPending]);
 
   const table = useReactTable({
     data: sortedData,
     columns: tableColumns,
-    state: { globalFilter },
+    state: { globalFilter, pagination },
     onGlobalFilterChange: setGlobalFilter,
+    onPaginationChange: setPagination,
+    autoResetPageIndex: false, // مدمج لمنع الريسيت لصفحة 1
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
@@ -276,26 +286,36 @@ columns.forEach((col) => {
                   </TableCell>
                 </TableRow>
               ) : table.getRowModel().rows?.length ? (
-                table.getRowModel().rows.map((row) => (
-                  <TableRow
-                    key={row.id}
-                    className="group border-b border-slate-50 dark:border-slate-900 hover:bg-slate-50/40 dark:hover:bg-slate-900/30 transition-colors"
-                  >
-                    {row.getVisibleCells().map((cell) => (
-                      <TableCell 
-                        key={cell.id} 
-                        className="py-4 px-6 align-middle text-sm text-slate-600 dark:text-slate-300 font-medium text-center"
-                      >
-                        <div className="flex items-center justify-center w-full">
-                          {flexRender(
-                            cell.column.columnDef.cell,
-                            cell.getContext(),
-                          )}
-                        </div>
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                ))
+                table.getRowModel().rows.map((row) => {
+                  // 💡 فحص ما إذا كان الصف الحالي هو الصف المعدل لعمل الـ Highlight
+                  const isHighlighted = row.original.id === highlightedId;
+                  
+                  return (
+                    <TableRow
+                      key={row.id}
+                      className={cn(
+                        "group border-b border-slate-50 dark:border-slate-900 transition-all duration-500",
+                        isHighlighted 
+                          ? "bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-100/70 border-l-4 border-l-amber-500 font-semibold" 
+                          : "hover:bg-slate-50/40 dark:hover:bg-slate-900/30"
+                      )}
+                    >
+                      {row.getVisibleCells().map((cell) => (
+                        <TableCell
+                          key={cell.id}
+                          className="py-4 px-6 align-middle text-sm text-slate-600 dark:text-slate-300 font-medium text-center"
+                        >
+                          <div className="flex items-center justify-center w-full">
+                            {flexRender(
+                              cell.column.columnDef.cell,
+                              cell.getContext(),
+                            )}
+                          </div>
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  );
+                })
               ) : (
                 <TableRow>
                   <TableCell
@@ -311,38 +331,56 @@ columns.forEach((col) => {
         </div>
       </div>
 
-      {/* PAGINATION */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
-        <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 order-2 sm:order-1">
-          {t("pageOf")} <span className="text-slate-700 dark:text-slate-300">{table.getState().pagination.pageIndex + 1}</span> {t("of")}{" "}
-          <span className="text-slate-700 dark:text-slate-300">{table.getPageCount()}</span>
-        </p>
+{/* PAGINATION */}
+<div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
+  {/* <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 order-2 sm:order-1">
+    {t("pageOf")} <span className="text-slate-700 dark:text-slate-300">{table.getState().pagination.pageIndex + 1}</span> {t("of")}{" "}
+    <span className="text-slate-700 dark:text-slate-300">{table.getPageCount()}</span>
+  </p> */}
 
-        <div className="flex items-center gap-2 order-1 sm:order-2 w-full sm:w-auto justify-between sm:justify-end">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
-            className="h-9 rounded-xl border-slate-200 hover:bg-slate-50 font-medium text-xs gap-1.5 transition-colors"
-          >
-            {isRTL ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronLeft className="h-3.5 w-3.5" />}
-            <span>{t("prev")}</span>
-          </Button>
+  {/* هنا التعديل: إنشاء مربعات أرقام الصفحات */}
+  <div className="flex items-center  m-auto gap-1.5 order-1 sm:order-2">
+    {/* زر الصفحة السابقة */}
+    <Button
+      variant="outline"
+      size="sm"
+      onClick={() => table.previousPage()}
+      disabled={!table.getCanPreviousPage()}
+      className="h-9 w-9 p-0 rounded-lg border-slate-200"
+    >
+      {isRTL ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+    </Button>
 
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
-            className="h-9 rounded-xl border-slate-200 hover:bg-slate-50 font-medium text-xs gap-1.5 transition-colors"
-          >
-            <span>{t("next")}</span>
-            {isRTL ? <ChevronLeft className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
-          </Button>
-        </div>
-      </div>
+    {/* توليد أرقام الصفحات */}
+    {Array.from({ length: table.getPageCount() }, (_, i) => (
+      <Button
+        key={i}
+        variant={table.getState().pagination.pageIndex === i ? "default" : "outline"}
+        size="sm"
+        onClick={() => table.setPageIndex(i)}
+        className={cn(
+          "h-9 w-9 p-0 rounded-lg border-slate-200 font-semibold text-xs transition-all",
+          table.getState().pagination.pageIndex === i 
+            ? "bg-primary text-white shadow-sm" 
+            : "hover:bg-slate-50"
+        )}
+      >
+        {i + 1}
+      </Button>
+    ))}
 
+    {/* زر الصفحة التالية */}
+    <Button
+      variant="outline"
+      size="sm"
+      onClick={() => table.nextPage()}
+      disabled={!table.getCanNextPage()}
+      className="h-9 w-9 p-0 rounded-lg border-slate-200"
+    >
+      {isRTL ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+    </Button>
+  </div>
+</div>
       {/* DELETE DIALOG */}
       <DeleteDialog
         isOpen={!!deleteId}

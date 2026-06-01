@@ -36,7 +36,7 @@ export default function Layout() {
 
 
 // اسم المطعم أو المستخدم (حسب الحقل المخزن بالـ ستور، هنا نأخذ الـ name الموجود بالصورة)
-const restaurantName = user?.name || "Keeto";
+const restaurantName = user?.restaurantName || "Keeto";
 
 
   const location = useLocation();
@@ -148,6 +148,27 @@ const restaurantName = user?.name || "Keeto";
       setActiveModule(null);
     }
   }, [location.pathname, setActiveModule]);
+// 2. دالة التعامل مع الضغط على الإشعار
+const handleNotificationClick = async (notification) => {
+    // نجيب الـ orderId من جوة الـ data اللي مبعوتة في الإشعار
+    const orderId = notification?.data?.orderId;
+
+    if (orderId) {
+        // توجيه المستخدم لصفحة تفاصيل الأوردر مباشرة
+        navigate(`/orders/details/${orderId}`);
+    }
+
+    // [اختياري ولكنه ممتاز لتجربة المستخدم]: تحويل الإشعار لـ Read عبر الـ API
+    if (!notification.isRead) {
+        try {
+            await api.put(`/api/restaurant/notifications/${notification.id}/read`);
+            // هنا ممكن تعملي invalidate للـ query بتاعة الإشعارات عشان الجرس يتحدث
+            // queryClient.invalidateQueries({ queryKey: ['notifications'] });
+        } catch (error) {
+            console.error("Failed to mark notification as read:", error);
+        }
+    }
+};
 
   return (
     <TooltipProvider delayDuration={0}>
@@ -220,7 +241,7 @@ const restaurantName = user?.name || "Keeto";
                 <LanguageSwitcher />
                 
                 {/* Notification Dropdown */}
-                <DropdownMenu>
+<DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <button className="relative rounded-full p-2 hover:bg-accent transition-colors">
                       <Bell size={24} className="text-slate-600 hover:text-primary transition-colors" />
@@ -257,7 +278,17 @@ const restaurantName = user?.name || "Keeto";
                         notifications.map((notification) => (
                           <div
                             key={notification.id}
-                            className={`p-4 border-b last:border-b-0 flex flex-col gap-1.5 transition-colors ${
+                    
+                            onClick={() => {
+                              const orderId = notification?.data?.orderId;
+                              if (orderId) {
+                                navigate(`/orders/details/${orderId}`);
+                              }
+                              if (!notification.isRead) {
+                                handleMarkAsRead(notification.id);
+                              }
+                            }}
+                            className={`p-4 border-b last:border-b-0 flex flex-col gap-1.5 transition-colors cursor-pointer ${
                               notification.isRead ? 'bg-white hover:bg-slate-50' : 'bg-blue-50/50 hover:bg-blue-50'
                             }`}
                           >
@@ -269,7 +300,7 @@ const restaurantName = user?.name || "Keeto";
                               {!notification.isRead && (
                                 <button
                                   onClick={(e) => {
-                                    e.stopPropagation(); // عشان المنيو متقفلش لو ضغط هنا
+                                    e.stopPropagation(); // يمنع انغلاق القائمة والـ onClick الأساسي للكارت
                                     handleMarkAsRead(notification.id);
                                   }}
                                   className="shrink-0 text-[10px] font-medium bg-blue-100 text-blue-700 px-2 py-1 rounded hover:bg-blue-200 transition-colors"

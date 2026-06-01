@@ -4,14 +4,14 @@ import AddPage from '@/components/AddPage';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/api/axios';
 import LoadingSpinner from '@/components/LoadingSpinner';
-import { useTranslation } from "@/hooks/useTranslation"; // استيراد الهوك
+import { useTranslation } from "@/hooks/useTranslation"; 
 
 const BrancheMenuAdd = () => {
     const { id } = useParams();
     const { state } = useLocation();
-    const { t } = useTranslation(); // تفعيل الهوك
+    const { t } = useTranslation(); 
 
-    // جلب البيانات (Branches & Foods)
+    // جلب البيانات الأساسية (Foods)
     const { data: selectData, isLoading: isSelectDataLoading } = useQuery({
         queryKey: ['branchemenu-select-data'],
         queryFn: async () => {
@@ -32,25 +32,22 @@ const BrancheMenuAdd = () => {
     const rawData = state?.branchemenu || branchemenu;
 
     const initialData = React.useMemo(() => {
-        if (!rawData) return null;
+        if (!rawData) {
+            return {
+                branchId: state?.branchId || "" 
+            };
+        }
         return {
             ...rawData,
-            branchId: rawData.branchId || rawData.branch?.id,
+            // 🌟 الحل الأول: تحويل menuItemId إلى id ليتم تفعيل وضع التعديل (Edit Mode) داخل AddPage تلقائياً
+            id: rawData.menuItemId, 
+            branchId: rawData.branchId || rawData.branch?.id || state?.branchId,
             foodId: rawData.foodId || rawData.food?.id
         };
-    }, [rawData]);
+    }, [rawData, state]);
 
     const brancheMenuFields = [
-        {
-            name: 'branchId',
-            label: t('branch'),
-            required: true,
-            type: 'select',
-            options: (selectData?.branches || []).map(b => ({
-                value: String(b.id),
-                label: b.name
-            }))
-        },
+        // 🧼 قمنا بحذف حقل الـ hidden من هنا تماماً ليبقى شكل الصفحة نظيفاً وبدون وسم Label فارغ
         {
             name: 'foodId',
             label: t('food'),
@@ -85,18 +82,26 @@ const BrancheMenuAdd = () => {
             required: true
         },
     ];
+    
 
     if ((id && isFetching) || isSelectDataLoading) return <LoadingSpinner />;
 
     return (
-        <AddPage
-            title={t("branchMenu")}
-            apiUrl="/api/restaurant/branchemenu"
-            queryKey="branchemenu"
-            fields={brancheMenuFields}
-            initialData={initialData}
-            onSuccessAction={() => window.history.back()}
-        />
+        <div className="container mx-auto py-10">
+            <AddPage
+                title={t("branchMenu")}
+                apiUrl="/api/restaurant/branchemenu"
+                queryKey="branchemenu"
+                fields={brancheMenuFields}
+                initialData={initialData}
+                // 🌟 الحل الثاني: حقن الـ branchId مباشرة في الـ Payload قبل إرساله للباك إند
+                transformPayload={(data) => ({
+                    ...data,
+                    branchId: state?.branchId || initialData?.branchId
+                })}
+                onSuccessAction={() => window.history.back()}
+            />
+        </div>
     );
 };
 

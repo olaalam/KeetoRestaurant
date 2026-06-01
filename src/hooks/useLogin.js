@@ -9,19 +9,30 @@ export const useLogin = () => {
     return useMutation({
         mutationFn: async (credentials) => {
             const { data } = await api.post('/api/restaurant/auth/login', credentials);
-            // لاحظ هنا أن axios بترجع data، والـ API بتاعك جواه برضه data
             return data;
         },
         onSuccess: (res) => {
-            // التعديل هنا: الرد جاي فيه object اسمه data وجواه admin و token
-            const userData = res.data.admin;
-            const token = res.data.token;
+            const userData = res.data?.admin;
+            const token = res.data?.token;
 
-            setLogin(userData, token);
-            toast.success(`Welcome ${userData.name}`);
+            if (userData && token) {
+                setLogin(userData, token);
+                toast.success(`Welcome ${userData.name}`);
+            } else {
+                toast.error('Unexpected response format');
+            }
         },
         onError: (error) => {
-            toast.error(error?.response?.data?.message || 'Error occurred');
+
+            // 💡 استخراج رسالة الخطأ بناءً على الهيكل الراجع من الـ API الخاص بكِ
+            const serverErrorMessage = 
+                error?.response?.data?.error?.message ||  // للتعامل مع { error: { message: "..." } }
+                error?.response?.data?.message ||         // للتعامل مع { message: "..." }
+                error?.message ||                          // رسالة Axios الافتراضية (مثل Network Error)
+                'Invalid Credentials';                     // رسالة احتياطية عامة
+
+            // عرض رسالة الخطأ للمستخدم عبر الـ Toast
+            toast.error(serverErrorMessage);
         },
     });
 };

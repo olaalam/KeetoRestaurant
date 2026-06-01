@@ -11,7 +11,7 @@ const FoodListDialog = ({ restaurantId, isOpen, onClose }) => {
     const { data: foodItems = [], isLoading } = useQuery({
         queryKey: ['restaurant-food', restaurantId],
         queryFn: async () => {
-            const res = await api.get(`/api/restaurant/food/${restaurantId}`);
+            const res = await api.get(`/api/restaurant/branchemenu/${restaurantId}`);
             return res.data?.data?.data || res.data?.data || [];
         },
         enabled: !!restaurantId && isOpen,
@@ -19,7 +19,7 @@ const FoodListDialog = ({ restaurantId, isOpen, onClose }) => {
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+            <DialogContent className="w-full max-h-[80vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>{t('restaurantMenu')}</DialogTitle>
                 </DialogHeader>
@@ -27,7 +27,7 @@ const FoodListDialog = ({ restaurantId, isOpen, onClose }) => {
                 {isLoading ? (
                     <div className="py-10"><LoadingSpinner /></div>
                 ) : foodItems.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                    <div className="grid grid-cols-1  gap-4 mt-4">
                         {foodItems.map((item) => (
                             <div key={item.id} className="flex border rounded-lg p-3 items-center gap-4">
                                 <img
