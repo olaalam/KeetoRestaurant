@@ -24,6 +24,8 @@ export default function SubCategory() {
         { accessorKey: 'category.name', header: 'category' },
         { accessorKey: 'priority', header: 'priority' },
         {accessorKey:'addons',header : "addons"},
+        {accessorKey:'order_level',header : "OrderLevel"},
+
 
         // {
         //     accessorKey: 'status',

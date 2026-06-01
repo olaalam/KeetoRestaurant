@@ -6,59 +6,62 @@ import api from '@/api/axios';
 import LoadingSpinner from '@/components/LoadingSpinner';
 
 const ImageAdd = () => {
-    const { id } = useParams(); // الحصول على الـ id من الـ URL في حالة التعديل
+    const { id } = useParams(); 
     const { state } = useLocation();
+
+    // جلب بيانات الصورة المحددة في حالة التعديل
     const { data: imageData, isLoading: isFetching } = useQuery({
         queryKey: ['image', id],
         queryFn: async () => {
-            const { data } = await api.get(`/api/restaurant/cities/${id}`);
-            console.log(data.data.data);
-            return data.data.data;
+            const { data } = await api.get(`/api/restaurant/image/${id}`);
+            // بناءً على الـ Response اللي أرسلتيه: data.data.data يحمل كائن الصورة
+            return data.data.data; 
         },
-        enabled: !!id && !state?.imageData, // لا يتم التفعيل إلا لو فيه id ومافيش بيانات جاهزة
+        enabled: !!id && !state?.imageData, 
     });
 
     const rawData = state?.imageData || imageData;
 
+    // تجهيز البيانات الابتدائية للفورم وتنظيفها
     const initialData = React.useMemo(() => {
         if (!rawData) return null;
 
+        // هنا بنعمل Destructuring عشان نخرج periorty بره خالص ونمسحها
+        const { periorty, ...restOfData } = rawData;
+
         return {
-            ...rawData,
-            // هنا بنخرج الـ id من جوه كائن الـ country ونحطه في countryId 
-            // عشان الـ AddPage والـ Select يحسوا بيه
-            countryId: rawData.countryId || rawData.country?.id
+            ...restOfData,
+            // نضع القيمة داخل الاسم الصحيح 'priority'
+            periorty: rawData.periorty || periorty 
         };
     }, [rawData]);
-    console.log("Initial Data sent to AddPage:", initialData);
 
-    const cityFields = [
-        { name: 'name', label: 'name', required: true },
-        { name: 'nameAr', label: 'nameAr', required: true },
-        { name: 'nameFr', label: 'nameFr', required: true },
-        {
-            name: 'countryId',
-            label: 'Country',
-            required: true,
-            type: 'select',
-            // التأكد من أن الـ options بتستخدم الـ id والـ name الصح
-            options: countries.map(c => ({
-                value: String(c.id), // تحويل لـ String للضمان
-                label: c.name
-            }))
-        },];
+    // الحقول المطلوبة للفورم
+    const imageFields = [
+        { 
+            name: 'img', 
+            label: 'Image', 
+            type: 'file', 
+            required: !initialData // مش إجباري في التعديل
+        },
+        { 
+            name: 'periorty', 
+            label: 'Priority', 
+            type: 'number', 
+            required: true 
+        }
+    ];
 
-    if ((id && isFetching) || isLoading) return <LoadingSpinner />;
+    if (id && isFetching) return <LoadingSpinner />;
 
     return (
         <AddPage
             title="image"
-            apiUrl="/api/restaurant/cities" // هذا هو الـ Base URL
-            queryKey="cities"
-            fields={cityFields}
-            initialData={initialData} // المكون سيفهم أن هناك id وسينادي useUpdate
+            apiUrl="/api/restaurant/image" 
+            queryKey="images" 
+            fields={imageFields}
+            initialData={initialData} 
             onSuccessAction={() => {
-                // مثلاً الرجوع للخلف أو لجدول المديرين
                 window.history.back();
             }}
         />

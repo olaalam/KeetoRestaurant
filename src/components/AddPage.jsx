@@ -252,7 +252,10 @@ const AddPage = ({
                                     <Input
                                         id={field.name}
                                         type={field.type || 'text'}
-                                        {...register(field.name, { required: field.required })}
+                                       {...register(field.name, { 
+            required: field.required,
+            valueAsNumber: field.type === 'number' // 👈 هذا السطر يجبره على التعامل معه كـ Number
+        })}
                                         className={errors[field.name] ? "border-destructive" : ""}
                                     />
                                 )}

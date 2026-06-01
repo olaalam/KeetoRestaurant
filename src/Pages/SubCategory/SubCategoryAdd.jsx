@@ -34,17 +34,36 @@ const SubCategoryAdd = () => {
     });
 
     const rawData = state?.subcategoryData || subcategoryData;
+const initialData = React.useMemo(() => {
+    if (!rawData) return null;
 
-    const initialData = React.useMemo(() => {
-        if (!rawData) return null;
+    // دالة أمان للتأكد من تحويل الـ addonsIds لمصفوفة حقيقية
+    let parsedAddonsIds = [];
+    if (rawData.addonsIds) {
+        if (Array.isArray(rawData.addonsIds)) {
+            parsedAddonsIds = rawData.addonsIds;
+        } else if (typeof rawData.addonsIds === 'string') {
+            try {
+                parsedAddonsIds = JSON.parse(rawData.addonsIds);
+            } catch (e) {
+                console.error("Error parsing addonsIds:", e);
+                parsedAddonsIds = [];
+            }
+        }
+    }
 
-        return {
-            ...rawData,
-            // هنا بنخرج الـ id من جوه كائن الـ country ونحطه في countryId 
-            // عشان الـ AddPage والـ Select يحسوا بيه
-            categoryId: rawData.categoryId || rawData.category?.id
-        };
-    }, [rawData]);
+    return {
+        ...rawData,
+        // حل مشكلة التصنيف
+        categoryId: rawData.categoryId || rawData.category?.id,
+        
+        // حل مشكلة الأرقام التي تحدثنا عنها سابقاً
+        order_level: rawData.order_level ? Number(rawData.order_level) : 0,
+        
+        // حل مشكلة الـ multi-select (تأمين إرسالها كمصفوفة نصوص)
+        addonsIds: parsedAddonsIds.map(id => String(id)) 
+    };
+}, [rawData]);
 
     const subcategoryFields = [
         { name: 'name', label: 'name', required: true },
