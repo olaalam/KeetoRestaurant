@@ -61,7 +61,7 @@ const SubCategoryAdd = () => {
         {
             name: 'addonsIds',
             label: 'Addons',
-            required: true,
+            required: false,
             type: 'multi-select',
             // التأكد من أن الـ options بتستخدم الـ id والـ name الصح
             options: addons.map(a => ({ value: a.id, label: a.name }))
