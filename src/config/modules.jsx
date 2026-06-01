@@ -94,14 +94,13 @@ export const getModules = (t, orderCounts = {}) => {
           url: "/orders",
           icon: ShoppingBag,
           subItems: [
-            { title: `${t("newOrders")} (${pending})`, url: "/orders", icon: ShoppingBag },
+            { title: `${t("AllOrders")} (${pending})`, url: "/orders", icon: ShoppingBag },
             { title: `${t("pending")} (${pending})`, url: "/orders/pending", icon: Clock },
             { title: `${t("accepted")} (${accepted})`, url: "/orders/accepted", icon: CheckCircle2 },
             { title: `${t("preparing")} (${preparing})`, url: "/orders/preparing", icon: Package },
             { title: `${t("outForDelivery")} (${outDelivery})`, url: "/orders/out-delivery", icon: Truck },
             { title: `${t("delivered")} (${delivered})`, url: "/orders/delivered", icon: CheckCheck },
             { title: `${t("cancelled")} (${cancelled})`, url: "/orders/cancelled", icon: XCircle },
-            { title: `${t("rejected")} (${rejected})`, url: "/orders/rejected", icon: Ban },
             { title: `${t("refund")} (${refund})`, url: "/orders/refunded", icon: Undo2 },
           ],
         },
@@ -122,27 +121,7 @@ export const getModules = (t, orderCounts = {}) => {
     },
   ];
 };
-    name: t("order management"),
-    key: "order",
-    items: [
-      {
-        title: t("orders"),
-        url: "/orders",
-        icon: ShoppingBag,
-        subItems: [
-          { title: t("allOrders"), url: "/orders", icon: ShoppingBag },
-          { title: t("pending"), url: "/orders/pending", icon: Clock },
-          { title: t("accepted"), url: "/orders/accepted", icon: CheckCircle2 },
-          { title: t("preparing"), url: "/orders/preparing", icon: Package },
-          { title: t("outForDelivery"), url: "/orders/out-delivery", icon: Truck },
-          { title: t("delivered"), url: "/orders/delivered", icon: CheckCheck },
-          { title: t("cancelled"), url: "/orders/cancelled", icon: XCircle },
-          { title: t("refund"), url: "/orders/refunded", icon: Undo2 },
-        ],
-      },
-    ],
-  },
-];
+
 
 // التعديل هنا لتجنب الخطأ عند استدعاء modules في أماكن غير الـ Component
 export const modules = getModules((key) => key, { statusCounts: {} });
