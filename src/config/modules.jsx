@@ -83,7 +83,6 @@ export const getModules = (t) => [
           { title: t("outForDelivery"), url: "/orders/out-delivery", icon: Truck },
           { title: t("delivered"), url: "/orders/delivered", icon: CheckCheck },
           { title: t("cancelled"), url: "/orders/cancelled", icon: XCircle },
-          { title: t("rejected"), url: "/orders/rejected", icon: Ban },
           { title: t("refund"), url: "/orders/refunded", icon: Undo2 },
         ],
       },
