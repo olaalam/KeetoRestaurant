@@ -54,6 +54,8 @@ import QR from "./Pages/QR/QR";
 import QRAdd from "./Pages/QR/QRAdd";
 import Image from "./Pages/Image/Image";
 import ImageAdd from "./Pages/Image/ImageAdd";
+import Social from "./Pages/Social/Social";
+import SocialAdd from "./Pages/Social/SocialAdd";
 
 const router = createBrowserRouter([
   {
@@ -361,17 +363,29 @@ const router = createBrowserRouter([
         path: "qr/edit/:id",
         element: <QRAdd />,
       },
-            {
+      {
         path: "image",
         element: <Image />,
       },
       {
         path: "image/add",
-        element: <ImageAdd/>,
+        element: <ImageAdd />,
       },
       {
         path: "image/edit/:id",
         element: <ImageAdd />,
+      },
+      {
+        path: "social",
+        element: <Social />,
+      },
+      {
+        path: "social/add",
+        element: <SocialAdd />,
+      },
+      {
+        path: "social/edit/:id",
+        element: <SocialAdd />,
       },
 
     ],

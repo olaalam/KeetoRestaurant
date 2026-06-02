@@ -153,12 +153,10 @@ const FoodAdd = () => {
               })) || [],
           })) || [],
 
-        addon:
-          raw.addon?.map((a) => ({
-            addonsId: String(a.addonsId || a.id || ""),
-
-            status: a.status || "active",
-          })) || [],
+addonsId: raw.addon?.map((a) => ({
+  addonsId: String(a.addonsId || a.id || ""),
+  status: a.status || "active",
+})) || [],
       };
     },
 
@@ -171,19 +169,19 @@ const FoodAdd = () => {
     return <LoadingSpinner />;
   }
 
-  const transformBeforeSubmit = (formData) => ({
-    ...formData,
-
-    allergen_ingredients: Array.isArray(formData.allergen_ingredients)
-      ? serializeAllergens(formData.allergen_ingredients)
-      : formData.allergen_ingredients,
-
-    addon: formData.addon?.map((a) => ({
-      ...a,
-
-      addonsId: Number(a.addonsId),
-    })),
-  });
+  const transformBeforeSubmit = (formData) => {
+    const { addonsId: addonsArr, ...rest } = formData;
+    return {
+      ...rest,
+      allergen_ingredients: Array.isArray(formData.allergen_ingredients)
+        ? serializeAllergens(formData.allergen_ingredients)
+        : formData.allergen_ingredients,
+      addonsId: addonsArr?.map((a) => ({
+        addonsId: String(a.addonsId),
+        status: a.status,
+      })),
+    };
+  };
 
   return (
     <AddPage
@@ -192,7 +190,7 @@ const FoodAdd = () => {
       queryKey={["foods"]}
       fields={[]}
       initialData={initialData}
-      transformData={transformBeforeSubmit}
+      transformPayload={transformBeforeSubmit}
       onSuccessAction={() => navigate("/foods")}
     >
       {({ register, control, formState: { errors }, setValue, watch }) => {
@@ -943,7 +941,7 @@ const AddonsSection = ({ control, selectOptions }) => {
   const { fields, append, remove } = useFieldArray({
     control,
 
-    name: "addon",
+    name: "addonsId",
   });
 
   return (
@@ -979,7 +977,7 @@ const AddonsSection = ({ control, selectOptions }) => {
               <Label className="text-xs font-semibold">Addon</Label>
 
               <Controller
-                name={`addon.${index}.addonsId`}
+                name={`addonsId.${index}.addonsId`}
                 control={control}
                 rules={{ required: "Please select an addon" }}
                 render={({ field, fieldState }) => (
@@ -1019,7 +1017,7 @@ const AddonsSection = ({ control, selectOptions }) => {
               <Label className="text-xs font-semibold">Status</Label>
 
               <Controller
-                name={`addon.${index}.status`}
+                name={`addonsId.${index}.status`}
                 control={control}
                 defaultValue="active"
                 render={({ field }) => (

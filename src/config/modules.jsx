@@ -87,6 +87,7 @@ export const modules = [
       { title: "MyKeeto Report", url: "/mykeeto", icon: KeetoIcon },
       { title: "QR", url: "/qr", icon: ShoppingBag },
       { title: "Image", url: "/image", icon: ShoppingBag },
+      { title: "SocialMedia", url: "/social", icon: ShoppingBag },
     ],
   },
 ];
