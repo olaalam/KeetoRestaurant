@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import api from '@/api/axios';
 import GenericDataTable from '@/components/GenericDataTable';
 import { useNavigate } from 'react-router-dom';
-import { User, Phone, Eye } from "lucide-react";
+import { User, Phone, Eye, Printer } from "lucide-react"; // استيراد أيقونة الطابعة للـ Invoice
 import { Button } from '@/components/ui/button';
 
 // بنستقبل الـ status كـ Prop
@@ -17,6 +17,35 @@ export default function OrdersList({ status }) {
             return res.data.data.data;
         }
     });
+
+    // دالة جلب وطباعة/تنزيل فاتورة الطلب (Invoice PDF)
+    const handleDownloadInvoice = async (orderId, orderNumber) => {
+        try {
+            // طلب الـ PDF مع تحديد الـ responseType كـ blob لضمان عدم تلف الملف
+            const response = await api.get(`/api/restaurant/order/${orderId}/invoice`, {
+                responseType: 'blob'
+            });
+
+            // تحويل الـ binary الراجع إلى ملف PDF مؤقت
+            const blob = new Blob([response.data], { type: 'application/pdf' });
+            const url = window.URL.createObjectURL(blob);
+
+            // إنشاء رابط تنزيل وهمي والضغط عليه أوتوماتيكياً
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `Invoice-${orderNumber || orderId}.pdf`);
+            document.body.appendChild(link);
+            link.click();
+
+            // تنظيف الذاكرة بعد انتهاء التنزيل
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error("Error fetching invoice PDF:", error);
+            alert("Failed to download invoice. Please try again.");
+        }
+    };
+    
 
     const columns = [
         {
@@ -91,16 +120,30 @@ export default function OrdersList({ status }) {
             header: "Actions",
             cell: ({ row }) => {
                 const orderId = row.original.id;
+                const orderNumber = row.original.orderNumber;
 
                 return (
-                    <div className="flex items-center justify-center">
+                    <div className="flex items-center justify-center gap-2">
+                        {/* زر معاينة تفاصيل الطلب الحالي */}
                         <Button
                             size="sm"
                             variant="ghost"
                             className="hover:bg-primary/10 text-primary"
                             onClick={() => navigate(`/orders/details/${orderId}`)}
+                            title="View Details"
                         >
                             <Eye size={18} />
+                        </Button>
+
+                        {/* زر جلب وطباعة الـ Thermal Invoice الجديد */}
+                        <Button
+                            size="sm"
+                            variant="ghost"
+                            className="hover:bg-emerald-50 text-emerald-600"
+                            onClick={() => handleDownloadInvoice(orderId, orderNumber)}
+                            title="Print Invoice"
+                        >
+                            <Printer size={18} />
                         </Button>
                     </div>
                 );
