@@ -56,6 +56,7 @@ import Image from "./Pages/Image/Image";
 import ImageAdd from "./Pages/Image/ImageAdd";
 import Social from "./Pages/Social/Social";
 import SocialAdd from "./Pages/Social/SocialAdd";
+import Invoice from "./Pages/Invoice/Invoice";
 
 const router = createBrowserRouter([
   {
@@ -387,6 +388,10 @@ const router = createBrowserRouter([
         path: "social/edit/:id",
         element: <SocialAdd />,
       },
+      {
+        path: "invoice",
+        element: <Invoice />,
+      }
 
     ],
   },
