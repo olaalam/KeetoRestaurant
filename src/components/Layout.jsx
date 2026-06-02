@@ -22,7 +22,12 @@ import api from "@/api/axios";
 export default function Layout() {
   const activeModule = useSidebarStore((state) => state.activeModule);
   const setActiveModule = useSidebarStore((state) => state.setActiveModule);
-  const { setLogout } = useAuthStore((state) => state);
+  const { setLogout , user} = useAuthStore((state) => state);
+
+
+// اسم المطعم أو المستخدم (حسب الحقل المخزن بالـ ستور، هنا نأخذ الـ name الموجود بالصورة)
+const restaurantName = user?.name || "Keeto";
+
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -172,9 +177,15 @@ export default function Layout() {
                       </span>
                     </div>
                   ) : (
-                    <span className="font-bold text-lg tracking-tight text-slate-800 dark:text-slate-100">
-                      Home
-                    </span>
+<div className="flex flex-col">
+    <span className="font-bold text-lg tracking-tight text-slate-800 dark:text-slate-100">
+      Home
+    </span>
+    {/* عرض اسم المطعم هنا بخط صغير أسفل كلمة Home */}
+    <span className="text-xs text-muted-foreground font-medium">
+      {restaurantName}
+    </span>
+  </div>
                   )}
                 </div>
               </div>
