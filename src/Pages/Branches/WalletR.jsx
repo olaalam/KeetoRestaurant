@@ -101,10 +101,10 @@ setIsDialogOpen(false);
             return;
         }
         
-        // if (parsedAmount > currentBalance) {
-        //     setErrorMessage(t('insufficientBalance') || 'المبلغ المطلوب أكبر من الرصيد المتاح!');
-        //     return;
-        // }
+        if (parsedAmount > currentBalance) {
+            setErrorMessage(t('insufficientBalance') || 'المبلغ المطلوب أكبر من الرصيد المتاح!');
+            return;
+        }
 
         // تنفيذ الطلب
         withdrawalMutation.mutate(parsedAmount);
@@ -137,7 +137,7 @@ setIsDialogOpen(false);
                 
                 <button
                     onClick={handleOpenDialog}
-                    // disabled={(wallet.balance || 0) <= 0}
+                    disabled={(wallet.balance || 0) <= 0}
                     className="flex items-center justify-center gap-2 px-4 py-2.5 bg-orange-600 hover:bg-orange-700 disabled:bg-slate-300 dark:disabled:bg-slate-800 text-white font-semibold rounded-xl shadow-md shadow-orange-600/10 hover:shadow-orange-700/20 transition-all disabled:shadow-none disabled:cursor-not-allowed text-sm"
                 >
                     <ArrowDownCircle className="h-4 w-4" />
