@@ -3,24 +3,23 @@ import AddPage from '@/components/AddPage';
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { useQuery } from '@tanstack/react-query';
-import { Loader2 } from "lucide-react"; // أيقونة التحميل
+import { Loader2 } from "lucide-react";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export default function PermissionAdd({ initialData }) {
-    // 1. جلب هيكل الوحدات والإجراءات الديناميكي من الـ API
+    const { t } = useTranslation();
+
     const { data: schema, isLoading: isSchemaLoading } = useQuery({
         queryKey: ['permissions-schema'],
         queryFn: async () => {
-            // ⚠️ استبدلي هذا الرابط برابط الـ API الفعلي الخاص بك
             const response = await fetch('/api/restaurant/permissions-list');
             if (!response.ok) throw new Error('Failed to fetch permissions schema');
             return response.json();
         }
     });
 
-    // حالة محلية لتخزين الصلاحيات المحددة
     const [selectedPerms, setSelectedPerms] = useState({});
 
-    // تهيئة البيانات عند التعديل
     useEffect(() => {
         if (initialData?.permissions) {
             const initialState = {};
@@ -48,7 +47,6 @@ export default function PermissionAdd({ initialData }) {
         });
     };
 
-    // زر تحديد الكل (يعتمد الآن على البيانات الديناميكية)
     const handleSelectAll = (checked, setValue) => {
         if (!schema) return;
 
@@ -80,35 +78,32 @@ export default function PermissionAdd({ initialData }) {
         setValue('permissions', formattedPermissions, { shouldDirty: true });
     };
 
-    // عرض مؤشر تحميل أثناء جلب الصلاحيات المتاحة من الـ API
     if (isSchemaLoading) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[400px] text-gray-500">
                 <Loader2 className="w-8 h-8 animate-spin mb-4" />
-                <p>Loading permissions structure...</p>
+                <p>{t('loadingPermissions')}</p>
             </div>
         );
     }
 
-    // استخراج المصفوفات من استجابة الـ API (مع توفير قيم افتراضية لتجنب الأخطاء)
     const availableModules = schema?.modules || [];
     const availableActions = schema?.actions || [];
 
     return (
         <div className="p-6">
             <AddPage
-                title="Role"
+                title={t('roleLabel')}
                 apiUrl="/api/restaurant/roles"
                 queryKey="roles"
                 initialData={initialData}
                 fields={[
-                    { name: 'name', label: 'Role Name', type: 'text', required: true },
-                    { name: 'nameAr', label: 'nameAr', type: 'text', required: true },
-                    { name: 'nameFr', label: 'nameFr', type: 'text', required: true },
+                    { name: 'name', label: t('roleNameLabel'), type: 'text', required: true },
+                    { name: 'nameAr', label: t('nameAr'), type: 'text', required: true },
+                    { name: 'nameFr', label: t('nameFr'), type: 'text', required: true },
                 ]}
             >
                 {({ setValue }) => {
-
                     useEffect(() => {
                         setValue('permissions', initialData?.permissions || []);
                     }, [setValue]);
@@ -121,19 +116,17 @@ export default function PermissionAdd({ initialData }) {
                                     onCheckedChange={(c) => handleSelectAll(c, setValue)}
                                 />
                                 <Label htmlFor="select-all" className="font-bold cursor-pointer">
-                                    Select All Permissions
+                                    {t('selectAllPermissions')}
                                 </Label>
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {/* الاعتماد على المصفوفة الديناميكية للوحدات */}
                                 {availableModules.map(moduleName => (
                                     <div key={moduleName} className="border rounded-lg p-4 bg-white shadow-sm">
                                         <h3 className="font-bold uppercase mb-4 text-gray-800 border-b pb-2">
                                             {moduleName.replace('_', ' ')}
                                         </h3>
                                         <div className="grid grid-cols-2 gap-3">
-                                            {/* الاعتماد على المصفوفة الديناميكية للإجراءات */}
                                             {availableActions.map(action => {
                                                 const isChecked = selectedPerms[moduleName]?.includes(action.value) || false;
                                                 return (

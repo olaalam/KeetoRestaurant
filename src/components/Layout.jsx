@@ -5,7 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AppSidebar } from "./AppSidebar";
 import useSidebarStore from "@/store/useSidebarStore";
 import useAuthStore from "@/store/useAuthStore";
-import { LogOut, ChevronLeft, UserCircle2, Bell } from "lucide-react";
+import { LogOut, ChevronLeft, ChevronRight, UserCircle2, Bell } from "lucide-react";
 
 import {
   DropdownMenu,
@@ -18,11 +18,21 @@ import { useGet } from "@/hooks/useGet";
 import { useUpdate } from "@/hooks/useUpdate";
 import { useQuery } from "@tanstack/react-query";
 import api from "@/api/axios";
+import LanguageSwitcher from "./LanguageSwitcher";
+import { useTranslation } from "@/hooks/useTranslation";
+import { getModules } from "@/config/modules";
 
 export default function Layout() {
-  const activeModule = useSidebarStore((state) => state.activeModule);
+  const storedModule = useSidebarStore((state) => state.activeModule);
   const setActiveModule = useSidebarStore((state) => state.setActiveModule);
   const { setLogout , user} = useAuthStore((state) => state);
+  const { t, isRTL } = useTranslation();
+
+  // نجيب الـ module بالترجمة الحالية
+  const translatedModules = getModules(t);
+  const activeModule = storedModule
+    ? translatedModules.find((m) => m.key === storedModule.key) || storedModule
+    : null;
 
 
 // اسم المطعم أو المستخدم (حسب الحقل المخزن بالـ ستور، هنا نأخذ الـ name الموجود بالصورة)
@@ -141,8 +151,8 @@ const restaurantName = user?.name || "Keeto";
 
   return (
     <TooltipProvider delayDuration={0}>
-      <SidebarProvider>
-        {activeModule && <AppSidebar />}
+      <SidebarProvider dir={isRTL ? "rtl" : "ltr"}>
+        {activeModule && <AppSidebar side={isRTL ? "right" : "left"} />}
 
         <main className="relative flex flex-col flex-1 min-w-0 max-h-screen overflow-hidden bg-background">
           <header className="flex-none sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -164,10 +174,17 @@ const restaurantName = user?.name || "Keeto";
                         className="p-1.5 rounded-md hover:bg-accent shrink-0 transition-colors group/back"
                         title="Go back"
                       >
-                        <ChevronLeft
-                          size={18}
-                          className="text-muted-foreground group-hover/back:text-primary transition-transform group-hover/back:-translate-x-0.5"
-                        />
+                        {isRTL ? (
+                          <ChevronRight
+                            size={18}
+                            className="text-muted-foreground group-hover/back:text-primary transition-transform group-hover/back:translate-x-0.5"
+                          />
+                        ) : (
+                          <ChevronLeft
+                            size={18}
+                            className="text-muted-foreground group-hover/back:text-primary transition-transform group-hover/back:-translate-x-0.5"
+                          />
+                        )}
                       </button>
 
                       <div className="h-4 w-[1px] bg-border shrink-0" />
@@ -179,9 +196,8 @@ const restaurantName = user?.name || "Keeto";
                   ) : (
 <div className="flex flex-col">
     <span className="font-bold text-lg tracking-tight text-slate-800 dark:text-slate-100">
-      Home
+      {t("home")}
     </span>
-    {/* عرض اسم المطعم هنا بخط صغير أسفل كلمة Home */}
     <span className="text-xs text-muted-foreground font-medium">
       {restaurantName}
     </span>
@@ -199,6 +215,9 @@ const restaurantName = user?.name || "Keeto";
 
               {/* Right Section: Notifications & Profile */}
               <div className="flex items-center gap-3">
+
+                {/* Language Switcher */}
+                <LanguageSwitcher />
                 
                 {/* Notification Dropdown */}
                 <DropdownMenu>
@@ -218,22 +237,22 @@ const restaurantName = user?.name || "Keeto";
                   <DropdownMenuContent align="end" className="w-80 md:w-96 rounded-xl p-0 shadow-lg">
                     {/* هيدر قائمة الإشعارات */}
                     <div className="flex items-center justify-between px-4 py-3 border-b bg-slate-50/50 rounded-t-xl">
-                      <span className="font-semibold text-slate-800">Notifications</span>
+                      <span className="font-semibold text-slate-800">{t("notifications")}</span>
                       <button
                         onClick={handleMarkAllRead}
                         disabled={isMarkingAll || unreadCount === 0}
                         className="text-xs font-medium text-blue-600 hover:text-blue-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                       >
-                        {isMarkingAll ? 'Updating...' : 'Mark all as read'}
+                        {isMarkingAll ? t("updating") : t("markAllRead")}
                       </button>
                     </div>
 
                     {/* قائمة الإشعارات القابلة للتمرير */}
                     <div className="max-h-[400px] overflow-y-auto">
                       {isLoadingNotifications ? (
-                        <div className="p-8 text-center text-sm text-slate-500">Loading notifications...</div>
+                        <div className="p-8 text-center text-sm text-slate-500">{t("loadingNotifications")}</div>
                       ) : notifications.length === 0 ? (
-                        <div className="p-8 text-center text-sm text-slate-500">No notifications yet.</div>
+                        <div className="p-8 text-center text-sm text-slate-500">{t("noNotifications")}</div>
                       ) : (
                         notifications.map((notification) => (
                           <div
@@ -255,7 +274,7 @@ const restaurantName = user?.name || "Keeto";
                                   }}
                                   className="shrink-0 text-[10px] font-medium bg-blue-100 text-blue-700 px-2 py-1 rounded hover:bg-blue-200 transition-colors"
                                 >
-                                  Mark read
+                                  {t("markRead")}
                                 </button>
                               )}
                             </div>
@@ -294,7 +313,7 @@ const restaurantName = user?.name || "Keeto";
                       className="cursor-pointer flex items-center gap-2"
                     >
                       <UserCircle2 size={16} />
-                      <span>Profile</span>
+                      <span>{t("profile")}</span>
                     </DropdownMenuItem>
 
                     <DropdownMenuItem
@@ -302,7 +321,7 @@ const restaurantName = user?.name || "Keeto";
                       className="cursor-pointer flex items-center gap-2 text-red-600 focus:text-red-600"
                     >
                       <LogOut size={16} />
-                      <span>Log out</span>
+                      <span>{t("logout")}</span>
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>

@@ -4,13 +4,15 @@ import { useQuery } from '@tanstack/react-query';
 import api from '@/api/axios';
 import AddPage from '@/components/AddPage';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import { useTranslation } from "@/hooks/useTranslation"; // استيراد هوك الترجمة
 
 const AddonsAdd = () => {
     const { id } = useParams();
     const { state } = useLocation();
     const navigate = useNavigate();
+    const { t } = useTranslation(); // تفعيل الهوك
 
-    // 1. Fetch select data (restaurants and categories)
+    // 1. Fetch select data (categories)
     const { data: selectData } = useQuery({
         queryKey: ['addonsSelectData'],
         queryFn: async () => {
@@ -19,7 +21,6 @@ const AddonsAdd = () => {
         }
     });
 
-   // const restaurants = selectData?.allRestaurants || [];
     const categories = selectData?.allAddons || [];
 
     // 3. Fetch addon data if editing
@@ -34,34 +35,26 @@ const AddonsAdd = () => {
 
     const initialData = state?.addonData || addonData;
 
+    // تم تمرير الـ labels عبر دالة الـ t() لتدعم اللغتين فوراً
     const fields = [
-        { name: 'name', label: 'Addon Name', required: true },
-        { name: 'nameAr', label: 'Addon Name (Arabic)', required: true },
-        { name: 'nameFr', label: 'Addon Name (Franko)', required: true },
-        { name: 'price', label: 'Price', type: 'number', required: true },
+        { name: 'name', label: t('addonName'), required: true },
+        { name: 'nameAr', label: t('addonNameAr'), required: true },
+        { name: 'nameFr', label: t('addonNameFr'), required: true },
+        { name: 'price', label: t('price'), type: 'number', required: true },
         {
             name: 'stock_type',
-            label: 'Stock Type',
+            label: t('stockType'),
             type: 'select',
             required: true,
             options: [
-                { label: 'Unlimited', value: 'unlimited' },
-                { label: 'Limited', value: 'limited' },
-                { label: 'Daily', value: 'daily' },
+                { label: t('unlimited'), value: 'unlimited' },
+                { label: t('limited'), value: 'limited' },
+                { label: t('daily'), value: 'daily' },
             ]
         },
-        /* {
-            name: 'restaurantid',
-            label: 'Restaurant',
-            type: 'select',
-            required: true,
-            options: Array.isArray(restaurants)
-                ? restaurants.map(r => ({ label: r.name, value: r.id }))
-                : []
-        }, */
         {
             name: 'adonescategoryid',
-            label: 'Addon Category',
+            label: t('addonCategory'),
             type: 'select',
             required: true,
             options: Array.isArray(categories)
@@ -74,7 +67,7 @@ const AddonsAdd = () => {
 
     return (
         <AddPage
-            title="Modifier"
+            title={t('modifier')}
             apiUrl="/api/restaurant/addons"
             queryKey="addons"
             fields={fields}

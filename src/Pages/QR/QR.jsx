@@ -3,22 +3,24 @@ import { useQuery } from '@tanstack/react-query';
 import api from '@/api/axios';
 import GenericDataTable from '@/components/GenericDataTable';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from "@/hooks/useTranslation"; // استيراد هوك الترجمة
 
 export default function QR() {
     const navigate = useNavigate();
+    const { t } = useTranslation(); // تفعيل الهوك
 
     const { data: qr = [], isLoading } = useQuery({
         queryKey: ['qr'],
         queryFn: async () => {
             const res = await api.get('/api/restaurant/restQR');
-            return res.data.data.data; // بناءً على هيكل الـ Response الخاص بكِ
+            return res.data.data.data;
         }
     });
 
     const columns = [
         {
-            accessorKey: "qrCodeImg", // التأكد من مطابقة الاسم الراجع من الـ API (حرف I كبير)
-            header: "qrCodeImg",
+            accessorKey: "qrCodeImg",
+            header: t("qrCodeImage"), // ترجمة عنوان العمود
             cell: ({ row }) => {
                 const imageStr = row.getValue("qrCodeImg");
                 return (
@@ -26,36 +28,30 @@ export default function QR() {
                         {imageStr ? (
                             <img
                                 src={imageStr}
-                                alt="category"
+                                alt="QR Code"
                                 className="w-full h-full object-cover"
                             />
                         ) : (
                             <div className="flex items-center justify-center h-full text-[10px] text-gray-400">
-                                No Image
+                                {t("noImage")} {/* نص عند عدم وجود صورة */}
                             </div>
                         )}
                     </div>
                 );
             },
         },
-        // {
-        //     accessorKey: "restaurantid",
-        //     header: "ID",
-        // },
-
     ];
 
     return (
         <div className="container mx-auto py-10">
             <GenericDataTable
-                title="qr"
+                title={t("qrCode")} // عنوان الجدول معرب ومترجم
                 columns={columns}
                 data={qr}
                 isLoading={isLoading}
                 queryKey="qr"
                 deleteApiUrl="/api/restaurant/restQR"
                 onAdd={() => navigate("/qr/add")}
-                
             />
         </div>
     );

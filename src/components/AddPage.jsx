@@ -2,8 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form'; 
 import { usePost } from '@/hooks/usePost';
 import { useUpdate } from '@/hooks/useUpdate';
-
-// استيراد مكونات Shadcn
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,11 +9,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Loader2, Save, Check, ChevronsUpDown } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-
-// استيراد مكونات الـ Combobox الجديدة (Popover + Command)
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "@/hooks/useTranslation";
 
 const AddPage = ({
     title,
@@ -35,8 +32,7 @@ const AddPage = ({
     const { control, handleSubmit, register, reset, formState: { errors } } = formMethods;
     const postMutation = usePost(apiUrl, 'post', queryKey);
     const updateMutation = useUpdate(apiUrl, queryKey);
-    
-    // حالة لتتبع أي القوائم المنسدلة للـ combobox مفتوحة حالياً بناءً على اسم الحقل
+    const { t } = useTranslation();
     const [openCombobox, setOpenCombobox] = useState({});
 
     const toBase64 = (file) => new Promise((resolve, reject) => {
@@ -82,10 +78,10 @@ const AddPage = ({
         <Card className="mx-auto shadow-lg border-none">
             <CardHeader className="space-y-1">
                 <CardTitle className="text-2xl font-bold tracking-tight text-capitalize">
-                    {isEdit ? `Edit ${title}` : `Add ${title}`}
+                    {isEdit ? `${t("editTitle")} ${title}` : `${t("addTitle")} ${title}`}
                 </CardTitle>
                 <CardDescription>
-                    Please fill the following data, the marked fields are required.
+                    {t("fillRequired")}
                 </CardDescription>
             </CardHeader>
             <CardContent>
@@ -129,19 +125,19 @@ const AddPage = ({
                                                     >
                                                         {stringVal
                                                             ? field.options?.find((option) => String(option.value) === stringVal)?.label
-                                                            : `Select ${field.label}...`}
+                                                            : `${t("selectField")} ${field.label}...`}
                                                         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                                     </Button>
                                                 </PopoverTrigger>
                                                 <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0 PopoverContent" align="start">
                                                     <Command shouldFilter={false}>
                                                         <CommandInput
-                                                            placeholder={`Search ${field.label}...`}
+                                                            placeholder={`${t("searchField")} ${field.label}...`}
                                                             value={searchVal}
                                                             onValueChange={setSearchVal}
                                                         />
                                                         <CommandList>
-                                                            <CommandEmpty>No results found.</CommandEmpty>
+                                                            <CommandEmpty>{t("noResultsFound")}</CommandEmpty>
                                                             <CommandGroup>
                                                                 {filteredOptions?.map((option) => (
                                                                     <CommandItem
@@ -191,7 +187,7 @@ const AddPage = ({
                                                 <div className="space-y-2">
                                                     <Select onValueChange={handleToggleOption} value="">
                                                         <SelectTrigger className={errors[field.name] ? "border-destructive w-full" : "w-full"}>
-                                                            <SelectValue placeholder={`Select ${field.label}...`} />
+                                                        <SelectValue placeholder={`${t("selectField")} ${field.label}...`} />
                                                         </SelectTrigger>
                                                         <SelectContent>
                                                             {field.options?.map((option) => {
@@ -270,7 +266,7 @@ const AddPage = ({
                                                             className="w-full h-full object-cover"
                                                         />
                                                         <div className="absolute top-0 right-0 bg-primary text-white text-[10px] px-2 py-1">
-                                                            Current
+                                                            {t("currentImage")}
                                                         </div>
                                                     </div>
                                                 )}
@@ -301,7 +297,7 @@ const AddPage = ({
                                     />
                                 )}
 
-                                {errors[field.name] && <p className="text-destructive text-xs">Required</p>}
+                                {errors[field.name] && <p className="text-destructive text-xs">{t("required")}</p>}
                             </div>
                         ))}
                         {children && (
@@ -316,9 +312,9 @@ const AddPage = ({
                     <div className="flex items-center justify-end gap-4 pt-4 border-t">
                         <Button type="submit" disabled={isLoading} className="w-full md:w-32">
                             {isLoading ? (
-                                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> saving...</>
+                                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> {t("savingBtn")}</>
                             ) : (
-                                <><Save className="mr-2 h-4 w-4" /> {isEdit ? 'update' : 'save'}</>
+                                <><Save className="mr-2 h-4 w-4" /> {isEdit ? t("updateBtn") : t("saveBtn")}</>
                             )}
                         </Button>
                     </div>

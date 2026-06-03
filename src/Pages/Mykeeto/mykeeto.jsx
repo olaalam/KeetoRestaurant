@@ -7,9 +7,11 @@ import {
   ShoppingBag, Landmark, Percent, DollarSign, 
   TrendingUp, CreditCard, Utensils, Globe, AlertTriangle
 } from "lucide-react";
+import { useTranslation } from "@/hooks/useTranslation"; // استيراد الهوك
 
 export default function DetailedFinancialReport() {
   const { startDate, endDate } = useParams();
+  const { t } = useTranslation(); // تفعيل الهوك
 
   // 1. جلب تقرير المطعم المالي التفصيلي من الـ API
   const { data: reportData, isLoading } = useQuery({
@@ -30,25 +32,25 @@ export default function DetailedFinancialReport() {
   // 2. تحضير الكروت المالية العلوية الأساسية
   const statsCards = [
     {
-      title: "Grand Total Sales",
-      value: `${financials?.totalRevenue ?? "0.00"} E£`,
+      title: t("grandTotalSales"),
+      value: `${financials?.totalRevenue ?? "0.00"} ${t("currency")}`,
       icon: ShoppingBag,
       bgIcon: "bg-orange-100 text-orange-600",
     },
     {
-      title: "Delivered Revenue",
-      value: `${financials?.deliveredRevenue ?? "0.00"} E£`,
+      title: t("deliveredRevenue"),
+      value: `${financials?.deliveredRevenue ?? "0.00"} ${t("currency")}`,
       icon: DollarSign,
       bgIcon: "bg-green-100 text-green-600",
     },
     {
-      title: "App Commission (Keeto)",
-      value: `${financials?.totalAppCommission ?? "0.00"} E£`,
+      title: t("appCommissionKeeto"),
+      value: `${financials?.totalAppCommission ?? "0.00"} ${t("currency")}`,
       icon: Percent,
       bgIcon: "bg-rose-100 text-rose-600",
     },
     {
-      title: "Total Orders Count",
+      title: t("totalOrdersCount"),
       value: overview?.totalOrders ?? 0,
       icon: Landmark,
       bgIcon: "bg-blue-100 text-blue-600",
@@ -59,62 +61,62 @@ export default function DetailedFinancialReport() {
   const branchColumns = [
     {
       accessorKey: "branchName",
-      header: "Branch Name",
-      cell: ({ row }) => <div className="font-bold text-slate-800">{row.getValue("branchName") || "N/A"}</div>,
+      header: t("branchName"),
+      cell: ({ row }) => <div className="font-bold text-slate-800">{row.getValue("branchName") || t("na")}</div>,
     },
     {
       accessorKey: "totalOrders",
-      header: "Total Orders",
+      header: t("totalOrders"),
       cell: ({ row }) => <span className="font-medium font-mono">{row.getValue("totalOrders") ?? 0}</span>,
     },
     {
       accessorKey: "deliveredOrders",
-      header: "Delivered Orders",
+      header: t("deliveredOrders"),
       cell: ({ row }) => <span className="font-medium text-green-600 font-mono">{row.getValue("deliveredOrders") ?? 0}</span>,
     },
     {
       accessorKey: "cancelledOrders",
-      header: "Cancelled Orders",
+      header: t("cancelledOrders"),
       cell: ({ row }) => <span className="font-medium text-rose-600 font-mono">{row.getValue("cancelledOrders") ?? 0}</span>,
     },
     {
       accessorKey: "totalAmount",
-      header: "Total Volume",
-      cell: ({ row }) => <span className="font-semibold text-slate-700 font-mono">{row.getValue("totalAmount")} E£</span>,
+      header: t("totalVolume"),
+      cell: ({ row }) => <span className="font-semibold text-slate-700 font-mono">{row.getValue("totalAmount")} {t("currency")}</span>,
     },
     {
       accessorKey: "deliveredAmount",
-      header: "Delivered Revenue",
-      cell: ({ row }) => <span className="font-bold text-emerald-600 font-mono">{row.getValue("deliveredAmount")} E£</span>,
+      header: t("deliveredRevenue"),
+      cell: ({ row }) => <span className="font-bold text-emerald-600 font-mono">{row.getValue("deliveredAmount")} {t("currency")}</span>,
     },
   ];
 
   // 4. بناء أعمدة الجداول الصغيرة التحليلية (لحالة الطلب، الدفع، المصدر، والنوع)
   const breakdownColumns = [
     {
-      accessorKey: "typeLabel", // حقل وهمي سنقوم بدمجه ديناميكياً بناءً على نوع الجدول
-      header: "Category",
-      cell: ({ row }) => <span className="font-semibold text-slate-700 capitalize">{row.getValue("typeLabel")}</span>,
+      accessorKey: "typeLabel", 
+      header: t("category"),
+      cell: ({ row }) => <span className="font-semibold text-slate-700 capitalize">{t(row.getValue("typeLabel"))}</span>,
     },
     {
       accessorKey: "count",
-      header: "Orders Count",
+      header: t("ordersCount"),
       cell: ({ row }) => <span className="font-medium font-mono">{row.getValue("count") ?? 0}</span>,
     },
     {
       accessorKey: "totalAmount",
-      header: "Total Amount",
-      cell: ({ row }) => <span className="font-bold text-slate-950 font-mono">{row.getValue("totalAmount") ?? "0.00"} E£</span>,
+      header: t("totalAmount"),
+      cell: ({ row }) => <span className="font-bold text-slate-950 font-mono">{row.getValue("totalAmount") ?? "0.00"} {t("currency")}</span>,
     },
   ];
 
   // تحضير البيانات الفرعية وتوحيد مسمى حقل الفئة (Category) لتتناسب مع الـ breakdownColumns
-  const ordersByStatusData = reportData?.ordersByStatus?.map(item => ({ ...item, typeLabel: item.status.replace(/_/g, ' ') })) || [];
-  const ordersByPaymentData = reportData?.ordersByPayment?.map(item => ({ ...item, typeLabel: item.paymentMethod.replace(/_/g, ' ') })) || [];
-  const ordersByTypeData = reportData?.ordersByType?.map(item => ({ ...item, typeLabel: item.orderType.replace(/_/g, ' ') })) || [];
-  const ordersBySourceData = reportData?.ordersBySource?.map(item => ({ ...item, typeLabel: item.orderSource.replace(/_/g, ' ') })) || [];
+  const ordersByStatusData = reportData?.ordersByStatus?.map(item => ({ ...item, typeLabel: item.status })) || [];
+  const ordersByPaymentData = reportData?.ordersByPayment?.map(item => ({ ...item, typeLabel: item.paymentMethod })) || [];
+  const ordersByTypeData = reportData?.ordersByType?.map(item => ({ ...item, typeLabel: item.orderType })) || [];
+  const ordersBySourceData = reportData?.ordersBySource?.map(item => ({ ...item, typeLabel: item.orderSource })) || [];
 
-  // فحص ما إذا كان صافي الربح سالباً أم موجباً لتغيير اللون تبعا للـ JSON المرفق (صافي الربح فيه سالب -163.50)
+  // فحص ما إذا كان صافي الربح سالباً أم موجباً لتغيير اللون
   const isNetNegative = parseFloat(financials?.netRevenue || "0") < 0;
 
   return (
@@ -131,18 +133,18 @@ export default function DetailedFinancialReport() {
             />
           )}
           <div>
-            <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Detailed Financial Report</h1>
+            <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">{t("detailedFinancialReport")}</h1>
             <p className="text-sm text-slate-500 font-medium">
-              Reviewing complete analytics for <span className="text-slate-800 font-bold">{restaurantInfo?.name || "your restaurant"}</span>
+              {t("reviewingAnalyticsFor")} <span className="text-slate-800 font-bold">{restaurantInfo?.name || t("yourRestaurant")}</span>
             </p>
           </div>
         </div>
         
         {/* شارة حالة المطعم */}
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-slate-400">Status:</span>
+          <span className="text-sm font-medium text-slate-400">{t("status")}:</span>
           <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${restaurantInfo?.status === 'active' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
-            {restaurantInfo?.status || "Unknown"}
+            {restaurantInfo?.status ? t(restaurantInfo.status) : t("unknown")}
           </span>
         </div>
       </div>
@@ -169,42 +171,42 @@ export default function DetailedFinancialReport() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-3">
           <h3 className="text-sm font-bold text-slate-700 flex items-center gap-2">
-            <TrendingUp className="w-4 h-4 text-slate-500" /> Additional Financial Metrics
+            <TrendingUp className="w-4 h-4 text-slate-500" /> {t("additionalFinancialMetrics")}
           </h3>
           <div className="divide-y text-sm">
-            <div className="flex justify-between py-2"><span className="text-slate-500">Subtotal</span><span className="font-semibold font-mono">{financials?.totalSubtotal ?? "0.00"} E£</span></div>
-            <div className="flex justify-between py-2"><span className="text-slate-500">Delivery Fees</span><span className="font-semibold font-mono">{financials?.totalDeliveryFees ?? "0.00"} E£</span></div>
-            <div className="flex justify-between py-2"><span className="text-slate-500">Service Fees</span><span className="font-semibold font-mono">{financials?.totalServiceFees ?? "0.00"} E£</span></div>
+            <div className="flex justify-between py-2"><span className="text-slate-500">{t("subtotal")}</span><span className="font-semibold font-mono">{financials?.totalSubtotal ?? "0.00"} {t("currency")}</span></div>
+            <div className="flex justify-between py-2"><span className="text-slate-500">{t("deliveryFees")}</span><span className="font-semibold font-mono">{financials?.totalDeliveryFees ?? "0.00"} {t("currency")}</span></div>
+            <div className="flex justify-between py-2"><span className="text-slate-500">{t("serviceFees")}</span><span className="font-semibold font-mono">{financials?.totalServiceFees ?? "0.00"} {t("currency")}</span></div>
           </div>
         </div>
 
         <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-3">
           <h3 className="text-sm font-bold text-slate-700 flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 text-slate-500" /> Operational Overview
+            <AlertTriangle className="w-4 h-4 text-slate-500" /> {t("operationalOverview")}
           </h3>
           <div className="divide-y text-sm">
-            <div className="flex justify-between py-2"><span className="text-slate-500">Avg Order Value</span><span className="font-semibold font-mono">{overview?.avgOrderValue ?? "0.00"} E£</span></div>
-            <div className="flex justify-between py-2"><span className="text-slate-500">Cancellation Rate</span><span className="font-semibold text-rose-600 font-mono">{overview?.cancellationRate ?? "0%"}</span></div>
-            <div className="flex justify-between py-2"><span className="text-slate-500">Cancelled Orders</span><span className="font-semibold text-rose-600 font-mono">{overview?.cancelledOrders ?? 0}</span></div>
+            <div className="flex justify-between py-2"><span className="text-slate-500">{t("avgOrderValue")}</span><span className="font-semibold font-mono">{overview?.avgOrderValue ?? "0.00"} {t("currency")}</span></div>
+            <div className="flex justify-between py-2"><span className="text-slate-500">{t("cancellationRate")}</span><span className="font-semibold text-rose-600 font-mono">{overview?.cancellationRate ?? "0%"}</span></div>
+            <div className="flex justify-between py-2"><span className="text-slate-500">{t("cancelledOrders")}</span><span className="font-semibold text-rose-600 font-mono">{overview?.cancelledOrders ?? 0}</span></div>
           </div>
         </div>
 
         {/* كارت صافي الربح الملون ديناميكياً */}
         <div className={`border rounded-2xl p-5 flex flex-col justify-center items-center text-center shadow-sm ${isNetNegative ? 'bg-rose-50/60 border-rose-200' : 'bg-emerald-50/60 border-emerald-200'}`}>
-          <p className={`text-xs font-bold uppercase tracking-wider ${isNetNegative ? 'text-rose-600' : 'text-emerald-600'}`}>Net Revenue (After Commission)</p>
+          <p className={`text-xs font-bold uppercase tracking-wider ${isNetNegative ? 'text-rose-600' : 'text-emerald-600'}`}>{t("netRevenueAfterCommission")}</p>
           <h2 className={`text-3xl font-black mt-2 font-mono ${isNetNegative ? 'text-rose-700' : 'text-emerald-700'}`}>
-            {financials?.netRevenue ?? "0.00"} E£
+            {financials?.netRevenue ?? "0.00"} {t("currency")}
           </h2>
-          <p className="text-xs text-slate-400 mt-1">Total revenue minus app commission & expenses</p>
+          <p className="text-xs text-slate-400 mt-1">{t("netRevenueDescription")}</p>
         </div>
       </div>
 
-      {/* 7. المحور الجديد: شبكة الجداول التحليلية المتقدمة المصاحبة للـ Response */}
+      {/* 7. شبكة الجداول التحليلية المتقدمة */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
         {/* جدول الطلبات بحسب الحالة */}
         <GenericDataTable
-          title="Orders by Status"
+          title={t("ordersByStatus")}
           columns={breakdownColumns}
           data={ordersByStatusData}
           isLoading={isLoading}
@@ -215,7 +217,7 @@ export default function DetailedFinancialReport() {
 
         {/* جدول الطلبات بحسب طريقة الدفع */}
         <GenericDataTable
-          title="Orders by Payment Method"
+          title={t("ordersByPaymentMethod")}
           columns={breakdownColumns}
           data={ordersByPaymentData}
           isLoading={isLoading}
@@ -226,7 +228,7 @@ export default function DetailedFinancialReport() {
 
         {/* جدول الطلبات بحسب نوع الطلب */}
         <GenericDataTable
-          title="Orders by Type"
+          title={t("ordersByType")}
           columns={breakdownColumns}
           data={ordersByTypeData}
           isLoading={isLoading}
@@ -237,7 +239,7 @@ export default function DetailedFinancialReport() {
 
         {/* جدول الطلبات بحسب مصدر الطلب */}
         <GenericDataTable
-          title="Orders by Source"
+          title={t("ordersBySource")}
           columns={breakdownColumns}
           data={ordersBySourceData}
           isLoading={isLoading}
@@ -248,10 +250,10 @@ export default function DetailedFinancialReport() {
 
       </div>
 
-      {/* 8. جدول تفاصيل الفروع التابع للمطعم (الأساسي) */}
+      {/* 8. جدول تفاصيل الفروع */}
       <div className="pt-4">
         <GenericDataTable
-          title="Branches Performance Breakdown"
+          title={t("branchesPerformanceBreakdown")}
           columns={branchColumns}
           data={reportData?.branchBreakdown || []}
           isLoading={isLoading}

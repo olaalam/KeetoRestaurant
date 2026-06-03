@@ -23,14 +23,22 @@ import {
   ChevronRight,
   Home,
 } from "lucide-react";
+import { useTranslation } from "@/hooks/useTranslation";
+import { getModules } from "@/config/modules";
 
-export function AppSidebar() {
+export function AppSidebar({ side = "left" }) {
   const { open } = useSidebar();
   const location = useLocation();
-
-  const activeModule = useSidebarStore((s) => s.activeModule);
+  const storedModule = useSidebarStore((s) => s.activeModule);
   const navigate = useNavigate();
   const [openMenus, setOpenMenus] = useState([]);
+  const { t } = useTranslation();
+
+  // نجيب الـ module بالترجمة الحالية بناءً على الـ key المحفوظ
+  const translatedModules = getModules(t);
+  const activeModule = storedModule
+    ? translatedModules.find((m) => m.key === storedModule.key) || storedModule
+    : null;
 
   const toggleMenu = (title) => {
     setOpenMenus((prev) =>
@@ -43,7 +51,7 @@ export function AppSidebar() {
   if (!activeModule) return null;
 
   return (
-    <Sidebar variant="sidebar" collapsible="icon">
+    <Sidebar side={side} variant="sidebar" collapsible="icon">
       <SidebarHeader className="flex justify-center py-5">
         <h2 className="text-2xl font-black text-primary">
           {open ? activeModule.name : activeModule.name?.[0] || ""}
@@ -151,7 +159,7 @@ export function AppSidebar() {
               <Link to="/" className="w-full">
                 <Button className={`w-full ${!open ? "px-2 justify-center" : ""}`}>
                   <Home size={18} />
-                  {open && <span className="ml-2">Back to home</span>}
+                  {open && <span className="ml-2">{t("backToHome")}</span>}
                 </Button>
               </Link>
             </SidebarMenuButton>

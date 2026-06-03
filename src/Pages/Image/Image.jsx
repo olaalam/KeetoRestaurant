@@ -3,22 +3,24 @@ import { useQuery } from '@tanstack/react-query';
 import api from '@/api/axios';
 import GenericDataTable from '@/components/GenericDataTable';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from "@/hooks/useTranslation"; // استيراد هوك الترجمة
 
 export default function Image() {
     const navigate = useNavigate();
+    const { t } = useTranslation(); // تفعيل الهوك
 
     const { data: image = [], isLoading } = useQuery({
         queryKey: ['image'],
         queryFn: async () => {
             const res = await api.get('/api/restaurant/image');
-            return res.data.data.data; // بناءً على هيكل الـ Response الخاص بكِ
+            return res.data.data.data; 
         }
     });
 
     const columns = [
         {
-            accessorKey: "img", // التأكد من مطابقة الاسم الراجع من الـ API (حرف I كبير)
-            header: "img",
+            accessorKey: "img", 
+            header: t("image"),
             cell: ({ row }) => {
                 const imageStr = row.getValue("img");
                 return (
@@ -26,12 +28,12 @@ export default function Image() {
                         {imageStr ? (
                             <img
                                 src={imageStr}
-                                alt="category"
+                                alt="Restaurant Asset"
                                 className="w-full h-full object-cover"
                             />
                         ) : (
                             <div className="flex items-center justify-center h-full text-[10px] text-gray-400">
-                                No Image
+                                {t("noImage")}
                             </div>
                         )}
                     </div>
@@ -40,15 +42,14 @@ export default function Image() {
         },
         {
             accessorKey: "periorty",
-            header: "Priorty",
+            header: t("priority"),
         },
-
     ];
 
     return (
         <div className="container mx-auto py-10">
             <GenericDataTable
-                title="image"
+                title={t("restaurantImages")}
                 columns={columns}
                 data={image}
                 isLoading={isLoading}
@@ -56,8 +57,7 @@ export default function Image() {
                 editApiUrl="/api/restaurant/image"
                 deleteApiUrl="/api/restaurant/image"
                 onAdd={() => navigate("/image/add")}
-                  onEdit={(image) => navigate(`/image/edit/${image.id}`)}
-                
+                onEdit={(image) => navigate(`/image/edit/${image.id}`)}
             />
         </div>
     );

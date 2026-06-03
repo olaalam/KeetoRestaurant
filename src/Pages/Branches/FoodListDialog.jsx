@@ -2,30 +2,26 @@ import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/api/axios';
 import LoadingSpinner from '@/components/LoadingSpinner';
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-} from "@/components/ui/dialog"; // تأكدي من مسار الـ Dialog في مشروعك
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useTranslation } from "@/hooks/useTranslation";
 
 const FoodListDialog = ({ restaurantId, isOpen, onClose }) => {
+    const { t } = useTranslation();
 
     const { data: foodItems = [], isLoading } = useQuery({
         queryKey: ['restaurant-food', restaurantId],
         queryFn: async () => {
             const res = await api.get(`/api/restaurant/food/restaurant/${restaurantId}`);
-            // لاحظي هنا الوصول للبيانات قد يكون res.data.data.data حسب هيكل الـ API لديكِ
             return res.data?.data?.data || res.data?.data || [];
         },
-        enabled: !!restaurantId && isOpen, // لا يعمل إلا لو الـ Dialog مفتوح ومعنا ID
+        enabled: !!restaurantId && isOpen,
     });
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
                 <DialogHeader>
-                    <DialogTitle>Restaurant Menu</DialogTitle>
+                    <DialogTitle>{t('restaurantMenu')}</DialogTitle>
                 </DialogHeader>
 
                 {isLoading ? (
@@ -45,9 +41,9 @@ const FoodListDialog = ({ restaurantId, isOpen, onClose }) => {
                                     <div className="flex justify-between items-center mt-2">
                                         <span className="text-orange-600 font-bold text-sm">{item.price} EGP</span>
                                         {item.status === 'active' ?
-                                            <span className="text-[10px] bg-green-100 text-green-600 px-2 py-0.5 rounded-full">Active</span>
+                                            <span className="text-[10px] bg-green-100 text-green-600 px-2 py-0.5 rounded-full">{t('active')}</span>
                                             :
-                                            <span className="text-[10px] bg-red-100 text-red-600 px-2 py-0.5 rounded-full">Inactive</span>
+                                            <span className="text-[10px] bg-red-100 text-red-600 px-2 py-0.5 rounded-full">{t('inactive')}</span>
                                         }
                                     </div>
                                 </div>
@@ -55,7 +51,7 @@ const FoodListDialog = ({ restaurantId, isOpen, onClose }) => {
                         ))}
                     </div>
                 ) : (
-                    <div className="py-10 text-center text-gray-500">No food items found for this restaurant.</div>
+                    <div className="py-10 text-center text-gray-500">{t('noFoodItems')}</div>
                 )}
             </DialogContent>
         </Dialog>

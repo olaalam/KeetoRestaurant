@@ -40,7 +40,7 @@ import PaymentMetodAdd from "./Pages/PaymentMetod/PaymentMetodAdd";
 import Transaction from "./Pages/Transaction/Transaction";
 import Order from "./Pages/Order/Order";
 import WalletR from "./Pages/Branches/WalletR";
-import OrderAdd from "./Pages/Order/OrderAdd";
+
 import IngredientCategory from "./Pages/IngredientCategory/IngredientCategory";
 import IngredientCategoryAdd from "./Pages/IngredientCategory/IngredientCategoryAdd";
 import Ingredients from "./Pages/Ingredients/Ingredients";
@@ -316,10 +316,7 @@ const router = createBrowserRouter([
         path: "orders/refunded", // تم تعديل الإسبيلنج من refuned لـ refunded
         element: <OrdersList status="refunded" />,
       },
-      {
-        path: "orders/edit/:id",
-        element: <OrderAdd />,
-      },
+
       {
         path: "branches/wallet/:restaurantId",
         element: <WalletR />,

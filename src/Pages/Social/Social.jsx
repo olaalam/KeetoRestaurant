@@ -3,22 +3,24 @@ import { useQuery } from '@tanstack/react-query';
 import api from '@/api/axios';
 import GenericDataTable from '@/components/GenericDataTable';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from "@/hooks/useTranslation"; // استيراد هوك الترجمة
 
 export default function Social() {
     const navigate = useNavigate();
+    const { t } = useTranslation(); // تفعيل الهوك
 
     const { data: social = [], isLoading } = useQuery({
         queryKey: ['social'],
         queryFn: async () => {
             const res = await api.get('/api/restaurant/socialmedia/');
-            return res.data.data.data; // بناءً على هيكل الـ Response الخاص بكِ
+            return res.data.data.data;
         }
     });
 
     const columns = [
         {
-            accessorKey: "icon", // التأكد من مطابقة الاسم الراجع من الـ API (حرف I كبير)
-            header: "icon",
+            accessorKey: "icon", 
+            header: t("icon"),
             cell: ({ row }) => {
                 const imageStr = row.getValue("icon");
                 return (
@@ -26,12 +28,12 @@ export default function Social() {
                         {imageStr ? (
                             <img
                                 src={imageStr}
-                                alt="category"
+                                alt="Platform Icon"
                                 className="w-full h-full object-cover"
                             />
                         ) : (
                             <div className="flex items-center justify-center h-full text-[10px] text-gray-400">
-                                No Image
+                                {t("noImage")}
                             </div>
                         )}
                     </div>
@@ -40,15 +42,14 @@ export default function Social() {
         },
         {
             accessorKey: "link",
-            header: "link",
+            header: t("link"),
         },
-
     ];
 
     return (
         <div className="container mx-auto py-10">
             <GenericDataTable
-                title="SocialMedia"
+                title={t("socialMedia")}
                 columns={columns}
                 data={social}
                 isLoading={isLoading}
@@ -56,7 +57,6 @@ export default function Social() {
                 deleteApiUrl="/api/restaurant/socialmedia/"
                 onAdd={() => navigate("/social/add")}
                 onEdit={(social) => navigate(`/social/edit/${social.id}`)}
-                
             />
         </div>
     );

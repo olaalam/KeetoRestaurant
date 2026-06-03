@@ -4,9 +4,11 @@ import api from '@/api/axios';
 import GenericDataTable from '@/components/GenericDataTable';
 import { useNavigate } from 'react-router-dom';
 import { MapPin, DollarSign } from "lucide-react";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export default function DeliveryZone() {
     const navigate = useNavigate();
+    const { t } = useTranslation();
 
     // 1. جلب بيانات مناطق التوصيل
     const { data: deliveryFees = [], isLoading } = useQuery({
@@ -21,8 +23,8 @@ export default function DeliveryZone() {
     // 2. تعريف الأعمدة لتطابق الهيكل الجديد
     const columns = [
         {
-            accessorKey: 'zone.name', // الوصول للاسم داخل كائن zone
-            header: 'Zone Name',
+            accessorKey: 'zone.name',
+            header: t('zoneName'),
             cell: ({ row }) => (
                 <div className="flex items-center gap-2">
                     <MapPin size={16} className="text-gray-400" />
@@ -32,7 +34,7 @@ export default function DeliveryZone() {
         },
         {
             accessorKey: 'deliveryFee',
-            header: 'Delivery Fee',
+            header: t('deliveryFee'),
             cell: ({ row }) => (
                 <div className="flex items-center gap-1 font-semibold text-green-600">
                     <span>{row.original.deliveryFee} EGP</span>
@@ -41,13 +43,13 @@ export default function DeliveryZone() {
         },
         {
             accessorKey: 'status',
-            header: 'Status',
+            header: t('status'),
             cell: ({ row }) => (
                 <span className={`px-2 py-1 rounded-full text-xs capitalize ${row.original.status === 'active'
                     ? 'bg-green-100 text-green-700'
                     : 'bg-red-100 text-red-700'
                     }`}>
-                    {row.original.status}
+                    {t(row.original.status)}
                 </span>
             )
         },
@@ -57,7 +59,7 @@ export default function DeliveryZone() {
     return (
         <div className="container mx-auto py-10">
             <GenericDataTable
-                title="Delivery Fees"
+                title={t('deliveryFees')}
                 columns={columns}
                 data={deliveryFees}
                 isLoading={isLoading}

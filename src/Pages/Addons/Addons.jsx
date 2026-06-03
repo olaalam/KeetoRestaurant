@@ -3,9 +3,11 @@ import { useQuery } from '@tanstack/react-query';
 import api from '@/api/axios';
 import GenericDataTable from '@/components/GenericDataTable';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from "@/hooks/useTranslation"; // استيراد هوك الترجمة
 
 export default function Addons() {
     const navigate = useNavigate();
+    const { t } = useTranslation(); // تفعيل الهوك
 
     const { data: addons = [], isLoading } = useQuery({
         queryKey: ['addons'],
@@ -16,23 +18,30 @@ export default function Addons() {
     });
 
     const columns = [
-        { accessorKey: 'name', header: 'Addon Name' },
-        { accessorKey: 'nameAr', header: 'Addon Name (Arabic)' },
-        { accessorKey: 'nameFr', header: 'Addon Name (Franko)' },
-        { accessorKey: 'price', header: 'Price' },
-        { accessorKey: 'stock_type', header: 'Stock Type' },
+        { accessorKey: 'name', header: t('addonName') },
+        { accessorKey: 'nameAr', header: t('addonNameAr') },
+        { accessorKey: 'nameFr', header: t('addonNameFr') },
+        { 
+            accessorKey: 'price', 
+            header: t('price'),
+            cell: ({ row }) => `${row.getValue('price')} ${t('currency')}`
+        },
+        { 
+            accessorKey: 'stock_type', 
+            header: t('stockType'),
+            cell: ({ row }) => t(row.getValue('stock_type')) // ترجمة نوع المخزون ديناميكياً
+        },
         {
             accessorKey: 'adonescategory.name',
-            header: 'Category',
-            cell: ({ row }) => row.original.adonescategory?.name || 'N/A'
+            header: t('category'),
+            cell: ({ row }) => row.original.adonescategory?.name || t('na')
         },
-
     ];
 
     return (
         <div className="container mx-auto py-10">
             <GenericDataTable
-                title="Modifier"
+                title={t('modifier')}
                 columns={columns}
                 data={addons}
                 isLoading={isLoading}

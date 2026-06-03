@@ -3,16 +3,19 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/api/axios';
 import GenericDataTable from '@/components/GenericDataTable';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Switch } from "@/components/ui/switch"; // تأكدي من مسار المكون في مشروعك
+import { Switch } from "@/components/ui/switch"; 
+import { useTranslation } from "@/hooks/useTranslation"; // استيراد الهوك
+import { toast } from "sonner"; // تأكدي من مكتبة الـ toast المستخدمة لديكِ
 
 export default function BrancheMenu() {
     const navigate = useNavigate();
     const queryClient = useQueryClient();
     const { restaurantId } = useParams();
+    const { t } = useTranslation(); // تفعيل الهوك
 
     // 1. جلب البيانات
     const { data: branchemenu = [], isLoading } = useQuery({
-        queryKey: ['branchemenu'],
+        queryKey: ['branchemenu', restaurantId],
         queryFn: async () => {
             const res = await api.get(`/api/restaurant/branchemenu/${restaurantId}`);
             return res.data?.data?.data || res.data?.data || [];
@@ -21,30 +24,35 @@ export default function BrancheMenu() {
 
     // 2. دالة تحديث الحالة (Mutation)
     const updateStatusMutation = useMutation({
-        mutationFn: async ({ id, currentStatus }) => {
-            // استخدام الـ API الذي حددتِه (patch)
+        mutationFn: async ({ id }) => {
             return await api.patch(`/api/restaurant/basiccampaign/${id}/status`);
         },
         onSuccess: () => {
-            toast.success("Status updated successfully");
-            // إعادة جلب البيانات لتحديث الجدول
-            queryClient.invalidateQueries(['business-plans']);
+            toast.success(t("statusUpdatedSuccessfully"));
+            // تحديث الكاش الصحيح الخاص بـ branchemenu
+            queryClient.invalidateQueries(['branchemenu']);
         },
         onError: () => {
-            toast.error("Failed to update status");
+            toast.error(t("failedToUpdateStatus"));
         }
     });
 
     const columns = [
-        // { accessorKey: 'branchId', header: 'Branch' },
-        { accessorKey: 'name', header: 'Food' },
-        { accessorKey: 'price', header: 'Price' },
-        { accessorKey: 'stockType', header: 'Stock Type' },
-        { accessorKey: 'stockQty', header: 'Stock Qty' },
-        // عمود الحالة الجديد مع الـ Switch
+        { accessorKey: 'name', header: t('food') },
+        { 
+            accessorKey: 'price', 
+            header: t('price'),
+            cell: ({ getValue }) => `${getValue() || 0} ${t('egp')}`
+        },
+        { 
+            accessorKey: 'stockType', 
+            header: t('stockType'),
+            cell: ({ getValue }) => getValue() ? t(getValue().toLowerCase()) : '—'
+        },
+        { accessorKey: 'stockQty', header: t('stockQty') },
         {
             accessorKey: 'status',
-            header: 'Status',
+            header: t('status'),
             cell: ({ row }) => (
                 <div className="flex items-center justify-center">
                     <Switch
@@ -65,7 +73,7 @@ export default function BrancheMenu() {
     return (
         <div className="container mx-auto py-10">
             <GenericDataTable
-                title="branchemenu"
+                title={t("branchMenu")}
                 columns={columns}
                 data={branchemenu}
                 isLoading={isLoading}
