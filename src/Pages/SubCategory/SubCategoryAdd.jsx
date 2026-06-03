@@ -73,7 +73,7 @@ const initialData = React.useMemo(() => {
             name: 'categoryId',
             label: 'Category',
             required: true,
-            type: 'select',
+            type: 'combobox',
             // التأكد من أن الـ options بتستخدم الـ id والـ name الصح
             options: categories.map(c => ({ value: c.id, label: c.name }))
         },

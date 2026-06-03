@@ -66,14 +66,14 @@ const AdminAdd = () => {
     {
       name: "type",
       label: "Admin Role Type",
-      type: "select",
+      type: "combobox",
       required: true,
       options: roleOptions,
     },
     {
       name: "branchId",
       label: "Branch Permission",
-      type: "select",
+      type: "combobox",
       required: false,
       options: branchOptions,
       // ✅ Convert "none" back to null before sending to API

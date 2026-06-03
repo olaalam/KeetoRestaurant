@@ -10,13 +10,7 @@ import { Label } from "@/components/ui/label";
 
 import { Controller, useFieldArray } from "react-hook-form";
 
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { SearchableSelect } from "@/components/SearchableSelect";
 
 import { Switch } from "@/components/ui/switch";
 
@@ -328,30 +322,15 @@ addonsId: raw.addon?.map((a) => ({
                     control={control}
                     rules={{ required: "Category is required" }}
                     render={({ field }) => (
-                      <Select
-                        onValueChange={(val) => {
+                      <SearchableSelect
+                        options={selectOptions?.categories?.map((cat) => ({ value: String(cat.id), label: cat.name })) || []}
+                        value={field.value}
+                        onChange={(val) => {
                           field.onChange(val);
-
                           setValue("subcategoryid", "");
                         }}
-                        value={field.value}
-                      >
-                        <SelectTrigger
-                          className={
-                            errors.categoryid ? "border-destructive" : ""
-                          }
-                        >
-                          <SelectValue placeholder="Select Category" />
-                        </SelectTrigger>
-
-                        <SelectContent>
-                          {selectOptions?.categories?.map((cat) => (
-                            <SelectItem key={cat.id} value={String(cat.id)}>
-                              {cat.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                        placeholder="Select Category"
+                      />
                     )}
                   />
 
@@ -369,29 +348,19 @@ addonsId: raw.addon?.map((a) => ({
                     name="subcategoryid"
                     control={control}
                     render={({ field }) => (
-                      <Select
-                        onValueChange={field.onChange}
+                      <SearchableSelect
+                        options={
+                          selectOptions?.subcategories
+                            ?.filter((sub) => {
+                              const subCatId = sub.categoryId ?? sub.category_id ?? sub.category?.id;
+                              return String(subCatId) === String(selectedCategoryId);
+                            })
+                            ?.map((sub) => ({ value: String(sub.id), label: sub.name })) || []
+                        }
                         value={field.value}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select Sub Category" />
-                        </SelectTrigger>
-
-                        <SelectContent>
-                          {selectOptions?.subcategories
-
-                            ?.filter(
-                              (sub) =>
-                                String(sub.categoryId) ===
-                                String(selectedCategoryId),
-                            )
-                            ?.map((sub) => (
-                              <SelectItem key={sub.id} value={String(sub.id)}>
-                                {sub.name}
-                              </SelectItem>
-                            ))}
-                        </SelectContent>
-                      </Select>
+                        onChange={field.onChange}
+                        placeholder="Select Sub Category"
+                      />
                     )}
                   />
                 </div>
@@ -410,22 +379,16 @@ addonsId: raw.addon?.map((a) => ({
                     control={control}
                     defaultValue="none"
                     render={({ field }) => (
-                      <Select
-                        onValueChange={field.onChange}
+                      <SearchableSelect
+                        options={[
+                          { value: "none", label: "⚪ None" },
+                          { value: "veg", label: "🟢 Veg" },
+                          { value: "non-veg", label: "🔴 Non-Veg" },
+                        ]}
                         value={field.value || "none"}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select food type" />
-                        </SelectTrigger>
-
-                        <SelectContent>
-                          <SelectItem value="none">⚪ None</SelectItem>
-
-                          <SelectItem value="veg">🟢 Veg</SelectItem>
-
-                          <SelectItem value="non-veg">🔴 Non-Veg</SelectItem>
-                        </SelectContent>
-                      </Select>
+                        onChange={field.onChange}
+                        placeholder="Select food type"
+                      />
                     )}
                   />
                 </div>
@@ -541,22 +504,16 @@ addonsId: raw.addon?.map((a) => ({
                     name="discount_type"
                     control={control}
                     render={({ field }) => (
-                      <Select
-                        onValueChange={field.onChange}
+                      <SearchableSelect
+                        options={[
+                          { value: "none", label: "None" },
+                          { value: "percentage", label: "Percentage" },
+                          { value: "fixed", label: "Fixed Amount" },
+                        ]}
                         value={field.value}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="No Discount" />
-                        </SelectTrigger>
-
-                        <SelectContent>
-                          <SelectItem value="none">None</SelectItem>
-
-                          <SelectItem value="percentage">Percentage</SelectItem>
-
-                          <SelectItem value="fixed">Fixed Amount</SelectItem>
-                        </SelectContent>
-                      </Select>
+                        onChange={field.onChange}
+                        placeholder="No Discount"
+                      />
                     )}
                   />
                 </div>
@@ -586,20 +543,15 @@ addonsId: raw.addon?.map((a) => ({
                     name="stock_type"
                     control={control}
                     render={({ field }) => (
-                      <Select
-                        onValueChange={field.onChange}
+                      <SearchableSelect
+                        options={[
+                          { value: "unlimited", label: "Unlimited" },
+                          { value: "limited", label: "Limited" },
+                        ]}
                         value={field.value}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-
-                        <SelectContent>
-                          <SelectItem value="unlimited">Unlimited</SelectItem>
-
-                          <SelectItem value="limited">Limited</SelectItem>
-                        </SelectContent>
-                      </Select>
+                        onChange={field.onChange}
+                        placeholder="Select stock type"
+                      />
                     )}
                   />
                 </div>
@@ -611,20 +563,15 @@ addonsId: raw.addon?.map((a) => ({
                     name="status"
                     control={control}
                     render={({ field }) => (
-                      <Select
-                        onValueChange={field.onChange}
+                      <SearchableSelect
+                        options={[
+                          { value: "active", label: "Active" },
+                          { value: "inactive", label: "Inactive" },
+                        ]}
                         value={field.value}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-
-                        <SelectContent>
-                          <SelectItem value="active">Active</SelectItem>
-
-                          <SelectItem value="inactive">Inactive</SelectItem>
-                        </SelectContent>
-                      </Select>
+                        onChange={field.onChange}
+                        placeholder="Select status"
+                      />
                     )}
                   />
                 </div>
@@ -759,30 +706,21 @@ const VariationsSection = ({ control, register, setValue, watch }) => {
                   name={`variations.${index}.selectionType`}
                   control={control}
                   render={({ field }) => (
-                    <Select
-                      onValueChange={(val) => {
+                    <SearchableSelect
+                      options={[
+                        { value: "single", label: "Single (Radio)" },
+                        { value: "multiple", label: "Multiple (Checkbox)" },
+                      ]}
+                      value={field.value}
+                      onChange={(val) => {
                         field.onChange(val);
-
                         if (val === "single") {
                           setValue(`variations.${index}.min`, 1);
-
                           setValue(`variations.${index}.max`, 1);
                         }
                       }}
-                      value={field.value}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-
-                      <SelectContent>
-                        <SelectItem value="single">Single (Radio)</SelectItem>
-
-                        <SelectItem value="multiple">
-                          Multiple (Checkbox)
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
+                      placeholder="Select type"
+                    />
                   )}
                 />
               </div>
@@ -982,24 +920,12 @@ const AddonsSection = ({ control, selectOptions }) => {
                 rules={{ required: "Please select an addon" }}
                 render={({ field, fieldState }) => (
                   <>
-                    <Select
-                      onValueChange={field.onChange}
+                    <SearchableSelect
+                      options={selectOptions?.addons?.map((a) => ({ value: String(a.id), label: a.name })) || []}
                       value={field.value ? String(field.value) : ""}
-                    >
-                      <SelectTrigger
-                        className={`bg-white ${fieldState.error ? "border-destructive" : ""}`}
-                      >
-                        <SelectValue placeholder="Select addon..." />
-                      </SelectTrigger>
-
-                      <SelectContent>
-                        {selectOptions?.addons?.map((a) => (
-                          <SelectItem key={a.id} value={String(a.id)}>
-                            {a.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      onChange={field.onChange}
+                      placeholder="Select addon..."
+                    />
 
                     {fieldState.error && (
                       <span className="text-destructive text-xs">
@@ -1021,17 +947,15 @@ const AddonsSection = ({ control, selectOptions }) => {
                 control={control}
                 defaultValue="active"
                 render={({ field }) => (
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <SelectTrigger className="bg-white">
-                      <SelectValue />
-                    </SelectTrigger>
-
-                    <SelectContent>
-                      <SelectItem value="active">Active</SelectItem>
-
-                      <SelectItem value="inactive">Inactive</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <SearchableSelect
+                    options={[
+                      { value: "active", label: "Active" },
+                      { value: "inactive", label: "Inactive" },
+                    ]}
+                    value={field.value}
+                    onChange={field.onChange}
+                    placeholder="Select status"
+                  />
                 )}
               />
             </div>

@@ -18,6 +18,13 @@ import {
 
 export function SearchableSelect({ options = [], value, onChange, placeholder = "Select item..." }) {
   const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+
+  const stringValue = value != null ? String(value) : "";
+
+  const filtered = search.trim()
+    ? options.filter((o) => o.label.toLowerCase().includes(search.toLowerCase()))
+    : options;
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -28,32 +35,38 @@ export function SearchableSelect({ options = [], value, onChange, placeholder = 
           aria-expanded={open}
           className="w-full justify-between bg-white text-slate-700 border-slate-200 hover:bg-slate-50 h-10 font-normal"
         >
-          {value
-            ? options.find((option) => option.value === value)?.label
+          {stringValue
+            ? options.find((option) => String(option.value) === stringValue)?.label
             : placeholder}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-full p-0 pointer-events-auto" align="start">
-        <Command>
-          <CommandInput placeholder="Search..." className="h-9" />
+      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0 pointer-events-auto" align="start">
+        <Command shouldFilter={false}>
+          <CommandInput
+            placeholder="Search..."
+            className="h-9"
+            value={search}
+            onValueChange={setSearch}
+          />
           <CommandList>
             <CommandEmpty>No results found.</CommandEmpty>
             <CommandGroup>
-              {options.map((option) => (
+              {filtered.map((option) => (
                 <CommandItem
                   key={option.value}
-                  value={option.label} // البحث يتم بناءً على الاسم (label)
+                  value={String(option.value)}
                   onSelect={() => {
-                    onChange(option.value === value ? "" : option.value);
+                    onChange(String(option.value) === stringValue ? "" : String(option.value));
                     setOpen(false);
+                    setSearch("");
                   }}
                   className="cursor-pointer"
                 >
                   <Check
                     className={cn(
                       "mr-2 h-4 w-4",
-                      value === option.value ? "opacity-100" : "opacity-0"
+                      stringValue === String(option.value) ? "opacity-100" : "opacity-0"
                     )}
                   />
                   {option.label}
