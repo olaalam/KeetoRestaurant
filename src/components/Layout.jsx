@@ -114,7 +114,7 @@ const restaurantName = user?.name || "Keeto";
 
   // 2. تحديث الكل كمقروء
   const { mutate: markAllAsRead, isPending: isMarkingAll } = useUpdate(
-    '/api/restaurant/read-all',
+    '/api/restaurant/notifications/read-all',
     NOTIFICATIONS_QUERY_KEY
   );
 
@@ -129,7 +129,7 @@ const restaurantName = user?.name || "Keeto";
   };
 
   const handleMarkAsRead = (id) => {
-    markSingleAsRead({ id: `${id}/read`, payload: {} });
+    markSingleAsRead({ id: `notifications/${id}/read`, payload: {} });
   };
 
   // وظيفة الرجوع للخلف
