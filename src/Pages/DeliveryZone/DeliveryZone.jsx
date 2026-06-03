@@ -65,6 +65,7 @@ export default function DeliveryZone() {
                 isLoading={isLoading}
                 queryKey="DeliveryZone"
                 deleteApiUrl="/api/restaurant/restaurant-zone-delivery-fees"
+                editApiUrl="/api/restaurant/restaurant-zone-delivery-fees"
                 onAdd={() => navigate("/delivery-zones/add")}
                 onEdit={(item) => navigate(`/delivery-zones/edit/${item.id}`)}
             />

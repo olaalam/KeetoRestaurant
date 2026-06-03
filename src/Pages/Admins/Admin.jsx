@@ -48,6 +48,7 @@ export default function Admin() {
                 isLoading={isLoading}
                 queryKey="admins"
                 deleteApiUrl="/api/restaurant/restaurantadmin"
+                editApiUrl="/api/restaurant/restaurantadmin"
                 onAdd={() => navigate("/admins/add")}
                 onEdit={(admin) => navigate(`/admins/edit/${admin.id}`)}
             />

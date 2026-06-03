@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   useReactTable,
@@ -16,6 +16,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch"; // استيراد الـ Switch من shadcn
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import {
@@ -29,6 +30,9 @@ import {
 import DeleteDialog from "./DeleteDialog";
 import LoadingSpinner from "./LoadingSpinner";
 import { useTranslation } from "@/hooks/useTranslation";
+import { useMutation, useQueryClient } from "@tanstack/react-query"; // استيراد الـ Mutation للتعامل مع السويتش
+import api from "@/api/axios";
+import { toast } from "sonner";
 
 export default function GenericDataTable({
   columns,
@@ -36,6 +40,7 @@ export default function GenericDataTable({
   title,
   onAdd,
   onEdit,
+  editApiUrl,   // تأكدي من تمرير editApiUrl من الشاشات الأساسية لتشغيل الـ Switch
   deleteApiUrl,
   queryKey,
   isLoading,
@@ -45,18 +50,39 @@ export default function GenericDataTable({
   const [deleteId, setDeleteId] = useState(null);
   const navigate = useNavigate();
   const { t, isRTL } = useTranslation();
+  const queryClient = useQueryClient();
 
-  // Pre-process and sort data to append newly added items at the very end
+  // 1. Mutation لتحديث الـ Status فوراً عند تغيير السويتش
+  const updateStatusMutation = useMutation({
+    mutationFn: async ({ id, newStatus }) => {
+      // إرسال الـ status الجديدة فقط بناءً على الـ API الخاص بكِ
+      // يتم دمج الـ id في الرابط (مثال: /api/restaurant/image/5)
+      return await api.put(`${editApiUrl}/${id}`, { status: newStatus });
+    },
+    onSuccess: () => {
+      // عمل invalidate للـ queryKey عشان الجدول يعمل ريفريش تلقائي بالبيانات الجديدة
+      if (queryKey) {
+        queryClient.invalidateQueries([queryKey]);
+      }
+      toast.success("updateStatusSuccessfully")
+    },
+    onError: (error) => {
+      console.error("Failed to update status:", error);
+      toast.error(t("updateStatusError") || "Failed to update status");
+    }
+  });
+
+  // Pre-process and sort data
   const sortedData = useMemo(() => {
     if (!Array.isArray(data)) return [];
     return [...data].sort((a, b) => {
       const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
       const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-      return bTime - aTime; // newest first → newly added at top
+      return bTime - aTime;
     });
   }, [data]);
 
-  // إضافة عمود الترقيم التلقائي وعمود العمليات
+  // إضافة عمود الترقيم التلقائي، وعمود العمليات، وتعديل عمود الـ Status ديناميكياً
   const tableColumns = useMemo(() => {
     const baseColumns = [
       {
@@ -77,8 +103,47 @@ export default function GenericDataTable({
         },
         size: 60,
       },
-      ...columns,
     ];
+
+    // المرور على الأعمدة الممررة وفحص إذا كان هناك عمود باسم status
+columns.forEach((col) => {
+  // نقوم بتحويله إلى Switch فقط إذا كان العمود هو status وتوفر رابط التعديل السريع (editApiUrl)
+  if (col.accessorKey === "status" && editApiUrl) {
+    baseColumns.push({
+      ...col,
+      cell: ({ row }) => {
+        const currentStatus = row.getValue("status");
+        const isActive = currentStatus === "active" || currentStatus === "paid" || currentStatus === true || currentStatus === 1;
+        const rowId = row.original.id;
+
+        return (
+          <div className="flex items-center justify-center gap-2">
+            <Switch
+              checked={isActive}
+              disabled={updateStatusMutation.isPending} // تم تعديلها إلى isPending لتوافق الإصدارات الجديدة
+              onCheckedChange={(checked) => {
+                const newStatus = typeof currentStatus === "string" 
+                  ? (currentStatus === "paid" || currentStatus === "unpaid" ? (checked ? "paid" : "unpaid") : (checked ? "active" : "inactive"))
+                  : checked;
+
+                updateStatusMutation.mutate({ id: rowId, newStatus });
+              }}
+            />
+            <span className={cn(
+              "text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded-full",
+              isActive ? "bg-emerald-50 text-emerald-600" : "bg-slate-100 text-slate-500"
+                )}>
+              {isActive ? t("active") : t("inactive")}
+            </span>
+          </div>
+        );
+      }
+    });
+  } else {
+    // إذا لم يتوفر editApiUrl (مثل صفحة الأوردرات)، يتم استخدام الـ cell الأصلية الممررة في الـ columns
+    baseColumns.push(col);
+  }
+});
 
     if (actions) {
       baseColumns.push({
@@ -112,7 +177,7 @@ export default function GenericDataTable({
     }
 
     return baseColumns;
-  }, [columns, onEdit, deleteApiUrl, actions]);
+  }, [columns, onEdit, deleteApiUrl, actions, editApiUrl, updateStatusMutation.isLoading]);
 
   const table = useReactTable({
     data: sortedData,
@@ -134,12 +199,10 @@ export default function GenericDataTable({
       {/* HEADER */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2 border-b border-slate-100">
         <div className="flex items-center gap-4">
-          {/* Icon Box */}
           <div className="h-12 w-12 flex items-center justify-center rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 text-primary shadow-sm border border-primary/10 shrink-0">
             <span className="text-xl font-black uppercase">{title?.[0]}</span>
           </div>
 
-          {/* Title Text */}
           <div className="space-y-0.5">
             <h2 className="text-xl font-bold text-slate-800 tracking-tight dark:text-slate-100">
               {title}
@@ -190,7 +253,6 @@ export default function GenericDataTable({
                       key={header.id}
                       className="h-14 align-middle text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 py-4 px-6 text-center"
                     >
-                      {/* تم إضافة text-center هنا لتبديل محاذاة العناوين للمنتصف */}
                       {flexRender(
                         header.column.columnDef.header,
                         header.getContext(),
@@ -224,7 +286,6 @@ export default function GenericDataTable({
                         key={cell.id} 
                         className="py-4 px-6 align-middle text-sm text-slate-600 dark:text-slate-300 font-medium text-center"
                       >
-                        {/* تم إضافة text-center وتعديل محاذاة الفليكس داخل الخلايا لتصبح بالمنتصف تماماً */}
                         <div className="flex items-center justify-center w-full">
                           {flexRender(
                             cell.column.columnDef.cell,

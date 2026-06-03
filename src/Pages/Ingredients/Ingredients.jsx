@@ -94,6 +94,7 @@ export default function Ingredients() {
                 isLoading={isLoading}
                 queryKey="ingredients"
                 deleteApiUrl="/api/restaurant/ingredients"
+                editApiUrl="/api/restaurant/ingredients"
                 onAdd={() => navigate("/ingredients/add")}
                 onEdit={(item) => navigate(`/ingredients/edit/${item.id}`)}
             />

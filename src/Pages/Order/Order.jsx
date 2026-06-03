@@ -9,12 +9,12 @@ import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { useTranslation } from "@/hooks/useTranslation"; // استيراد الهوك
+import { useTranslation } from "@/hooks/useTranslation";
 
 export default function Order() {
     const navigate = useNavigate();
     const queryClient = useQueryClient();
-    const { t } = useTranslation(); // تفعيل الهوك
+    const { t } = useTranslation();
 
     const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
     const [cancelReason, setCancelReason] = useState("");
@@ -59,6 +59,8 @@ export default function Order() {
             setSelectedOrderId(orderId);
             setCancelDialogOpen(true);
         } else {
+            // نقوم بتحديث الـ selectedOrderId هنا أيضاً لضمان عمل الـ Loading الافتراضي في الـ Select
+            setSelectedOrderId(orderId);
             updateStatusMutation.mutate({ orderId, status: newStatus });
         }
     };
@@ -128,6 +130,7 @@ export default function Order() {
                 <Select
                     defaultValue={row.original.status}
                     onValueChange={(value) => handleStatusChange(row.original.id, value)}
+                    // الـ Loader سيتفعل فقط للسطر الذي يتم تعديله حالياً
                     disabled={updateStatusMutation.isPending && selectedOrderId === row.original.id}
                 >
                     <SelectTrigger className="w-[160px] h-9">
@@ -188,8 +191,10 @@ export default function Order() {
                 queryKey="orders"
                 onEdit={false}
                 actions={false}
+                // لم نقم بتمرير editApiUrl هنا، فبالتالي سيعرض الـ Select الممرر في الـ columns بكل سلام!
             />
 
+            {/* Dialog إلغاء الطلب */}
             <Dialog open={cancelDialogOpen} onOpenChange={(open) => {
                 if (!open) {
                     setCancelDialogOpen(false);

@@ -120,6 +120,7 @@ export default function Restaurant() {
                 isLoading={isLoading}
                 queryKey="branches"
                 deleteApiUrl="/api/restaurant/branches"
+                editApiUrl="/api/restaurant/branches"
                 onAdd={() => navigate("/branches/add")}
                 onEdit={(branch) => navigate(`/branches/edit/${branch.id}`)}
             />
