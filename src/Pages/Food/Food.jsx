@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import GenericDataTable from '@/components/GenericDataTable';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/api/axios';
@@ -17,11 +17,18 @@ const Foods = () => {
     const navigate = useNavigate();
     const { t } = useTranslation();
     const [selectedVariations, setSelectedVariations] = useState(null);
-
+    const location = useLocation();
     // حالات إدارة المكونات
     const [ingredientsDialogOpen, setIngredientsDialogOpen] = useState(false);
     const [currentFoodId, setCurrentFoodId] = useState(null);
     const [selectedIngredients, setSelectedIngredients] = useState([]);
+    const [highlightedId, setHighlightedId] = useState(null);
+const [pagination, setPagination] = useState({
+    pageIndex: 0,
+    pageSize: 15,
+});
+    // 💡 مراقبة ما إذا كنا راجعين من صفحة الحفظ ومعنا المعرف الخاص بالعنصر
+
 
     // جلب بيانات الأطعمة للجدول[cite: 1]
     const { data: foods = [], isLoading } = useQuery({
@@ -49,6 +56,30 @@ const Foods = () => {
         'post',
         'foods'
     );
+// في Food.jsx
+useEffect(() => {
+  if (location.state?.highlightedId && foods) {
+    const index = foods.findIndex(item => item.id === location.state.highlightedId);
+    
+    if (index !== -1) {
+      // 1. الانتقال للصفحة الصحيحة
+      const pageIndex = Math.floor(index / pagination.pageSize);
+      setPagination(prev => ({ ...prev, pageIndex }));
+      
+      // 2. تفعيل الـ highlight
+      setHighlightedId(location.state.highlightedId);
+      
+      // 3. إزالة الـ highlight بعد 3 ثوانٍ
+      const timer = setTimeout(() => {
+        setHighlightedId(null);
+        // مسح الـ state من الـ location حتى لا يتكرر الـ highlight عند عمل refresh
+        window.history.replaceState({}, document.title);
+      }, 3000);
+      
+      return () => clearTimeout(timer);
+    }
+  }
+}, [location.state, foods]);
 
     const handleIngredientToggle = (ingredientId) => {
         setSelectedIngredients(prev => {
@@ -170,7 +201,10 @@ const Foods = () => {
                 queryKey={['foods']}
                 deleteApiUrl="/api/restaurant/food"
                 onAdd={() => navigate('/foods/add')}
+                highlightedId={highlightedId}
                 onEdit={(row) => navigate(`/foods/edit/${row.id}`)}
+                pagination={pagination}
+    setPagination={setPagination}
             />
 
             {/* Variations Dialog */}

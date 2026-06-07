@@ -1,14 +1,17 @@
 import React from "react";
-import { useParams, useLocation } from "react-router-dom";
+import { useParams, useLocation, useNavigate } from "react-router-dom"; // 💡 أضفنا useNavigate بدلاً من استخدام window.history
 import AddPage from "@/components/AddPage";
 import { useQuery } from "@tanstack/react-query";
 import api from "@/api/axios";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { useTranslation } from "@/hooks/useTranslation";
+
 const AdminAdd = () => {
   const { id } = useParams();
   const { state } = useLocation();
- const { t } = useTranslation();
+  const navigate = useNavigate(); // 💡 تفعيل الـ useNavigate للانتقال السلس والموجه للجدول
+  const { t } = useTranslation();
+
   const { data: adminData, isLoading: isFetching } = useQuery({
     queryKey: ["admin", id],
     queryFn: async () => {
@@ -48,8 +51,6 @@ const AdminAdd = () => {
 
   const adminFields = [
     { name: "name", label: t("name"), required: true },
-    { name: "nameAr", label: t("nameAr"), required: true },
-    { name: "nameFr", label: t("nameFr"), required: true },
     { name: "email", label: t("email"), type: "email", required: true },
     { name: "phoneNumber", label: t("phoneNumber"), required: true },
     ...(!id
@@ -89,7 +90,13 @@ const AdminAdd = () => {
       queryKey="admins"
       fields={adminFields}
       initialData={initialData}
-      onSuccessAction={() => window.history.back()}
+      onSuccessAction={(res) => {
+        // 💡 التقاط الـ ID الراجع من السيرفر عند الإضافة الناجحة، أو الـ ID الموجود مسبقاً عند التعديل
+        const targetId = res?.data?.data?.id || res?.data?.id || res?.id || initialData?.id;
+        
+        // 💡 التوجيه لصفحة الـ admins وتمرير الـ ID المضيء بداخل الـ state
+        navigate("/admins", { state: { highlightedId: targetId } });
+      }}
     />
   );
 };

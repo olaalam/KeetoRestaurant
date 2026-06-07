@@ -45,6 +45,9 @@ export default function GenericDataTable({
   queryKey,
   isLoading,
   actions = true,
+  highlightedId, 
+  pagination,    // استقبليه كـ prop
+  setPagination,
 }) {
   const [globalFilter, setGlobalFilter] = useState("");
   const [deleteId, setDeleteId] = useState(null);
@@ -55,16 +58,13 @@ export default function GenericDataTable({
   // 1. Mutation لتحديث الـ Status فوراً عند تغيير السويتش
   const updateStatusMutation = useMutation({
     mutationFn: async ({ id, newStatus }) => {
-      // إرسال الـ status الجديدة فقط بناءً على الـ API الخاص بكِ
-      // يتم دمج الـ id في الرابط (مثال: /api/restaurant/image/5)
       return await api.put(`${editApiUrl}/${id}`, { status: newStatus });
     },
     onSuccess: () => {
-      // عمل invalidate للـ queryKey عشان الجدول يعمل ريفريش تلقائي بالبيانات الجديدة
       if (queryKey) {
         queryClient.invalidateQueries([queryKey]);
       }
-      toast.success("updateStatusSuccessfully")
+      toast.success("updateStatusSuccessfully");
     },
     onError: (error) => {
       console.error("Failed to update status:", error);
@@ -106,44 +106,42 @@ export default function GenericDataTable({
     ];
 
     // المرور على الأعمدة الممررة وفحص إذا كان هناك عمود باسم status
-columns.forEach((col) => {
-  // نقوم بتحويله إلى Switch فقط إذا كان العمود هو status وتوفر رابط التعديل السريع (editApiUrl)
-  if (col.accessorKey === "status" && editApiUrl) {
-    baseColumns.push({
-      ...col,
-      cell: ({ row }) => {
-        const currentStatus = row.getValue("status");
-        const isActive = currentStatus === "active" || currentStatus === "paid" || currentStatus === true || currentStatus === 1;
-        const rowId = row.original.id;
+    columns.forEach((col) => {
+      if (col.accessorKey === "status" && editApiUrl) {
+        baseColumns.push({
+          ...col,
+          cell: ({ row }) => {
+            const currentStatus = row.getValue("status");
+            const isActive = currentStatus === "active" || currentStatus === "paid" || currentStatus === true || currentStatus === 1;
+            const rowId = row.original.id;
 
-        return (
-          <div className="flex items-center justify-center gap-2">
-            <Switch
-              checked={isActive}
-              disabled={updateStatusMutation.isPending} // تم تعديلها إلى isPending لتوافق الإصدارات الجديدة
-              onCheckedChange={(checked) => {
-                const newStatus = typeof currentStatus === "string" 
-                  ? (currentStatus === "paid" || currentStatus === "unpaid" ? (checked ? "paid" : "unpaid") : (checked ? "active" : "inactive"))
-                  : checked;
+            return (
+              <div className="flex items-center justify-center gap-2">
+                <Switch
+                  checked={isActive}
+                  disabled={updateStatusMutation.isPending}
+                  onCheckedChange={(checked) => {
+                    const newStatus = typeof currentStatus === "string"
+                      ? (currentStatus === "paid" || currentStatus === "unpaid" ? (checked ? "paid" : "unpaid") : (checked ? "active" : "inactive"))
+                      : checked;
 
-                updateStatusMutation.mutate({ id: rowId, newStatus });
-              }}
-            />
-            <span className={cn(
-              "text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded-full",
-              isActive ? "bg-emerald-50 text-emerald-600" : "bg-slate-100 text-slate-500"
+                    updateStatusMutation.mutate({ id: rowId, newStatus });
+                  }}
+                />
+                <span className={cn(
+                  "text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded-full",
+                  isActive ? "bg-emerald-50 text-emerald-600" : "bg-slate-100 text-slate-500"
                 )}>
-              {isActive ? t("active") : t("inactive")}
-            </span>
-          </div>
-        );
+                  {isActive ? t("active") : t("inactive")}
+                </span>
+              </div>
+            );
+          }
+        });
+      } else {
+        baseColumns.push(col);
       }
     });
-  } else {
-    // إذا لم يتوفر editApiUrl (مثل صفحة الأوردرات)، يتم استخدام الـ cell الأصلية الممررة في الـ columns
-    baseColumns.push(col);
-  }
-});
 
     if (actions) {
       baseColumns.push({
@@ -177,13 +175,15 @@ columns.forEach((col) => {
     }
 
     return baseColumns;
-  }, [columns, onEdit, deleteApiUrl, actions, editApiUrl, updateStatusMutation.isLoading]);
+  }, [columns, onEdit, deleteApiUrl, actions, editApiUrl, updateStatusMutation.isPending]);
 
   const table = useReactTable({
     data: sortedData,
     columns: tableColumns,
-    state: { globalFilter },
+    state: { globalFilter, pagination },
     onGlobalFilterChange: setGlobalFilter,
+    onPaginationChange: setPagination,
+    autoResetPageIndex: false, // مدمج لمنع الريسيت لصفحة 1
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
@@ -276,26 +276,36 @@ columns.forEach((col) => {
                   </TableCell>
                 </TableRow>
               ) : table.getRowModel().rows?.length ? (
-                table.getRowModel().rows.map((row) => (
-                  <TableRow
-                    key={row.id}
-                    className="group border-b border-slate-50 dark:border-slate-900 hover:bg-slate-50/40 dark:hover:bg-slate-900/30 transition-colors"
-                  >
-                    {row.getVisibleCells().map((cell) => (
-                      <TableCell 
-                        key={cell.id} 
-                        className="py-4 px-6 align-middle text-sm text-slate-600 dark:text-slate-300 font-medium text-center"
-                      >
-                        <div className="flex items-center justify-center w-full">
-                          {flexRender(
-                            cell.column.columnDef.cell,
-                            cell.getContext(),
-                          )}
-                        </div>
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                ))
+                table.getRowModel().rows.map((row) => {
+                  // 💡 فحص ما إذا كان الصف الحالي هو الصف المعدل لعمل الـ Highlight
+                  const isHighlighted = row.original.id === highlightedId;
+                  
+                  return (
+                    <TableRow
+                      key={row.id}
+                      className={cn(
+                        "group border-b border-slate-50 dark:border-slate-900 transition-all duration-500",
+                        isHighlighted 
+                          ? "bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-100/70 border-l-4 border-l-amber-500 font-semibold" 
+                          : "hover:bg-slate-50/40 dark:hover:bg-slate-900/30"
+                      )}
+                    >
+                      {row.getVisibleCells().map((cell) => (
+                        <TableCell
+                          key={cell.id}
+                          className="py-4 px-6 align-middle text-sm text-slate-600 dark:text-slate-300 font-medium text-center"
+                        >
+                          <div className="flex items-center justify-center w-full">
+                            {flexRender(
+                              cell.column.columnDef.cell,
+                              cell.getContext(),
+                            )}
+                          </div>
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  );
+                })
               ) : (
                 <TableRow>
                   <TableCell

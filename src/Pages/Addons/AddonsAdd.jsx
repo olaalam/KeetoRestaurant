@@ -4,13 +4,13 @@ import { useQuery } from '@tanstack/react-query';
 import api from '@/api/axios';
 import AddPage from '@/components/AddPage';
 import LoadingSpinner from '@/components/LoadingSpinner';
-import { useTranslation } from "@/hooks/useTranslation"; // استيراد هوك الترجمة
+import { useTranslation } from "@/hooks/useTranslation"; 
 
 const AddonsAdd = () => {
     const { id } = useParams();
     const { state } = useLocation();
     const navigate = useNavigate();
-    const { t } = useTranslation(); // تفعيل الهوك
+    const { t } = useTranslation(); 
 
     // 1. Fetch select data (categories)
     const { data: selectData } = useQuery({
@@ -35,7 +35,6 @@ const AddonsAdd = () => {
 
     const initialData = state?.addonData || addonData;
 
-    // تم تمرير الـ labels عبر دالة الـ t() لتدعم اللغتين فوراً
     const fields = [
         { name: 'name', label: t('addonName'), required: true },
         { name: 'nameAr', label: t('addonNameAr'), required: true },
@@ -72,7 +71,11 @@ const AddonsAdd = () => {
             queryKey="addons"
             fields={fields}
             initialData={initialData}
-            onSuccessAction={() => navigate("/addons")}
+            onSuccessAction={(res) => {
+                // 💡 التقاط المعرف المحدث أو الجديد وتمريره للجدول الرئيسي
+                const targetId = res?.data?.data?.id || res?.data?.id || res?.id || initialData?.id;
+                navigate("/addons", { state: { highlightedId: targetId } });
+            }}
         />
     );
 };

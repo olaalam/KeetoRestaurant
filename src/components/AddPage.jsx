@@ -58,20 +58,19 @@ const AddPage = ({
         }
     }, [initialData, reset, fields]);
 
-    const onSubmit = (data) => {
+const onSubmit = (data) => {
         const payloadToSend = transformPayload ? transformPayload(data) : data;
         if (isEdit) {
             updateMutation.mutate(
                 { id: initialData.id, payload: payloadToSend }, 
-                { onSuccess: () => onSuccessAction?.() }
+                { onSuccess: (res) => onSuccessAction?.(res) } // 💡 تم تمرير الـ res هنا
             );
         } else {
             postMutation.mutate(payloadToSend, { 
-                onSuccess: () => onSuccessAction?.()
+                onSuccess: (res) => onSuccessAction?.(res) // 💡 تم تمرير الـ res هنا
             });
         }
     };
-
     const isLoading = postMutation.isPending || updateMutation.isPending;
 
     return (

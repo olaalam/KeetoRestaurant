@@ -61,13 +61,15 @@ export default function PermissionAdd() {
       apiUrl="/api/restaurant/roles"
       queryKey="roles"
       initialData={role}
-      onSuccessAction={() => {
-        navigate(-1);
+      onSuccessAction={(res) => {
+        // 💡 تصحيح: تم استبدال initialData بـ role لاستخراج المعرف الصحيح لـ الوميض (Highlight)
+        const targetId = res?.data?.data?.id || res?.data?.id || res?.id || role?.id;
+        
+        // التوجيه لصفحة الـ permissions وتمرير الـ ID المضيء بداخل الـ state
+        navigate("/permissions", { state: { highlightedId: targetId } });
       }}
       fields={[
         { name: "name", label: t("roleNameLabel"), type: "text", required: true },
-        { name: "nameAr", label: t("nameAr"), type: "text", required: true },
-        { name: "nameFr", label: t("nameFr"), type: "text", required: true },
         { name: "permissions", type: "hidden" },
       ]}
       transformPayload={(data) => ({
@@ -78,19 +80,25 @@ export default function PermissionAdd() {
       {({ setValue, watch }) => {
         const permissions = watch("permissions") || [];
 
+        // 💡 تصحيح: جعل دالة فحص الـ actions تعتمد على حالة الفورم الحالية أولاً (permissions) لكي تتفاعل الأزرار فوراً عند الضغط
         const getModuleActions = (module) => {
-          return (
-            permissionMap[norm(module)] ||
-            permissions.find((p) => norm(p.module) === norm(module))?.actions?.map((a) => norm(a.action)) ||
-            []
-          );
+          const formModule = permissions.find((p) => norm(p.module) === norm(module));
+          if (formModule) {
+            return formModule.actions?.map((a) => norm(a.action)) || [];
+          }
+          return permissionMap[norm(module)] || [];
         };
 
         const togglePermission = (module, action) => {
           const mod = norm(module);
           const act = norm(action);
 
-          let updated = [...permissions];
+          // إذا لم تكن الصلاحيات قد عُدلت بعد في الـ Form State، نقوم بتهيئة المصفوفة بناءً على الـ permissionMap الأساسي لضمان عدم فقدان الصلاحيات الأخرى
+          let updated = permissions.length > 0 ? [...permissions] : availableModules.map(m => ({
+            module: m,
+            actions: (permissionMap[norm(m)] || []).map(a => ({ action: a }))
+          })).filter(m => m.actions.length > 0);
+
           const index = updated.findIndex((p) => norm(p.module) === mod);
 
           if (index === -1) {
@@ -117,10 +125,14 @@ export default function PermissionAdd() {
           setValue("permissions", updated, { shouldDirty: true });
         };
 
-        // --- إضافة: تحديد/إلغاء تحديد كل الـ Actions في Module معين ---
+        // تحديد/إلغاء تحديد كل الـ Actions في Module معين
         const toggleModulePermissions = (module, isChecked) => {
           const mod = norm(module);
-          let updated = [...permissions];
+          let updated = permissions.length > 0 ? [...permissions] : availableModules.map(m => ({
+            module: m,
+            actions: (permissionMap[norm(m)] || []).map(a => ({ action: a }))
+          })).filter(m => m.actions.length > 0);
+
           const index = updated.findIndex((p) => norm(p.module) === mod);
 
           if (isChecked) {
@@ -133,12 +145,15 @@ export default function PermissionAdd() {
           } else {
             if (index !== -1) {
               updated.splice(index, 1);
+            } else {
+              // إذا كان غير موجود بالفورم ولكنه يملك صلاحيات بالـ map، نقوم بحذفه بصورة صريحة
+              updated = updated.filter(p => norm(p.module) !== mod);
             }
           }
           setValue("permissions", updated, { shouldDirty: true });
         };
 
-        // --- إضافة: تحديد/إلغاء تحديد كل الصلاحيات بالكامل ---
+        // تحديد/إلغاء تحديد كل الصلاحيات بالكامل
         const toggleAllPermissions = (isChecked) => {
           if (isChecked) {
             const allPermissions = availableModules.map((module) => ({

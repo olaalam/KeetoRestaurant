@@ -90,7 +90,7 @@ const FoodAdd = () => {
           })) || [],
       };
     },
-    enabled: !!id,
+    enabled: !!id && !state?.foodData,
   });
 
   const initialData = foodData;
@@ -121,7 +121,13 @@ const FoodAdd = () => {
       fields={[]}
       initialData={initialData}
       transformPayload={transformBeforeSubmit}
-      onSuccessAction={() => navigate("/foods")}
+      onSuccessAction={(res) => {
+        // تأكد من تحويل الـ ID إلى String دائماً لضمان تطابق المقارنة في الجدول
+        const targetId = String(res?.data?.data?.id || res?.data?.id || res?.id || id);
+
+        navigate("/foods", { state: { highlightedId: targetId } });
+      }}
+
     >
       {({ register, control, formState: { errors }, setValue, watch }) => {
         const imagePreview = watch("image");
