@@ -6,12 +6,12 @@ import { useQuery } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { useTranslation } from "@/hooks/useTranslation";
 import api from "@/api/axios";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 
 export default function PermissionAdd() {
   const { t } = useTranslation();
   const { id } = useParams();
-
+  const navigate = useNavigate();
   const norm = (v) => v?.trim().toLowerCase();
 
   // ================= Schema =================
@@ -33,7 +33,7 @@ export default function PermissionAdd() {
     },
   });
 
-  // ================= Permission Map (IMPORTANT FIX) =================
+  // ================= Permission Map =================
   const permissionMap = useMemo(() => {
     const map = {};
 
@@ -61,6 +61,9 @@ export default function PermissionAdd() {
       apiUrl="/api/restaurant/roles"
       queryKey="roles"
       initialData={role}
+      onSuccessAction={() => {
+        navigate(-1);
+      }}
       fields={[
         { name: "name", label: t("roleNameLabel"), type: "text", required: true },
         { name: "nameAr", label: t("nameAr"), type: "text", required: true },
@@ -96,8 +99,7 @@ export default function PermissionAdd() {
               actions: [{ action }],
             });
           } else {
-            const currentActions =
-              updated[index].actions.map((a) => norm(a.action));
+            const currentActions = updated[index].actions.map((a) => norm(a.action));
 
             if (currentActions.includes(act)) {
               updated[index].actions = updated[index].actions.filter(
@@ -115,34 +117,107 @@ export default function PermissionAdd() {
           setValue("permissions", updated, { shouldDirty: true });
         };
 
+        // --- إضافة: تحديد/إلغاء تحديد كل الـ Actions في Module معين ---
+        const toggleModulePermissions = (module, isChecked) => {
+          const mod = norm(module);
+          let updated = [...permissions];
+          const index = updated.findIndex((p) => norm(p.module) === mod);
+
+          if (isChecked) {
+            const allActions = availableActions.map((action) => ({ action }));
+            if (index === -1) {
+              updated.push({ module, actions: allActions });
+            } else {
+              updated[index].actions = allActions;
+            }
+          } else {
+            if (index !== -1) {
+              updated.splice(index, 1);
+            }
+          }
+          setValue("permissions", updated, { shouldDirty: true });
+        };
+
+        // --- إضافة: تحديد/إلغاء تحديد كل الصلاحيات بالكامل ---
+        const toggleAllPermissions = (isChecked) => {
+          if (isChecked) {
+            const allPermissions = availableModules.map((module) => ({
+              module,
+              actions: availableActions.map((action) => ({ action })),
+            }));
+            setValue("permissions", allPermissions, { shouldDirty: true });
+          } else {
+            setValue("permissions", [], { shouldDirty: true });
+          }
+        };
+
+        // التحقق مما إذا كانت كل الصلاحيات محددة (لزر Select All الرئيسي)
+        const isAllGlobalChecked =
+          availableModules.length > 0 &&
+          availableModules.every((module) => {
+            const currentActions = getModuleActions(module);
+            return availableActions.every((action) => currentActions.includes(norm(action)));
+          });
+
         return (
           <div className="space-y-6">
-            {availableModules.map((module) => (
-              <div key={module} className="border p-4 rounded-lg">
-                <h3 className="font-bold mb-3">
-                  {module.replace("_", " ")}
-                </h3>
 
-                <div className="grid grid-cols-2 gap-2">
-                  {availableActions.map((action) => {
-                    const isChecked =
-                      getModuleActions(module).includes(norm(action));
+            {/* زر تحديد الكل (Global Select All) */}
+            <div className="flex items-center gap-2 pb-4 border-b border-gray-200">
+              <Checkbox
+                checked={isAllGlobalChecked}
+                onCheckedChange={toggleAllPermissions}
+                id="selectAll"
+              />
+              <Label htmlFor="selectAll" className="font-bold text-lg cursor-pointer">
+                {t("selectAll", "تحديد الكل")}
+              </Label>
+            </div>
 
-                    return (
-                      <div key={action} className="flex items-center gap-2">
-                        <Checkbox
-                          checked={isChecked}
-                          onCheckedChange={() =>
-                            togglePermission(module, action)
-                          }
-                        />
-                        <Label>{action}</Label>
-                      </div>
-                    );
-                  })}
+            {availableModules.map((module) => {
+              const currentModuleActions = getModuleActions(module);
+              // التحقق مما إذا كانت كل الصلاحيات محددة داخل هذا الموديول
+              const isModuleFullyChecked =
+                availableActions.length > 0 &&
+                availableActions.every((action) => currentModuleActions.includes(norm(action)));
+
+              return (
+                <div key={module} className="border p-4 rounded-lg">
+
+                  {/* زر تحديد الكل الخاص بالـ Module */}
+                  <div className="flex items-center gap-2 mb-4 pb-2 border-b border-gray-100">
+                    <Checkbox
+                      checked={isModuleFullyChecked}
+                      onCheckedChange={(checked) => toggleModulePermissions(module, checked)}
+                      id={`module-${module}`}
+                    />
+                    <Label htmlFor={`module-${module}`} className="font-bold text-md cursor-pointer">
+                      {module.replace("_", " ")}
+                    </Label>
+                  </div>
+
+                  {/* الـ Actions الفردية */}
+                  <div className="grid grid-cols-2 gap-3 pl-6">
+                    {availableActions.map((action) => {
+                      const isChecked = currentModuleActions.includes(norm(action));
+
+                      return (
+                        <div key={action} className="flex items-center gap-2">
+                          <Checkbox
+                            checked={isChecked}
+                            onCheckedChange={() => togglePermission(module, action)}
+                            id={`action-${module}-${action}`}
+                          />
+                          <Label htmlFor={`action-${module}-${action}`} className="cursor-pointer">
+                            {action}
+                          </Label>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         );
       }}

@@ -14,7 +14,7 @@ export default function ViewPermissionsModal({ isOpen, onClose, role }) {
             <DialogContent className="max-w-md">
                 <DialogHeader>
                     <DialogTitle className="flex gap-2 text-xl font-bold">
-                        Permissions: <span className="text-red-600">{role.name}</span>
+                        Permissions: <span className="text-primary">{role.name}</span>
                     </DialogTitle>
                 </DialogHeader>
 
@@ -22,7 +22,7 @@ export default function ViewPermissionsModal({ isOpen, onClose, role }) {
                     {role.permissions?.map((permGroup, index) => (
                         <div key={index} className="space-y-3">
                             <div className="flex items-center gap-2">
-                                <div className="h-2 w-2 rounded-full bg-red-600"></div>
+                                <div className="h-2 w-2 rounded-full bg-primary"></div>
                                 <h4 className="font-semibold text-gray-800 capitalize">
                                     {permGroup.module}:
                                 </h4>
