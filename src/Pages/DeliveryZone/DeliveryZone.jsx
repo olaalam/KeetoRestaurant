@@ -23,6 +23,11 @@ export default function DeliveryZone() {
     // 2. تعريف الأعمدة لتطابق الهيكل الجديد
     const columns = [
         {
+            accessorKey: 'city.name',
+            header: t('cityname'),
+            
+        },
+        {
             accessorKey: 'zone.name',
             header: t('zoneName'),
             cell: ({ row }) => (

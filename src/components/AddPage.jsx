@@ -93,80 +93,86 @@ const AddPage = ({
                                     {field.label} {field.required && <span className="text-destructive">*</span>}
                                 </Label>
 
-                                {(field.type === 'select' || field.type === 'combobox') ? (
-                                    /* 🌟 إضافة دعم الـ Combobox الذكي هنا سيعمل مع الفلترة والبحث السريع */
-                                    <Controller
-                                        name={field.name}
-                                        control={control}
-                                        defaultValue={initialData?.[field.name] || ""}
-                                        rules={{ required: field.required }}
-                                        render={({ field: { onChange, value } }) => {
-                                            const stringVal = value != null ? String(value) : "";
-                                            const [searchVal, setSearchVal] = React.useState("");
-                                            const filteredOptions = searchVal.trim()
-                                                ? field.options?.filter(o => o.label.toLowerCase().includes(searchVal.toLowerCase()))
-                                                : field.options;
-                                            return (
-                                            <Popover 
-                                                open={openCombobox[field.name] || false} 
-                                                onOpenChange={(isOpen) => {
-                                                    setOpenCombobox(prev => ({ ...prev, [field.name]: isOpen }));
-                                                    if (!isOpen) setSearchVal("");
-                                                }}
-                                            >
-                                                <PopoverTrigger asChild>
-                                                    <Button
-                                                        variant="outline"
-                                                        role="combobox"
-                                                        className={cn(
-                                                            "w-full justify-between font-normal text-left h-10 bg-white border-input",
-                                                            errors[field.name] ? "border-destructive text-destructive" : ""
-                                                        )}
-                                                    >
-                                                        {stringVal
-                                                            ? field.options?.find((option) => String(option.value) === stringVal)?.label
-                                                            : `${t("selectField")} ${field.label}...`}
-                                                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                                    </Button>
-                                                </PopoverTrigger>
-                                                <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0 PopoverContent" align="start">
-                                                    <Command shouldFilter={false}>
-                                                        <CommandInput
-                                                            placeholder={`${t("searchField")} ${field.label}...`}
-                                                            value={searchVal}
-                                                            onValueChange={setSearchVal}
-                                                        />
-                                                        <CommandList>
-                                                            <CommandEmpty>{t("noResultsFound")}</CommandEmpty>
-                                                            <CommandGroup>
-                                                                {filteredOptions?.map((option) => (
-                                                                    <CommandItem
-                                                                        key={option.value}
-                                                                        value={String(option.value)}
-                                                                        onSelect={() => {
-                                                                            onChange(String(option.value));
-                                                                            setOpenCombobox(prev => ({ ...prev, [field.name]: false }));
-                                                                            setSearchVal("");
-                                                                        }}
-                                                                    >
-                                                                        <Check
-                                                                            className={cn(
-                                                                                "mr-2 h-4 w-4",
-                                                                                stringVal === String(option.value) ? "opacity-100" : "opacity-0"
-                                                                            )}
-                                                                        />
-                                                                        {option.label}
-                                                                    </CommandItem>
-                                                                ))}
-                                                            </CommandGroup>
-                                                        </CommandList>
-                                                    </Command>
-                                                </PopoverContent>
-                                            </Popover>
-                                            );
+{(field.type === 'select' || field.type === 'combobox') ? (
+    <Controller
+        name={field.name}
+        control={control}
+        defaultValue={initialData?.[field.name] || ""}
+        rules={{ required: field.required }}
+        render={({ field: { onChange, value } }) => {
+            const stringVal = value != null ? String(value) : "";
+            const [searchVal, setSearchVal] = React.useState("");
+            const filteredOptions = searchVal.trim()
+                ? field.options?.filter(o => o.label.toLowerCase().includes(searchVal.toLowerCase()))
+                : field.options;
+            return (
+            <Popover 
+                open={openCombobox[field.name] || false} 
+                onOpenChange={(isOpen) => {
+                    setOpenCombobox(prev => ({ ...prev, [field.name]: isOpen }));
+                    if (!isOpen) setSearchVal("");
+                }}
+            >
+                <PopoverTrigger asChild>
+                    <Button
+                        variant="outline"
+                        role="combobox"
+                        className={cn(
+                            "w-full justify-between font-normal text-left h-10 bg-white border-input",
+                            errors[field.name] ? "border-destructive text-destructive" : ""
+                        )}
+                    >
+                        {stringVal
+                            ? field.options?.find((option) => String(option.value) === stringVal)?.label
+                            : `${t("selectField")} ${field.label}...`}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0 PopoverContent" align="start">
+                    <Command shouldFilter={false}>
+                        <CommandInput
+                            placeholder={`${t("searchField")} ${field.label}...`}
+                            value={searchVal}
+                            onValueChange={setSearchVal}
+                        />
+                        <CommandList>
+                            <CommandEmpty>{t("noResultsFound")}</CommandEmpty>
+                            <CommandGroup>
+                                {filteredOptions?.map((option) => (
+                                    <CommandItem
+                                        key={option.value}
+                                        value={String(option.value)}
+                                        onSelect={() => {
+                                            // 1. تحديث قيمة react-hook-form الداخلية
+                                            onChange(String(option.value)); 
+                                            
+                                            // 💡 2. السطر السحري الناقص: تشغيل الـ onChange الخارجية الممررة من الـ Component الأب
+                                            if (field.onChange) {
+                                                field.onChange(String(option.value));
+                                            }
+
+                                            setOpenCombobox(prev => ({ ...prev, [field.name]: false }));
+                                            setSearchVal("");
                                         }}
-                                    />
-                                ) : field.type === 'multi-select' ? (
+                                    >
+                                        <Check
+                                            className={cn(
+                                                "mr-2 h-4 w-4",
+                                                stringVal === String(option.value) ? "opacity-100" : "opacity-0"
+                                            )}
+                                        />
+                                        {option.label}
+                                    </CommandItem>
+                                ))}
+                            </CommandGroup>
+                        </CommandList>
+                    </Command>
+                </PopoverContent>
+            </Popover>
+            );
+        }}
+    />
+) : field.type === 'multi-select' ? (
                                     <Controller
                                         name={field.name}
                                         control={control}
