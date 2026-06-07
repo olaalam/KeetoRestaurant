@@ -57,6 +57,7 @@ import ImageAdd from "./Pages/Image/ImageAdd";
 import Social from "./Pages/Social/Social";
 import SocialAdd from "./Pages/Social/SocialAdd";
 import Invoice from "./Pages/Invoice/Invoice";
+import Profile from "./Pages/Profile/Profile";
 
 const router = createBrowserRouter([
   {
@@ -388,10 +389,15 @@ const router = createBrowserRouter([
       {
         path: "invoice",
         element: <Invoice />,
-      }
+      },
+      {
+        path: "profile",
+        element: <Profile />,
+      },
 
     ],
   },
+
   {
     path: "*",
     element: <NotFound />,
