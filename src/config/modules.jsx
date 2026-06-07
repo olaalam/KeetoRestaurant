@@ -37,39 +37,44 @@ export const getModules = (t, orderCounts = {}) => [
     items: [{ title: t("dashboard"), url: "/dashboard", icon: LayoutDashboard }],
   },
   {
-    name: t("management"),
+    name: t("Setting"),
     key: "management",
     items: [
       { title: t("admins"), url: "/admins", icon: UserCog },
       { title: "Permissions", url: "/permissions", icon: ShieldCheck },
+      { title: t("qr"), url: "/qr", icon: ShoppingBag },
     ],
   },
   {
     name: t("location"),
     key: "location",
-    items: [{ title: t("deliveryZones"), url: "/delivery-zones", icon: Truck }],
+    items: [{ title: t("deliveryZones"), url: "/delivery-zones", icon: Truck },
+    { title: t("branches"), url: "/branches", icon: Utensils },
+    ],
+
   },
   {
-    name: t("content"),
+    name: t("product management"),
     key: "content",
     items: [
       { title: t("foods"), url: "/foods", icon: Beef },
       { title: t("subCategories"), url: "/sub-categories", icon: Library },
-      { title: t("branches"), url: "/branches", icon: Utensils },
+      { title: t("modifier"), url: "/addons", icon: Settings2 },
+      { title: t("image"), url: "/image", icon: ShoppingBag },
       { title: t("ingredientCategories"), url: "/ingredient-category", icon: ShieldCheck },
       { title: t("ingredients"), url: "/ingredients", icon: ShieldCheck },
     ],
   },
   {
-    name: t("business"),
+    name: t("report"),
     key: "business",
     items: [
-      { title: t("addons"), url: "/addons", icon: Settings2 },
+
       { title: t("myKeeto"), url: "/mykeeto", icon: KeetoIcon },
       { title: t("invoice"), url: "/invoice", icon: KeetoIcon },
-      { title: t("qr"), url: "/qr", icon: ShoppingBag },
-      { title: t("image"), url: "/image", icon: ShoppingBag },
-      { title: t("social"), url: "/social", icon: ShoppingBag },
+
+
+
     ],
   },
   {
@@ -93,6 +98,15 @@ export const getModules = (t, orderCounts = {}) => [
           { title: t("refund") + getCount(orderCounts.refund), url: "/orders/refunded", icon: Undo2 },
         ],
       },
+    ],
+  },
+  
+  {
+    name: t("Marketing"),
+    key: "marketing",
+    items: [
+      { title: t("social"), url: "/social", icon: ShoppingBag },
+
     ],
   },
 ];

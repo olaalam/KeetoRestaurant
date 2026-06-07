@@ -46,14 +46,17 @@ export default function GenericDataTable({
   isLoading,
   actions = true,
   highlightedId, 
-  pagination,    // استقبليه كـ prop
-  setPagination,
+  // 💡 تم إضافته هنا كـ Prop يستقبله الجدول لتلوين الصف المعدل
 }) {
   const [globalFilter, setGlobalFilter] = useState("");
   const [deleteId, setDeleteId] = useState(null);
   const navigate = useNavigate();
   const { t, isRTL } = useTranslation();
   const queryClient = useQueryClient();
+  const [pagination, setPagination] = useState({
+    pageIndex: 0,
+    pageSize: 15,
+  });
 
   // 1. Mutation لتحديث الـ Status فوراً عند تغيير السويتش
   const updateStatusMutation = useMutation({
