@@ -17,6 +17,7 @@ import {
   Undo2,
 } from "lucide-react";
 import keetoImage from "../../public/WhatsApp Image 2026-05-18 at 11.27.30 AM.jpeg";
+
 const KeetoIcon = (props) => (
   <img
     src={keetoImage}
@@ -24,7 +25,12 @@ const KeetoIcon = (props) => (
     className={`object-contain rounded-sm ${props.className || "w-5 h-5"}`}
   />
 );
-export const getModules = (t) => [
+
+// دالة مساعدة صغيرة عشان لو الرقم موجود تحطه بين قوسين، ولو مش موجود متكتبش حاجة
+const getCount = (count) => (count !== undefined && count !== null ? ` (${count})` : "");
+
+// إضافة orderCounts كبارامتر ثاني، وإعطائه قيمة افتراضية {}
+export const getModules = (t, orderCounts = {}) => [
   {
     name: t("dashboard"),
     key: "dashboard",
@@ -52,7 +58,6 @@ export const getModules = (t) => [
       { title: t("branches"), url: "/branches", icon: Utensils },
       { title: t("ingredientCategories"), url: "/ingredient-category", icon: ShieldCheck },
       { title: t("ingredients"), url: "/ingredients", icon: ShieldCheck },
-
     ],
   },
   {
@@ -67,7 +72,7 @@ export const getModules = (t) => [
       { title: t("social"), url: "/social", icon: ShoppingBag },
     ],
   },
-    {
+  {
     name: t("order management"),
     key: "order",
     items: [
@@ -76,20 +81,20 @@ export const getModules = (t) => [
         url: "/orders",
         icon: ShoppingBag,
         subItems: [
-          { title: t("allOrders"), url: "/orders", icon: ShoppingBag },
-          { title: t("pending"), url: "/orders/pending", icon: Clock },
-          { title: t("accepted"), url: "/orders/accepted", icon: CheckCircle2 },
-          { title: t("preparing"), url: "/orders/preparing", icon: Package },
-          { title: t("outForDelivery"), url: "/orders/out-delivery", icon: Truck },
-          { title: t("delivered"), url: "/orders/delivered", icon: CheckCheck },
-          { title: t("cancelled"), url: "/orders/cancelled", icon: XCircle },
-          { title: t("rejected"), url: "/orders/rejected", icon: Ban },
-          { title: t("refund"), url: "/orders/refunded", icon: Undo2 },
+          // دمج العدد مع العنوان لو متاح
+          { title: t("allOrders") + getCount(orderCounts.all), url: "/orders", icon: ShoppingBag },
+          { title: t("pending") + getCount(orderCounts.pending), url: "/orders/pending", icon: Clock },
+          { title: t("accepted") + getCount(orderCounts.accepted), url: "/orders/accepted", icon: CheckCircle2 },
+          { title: t("preparing") + getCount(orderCounts.preparing), url: "/orders/preparing", icon: Package },
+          { title: t("outForDelivery") + getCount(orderCounts.out_for_delivery), url: "/orders/out-delivery", icon: Truck },
+          { title: t("delivered") + getCount(orderCounts.delivered), url: "/orders/delivered", icon: CheckCheck },
+          { title: t("cancelled") + getCount(orderCounts.cancelled), url: "/orders/cancelled", icon: XCircle },
+          { title: t("rejected") + getCount(orderCounts.rejected), url: "/orders/rejected", icon: Ban },
+          { title: t("refund") + getCount(orderCounts.refund), url: "/orders/refunded", icon: Undo2 },
         ],
       },
     ],
   },
 ];
 
-// للتوافق مع الكود القديم - بيرجع الـ modules بالإنجليزي كـ default
 export const modules = getModules((key) => key);

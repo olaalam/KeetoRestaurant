@@ -25,6 +25,8 @@ import {
 } from "lucide-react";
 import { useTranslation } from "@/hooks/useTranslation";
 import { getModules } from "@/config/modules";
+import { useQuery } from "@tanstack/react-query"; // 1. استيراد useQuery
+import api from "@/api/axios"; // 2. استيراد الـ API
 
 export function AppSidebar({ side = "left" }) {
   const { open } = useSidebar();
@@ -34,8 +36,20 @@ export function AppSidebar({ side = "left" }) {
   const [openMenus, setOpenMenus] = useState([]);
   const { t } = useTranslation();
 
-  // نجيب الـ module بالترجمة الحالية بناءً على الـ key المحفوظ
-  const translatedModules = getModules(t);
+  // 3. جلب إحصائيات الطلبات من الـ Backend
+  const { data: orderCounts = {} } = useQuery({
+    queryKey: ['order-statistics'],
+    queryFn: async () => {
+      // تنبيه: تأكدي من أن هذا المسار (Endpoint) متطابق مع مسار الـ API الفعلي لديكِ
+      const res = await api.get('/api/restaurant/order/statistics');
+      return res.data.data;
+    },
+    // تحديث البيانات كل 30 ثانية لضمان بقاء الأرقام دقيقة
+    refetchInterval: 30000, 
+  });
+
+  // 4. تمرير الترجمة والأرقام إلى دالة getModules
+  const translatedModules = getModules(t, orderCounts);
   const activeModule = storedModule
     ? translatedModules.find((m) => m.key === storedModule.key) || storedModule
     : null;
@@ -72,13 +86,11 @@ export function AppSidebar({ side = "left" }) {
                   <div key={item.title}>
                     {/* Main Item */}
                     <SidebarMenuItem>
-                      {/* FIX 1: Added asChild here so it accepts the <Link> or custom wrapper */}
                       <SidebarMenuButton 
                         asChild={!hasSubItems} 
                         tooltip={item.title}
                       >
                         {hasSubItems ? (
-                          /* If it has sub-items, keep it as a button to toggle the dropdown */
                           <button
                             onClick={() => toggleMenu(item.title)}
                             className={`flex items-center w-full gap-3 px-3 py-2 rounded-xl transition-all duration-200 cursor-pointer ${
@@ -98,7 +110,6 @@ export function AppSidebar({ side = "left" }) {
                             )}
                           </button>
                         ) : (
-                          /* FIX 2: Wrapped the standalone item inside a native router <Link> */
                           <Link
                             to={item.url}
                             className={`flex items-center w-full gap-3 px-3 py-2 rounded-xl transition-all duration-200 cursor-pointer ${
@@ -155,7 +166,6 @@ export function AppSidebar({ side = "left" }) {
               tooltip="Home"
               className="text-red-500 hover:text-red-600 hover:bg-red-50 transition-colors"
             >
-              {/* BONUS FIX: Also turned "Back to home" into a native link component */}
               <Link to="/" className="w-full">
                 <Button className={`w-full ${!open ? "px-2 justify-center" : ""}`}>
                   <Home size={18} />
