@@ -14,7 +14,7 @@ import { useQuery } from "@tanstack/react-query";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { useTranslation } from "@/hooks/useTranslation";
 import { toast } from 'sonner'; // استيراد التنبيهات في حالة حدوث خطأ أثناء جلب الفاتورة
-import { Dialog,DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 const statusConfig = {
     pending: { labelKey: "pending", color: "bg-yellow-100 text-yellow-800 border-yellow-200", icon: Clock },
@@ -32,8 +32,8 @@ export default function OrderDetails() {
     const navigate = useNavigate();
     const { t } = useTranslation();
     const [isPreviewOpen, setIsPreviewOpen] = useState(false);
-const [pdfUrl, setPdfUrl] = useState(null);
-const [isPdfLoading, setIsPdfLoading] = useState(false);
+    const [pdfUrl, setPdfUrl] = useState(null);
+    const [isPdfLoading, setIsPdfLoading] = useState(false);
 
     // 💡 حالة إدارة تحميل الفاتورة لمنع الضغط المتكرر
     const [isPreviewLoading, setIsPreviewLoading] = useState(false);
@@ -48,27 +48,27 @@ const [isPdfLoading, setIsPdfLoading] = useState(false);
     });
 
     // 💡 دالة جلب ومعاينة الفاتورة قبل التحميل
-const handlePreviewInvoice = async () => {
-  try {
-    setIsPdfLoading(true);
-    setIsPreviewOpen(true); // فتح المودال فوراً لبدء مؤشر التحميل بالداخل
+    const handlePreviewInvoice = async () => {
+        try {
+            setIsPdfLoading(true);
+            setIsPreviewOpen(true); // فتح المودال فوراً لبدء مؤشر التحميل بالداخل
 
-    const response = await api.get(`/api/restaurant/order/${orderId}/invoice`, {
-      responseType: 'blob' 
-    });
+            const response = await api.get(`/api/restaurant/order/${orderId}/invoice`, {
+                responseType: 'blob'
+            });
 
-    const blob = new Blob([response.data], { type: 'application/pdf' });
-    const url = window.URL.createObjectURL(blob);
-    
-    setPdfUrl(url);
-    setIsPdfLoading(false);
-  } catch (error) {
-    console.error("Failed to fetch invoice PDF:", error);
-    toast.error(t("downloadErrorAlert") || "فشل تحميل ملف الفاتورة");
-    setIsPreviewOpen(false);
-    setIsPdfLoading(false);
-  }
-};
+            const blob = new Blob([response.data], { type: 'application/pdf' });
+            const url = window.URL.createObjectURL(blob);
+
+            setPdfUrl(url);
+            setIsPdfLoading(false);
+        } catch (error) {
+            console.error("Failed to fetch invoice PDF:", error);
+            toast.error(t("downloadErrorAlert") || "فشل تحميل ملف الفاتورة");
+            setIsPreviewOpen(false);
+            setIsPdfLoading(false);
+        }
+    };
 
 
     if (isLoading) {
@@ -104,10 +104,10 @@ const handlePreviewInvoice = async () => {
                 </div>
                 <div className="flex items-center gap-3 flex-wrap">
                     {/* 💡 زر معاينة الفاتورة العلوي */}
-                    <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={handlePreviewInvoice} 
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handlePreviewInvoice}
                         disabled={isPreviewLoading}
                         className="flex items-center gap-2 border-emerald-200 text-emerald-700 hover:bg-emerald-50"
                     >
@@ -165,6 +165,10 @@ const handlePreviewInvoice = async () => {
                             <div className="flex justify-between">
                                 <span className="text-muted-foreground">{t("branch")}</span>
                                 <span className="font-medium">{order.branch?.name}</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span className="text-muted-foreground">{t("orderType")}</span>
+                                <span className="font-medium">{order?.orderType}</span>
                             </div>
                             <div className="flex justify-between">
                                 <span className="text-muted-foreground">{t("paymentMethod")}</span>
@@ -236,10 +240,10 @@ const handlePreviewInvoice = async () => {
                         <Button variant="outline" onClick={() => navigate(-1)}>
                             {t("backToOrders")}
                         </Button>
-                        
+
                         {/* 💡 زر معاينة الفاتورة السفلي بجانب أزرار التحكم والرجوع */}
-                        <Button 
-                            onClick={handlePreviewInvoice} 
+                        <Button
+                            onClick={handlePreviewInvoice}
                             disabled={isPreviewLoading}
                             className="bg-emerald-600 hover:bg-emerald-700 text-white"
                         >
@@ -252,48 +256,48 @@ const handlePreviewInvoice = async () => {
                     </div>
                 </div>
             </div>
-{/* نافذة معاينة الفاتورة */}
-<Dialog 
-    open={isPreviewOpen} 
-    onOpenChange={(open) => {
-        setIsPreviewOpen(open);
-        // 💡 تنظيف الذاكرة وحذف الرابط المؤقت فور إغلاق المودال
-        if (!open && pdfUrl) {
-            window.URL.revokeObjectURL(pdfUrl);
-            setPdfUrl(null);
-        }
-    }}
->
-    {/* max-w-4xl لضمان مساحة عرض كافية للفاتورة و h-[85vh] لضبط الارتفاع */}
-    <DialogContent className="w-full h-[85vh] flex flex-col">
-        <DialogHeader>
-            <DialogTitle>{t("invoicePreview") || "معاينة الفاتورة"}</DialogTitle>
-            <DialogDescription>
-                {t("previewInvoiceDesc") || "يمكنك مراجعة تفاصيل الفاتورة أو طباعتها مباشرة من هنا."}
-            </DialogDescription>
-        </DialogHeader>
+            {/* نافذة معاينة الفاتورة */}
+            <Dialog
+                open={isPreviewOpen}
+                onOpenChange={(open) => {
+                    setIsPreviewOpen(open);
+                    // 💡 تنظيف الذاكرة وحذف الرابط المؤقت فور إغلاق المودال
+                    if (!open && pdfUrl) {
+                        window.URL.revokeObjectURL(pdfUrl);
+                        setPdfUrl(null);
+                    }
+                }}
+            >
+                {/* max-w-4xl لضمان مساحة عرض كافية للفاتورة و h-[85vh] لضبط الارتفاع */}
+                <DialogContent className="w-full h-[85vh] flex flex-col">
+                    <DialogHeader>
+                        <DialogTitle>{t("invoicePreview") || "معاينة الفاتورة"}</DialogTitle>
+                        <DialogDescription>
+                            {t("previewInvoiceDesc") || "يمكنك مراجعة تفاصيل الفاتورة أو طباعتها مباشرة من هنا."}
+                        </DialogDescription>
+                    </DialogHeader>
 
-        {/* حاوية العرض المدعومة بمؤشر التحميل */}
-        <div className="flex-1 w-full h-full bg-gray-50 rounded-md overflow-hidden relative border">
-            {isPdfLoading ? (
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/80 gap-3">
-                    <Loader2 className="w-8 h-8 animate-spin text-primary" />
-                    <p className="text-sm text-muted-foreground">{t("loadingInvoice") || "جاري تجهيز الفاتورة..."}</p>
-                </div>
-            ) : pdfUrl ? (
-                <iframe
-                    src={pdfUrl}
-                    className="w-full h-full border-none"
-                    title="Invoice Preview"
-                />
-            ) : (
-                <div className="absolute inset-0 flex items-center justify-center text-muted-foreground">
-                    {t("noInvoiceAvailable") || "لا توجد فاتورة متاحة للعرض"}
-                </div>
-            )}
-        </div>
-    </DialogContent>
-</Dialog>
+                    {/* حاوية العرض المدعومة بمؤشر التحميل */}
+                    <div className="flex-1 w-full h-full bg-gray-50 rounded-md overflow-hidden relative border">
+                        {isPdfLoading ? (
+                            <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/80 gap-3">
+                                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                                <p className="text-sm text-muted-foreground">{t("loadingInvoice") || "جاري تجهيز الفاتورة..."}</p>
+                            </div>
+                        ) : pdfUrl ? (
+                            <iframe
+                                src={pdfUrl}
+                                className="w-full h-full border-none"
+                                title="Invoice Preview"
+                            />
+                        ) : (
+                            <div className="absolute inset-0 flex items-center justify-center text-muted-foreground">
+                                {t("noInvoiceAvailable") || "لا توجد فاتورة متاحة للعرض"}
+                            </div>
+                        )}
+                    </div>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

@@ -4,16 +4,16 @@ import api from '@/api/axios';
 import GenericDataTable from '@/components/GenericDataTable';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Switch } from "@/components/ui/switch"; 
-import { useTranslation } from "@/hooks/useTranslation"; // استيراد الهوك
-import { toast } from "sonner"; // تأكدي من مكتبة الـ toast المستخدمة لديكِ
+import { useTranslation } from "@/hooks/useTranslation"; 
+import { toast } from "sonner"; 
 
 export default function BrancheMenu() {
     const navigate = useNavigate();
     const queryClient = useQueryClient();
-    const { restaurantId } = useParams();
-    const { t } = useTranslation(); // تفعيل الهوك
+    const { restaurantId } = useParams(); // استقبال المعرف من الرابط الأساسي
+    const { t } = useTranslation(); 
 
-    // 1. جلب البيانات
+    // 1. جلب البيانات بناءً على معرف المطعم/الفرع
     const { data: branchemenu = [], isLoading } = useQuery({
         queryKey: ['branchemenu', restaurantId],
         queryFn: async () => {
@@ -25,12 +25,11 @@ export default function BrancheMenu() {
     // 2. دالة تحديث الحالة (Mutation)
     const updateStatusMutation = useMutation({
         mutationFn: async ({ id }) => {
-            return await api.patch(`/api/restaurant/basiccampaign/${id}/status`);
+            return await api.patch(`/api/restaurant/branchemenu/${id}/status`);
         },
         onSuccess: () => {
             toast.success(t("statusUpdatedSuccessfully"));
-            // تحديث الكاش الصحيح الخاص بـ branchemenu
-            queryClient.invalidateQueries(['branchemenu']);
+            queryClient.invalidateQueries({ queryKey: ['branchemenu'] });
         },
         onError: () => {
             toast.error(t("failedToUpdateStatus"));
@@ -59,7 +58,7 @@ export default function BrancheMenu() {
                         checked={row.original.status === 'active' || row.original.status === true}
                         onCheckedChange={() =>
                             updateStatusMutation.mutate({
-                                id: row.original.id,
+                                id: row.original.menuItemId, 
                                 currentStatus: row.original.status
                             })
                         }
@@ -79,8 +78,9 @@ export default function BrancheMenu() {
                 isLoading={isLoading}
                 queryKey="branchemenu"
                 deleteApiUrl="/api/restaurant/branchemenu"
-                onAdd={() => navigate(`/branches/branch_menu/add`)}
-                onEdit={() => navigate(`/branches/branch_menu/edit/${restaurantId}`)}
+                // 🌟 الحل السحري: تمرير الـ branchId هنا أيضاً عند الإضافة لتستقبله صفحة BrancheMenuAdd
+                onAdd={() => navigate(`/branches/branch_menu/add`, { state: { branchId: restaurantId } })}
+                onEdit={(row) => navigate(`/branches/branch_menu/edit/${row.menuItemId}`, { state: { branchId: restaurantId } })}
             />
         </div>
     );
