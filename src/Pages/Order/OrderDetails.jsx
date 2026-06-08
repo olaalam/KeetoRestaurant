@@ -176,6 +176,12 @@ export default function OrderDetails() {
                                     <CreditCard size={14} /> {order.paymentMethod}
                                 </span>
                             </div>
+                            <div className="flex justify-between">
+                                <span className="text-muted-foreground">{t("note")}</span>
+                                <span className="font-medium flex items-center gap-1">
+                                    {order.note}
+                                </span>
+                            </div>
                         </CardContent>
                     </Card>
                 </div>

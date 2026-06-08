@@ -36,7 +36,7 @@ export default function Layout() {
 
 
 // اسم المطعم أو المستخدم (حسب الحقل المخزن بالـ ستور، هنا نأخذ الـ name الموجود بالصورة)
-const restaurantName = user?.name || "Keeto";
+const restaurantName = user?.restaurantName || "Keeto";
 
 
   const location = useLocation();

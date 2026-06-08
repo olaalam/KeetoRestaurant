@@ -29,9 +29,9 @@ export default function Profile() {
     const { data: profileData, isLoading: isLoadingProfile } = useQuery({
         queryKey: ['restaurantProfile'],
         queryFn: async () => {
-            const res = await api.get('/api/restaurant/Profile');
+            const res = await api.get('/api/restaurant/profile');
             // استخراج البيانات بناءً على الهيكل المعتاد في مشروعكِ
-            return res.data?.data?.data || res.data?.data || res.data;
+            return res.data?.data?.data || res.data?.data?.profile || res.data;
         }
     });
 

@@ -324,38 +324,56 @@ export default function GenericDataTable({
         </div>
       </div>
 
-      {/* PAGINATION */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
-        <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 order-2 sm:order-1">
-          {t("pageOf")} <span className="text-slate-700 dark:text-slate-300">{table.getState().pagination.pageIndex + 1}</span> {t("of")}{" "}
-          <span className="text-slate-700 dark:text-slate-300">{table.getPageCount()}</span>
-        </p>
+{/* PAGINATION */}
+<div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
+  {/* <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 order-2 sm:order-1">
+    {t("pageOf")} <span className="text-slate-700 dark:text-slate-300">{table.getState().pagination.pageIndex + 1}</span> {t("of")}{" "}
+    <span className="text-slate-700 dark:text-slate-300">{table.getPageCount()}</span>
+  </p> */}
 
-        <div className="flex items-center gap-2 order-1 sm:order-2 w-full sm:w-auto justify-between sm:justify-end">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
-            className="h-9 rounded-xl border-slate-200 hover:bg-slate-50 font-medium text-xs gap-1.5 transition-colors"
-          >
-            {isRTL ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronLeft className="h-3.5 w-3.5" />}
-            <span>{t("prev")}</span>
-          </Button>
+  {/* هنا التعديل: إنشاء مربعات أرقام الصفحات */}
+  <div className="flex items-center  m-auto gap-1.5 order-1 sm:order-2">
+    {/* زر الصفحة السابقة */}
+    <Button
+      variant="outline"
+      size="sm"
+      onClick={() => table.previousPage()}
+      disabled={!table.getCanPreviousPage()}
+      className="h-9 w-9 p-0 rounded-lg border-slate-200"
+    >
+      {isRTL ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+    </Button>
 
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
-            className="h-9 rounded-xl border-slate-200 hover:bg-slate-50 font-medium text-xs gap-1.5 transition-colors"
-          >
-            <span>{t("next")}</span>
-            {isRTL ? <ChevronLeft className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
-          </Button>
-        </div>
-      </div>
+    {/* توليد أرقام الصفحات */}
+    {Array.from({ length: table.getPageCount() }, (_, i) => (
+      <Button
+        key={i}
+        variant={table.getState().pagination.pageIndex === i ? "default" : "outline"}
+        size="sm"
+        onClick={() => table.setPageIndex(i)}
+        className={cn(
+          "h-9 w-9 p-0 rounded-lg border-slate-200 font-semibold text-xs transition-all",
+          table.getState().pagination.pageIndex === i 
+            ? "bg-primary text-white shadow-sm" 
+            : "hover:bg-slate-50"
+        )}
+      >
+        {i + 1}
+      </Button>
+    ))}
 
+    {/* زر الصفحة التالية */}
+    <Button
+      variant="outline"
+      size="sm"
+      onClick={() => table.nextPage()}
+      disabled={!table.getCanNextPage()}
+      className="h-9 w-9 p-0 rounded-lg border-slate-200"
+    >
+      {isRTL ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+    </Button>
+  </div>
+</div>
       {/* DELETE DIALOG */}
       <DeleteDialog
         isOpen={!!deleteId}

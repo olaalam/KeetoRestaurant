@@ -58,6 +58,15 @@ import Social from "./Pages/Social/Social";
 import SocialAdd from "./Pages/Social/SocialAdd";
 import Invoice from "./Pages/Invoice/Invoice";
 import Profile from "./Pages/Profile/Profile";
+import Discount from "./Pages/Discount/Discount";
+import DiscountAdd from "./Pages/Discount/DiscountAdd";
+import Coupon from "./Pages/Coupon/Coupon";
+import CouponAdd from "./Pages/Coupon/CouponAdd";
+import Rating from "./Pages/Rating/Rating";
+import Popup from "./Pages/Popup/Popup";
+import PopupAdd from "./Pages/Popup/PopupAdd";
+import Slider from "./Pages/Slider/Slider";
+import SliderAdd from "./Pages/Slider/SliderAdd";
 
 const router = createBrowserRouter([
   {
@@ -394,7 +403,58 @@ const router = createBrowserRouter([
         path: "profile",
         element: <Profile />,
       },
-
+      {
+        path: "discount",
+        element: <Discount />,
+      },
+      {
+        path: "discount/add",
+        element: <DiscountAdd />,
+      },
+      {
+        path: "discount/edit/:id",
+        element: <DiscountAdd />,
+      },
+      {
+        path: "coupon",
+        element: <Coupon />,
+      },
+      {
+        path: "coupon/add",
+        element: <CouponAdd />,
+      },
+      {
+        path: "coupon/edit/:id",
+        element: <CouponAdd />,
+      },
+      {
+        path: "rating",
+        element: <Rating />,
+      },
+      {
+        path: "popup",
+        element: <Popup />,
+      },
+      {
+        path: "popup/add",
+        element: <PopupAdd />,
+      },
+      {
+        path: "popup/edit/:id",
+        element: <PopupAdd />,
+      },
+      {
+        path: "slider",
+        element: <Slider />,
+      },
+      {
+        path: "slider/add",
+        element: <SliderAdd />,
+      },
+      {
+        path: "slider/edit/:id",
+        element: <SliderAdd />,
+      },
     ],
   },
 

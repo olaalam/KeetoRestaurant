@@ -37,16 +37,16 @@ export function AppSidebar({ side = "left" }) {
   const { t } = useTranslation();
 
   // 3. جلب إحصائيات الطلبات من الـ Backend
-  const { data: orderCounts = {} } = useQuery({
+const { data: orderCounts = { totalOrders: 0, statusCounts: {} } } = useQuery({
     queryKey: ['order-statistics'],
     queryFn: async () => {
-      // تنبيه: تأكدي من أن هذا المسار (Endpoint) متطابق مع مسار الـ API الفعلي لديكِ
-      const res = await api.get('/api/restaurant/order/statistics');
-      return res.data.data;
+        const res = await api.get('/api/restaurant/order/numbers');
+       
+        console.log('Order counts data:', res.data.data.data);
+        return res.data.data.data; 
     },
-    // تحديث البيانات كل 30 ثانية لضمان بقاء الأرقام دقيقة
     refetchInterval: 30000, 
-  });
+});
 
   // 4. تمرير الترجمة والأرقام إلى دالة getModules
   const translatedModules = getModules(t, orderCounts);
