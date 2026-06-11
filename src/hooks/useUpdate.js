@@ -6,8 +6,11 @@ export const useUpdate = (url, onSuccessKey) => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: async ({ id, payload }) => {
-            const targetUrl = id ? `${url}/${id}` : url;
+        // 💡 قمنا بإضافة customUrl هنا داخل الـ arguments
+        mutationFn: async ({ id, payload, customUrl }) => {
+            // إذا قمنا بتمرير customUrl نستخدمه مباشرة، وإلا نطبق المنطق القديم
+            const targetUrl = customUrl ? customUrl : (id ? `${url}/${id}` : url);
+            
             const { data } = await api.put(targetUrl, payload);
             return data;
         },

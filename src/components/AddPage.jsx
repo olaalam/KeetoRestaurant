@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Controller, useForm } from 'react-hook-form'; 
 import { usePost } from '@/hooks/usePost';
 import { useUpdate } from '@/hooks/useUpdate';
@@ -24,6 +24,7 @@ const AddPage = ({
     onSuccessAction,
     children,
     transformPayload,
+    bypassIdInEdit = false,
 }) => {
     const isEdit = method === 'PUT' || !!initialData?.id;
     const formMethods = useForm({
@@ -34,6 +35,12 @@ const AddPage = ({
     const updateMutation = useUpdate(apiUrl, queryKey);
     const { t } = useTranslation();
     const [openCombobox, setOpenCombobox] = useState({});
+    
+    // استخدام useRef للاحتفاظ بهوية الـ fields دون التسبب في إعادة تشغيل الـ useEffect
+    const fieldsRef = useRef(fields);
+    useEffect(() => {
+        fieldsRef.current = fields;
+    }, [fields]);
 
     const toBase64 = (file) => new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -42,34 +49,58 @@ const AddPage = ({
         reader.onerror = error => reject(error);
     });
 
-useEffect(() => {
-    if (initialData) {
-        const formattedData = { ...initialData };
+    // تحويل initialData إلى نص JSON لمراقبة التغيير الحقيقي في البيانات فقط وليس الـ Reference
+    const initialDataString = JSON.stringify(initialData);
 
-        fields.forEach(field => {
-            if (field.type === 'date' && initialData[field.name]) {
-                formattedData[field.name] = new Date(initialData[field.name])
-                    .toISOString()
-                    .split('T')[0];
+    useEffect(() => {
+        if (initialData) {
+            const formattedData = { ...initialData };
+
+            // استخدام fieldsRef.current لتجنب وضع fields في التبعيات
+            fieldsRef.current.forEach(field => {
+                if (field.type === 'date' && initialData[field.name]) {
+                    try {
+                        formattedData[field.name] = new Date(initialData[field.name])
+                            .toISOString()
+                            .split('T')[0];
+                    } catch (e) {
+                        console.error("Error formatting date:", e);
+                    }
+                }
+            });
+
+            // عمل reset فقط عندما تتغير البيانات القادمة فعلياً من الـ API
+            reset(formattedData, { keepDirtyValues: true });
+        }
+    }, [initialDataString, reset]); // ✅ الآن التبعية مستقرة تماماً ولن تسبب Loop
+
+const onSubmit = (data) => {
+    const payloadToSend = transformPayload ? transformPayload(data) : data;
+
+    if (isEdit) {
+        // 💡 إذا كانت الخاصية true نرسل الرابط الأصلي صافي، وإلا نتركه null ليقوم الهوك بدمج الـ id تلقائياً
+        const customUrl = bypassIdInEdit ? apiUrl : null;
+
+        updateMutation.mutate(
+            { 
+                id: initialData?.id || data?.id, 
+                payload: payloadToSend,
+                customUrl: customUrl // 👈 نمرر الرابط المخصص هنا للهوك
+            },
+            {
+                onSuccess: (res) => {
+                    onSuccessAction?.(res);
+                }
+            }
+        );
+    } else {
+        postMutation.mutate(payloadToSend, {
+            onSuccess: (res) => {
+                onSuccessAction?.(res);
             }
         });
-
-        reset(formattedData, { keepDirtyValues: true });
     }
-}, [initialData, reset]); // ⚠️ هنا المشكلة!
-    const onSubmit = (data) => {
-        const payloadToSend = transformPayload ? transformPayload(data) : data;
-        if (isEdit) {
-            updateMutation.mutate(
-                { id: initialData.id, payload: payloadToSend }, 
-                { onSuccess: (res) => onSuccessAction?.(res) }
-            );
-        } else {
-            postMutation.mutate(payloadToSend, { 
-                onSuccess: (res) => onSuccessAction?.(res)
-            });
-        }
-    };
+};
     const isLoading = postMutation.isPending || updateMutation.isPending;
 
     return (
@@ -142,15 +173,10 @@ useEffect(() => {
                                                                             value={String(option.value)}
                                                                             onSelect={() => {
                                                                                 const selectedValue = String(option.value);
-                                                                                
-                                                                                // 1. تحديث قيمة react-hook-form الفورية
                                                                                 formOnChange(selectedValue); 
-                                                                                
-                                                                                // 2. تشغيل الـ onChange الخارجية الممررة من الـ Object الخاص بالفيلد لو وُجدت
                                                                                 if (fieldItem.onChange) {
                                                                                     fieldItem.onChange(selectedValue);
                                                                                 }
-
                                                                                 setOpenCombobox(prev => ({ ...prev, [fieldItem.name]: false }));
                                                                                 setSearchVal("");
                                                                             }}
@@ -191,8 +217,6 @@ useEffect(() => {
                                                 }
 
                                                 formOnChange(updatedValue);
-                                                
-                                                // تشغيل الـ onChange الخارجية للمتعدد لو محتاجاها
                                                 if (fieldItem.onChange) {
                                                     fieldItem.onChange(updatedValue);
                                                 }
@@ -300,7 +324,7 @@ useEffect(() => {
                                         defaultValue={false}
                                         render={({ field: { onChange: formOnChange, value } }) => (
                                             <Switch
-                                                checked={value}
+                                                checked={!!value}
                                                 onCheckedChange={(checked) => {
                                                     formOnChange(checked);
                                                     if (fieldItem.onChange) fieldItem.onChange(checked);

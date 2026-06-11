@@ -65,7 +65,6 @@ const SettingAdd = () => {
             fields={settingFields}
             initialData={initialData}
             onSuccessAction={() => {
-                console.log("Updated Successfully");
                 navigate(`/branches/setting/${id}`);
             }}
         />
