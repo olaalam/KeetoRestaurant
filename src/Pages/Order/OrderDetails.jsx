@@ -248,11 +248,23 @@ export default function OrderDetails() {
                                                     {item.quantity} × {t("currency")} {parseFloat(item.basePrice).toFixed(2)}
                                                 </p>
                                                 
-                                                {/* عرض الإضافات والمكونات إذا وجدت */}
-                                                {item.variations && (
-                                                    <p className="text-[11px] text-primary/80 bg-primary/5 px-1.5 py-0.5 rounded inline-block mt-1">
-                                                        {item.variations} (+{t("currency")} {parseFloat(item.variationsPrice).toFixed(2)})
-                                                    </p>
+                                                {/* 💡 الحل: معالجة وعرض الإضافات والمكونات بشكل آمن بعد أن أصبحت Array of Objects */}
+                                                {Array.isArray(item.variations) && item.variations.length > 0 && (
+                                                    <div className="flex flex-wrap gap-1 mt-1">
+                                                        {item.variations.map((v, index) => (
+                                                            <span key={v.optionId || index} className="text-[11px] text-primary bg-primary/5 px-2 py-0.5 rounded-md font-medium border border-primary/10">
+                                                                {isRTL 
+                                                                    ? `${v.variationNameAr || v.variationName}: ${v.optionNameAr || v.optionName}`
+                                                                    : `${v.variationName}: ${v.optionName}`
+                                                                }
+                                                            </span>
+                                                        ))}
+                                                        {parseFloat(item.variationsPrice) > 0 && (
+                                                            <span className="text-[11px] text-slate-500 self-center">
+                                                                (+{t("currency")} {parseFloat(item.variationsPrice).toFixed(2)})
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                 )}
                                                 
                                                 {item.note && (
@@ -288,7 +300,7 @@ export default function OrderDetails() {
                                     <span className="font-medium">{t("currency")} {parseFloat(order.serviceFee).toFixed(2)}</span>
                                 </div>
                                 
-                                {/* حقل عمولة التطبيق الجديد */}
+                                {/* حقل عمولة التطبيق */}
                                 {order.appCommission && parseFloat(order.appCommission) > 0 && (
                                     <div className="flex justify-between text-slate-500 text-xs italic bg-slate-50/50 p-1.5 rounded border border-dashed">
                                         <span className="flex items-center gap-1">
@@ -328,7 +340,7 @@ export default function OrderDetails() {
                 </div>
             </div>
 
-            {/* نافذة معاينة الفاتورة المدبجة */}
+            {/* نافذة معاينة الفاتورة */}
             <Dialog
                 open={isPreviewOpen}
                 onOpenChange={(open) => {
