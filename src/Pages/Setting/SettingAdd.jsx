@@ -26,6 +26,35 @@ const SettingPageAdd = () => {
 
     const rawData = state?.settingData || fullData;
 
+    const defaultInitialData = {
+        foodManagement: false,
+        scheduledDelivery: false,
+        reviewsSection: false,
+        posSection: true,
+        selfDelivery: false,
+        homeDelivery: true,
+        takeaway: true,
+        orderSubscription: false,
+        instantOrder: false,
+        halalTagStatus: true,
+        dineIn: true,
+        vegType: "BOTH",
+        canEditOrder: true,
+        minOrderAmount: 50,
+        minDeliveryTime: 15,
+        maxDeliveryTime: 45,
+        isAlwaysOpen: false,
+        isSameTimeEveryDay: false,
+        schedules: [
+            { dayOfWeek: 0, isOffDay: false, openingTime: "09:00", closingTime: "23:00" },
+            { dayOfWeek: 1, isOffDay: false, openingTime: "09:00", closingTime: "23:00" },
+            { dayOfWeek: 2, isOffDay: false, openingTime: "09:00", closingTime: "23:00" },
+            { dayOfWeek: 3, isOffDay: false, openingTime: "09:00", closingTime: "23:00" },
+            { dayOfWeek: 4, isOffDay: false, openingTime: "09:00", closingTime: "23:00" },
+            { dayOfWeek: 5, isOffDay: true, openingTime: "", closingTime: "" },
+            { dayOfWeek: 6, isOffDay: false, openingTime: "09:00", closingTime: "23:00" }
+        ]
+    };
     // تهيئة البيانات والاحتفاظ بـ id المطعم داخلياً داخل الـ form بدون وضعه في الـ URL
     const initialData = React.useMemo(() => {
         if (!rawData) return null;
@@ -106,35 +135,7 @@ const SettingPageAdd = () => {
 
     if (id && isFetching) return <LoadingSpinner />;
 
-    const defaultInitialData = {
-        foodManagement: false,
-        scheduledDelivery: false,
-        reviewsSection: false,
-        posSection: true,
-        selfDelivery: false,
-        homeDelivery: true,
-        takeaway: true,
-        orderSubscription: false,
-        instantOrder: false,
-        halalTagStatus: true,
-        dineIn: true,
-        vegType: "BOTH",
-        canEditOrder: true,
-        minOrderAmount: 50,
-        minDeliveryTime: 15,
-        maxDeliveryTime: 45,
-        isAlwaysOpen: false,
-        isSameTimeEveryDay: false,
-        schedules: [
-            { dayOfWeek: 0, isOffDay: false, openingTime: "09:00", closingTime: "23:00" },
-            { dayOfWeek: 1, isOffDay: false, openingTime: "09:00", closingTime: "23:00" },
-            { dayOfWeek: 2, isOffDay: false, openingTime: "09:00", closingTime: "23:00" },
-            { dayOfWeek: 3, isOffDay: false, openingTime: "09:00", closingTime: "23:00" },
-            { dayOfWeek: 4, isOffDay: false, openingTime: "09:00", closingTime: "23:00" },
-            { dayOfWeek: 5, isOffDay: true, openingTime: "", closingTime: "" },
-            { dayOfWeek: 6, isOffDay: false, openingTime: "09:00", closingTime: "23:00" }
-        ]
-    };
+
 
     return (
         <AddPage
