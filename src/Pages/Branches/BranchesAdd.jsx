@@ -46,6 +46,7 @@ const RestaurantAdd = () => {
         { name: 'nameAr', label: t('nameAr'), required: true },
         { name: 'nameFr', label: t('nameFr'), required: true },
         { name: 'phoneNumber', label: t('phoneNumberLabel'), type: 'text', required: true },
+        
         { name: 'address', label: t('addressLabel'), type: 'text', required: true },
         {
             name: 'zoneId',

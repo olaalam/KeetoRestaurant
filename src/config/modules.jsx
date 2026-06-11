@@ -115,6 +115,7 @@ export const getModules = (t, orderCounts = {}) => {
         { title: t("rating"), url: "/rating", icon: ShoppingBag },
         { title: t("popup"), url: "/popup", icon: ShoppingBag },
         { title: t("banner"), url: "/slider", icon: ShoppingBag },
+        { title: t("setting"), url: "/setting", icon: ShoppingBag },
       ],
     },
   ];

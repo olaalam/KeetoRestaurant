@@ -6,11 +6,12 @@ import api from '@/api/axios';
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { ListTree, PlusCircle, CheckCircle2 } from "lucide-react";
+import { ListTree, PlusCircle, CheckCircle2, Pencil } from "lucide-react"; // 💡 أضفنا أيقونة القلم
 import { usePost } from '@/hooks/usePost';
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input"; // 💡 أضفنا الـ Input لتعديل السعر
 import { useTranslation } from "@/hooks/useTranslation";
 
 const Foods = () => {
@@ -18,20 +19,25 @@ const Foods = () => {
     const { t } = useTranslation();
     const [selectedVariations, setSelectedVariations] = useState(null);
     const location = useLocation();
+    
     // حالات إدارة المكونات
     const [ingredientsDialogOpen, setIngredientsDialogOpen] = useState(false);
     const [currentFoodId, setCurrentFoodId] = useState(null);
     const [selectedIngredients, setSelectedIngredients] = useState([]);
     const [highlightedId, setHighlightedId] = useState(null);
+    
+    // 💡 حالات إدارة تعديل السعر السريع
+    const [priceDialogOpen, setPriceDialogOpen] = useState(false);
+    const [foodToUpdatePrice, setFoodToUpdatePrice] = useState(null); // هنيشيل فيه الـ id والـ name
+    const [newPrice, setNewPrice] = useState('');
+
     const [pagination, setPagination] = useState({
         pageIndex: 0,
         pageSize: 15,
     });
-    // 💡 مراقبة ما إذا كنا راجعين من صفحة الحفظ ومعنا المعرف الخاص بالعنصر
 
-
-    // جلب بيانات الأطعمة للجدول[cite: 1]
-    const { data: foods = [], isLoading } = useQuery({
+    // جلب بيانات الأطعمة للجدول
+    const { data: foods = [], isLoading, refetch } = useQuery({ // 💡 أضفنا refetch لتحديث الجدول بعد تعديل السعر
         queryKey: ['foods'],
         queryFn: async () => {
             const res = await api.get('/api/restaurant/food');
@@ -39,40 +45,41 @@ const Foods = () => {
         }
     });
 
-    // 1. جلب قائمة المكونات المتاحة - المسار الصحيح بناءً على الـ JSON[cite: 1]
+    // جلب قائمة المكونات المتاحة
     const { data: ingredientsOptions = [] } = useQuery({
         queryKey: ['ingredients-select'],
         queryFn: async () => {
             const res = await api.get('/api/restaurant/food/select');
-
-
             return res.data.data.data.ingredients || [];
         }
     });
 
-    // 2. هوك الإرسال للبيانات[cite: 2]
+    // هوك الإرسال للمكونات
     const assignMutation = usePost(
         `/api/restaurant/food/assign-ingredients/${currentFoodId}`,
         'post',
         'foods'
     );
-    // في Food.jsx
+
+    // 💡 هوك إرسال السعر الجديد للباك إند
+    // ملحوظة: لو الباك إند بيحتاج مسار ديناميكي زي /update-price/${id}، تقدري تستخدمي api.patch مباشرة جوا دالة الحفظ
+    const updatePriceMutation = usePost(
+        `/api/restaurant/food/update-price/${foodToUpdatePrice?.id}`, // تأكدي من المسار الصحيح من الباك إند عندك
+        'post', // أو 'patch' / 'put' حسب الـ API
+        'foods'
+    );
+
     useEffect(() => {
         if (location.state?.highlightedId && foods) {
             const index = foods.findIndex(item => item.id === location.state.highlightedId);
 
             if (index !== -1) {
-                // 1. الانتقال للصفحة الصحيحة
                 const pageIndex = Math.floor(index / pagination.pageSize);
                 setPagination(prev => ({ ...prev, pageIndex }));
-
-                // 2. تفعيل الـ highlight
                 setHighlightedId(location.state.highlightedId);
 
-                // 3. إزالة الـ highlight بعد 3 ثوانٍ
                 const timer = setTimeout(() => {
                     setHighlightedId(null);
-                    // مسح الـ state من الـ location حتى لا يتكرر الـ highlight عند عمل refresh
                     window.history.replaceState({}, document.title);
                 }, 3000);
 
@@ -106,6 +113,26 @@ const Foods = () => {
         });
     };
 
+    // 💡 دالة حفظ السعر الجديد
+    const handleSavePrice = async () => {
+        if (!newPrice || isNaN(newPrice) || Number(newPrice) <= 0) return;
+
+        // لو الـ usePost عندك مش بتدعم تغيير الـ URL ديناميكياً بسهولة لكل طلب، يفضل نعملها بـ api.put/post مباشرة هنا:
+        try {
+            // هنبعت الطلب للباك إند (عدلي المسار والـ Method بناءً على الـ API Documentation عندك)
+            await api.put(`/api/restaurant/food/${foodToUpdatePrice.id}`, {
+                price: Number(newPrice)
+                // لو الباك بيطلب بقية الداتا، يفضل تبعتي السعر بس لو المسار مخصص لتحديث السعر السريع
+            });
+            
+            // عمل تحديث للبيانات في الجدول بعد النجاح
+            refetch(); 
+            setPriceDialogOpen(false);
+        } catch (error) {
+            console.error("Error updating price:", error);
+        }
+    };
+
     const columns = [
         {
             accessorKey: 'image',
@@ -134,9 +161,19 @@ const Foods = () => {
             accessorKey: 'price',
             header: t('price'),
             cell: ({ row }) => (
-                <span className="font-medium text-green-600">
-                    {row.original.price} EGP
-                </span>
+                // 💡 جعلنا منطقة السعر قابلة للضغط ويوضح للمستخدم إنها تفاعلية عن طريق الـ hover وايقونة القلم الصغيرة
+                <div 
+                    className="flex items-center gap-2 font-medium text-green-600 cursor-pointer hover:bg-slate-50 p-1.5 rounded-md transition-colors w-fit"
+                    onClick={() => {
+                        setFoodToUpdatePrice({ id: row.original.id, name: row.original.name });
+                        setNewPrice(row.original.price); // وضع السعر الحالي كقيمة افتراضية في الـ Input
+                        setPriceDialogOpen(true);
+                    }}
+                    title={t('editPrice') || 'تعديل السعر'}
+                >
+                    <span>{row.original.price} EGP</span>
+                    <Pencil className="h-3 w-3 text-gray-400 hover:text-green-600" />
+                </div>
             )
         },
         {
@@ -203,7 +240,7 @@ const Foods = () => {
                 data={foods || []}
                 isLoading={isLoading}
                 queryKey={['foods']}
-                 editApiUrl="/api/restaurant/food"
+                editApiUrl="/api/restaurant/food"
                 deleteApiUrl="/api/restaurant/food"
                 onAdd={() => navigate('/foods/add')}
                 highlightedId={highlightedId}
@@ -212,8 +249,50 @@ const Foods = () => {
                 setPagination={setPagination}
             />
 
+            {/* 💡 Quick Edit Price Dialog */}
+            <Dialog open={priceDialogOpen} onOpenChange={setPriceDialogOpen}>
+                <DialogContent className="max-w-sm">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <Pencil className="h-5 w-5 text-primary" />
+                            {t('editPrice') || 'تعديل السعر'}
+                        </DialogTitle>
+                        <DialogDescription>
+                            {t('updatePriceFor') || 'تعديل سعر المنتج:'} <span className="font-bold text-slate-900">{foodToUpdatePrice?.name}</span>
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-2 my-4">
+                        <Label htmlFor="quick-price">{t('price') || 'السعر'} (EGP)</Label>
+                        <Input
+                            id="quick-price"
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={newPrice}
+                            onChange={(e) => setNewPrice(e.target.value)}
+                            placeholder="0.00"
+                            className="text-left font-medium"
+                        />
+                    </div>
+
+                    <div className="flex justify-end gap-3 border-t pt-4">
+                        <Button variant="outline" onClick={() => setPriceDialogOpen(false)}>
+                            {t('cancel')}
+                        </Button>
+                        <Button
+                            onClick={handleSavePrice}
+                            disabled={!newPrice}
+                        >
+                            {t('save') || 'حفظ'}
+                        </Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
             {/* Variations Dialog */}
             <Dialog open={!!selectedVariations} onOpenChange={() => setSelectedVariations(null)}>
+                {/* ... كود الـ Variations Dialog الحالي بدون تغيير ... */}
                 <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>{t('productVariationsTitle')}</DialogTitle>
@@ -252,6 +331,7 @@ const Foods = () => {
             </Dialog>
 
             {/* Assign Ingredients Dialog */}
+            {/* ... كود الـ Assign Ingredients Dialog الحالي بدون تغيير ... */}
             <Dialog open={ingredientsDialogOpen} onOpenChange={setIngredientsDialogOpen}>
                 <DialogContent className="max-w-md">
                     <DialogHeader>

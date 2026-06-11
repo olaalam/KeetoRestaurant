@@ -40,7 +40,6 @@ import PaymentMetodAdd from "./Pages/PaymentMetod/PaymentMetodAdd";
 import Transaction from "./Pages/Transaction/Transaction";
 import Order from "./Pages/Order/Order";
 import WalletR from "./Pages/Branches/WalletR";
-
 import IngredientCategory from "./Pages/IngredientCategory/IngredientCategory";
 import IngredientCategoryAdd from "./Pages/IngredientCategory/IngredientCategoryAdd";
 import Ingredients from "./Pages/Ingredients/Ingredients";
@@ -67,7 +66,8 @@ import Popup from "./Pages/Popup/Popup";
 import PopupAdd from "./Pages/Popup/PopupAdd";
 import Slider from "./Pages/Slider/Slider";
 import SliderAdd from "./Pages/Slider/SliderAdd";
-
+import SettingPage from "./Pages/Setting/Setting";
+import SettingPageAdd from "./Pages/Setting/SettingAdd";
 const router = createBrowserRouter([
   {
     path: "/login",
@@ -454,6 +454,14 @@ const router = createBrowserRouter([
       {
         path: "slider/edit/:id",
         element: <SliderAdd />,
+      },
+      {
+        path: "setting",
+        element: <SettingPage/>,
+      },
+      {
+        path: "setting/edit/:id",
+        element: <SettingPageAdd />,
       },
     ],
   },
