@@ -28,7 +28,7 @@ const WalletR = () => {
 
     // تعريف أعمدة جدول المعاملات المترجمة
     const transactionColumns = [
-        { accessorKey: 'id', header: t('transactionId') },
+        // { accessorKey: 'id', header: t('transactionId') },
         { 
             accessorKey: 'amount', 
             header: t('amount'),
