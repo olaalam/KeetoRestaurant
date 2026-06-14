@@ -59,9 +59,16 @@ export default function GenericDataTable({
   });
 
   // 1. Mutation لتحديث الـ Status فوراً عند تغيير السويتش
+// 1. Mutation لتحديث الـ Status فوراً عند تغيير السويتش
   const updateStatusMutation = useMutation({
     mutationFn: async ({ id, newStatus }) => {
-      return await api.put(`${editApiUrl}/${id}`, { status: newStatus });
+      // 💡 هنا الذكاء: إذا كان الرابط يخص الخصومات، نقوم بتركيبه بالشكل الذي يتوقعه الـ Backend لديكِ
+      const url = editApiUrl.includes("discounts") 
+        ? `${editApiUrl}/${id}/toggle-status` 
+        : `${editApiUrl}/${id}`;
+
+      // نقوم بإرسال الطلب (يمكنك تعديل الـ Body المرسل بناءً على ما يتوقعه الـ API، هنا أرسلنا الحالة الجديدة)
+      return await api.put(url, { status: newStatus });
     },
     onSuccess: () => {
       if (queryKey) {
