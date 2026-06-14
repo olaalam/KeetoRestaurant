@@ -23,7 +23,7 @@ const statusConfig = {
     out_for_delivery: { labelKey: "out_for_delivery", color: "bg-orange-100 text-orange-800 border-orange-200", icon: Truck },
     delivered: { labelKey: "delivered", color: "bg-green-100 text-green-800 border-green-200", icon: CheckCheck },
     cancelled: { labelKey: "cancelled", color: "bg-red-100 text-red-800 border-red-200", icon: XCircle },
-    rejected: { labelKey: "rejected", color: "bg-red-100 text-red-800 border-red-200", icon: Ban },
+    // rejected: { labelKey: "rejected", color: "bg-red-100 text-red-800 border-red-200", icon: Ban },
     refund: { labelKey: "refund", color: "bg-gray-100 text-gray-800 border-gray-200", icon: Undo2 },
 };
 

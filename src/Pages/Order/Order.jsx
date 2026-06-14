@@ -19,7 +19,7 @@ export default function Order() {
 
     const orderStatuses = [
         "pending", "accepted", "preparing", "out_for_delivery",
-        "delivered", "cancelled", "rejected", "refund"
+        "delivered", "cancelled", "refund"
     ];
 
     const { data: orders = [], isLoading } = useQuery({
@@ -31,9 +31,9 @@ export default function Order() {
     });
 
     const updateStatusMutation = useMutation({
-        mutationFn: async ({ orderId, status, cancelReason }) => {
+        mutationFn: async ({ orderId, status, cancelReasonId }) => {
             const payload = { status };
-            if (cancelReason) payload.cancelReason = cancelReason;
+            if (cancelReasonId) payload.cancelReasonId = cancelReasonId;
             const { data } = await api.put(`/api/restaurant/order/${orderId}`, payload);
             return data;
         },
@@ -50,7 +50,7 @@ export default function Order() {
     });
 
     const handleStatusChange = (orderId, newStatus) => {
-        if (newStatus === 'cancelled' || newStatus === 'rejected') {
+        if (newStatus === 'cancelled') {
             setDialogConfig({ open: true, type: newStatus, orderId });
         } else {
             updateStatusMutation.mutate({ orderId, status: newStatus });
@@ -169,10 +169,10 @@ export default function Order() {
             <ReasonDialog 
                 isOpen={dialogConfig.open}
                 onClose={() => setDialogConfig({ open: false, type: null, orderId: null })}
-                onConfirm={(cancelReason) => updateStatusMutation.mutate({ 
+                onConfirm={(cancelReasonId) => updateStatusMutation.mutate({ 
                     orderId: dialogConfig.orderId, 
                     status: dialogConfig.type, 
-                    cancelReason 
+                    cancelReasonId 
                 })}
                 title={dialogConfig.type === 'cancelled' ? t("cancelOrder") : t("rejectOrder")}
             />
