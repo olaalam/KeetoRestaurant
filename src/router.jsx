@@ -68,6 +68,8 @@ import Slider from "./Pages/Slider/Slider";
 import SliderAdd from "./Pages/Slider/SliderAdd";
 import SettingPage from "./Pages/Setting/Setting";
 import SettingPageAdd from "./Pages/Setting/SettingAdd";
+import Policy from "./Pages/Policy/Policy";
+import PolicyAdd from "./Pages/Policy/PolicyAdd";
 const router = createBrowserRouter([
   {
     path: "/login",
@@ -463,8 +465,21 @@ const router = createBrowserRouter([
         path: "setting/edit/:id",
         element: <SettingPageAdd />,
       },
+            {
+        path: "policy",
+        element: <Policy />,
+      },
+      {
+        path: "policy/add",
+        element: <PolicyAdd />,
+      },
+      {
+        path: "policy/edit/:id",
+        element: <PolicyAdd />,
+      },
     ],
   },
+
 
   {
     path: "*",
