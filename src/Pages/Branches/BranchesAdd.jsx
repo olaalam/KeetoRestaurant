@@ -156,14 +156,14 @@ const RestaurantAdd = () => {
             label: t('latitude') || 'Latitude',
             required: true,
             type: 'text',
-            disabled: true // معطلة حتى لا يقوم المستخدم بتعديلها يدوياً بل عبر الخريطة فقط
+            disabled: false // معطلة حتى لا يقوم المستخدم بتعديلها يدوياً بل عبر الخريطة فقط
         },
         {
             name: 'lng',
             label: t('longitude') || 'Longitude',
             required: true,
             type: 'text',
-            disabled: true // معطلة حتى لا يقوم المستخدم بتعديلها يدوياً بل عبر الخريطة فقط
+            disabled: false // معطلة حتى لا يقوم المستخدم بتعديلها يدوياً بل عبر الخريطة فقط
         },
     ];
 
@@ -186,25 +186,26 @@ const RestaurantAdd = () => {
                         <p className="text-sm text-gray-500 mb-4">Click on the map or drag the marker to set the zone's exact location.</p>
 
                         <div className="border rounded-xl p-1 relative">
-                            <MapComponent
-                                form={methods}
-                                selectedLocation={location}
-                                isMapClickEnabled={true}
-                                handleMapClick={(e) => {
-                                    const { lat, lng } = e.latlng;
-                                    setLocation({ lat, lng });
+<MapComponent
+    form={methods}
+    selectedLocation={location}
+    setSelectedLocation={setLocation} // 💡 أضيفي هذا السطر هنا لتمرير دالة التحديث للخريطة
+    isMapClickEnabled={true}
+    handleMapClick={(e) => {
+        const { lat, lng } = e.latlng;
+        setLocation({ lat, lng });
 
-                                    methods.setValue('lat', String(lat), { shouldDirty: true, shouldValidate: true });
-                                    methods.setValue('lng', String(lng), { shouldDirty: true, shouldValidate: true });
-                                }}
-                                onMarkerDragEnd={(e) => {
-                                    const { lat, lng } = e.target.getLatLng();
-                                    setLocation({ lat, lng });
+        methods.setValue('lat', String(lat), { shouldDirty: true, shouldValidate: true });
+        methods.setValue('lng', String(lng), { shouldDirty: true, shouldValidate: true });
+    }}
+    onMarkerDragEnd={(e) => {
+        const { lat, lng } = e.target.getLatLng();
+        setLocation({ lat, lng });
 
-                                    methods.setValue('lat', String(lat), { shouldDirty: true, shouldValidate: true });
-                                    methods.setValue('lng', String(lng), { shouldDirty: true, shouldValidate: true });
-                                }}
-                            />
+        methods.setValue('lat', String(lat), { shouldDirty: true, shouldValidate: true });
+        methods.setValue('lng', String(lng), { shouldDirty: true, shouldValidate: true });
+    }}
+/>
                         </div>
                     </div>
                 );

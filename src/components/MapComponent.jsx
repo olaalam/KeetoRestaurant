@@ -5,13 +5,12 @@ import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import { useEffect, useState } from "react";
 import { useMap } from "react-leaflet";
-import { Search, MapPin, Loader2 } from "lucide-react"; // استيراد الأيقونات المطلوبة
+import { Search, MapPin, Loader2 } from "lucide-react";
 
 // إصلاح مشكلة أيقونات Leaflet الافتراضية
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
-    iconRetinaUrl:
-        "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+    iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
     iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
     shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
 });
@@ -28,16 +27,12 @@ const ChangeView = ({ center }) => {
 
 const MapEvents = ({ handleMapClick, isMapClickEnabled }) => {
     const map = useMap();
-
     useEffect(() => {
         if (handleMapClick && isMapClickEnabled) {
             map.on('click', handleMapClick);
-            return () => {
-                map.off('click', handleMapClick);
-            };
+            return () => { map.off('click', handleMapClick); };
         }
     }, [map, handleMapClick, isMapClickEnabled]);
-
     return null;
 };
 
@@ -45,7 +40,7 @@ const RecenterMap = ({ coords }) => {
     const map = useMap();
     useEffect(() => {
         if (coords.lat && coords.lng) {
-            map.setView([coords.lat, coords.lng], 14); // زووم مناسب عند الانتقال
+            map.setView([coords.lat, coords.lng], 14);
         }
     }, [coords, map]);
     return null;
@@ -53,7 +48,7 @@ const RecenterMap = ({ coords }) => {
 
 const MapComponent = ({
     selectedLocation,
-    setSelectedLocation, // 💡 قمنا باستقبالها هنا لنتمكن من تحديث الإحداثيات عند البحث
+    setSelectedLocation,
     locationName,
     setLocationName,
     handleMapClick,
@@ -63,10 +58,29 @@ const MapComponent = ({
 }) => {
     const watchedAddress = form.watch("address");
     
-    // حالات التحكم في البحث والاقتراحات
+    // 💡 1. مراقبة حقول الـ lat والـ lng داخل الفورم عند تغييرهم يدوياً
+    const watchedLat = form.watch("lat");
+    const watchedLng = form.watch("lng");
+
     const [searchQuery, setSearchQuery] = useState("");
     const [suggestions, setSuggestions] = useState([]);
     const [isSearching, setIsSearching] = useState(false);
+
+    // 💡 2. تأثير جانبي لتحديث موقع الخريطة والـ Marker فوراً عند الكتابة اليدوية داخل الحقول
+useEffect(() => {
+    const latNum = parseFloat(watchedLat);
+    const lngNum = parseFloat(watchedLng);
+
+    // التأكد من أن القيم المدخلة هي أرقام صالحة
+    if (!isNaN(latNum) && !isNaN(lngNum)) {
+        // شرط لمنع الـ Infinite Loop + التأكد من أن الدالة ممررة وموجودة 💡
+        if (latNum !== selectedLocation.lat || lngNum !== selectedLocation.lng) {
+            if (typeof setSelectedLocation === "function") {
+                setSelectedLocation({ lat: latNum, lng: lngNum });
+            }
+        }
+    }
+}, [watchedLat, watchedLng, selectedLocation, setSelectedLocation]);
 
     // دالة جلب الاقتراحات من خوادم OpenStreetMap أثناء الكتابة
     useEffect(() => {
@@ -90,27 +104,22 @@ const MapComponent = ({
             } finally {
                 setIsSearching(false);
             }
-        }, 600); // عمل Debounce بمقدار 600 ملي ثانية لتقليل الضغط على السيرفر
+        }, 600);
 
         return () => clearTimeout(delayDebounceFn);
     }, [searchQuery]);
 
-    // دالة اختيار مكان من الاقتراحات والذهاب إليه
     const handleSelectSuggestion = (place) => {
         const lat = parseFloat(place.lat);
         const lng = parseFloat(place.lon);
         const displayName = place.display_name;
 
-        // 1. تحديث الإحداثيات والـ Marker في الـ State الرئيسي الشاشة
         if (setSelectedLocation) {
             setSelectedLocation({ lat, lng });
         }
         
-        // 2. تحديث نص العنوان
         setLocationName(displayName);
         form.setValue("address", displayName, { shouldValidate: true });
-        
-        // 3. تفريغ قائمة الاقتراحات وإدخال البحث
         setSuggestions([]);
         setSearchQuery("");
     };
@@ -118,7 +127,7 @@ const MapComponent = ({
     return (
         <div className="relative rounded-2xl overflow-hidden shadow-lg h-[460px] flex flex-col bg-white">
             
-            {/* 🔍 صندوق البحث العائم فوق الخريطة */}
+            {/* صندوق البحث العائم فوق الخريطة */}
             <div className="absolute top-4 left-4 right-4 z-[1000] max-w-md mx-auto">
                 <div className="relative shadow-md rounded-xl bg-white border border-slate-200 overflow-visible">
                     <div className="flex items-center px-3 py-1">
@@ -144,7 +153,7 @@ const MapComponent = ({
                                     type="button"
                                     onClick={() => handleSelectSuggestion(place)}
                                     className="w-full text-left px-4 py-2.5 hover:bg-slate-50 transition-colors flex items-start gap-2.5 text-xs font-medium text-slate-600"
-                                    style={{ direction: 'rtl', textAlign: 'right' }} // لدعم المظهر العربي بشكل لائق
+                                    style={{ direction: 'rtl', textAlign: 'right' }}
                                 >
                                     <MapPin className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                                     <span className="line-clamp-2">{place.display_name}</span>
