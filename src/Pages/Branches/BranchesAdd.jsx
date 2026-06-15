@@ -16,10 +16,10 @@ const RestaurantAdd = () => {
     const isEdit = !!id;
     
     const [selectedCityId, setSelectedCityId] = useState('');
-    // 1. تعريف الـ State الخاص بالموقع الجغرافي لتفادي أخطاء عدم التعريف
+    // تعريف الـ State الخاص بالموقع الجغرافي لتفادي أخطاء عدم التعريف
     const [location, setLocation] = useState({ lat: 30.0444, lng: 31.2357 }); // قيم افتراضية (مثال: القاهرة)
 
-    // 2. جلب قائمة المدن والمناطق من الـ API
+    // جلب قائمة المدن والمناطق من الـ API
     const { data: selectionData = { zones: [], cities: [] }, isLoading: isLoadingZones } = useQuery({
         queryKey: ['DeliveryZonesSelect'],
         queryFn: async () => {
@@ -57,7 +57,7 @@ const RestaurantAdd = () => {
 
     const rawData = state?.zoneDeliveryData || fetchedData;
 
-    // 3. تحويل البيانات (Mapping) واستخراج cityId في حالة التعديل
+    // تحويل البيانات (Mapping) واستخراج cityId في حالة التعديل
     const initialData = useMemo(() => {
         if (!rawData) return null;
 
@@ -71,19 +71,19 @@ const RestaurantAdd = () => {
             zoneId: String(zoneId),
             deliveryFee: rawData.deliveryFee,
             deliveryRadiusKm: rawData.deliveryRadiusKm,
-            lat: String(rawData.lat || ""), // تم تصحيح الخطأ الإملائي من raw إلى rawData
-            lng: String(rawData.lng || ""), // تم تصحيح الخطأ الإملائي من raw إلى rawData
+            lat: String(rawData.lat || ""), 
+            lng: String(rawData.lng || ""), 
         };
     }, [rawData, selectionData.zones]);
 
-    // 4. تعيين المدينة كقيمة افتراضية عند تحميل بيانات التعديل
+    // تعيين المدينة كقيمة افتراضية عند تحميل بيانات التعديل
     useEffect(() => {
         if (initialData?.cityId && !selectedCityId) {
             setSelectedCityId(initialData.cityId);
         }
     }, [initialData, selectedCityId]);
 
-    // 5. تصفية المناطق بناءً على المدينة المختارة
+    // تصفية المناطق بناءً على المدينة المختارة
     const filteredZones = useMemo(() => {
         if (!selectedCityId) return [];
         return selectionData.zones.filter(z =>
@@ -91,7 +91,7 @@ const RestaurantAdd = () => {
         );
     }, [selectedCityId, selectionData.zones]);
 
-    // 6. تحديث موقع الخريطة عند تحميل البيانات
+    // تحديث موقع الخريطة عند تحميل البيانات
     useEffect(() => {
         if (fetchedData?.lat && fetchedData?.lng) {
             setLocation({ 
@@ -150,6 +150,21 @@ const RestaurantAdd = () => {
             })),
             disabled: !selectedCityId
         },
+        // 🟢 إضافة حقول الـ lat و lng هنا لتظهر داخل الفورم وتُرسل للـ API
+        {
+            name: 'lat',
+            label: t('latitude') || 'Latitude',
+            required: true,
+            type: 'text',
+            disabled: true // معطلة حتى لا يقوم المستخدم بتعديلها يدوياً بل عبر الخريطة فقط
+        },
+        {
+            name: 'lng',
+            label: t('longitude') || 'Longitude',
+            required: true,
+            type: 'text',
+            disabled: true // معطلة حتى لا يقوم المستخدم بتعديلها يدوياً بل عبر الخريطة فقط
+        },
     ];
 
     return (
@@ -157,16 +172,11 @@ const RestaurantAdd = () => {
             title={t('branchTitle')}
             apiUrl="/api/restaurant/branches"
             queryKey="branches"
-            // نمرر الحقول كدالة إذا كان المكون يدعم ذلك، أو نمررها مباشرة. 
-            // تم تركها بالأسفل لتأخذ الـ methods مباشرة من الـ children render prop
             fields={getFields()} 
             initialData={initialData}
             onSuccessAction={() => navigate(-1)}
         >
             {(methods) => {
-                // تحديث مصفوفة الـ fields لتشمل الـ methods حتى يعمل الـ onChange للمدينة بشكل صحيح
-                const updatedFields = getFields(methods);
-                
                 return (
                     <div className="space-y-4 pt-4 border-t">
                         <div className="flex items-center gap-2">
