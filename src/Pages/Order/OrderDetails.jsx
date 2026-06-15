@@ -5,12 +5,13 @@ import {
     Clock, CheckCircle, Package, Truck, CheckCheck,
     XCircle, Undo2, MapPin, CreditCard, Store, Receipt, HomeIcon,
     ArrowLeft, User, Phone, Mail, Calendar, Hash, Info, ShoppingBag, 
-    Loader2, Copy // تم استيراد أيقونة النسخ هنا
+    Loader2, Copy, Printer
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"; // استيراد الـ Dialog هنا
 import api from '@/api/axios';
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { useTranslation } from "@/hooks/useTranslation";
@@ -34,6 +35,7 @@ export default function OrderDetails() {
     const queryClient = useQueryClient();
 
     const [dialogConfig, setDialogConfig] = useState({ open: false, type: null });
+    const [isInvoiceOpen, setIsInvoiceOpen] = useState(false); // State للتحكم في فتح وإغلاق الفاتورة
 
     const orderStatuses = [
         "pending", "accepted", "preparing", "out_for_delivery",
@@ -75,6 +77,17 @@ export default function OrderDetails() {
         }
     };
 
+    // دالة لطباعة الفاتورة مباشرة من الـ Dialog
+    const handlePrintInvoice = () => {
+        const printContent = document.getElementById("invoice-print-area")?.innerHTML;
+        const originalContent = document.body.innerHTML;
+        if (printContent) {
+            document.body.innerHTML = printContent;
+            window.print();
+            window.location.reload(); // لإعادة تحميل الصفحة واستعادة العناصر الأصلية
+        }
+    };
+
     if (isLoading) return <div className="min-h-[400px] flex items-center justify-center"><LoadingSpinner /></div>;
     if (error || !order) return <div className="text-center p-8 text-red-500">{t('orderNotFound') || 'الطلب غير موجود'}</div>;
 
@@ -84,7 +97,40 @@ export default function OrderDetails() {
     return (
         <div className="container mx-auto py-8 px-4 max-w-6xl space-y-6">
             
+            {/* الهيدر العلوي المحتوي على أزرار التحكم ورقم الطلب وزر فتح الفاتورة */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-4 rounded-2xl border shadow-sm">
+                <div className="flex items-center gap-3">
+                    <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="rounded-xl" 
+                        onClick={() => navigate('/orders')}
+                    >
+                        <ArrowLeft className="w-5 h-5 rtl:rotate-180" />
+                    </Button>
+                    <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                            <h1 className="text-lg font-bold text-gray-900">
+                                {t('orderDetails') || 'تفاصيل الطلب'}
+                            </h1>
+                            <Badge className={`${currentStatusStyle.color} font-semibold rounded-lg border px-2.5 py-0.5 text-xs flex items-center gap-1`}>
+                                <StatusIcon className="w-3.5 h-3.5" />
+                                {t(currentStatusStyle.labelKey)}
+                            </Badge>
+                        </div>
+                        <p className="text-xs text-gray-400 mt-0.5 font-medium">{order.orderNumber}</p>
+                    </div>
+                </div>
 
+                {/* زر فتح الفاتورة بداخل Dialog */}
+                <Button 
+                    onClick={() => setIsInvoiceOpen(true)} 
+                    className="rounded-xl gap-2 h-11 px-5 font-semibold bg-primary text-white shadow-sm hover:bg-primary/90"
+                >
+                    <Receipt className="w-4 h-4" />
+                    {t('viewInvoice') || 'عرض الفاتورة'}
+                </Button>
+            </div>
 
             {/* شبكة البيانات الأساسية */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -203,7 +249,7 @@ export default function OrderDetails() {
                         </CardContent>
                     </Card>
 
-                    {/* كارت بيانات العميل المحدث مع أيقونة الـ WhatsApp والنسخ المباشر */}
+                    {/* كارت بيانات العميل */}
                     <Card className="rounded-2xl border shadow-sm bg-white">
                         <CardHeader className="border-b bg-gray-50/50 px-6 py-4">
                             <CardTitle className="text-md font-bold text-gray-800 flex items-center gap-2">
@@ -228,7 +274,6 @@ export default function OrderDetails() {
                                         <Phone className="w-4 h-4 text-gray-400" />
                                         <span className="text-gray-500 font-medium">{t('contact') || 'Contact'}:</span>
                                         
-                                        {/* أيقونة الواتساب المضافة بجانب الرقم */}
                                         {order.customer?.phone && (
                                             <a 
                                                 href={`https://wa.me/${order.customer.phone.replace(/[^0-9]/g, '')}`} 
@@ -245,7 +290,6 @@ export default function OrderDetails() {
 
                                         <span className="font-semibold text-gray-900">{order.customer?.phone || t('notAvailable')}</span>
 
-                                        {/* زر نسخ رقم الهاتف المضاف مع التنبيه الفوري */}
                                         {order.customer?.phone && (
                                             <button 
                                                 onClick={() => {
@@ -266,9 +310,16 @@ export default function OrderDetails() {
                                         <span>{order.customer?.email}</span>
                                     </div>
                                 )}
-                                <div className="flex items-center gap-2 text-sm text-gray-600">
-                                    <MapPin className="w-4 h-4 text-gray-400" />
-                                    <span>{order?.address || t('notSpecified')}</span>
+                                
+                                <div className="flex items-start gap-2 text-sm text-gray-600">
+                                    <MapPin className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
+                                    <span>
+                                        {order?.address && typeof order.address === 'object' ? (
+                                            `${order.address.title || ''} - ${order.address.street || ''} (عمارة: ${order.address.number || '-'}, دور: ${order.address.floor || '-'})`
+                                        ) : (
+                                            order?.address || t('notSpecified')
+                                        )}
+                                    </span>
                                 </div>
                             </div>
                         </CardContent>
@@ -325,6 +376,112 @@ export default function OrderDetails() {
                     </Card>
                 </div>
             </div>
+
+            {/* مكوّن الـ Dialog الخاص بعرض وتصميم الفاتورة */}
+            <Dialog open={isInvoiceOpen} onOpenChange={setIsInvoiceOpen}>
+                <DialogContent className="max-w-md rounded-2xl p-6 bg-white shadow-xl overflow-hidden sm:max-w-lg">
+                    <DialogHeader className="flex flex-row justify-between items-center border-b pb-4">
+                        <DialogTitle className="text-md font-bold text-gray-800 flex items-center gap-2">
+                            <Receipt className="w-5 h-5 text-primary" />
+                            {t('orderInvoice') || 'فاتورة الطلب'}
+                        </DialogTitle>
+                        <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={handlePrintInvoice}
+                            className="rounded-xl gap-1.5 text-xs font-semibold"
+                        >
+                            <Printer className="w-4 h-4" />
+                            {t('print') || 'طباعة'}
+                        </Button>
+                    </DialogHeader>
+
+                    {/* منطقة الفاتورة القابلة للطباعة والتصفح */}
+                    <div id="invoice-print-area" className="py-4 space-y-4 max-h-[70vh] overflow-y-auto px-1">
+                        {/* ترويسة الفاتورة */}
+                        <div className="text-center space-y-1">
+                            <h2 className="text-xl font-black text-gray-900 capitalize">{order.restaurant?.name || 'Keeto'}</h2>
+                            <p className="text-xs text-gray-400 font-medium">{order.branch?.name}</p>
+                            <p className="text-xs text-gray-500 dir-ltr">{new Date(order.createdAt).toLocaleString()}</p>
+                        </div>
+
+                        <Separator className="border-dashed" />
+
+                        {/* بيانات الفاتورة الأساسية */}
+                        <div className="text-xs space-y-2 text-gray-600 bg-gray-50 p-3 rounded-xl border">
+                            <div className="flex justify-between">
+                                <span className="font-medium">{t('invoiceNo') || 'رقم الفاتورة'}:</span>
+                                <span className="font-bold text-gray-900">{order.orderNumber}</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span className="font-medium">{t('dailyNo') || 'الرقم اليومي'}:</span>
+                                <span className="font-bold text-gray-900">#{order.dailyOrderNumber}</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span className="font-medium">{t('customerName') || 'اسم العميل'}:</span>
+                                <span className="font-semibold text-gray-900">{order.customer?.name}</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span className="font-medium">{t('paymentMethod') || 'طريقة الدفع'}:</span>
+                                <span className="font-semibold text-gray-900">{order.paymentMethodNameAr || order.paymentMethodName}</span>
+                            </div>
+                        </div>
+
+                        <Separator className="border-dashed" />
+
+                        {/* جدول أو قائمة المنتجات */}
+                        <div className="space-y-3">
+                            <div className="flex justify-between text-xs font-bold text-gray-400 px-1">
+                                <span>{t('item') || 'الصنف'}</span>
+                                <span>{t('total') || 'الإجمالي'}</span>
+                            </div>
+                            <div className="space-y-2">
+                                {order.items?.map((item) => (
+                                    <div key={item.id} className="flex justify-between items-start text-sm gap-4">
+                                        <div className="space-y-0.5">
+                                            <p className="font-semibold text-gray-900">{item.foodName}</p>
+                                            <p className="text-xs text-gray-400">
+                                                {item.quantity} × {parseFloat(item.basePrice).toFixed(2)} {t('currency') || 'EGP'}
+                                            </p>
+                                        </div>
+                                        <span className="font-bold text-gray-900 shrink-0">
+                                            {parseFloat(item.totalPrice).toFixed(2)}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        <Separator className="border-dashed" />
+
+                        {/* ملخص الحساب النهائي داخل الفاتورة */}
+                        <div className="space-y-2 text-sm bg-gray-50/50 p-3 rounded-xl border">
+                            <div className="flex justify-between text-gray-600 text-xs">
+                                <span>{t('subtotal') || 'المجموع الفرعي'}</span>
+                                <span className="font-medium text-gray-900">{parseFloat(order.subtotal).toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between text-gray-600 text-xs">
+                                <span>{t('serviceFee') || 'رسوم الخدمة'}</span>
+                                <span className="font-medium text-gray-900">{parseFloat(order.serviceFee).toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between text-gray-600 text-xs">
+                                <span>{t('deliveryFee') || 'رسوم التوصيل'}</span>
+                                <span className="font-medium text-gray-900">{parseFloat(order.deliveryFee).toFixed(2)}</span>
+                            </div>
+                            <Separator className="my-1 border-gray-200" />
+                            <div className="flex justify-between items-center pt-0.5">
+                                <span className="font-bold text-gray-900">{t('totalAmount') || 'الإجمالي النهائي'}</span>
+                                <span className="text-lg font-black text-primary">{parseFloat(order.totalAmount).toFixed(2)} {t('currency') || 'EGP'}</span>
+                            </div>
+                        </div>
+
+                        {/* تذييل شكر الفاتورة */}
+                        <div className="text-center pt-2">
+                            <p className="text-xs text-gray-400 font-medium">شكرًا لتعاملكم معنا!</p>
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
 
             <ReasonDialog 
                 isOpen={dialogConfig.open}
