@@ -118,7 +118,7 @@ export default function OrderDetails() {
                                 {t(currentStatusStyle.labelKey)}
                             </Badge>
                         </div>
-                        <p className="text-xs text-gray-400 mt-0.5 font-medium">{order.orderNumber}</p>
+                        <p className="text-xs text-gray-400 mt-0.5 font-medium">{order.dailyOrderNumber}</p>
                     </div>
                 </div>
 
