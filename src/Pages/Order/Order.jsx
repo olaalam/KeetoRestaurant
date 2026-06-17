@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/api/axios';
 import GenericDataTable from '@/components/GenericDataTable';
@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import { useTranslation } from "@/hooks/useTranslation";
 import { Button } from "@/components/ui/button";
 import ReasonDialog from "./ReasonDialog"; 
+import { Input } from "@/components/ui/input";
 
 export default function Order() {
     const navigate = useNavigate();
@@ -16,6 +17,10 @@ export default function Order() {
     const { t } = useTranslation();
 
     const [dialogConfig, setDialogConfig] = useState({ open: false, type: null, orderId: null });
+    const [selectedDate, setSelectedDate] = useState(() => {
+        const today = new Date();
+        return today.toISOString().split('T')[0];
+    });
 
     const orderStatuses = [
         "pending", "accepted", "preparing", "out_for_delivery",
@@ -37,10 +42,25 @@ export default function Order() {
             const { data } = await api.put(`/api/restaurant/order/${orderId}`, payload);
             return data;
         },
-        onSuccess: () => {
+        onSuccess: (data, variables) => {
             queryClient.invalidateQueries(['orders']);
             toast.success(t("orderStatusUpdatedSuccessfully"));
             setDialogConfig({ open: false, type: null, orderId: null });
+
+            const routeMap = {
+                "pending": "pending",
+                "accepted": "accepted",
+                "preparing": "preparing",
+                "out_for_delivery": "out-delivery",
+                "delivered": "delivered",
+                "cancelled": "cancelled",
+                "refund": "refunded",
+                "rejected": "rejected"
+            };
+            const targetRoute = routeMap[variables.status];
+            if (targetRoute) {
+                navigate(`/orders/${targetRoute}`);
+            }
         },
         onError: (error) => {
             const serverErrorMessage = error?.response?.data?.error?.message || t("failedToUpdateStatus");
@@ -154,12 +174,38 @@ export default function Order() {
         }
     ];
 
+    const filteredOrders = useMemo(() => {
+        if (!selectedDate) return orders;
+        return orders.filter(order => {
+            if (!order.createdAt) return false;
+            const orderDate = new Date(order.createdAt).toISOString().split('T')[0];
+            return orderDate === selectedDate;
+        });
+    }, [orders, selectedDate]);
+
     return (
         <div className="container mx-auto py-10">
+            <div className="flex items-center gap-4 mb-6 bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
+                <label className="text-sm font-bold text-slate-700">{t("filterByDate") || "Filter by Date"}:</label>
+                <Input 
+                    type="date" 
+                    value={selectedDate} 
+                    onChange={(e) => setSelectedDate(e.target.value)}
+                    className="w-48 h-10"
+                />
+                <Button 
+                    variant="outline" 
+                    onClick={() => setSelectedDate("")}
+                    className="h-10"
+                >
+                    {t("clearFilter") || "Clear Filter"}
+                </Button>
+            </div>
+
             <GenericDataTable
                 title={t("ordersManagement")}
                 columns={columns}
-                data={orders}
+                data={filteredOrders}
                 isLoading={isLoading}
                 queryKey="orders"
                 actions={false}
