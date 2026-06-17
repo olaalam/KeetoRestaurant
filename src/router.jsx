@@ -70,6 +70,7 @@ import SettingPage from "./Pages/Setting/Setting";
 import SettingPageAdd from "./Pages/Setting/SettingAdd";
 import Policy from "./Pages/Policy/Policy";
 import PolicyAdd from "./Pages/Policy/PolicyAdd";
+import Dashboard from "./Pages/Dashboard";
 const router = createBrowserRouter([
   {
     path: "/login",
@@ -90,6 +91,9 @@ const router = createBrowserRouter([
       {
         index: true, // ليعرض صفحة Home عند الدخول على "/" مباشرة
         element: <Home />,
+      },
+      {path:"/dashboard",
+        element:<Dashboard/>
       },
       {
         path: "admins",

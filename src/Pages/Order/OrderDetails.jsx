@@ -333,7 +333,7 @@ export default function OrderDetails() {
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="p-6 space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-3 gap-4">
                                 <div className="bg-gray-50 p-3 rounded-xl border">
                                     <span className="text-xs text-gray-400 block mb-0.5">{t('orderType') || 'نوع الطلب'}</span>
                                     <span className="text-sm font-bold text-gray-800 capitalize">{order.orderType}</span>
@@ -341,6 +341,10 @@ export default function OrderDetails() {
                                 <div className="bg-gray-50 p-3 rounded-xl border">
                                     <span className="text-xs text-gray-400 block mb-0.5">{t('orderSource') || 'مصدر الطلب'}</span>
                                     <span className="text-sm font-bold text-gray-800 capitalize">{order.orderSource?.replace('_', ' ')}</span>
+                                </div>
+                                                         <div className="bg-gray-50 p-3 rounded-xl border">
+                                    <span className="text-xs text-gray-400 block mb-0.5">{t('paymentMethod') || 'طريقة الدفع '}</span>
+                                    <span className="text-sm font-bold text-gray-800 capitalize">{order.paymentMethodName}</span>
                                 </div>
                             </div>
 

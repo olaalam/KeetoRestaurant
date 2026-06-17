@@ -66,6 +66,7 @@ const FoodAdd = () => {
         Maximum_Purchase: raw.Maximum_Purchase ? Number(raw.Maximum_Purchase) : 5,
         stock_type: raw.stock_type || "unlimited",
         status: raw.status || "active",
+        
         variations:
           raw.variations?.map((v) => ({
             name: v.name || "",
@@ -83,10 +84,11 @@ const FoodAdd = () => {
                 additionalPrice: o.additionalPrice ? Number(o.additionalPrice) : 0,
               })) || [],
           })) || [],
+
         addonsId:
-          raw.addon?.map((a) => ({
-            addonsId: String(a.addonsId || a.id || ""),
-            status: a.status || "active",
+          (raw.addonsId || raw.addonsDetails || raw.addon)?.map((addon) => ({
+            addonsId: typeof addon === "string" ? String(addon) : String(addon.id || addon.addonsId || ""),
+            status: addon.status || "active",
           })) || [],
       };
     },
@@ -106,10 +108,7 @@ const FoodAdd = () => {
       allergen_ingredients: Array.isArray(formData.allergen_ingredients)
         ? serializeAllergens(formData.allergen_ingredients)
         : formData.allergen_ingredients,
-      addonsId: addonsArr?.map((a) => ({
-        addonsId: String(a.addonsId),
-        status: a.status,
-      })),
+      addonsId: addonsArr?.map((a) => String(a.addonsId || "")).filter(Boolean) || [],
     };
   };
 
@@ -122,12 +121,9 @@ const FoodAdd = () => {
       initialData={initialData}
       transformPayload={transformBeforeSubmit}
       onSuccessAction={(res) => {
-        // تأكد من تحويل الـ ID إلى String دائماً لضمان تطابق المقارنة في الجدول
         const targetId = String(res?.data?.data?.id || res?.data?.id || res?.id || id);
-
         navigate("/foods", { state: { highlightedId: targetId } });
       }}
-
     >
       {({ register, control, formState: { errors }, setValue, watch }) => {
         const imagePreview = watch("image");
