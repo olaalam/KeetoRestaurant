@@ -3,8 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import api from "@/api/axios";
 import GenericDataTable from "@/components/GenericDataTable";
 import { useParams } from "react-router-dom";
-import { 
-  ShoppingBag, Landmark, Percent, DollarSign, 
+import {
+  ShoppingBag, Landmark, Percent, DollarSign,
   TrendingUp, CreditCard, Utensils, Globe, AlertTriangle
 } from "lucide-react";
 import { useTranslation } from "@/hooks/useTranslation"; // استيراد الهوك
@@ -51,7 +51,19 @@ export default function DetailedFinancialReport() {
     },
     {
       title: t("totalOrdersCount"),
-      value: overview?.totalOrders ?? 0,
+      value: overview?.totalAttemptedOrders ?? 0,
+      icon: Landmark,
+      bgIcon: "bg-blue-100 text-blue-600",
+    },
+    {
+      title: t("AvgOrderValue"),
+      value: overview?.avgOrderValue ?? "0.00",
+      icon: Landmark,
+      bgIcon: "bg-blue-100 text-blue-600",
+    },
+    {
+      title: t("cancelledOrders"),
+      value: overview?.cancelledOrders ?? 0,
       icon: Landmark,
       bgIcon: "bg-blue-100 text-blue-600",
     },
@@ -94,7 +106,7 @@ export default function DetailedFinancialReport() {
   // 4. بناء أعمدة الجداول الصغيرة التحليلية (لحالة الطلب، الدفع، المصدر، والنوع)
   const breakdownColumns = [
     {
-      accessorKey: "typeLabel", 
+      accessorKey: "typeLabel",
       header: t("category"),
       cell: ({ row }) => <span className="font-semibold text-slate-700 capitalize">{t(row.getValue("typeLabel"))}</span>,
     },
@@ -121,14 +133,14 @@ export default function DetailedFinancialReport() {
 
   return (
     <div className="container mx-auto py-10 space-y-8">
-      
+
       {/* هيدر التقرير ومعلومات المطعم */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-6">
         <div className="flex items-center gap-4">
           {restaurantInfo?.logo && (
-            <img 
-              src={restaurantInfo.logo} 
-              alt="logo" 
+            <img
+              src={restaurantInfo.logo}
+              alt="logo"
               className="w-14 h-14 rounded-full object-cover border shadow-sm"
             />
           )}
@@ -139,7 +151,7 @@ export default function DetailedFinancialReport() {
             </p>
           </div>
         </div>
-        
+
         {/* شارة حالة المطعم */}
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium text-slate-400">{t("status")}:</span>
@@ -150,7 +162,7 @@ export default function DetailedFinancialReport() {
       </div>
 
       {/* 5. رندر الكروت العلوية الأربعة */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {statsCards.map((card) => {
           const Icon = card.icon;
           return (
@@ -179,7 +191,7 @@ export default function DetailedFinancialReport() {
             <div className="flex justify-between py-2"><span className="text-slate-500">{t("serviceFees")}</span><span className="font-semibold font-mono">{financials?.totalServiceFees ?? "0.00"} {t("currency")}</span></div>
           </div>
         </div>
-
+        {/* 
         <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-3">
           <h3 className="text-sm font-bold text-slate-700 flex items-center gap-2">
             <AlertTriangle className="w-4 h-4 text-slate-500" /> {t("operationalOverview")}
@@ -189,7 +201,7 @@ export default function DetailedFinancialReport() {
             <div className="flex justify-between py-2"><span className="text-slate-500">{t("cancellationRate")}</span><span className="font-semibold text-rose-600 font-mono">{overview?.cancellationRate ?? "0%"}</span></div>
             <div className="flex justify-between py-2"><span className="text-slate-500">{t("cancelledOrders")}</span><span className="font-semibold text-rose-600 font-mono">{overview?.cancelledOrders ?? 0}</span></div>
           </div>
-        </div>
+        </div> */}
 
         {/* كارت صافي الربح الملون ديناميكياً */}
         <div className={`border rounded-2xl p-5 flex flex-col justify-center items-center text-center shadow-sm ${isNetNegative ? 'bg-rose-50/60 border-rose-200' : 'bg-emerald-50/60 border-emerald-200'}`}>
@@ -203,7 +215,7 @@ export default function DetailedFinancialReport() {
 
       {/* 7. شبكة الجداول التحليلية المتقدمة */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        
+
         {/* جدول الطلبات بحسب الحالة */}
         <GenericDataTable
           title={t("ordersByStatus")}
