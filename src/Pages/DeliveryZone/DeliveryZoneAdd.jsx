@@ -11,6 +11,20 @@ const DeliveryZoneAdd = () => {
     const { state } = useLocation();
     const { t } = useTranslation();
 
+    // التحقق مما إذا كانت اللغة الحالية هي العربية من الـ Local Storage الموضح في الصورة image_54604c.png
+    const isAr = useMemo(() => {
+        try {
+            const keetoLang = localStorage.getItem('keeto-language');
+            if (keetoLang) {
+                const parsed = JSON.parse(keetoLang);
+                return parsed?.state?.language === 'ar';
+            }
+        } catch (e) {
+            console.error("Error parsing language configuration", e);
+        }
+        return false;
+    }, []);
+
     // 1. حالة لتخزين المدينة المختارة
     const [selectedCityId, setSelectedCityId] = useState('');
 
@@ -19,7 +33,6 @@ const DeliveryZoneAdd = () => {
         queryKey: ['DeliveryZonesSelect'],
         queryFn: async () => {
             const res = await api.get('/api/restaurant/restaurant-zone-delivery-fees/select');
-            // استخراج المدن والمناطق بناءً على شكل الداتا المرفق
             const responseData = res.data?.data?.data || {};
             return {
                 zones: responseData.zonesselect || [],
@@ -44,13 +57,12 @@ const DeliveryZoneAdd = () => {
         if (!rawData) return null;
 
         const zoneId = rawData.zone?.id || rawData.zoneId;
-        // البحث عن المدينة الخاصة بالمنطقة الحالية
         const zone = selectionData.zones.find(z => z.id === zoneId);
         const cityId = zone?.cityId || rawData.cityId || '';
 
         return {
             ...rawData,
-            cityId: cityId, // دمج الـ cityId لتظهر القيمة الافتراضية
+            cityId: cityId,
             zoneId: zoneId,
             deliveryFee: rawData.deliveryFee
         };
@@ -64,17 +76,12 @@ const DeliveryZoneAdd = () => {
     }, [initialData, selectedCityId]);
 
     // 5. تصفية المناطق بناءً على المدينة المختارة
-const filteredZones = useMemo(() => {
-    if (!selectedCityId) return [];
-    
-    // طباعة للبيانات للتأكد من الأسماء والقيم أثناء التجربة (يمكنك حذفها لاحقاً)
-    console.log("Selected City ID:", selectedCityId);
-    console.log("First Zone Example:", selectionData.zones[0]);
-
-    return selectionData.zones.filter(z => 
-        String(z.cityId) === String(selectedCityId) // توحيد نوع البيانات هنا
-    );
-}, [selectedCityId, selectionData.zones]);
+    const filteredZones = useMemo(() => {
+        if (!selectedCityId) return [];
+        return selectionData.zones.filter(z =>
+            String(z.cityId) === String(selectedCityId)
+        );
+    }, [selectedCityId, selectionData.zones]);
 
     // 6. إعداد حقول الفورم
     const zoneDeliveryFields = [
@@ -85,11 +92,10 @@ const filteredZones = useMemo(() => {
             type: 'select',
             options: selectionData.cities.map(c => ({
                 value: String(c.id),
-                label: c.name // يمكن تغييرها لـ c.nameAr إذا كنتِ تدعمين العربية هنا
+                // إذا كانت اللغة عربية يعرض nameAr (أو displayNameAr)، وإلا يعرض name الافتراضي
+                label: isAr ? (c.nameAr || c.displayNameAr || c.name) : c.name
             })),
-            // تحديث الـ State عند تغيير المدينة
             onChange: (e) => {
-                // بعض المكتبات ترجع الحدث (Event) وبعضها يرجع القيمة مباشرة
                 const value = e?.target?.value !== undefined ? e.target.value : e;
                 setSelectedCityId(value);
             }
@@ -101,9 +107,10 @@ const filteredZones = useMemo(() => {
             type: 'select',
             options: filteredZones.map(z => ({
                 value: String(z.id),
-                label: z.name
+                // إذا كانت اللغة عربية يعرض nameAr (أو displayNameAr)، وإلا يعرض name الافتراضي
+                label: isAr ? (z.nameAr || z.displayNameAr || z.name) : z.name
             })),
-            disabled: !selectedCityId // تعطيل الحقل إذا لم يتم اختيار مدينة
+            disabled: !selectedCityId
         },
         {
             name: 'deliveryFee',
