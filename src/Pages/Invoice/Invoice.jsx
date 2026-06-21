@@ -30,6 +30,29 @@ export default function Invoice() {
 
   const currentInvoice = invoicesData?.[0] || {};
 
+  // دالة مخصصة لتحميل ملف الفاتورة مباشرة عند الضغط على الزر العلوي للجدول
+  const handleDownloadPDFDirectly = async (invoiceId) => {
+    if (!invoiceId) return;
+    try {
+      const response = await api.get(`/api/restaurant/report/my-restaurant/${invoiceId}/invoice`, {
+        responseType: 'blob' 
+      });
+
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `Invoice_${invoiceId}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+    } catch (error) {
+      console.error("Failed to download invoice PDF:", error);
+      alert(t("downloadErrorAlert"));
+    }
+  };
+
   const handleViewPDFInDialog = async (invoiceId) => {
     try {
       setIsPdfLoading(true);
@@ -230,8 +253,15 @@ export default function Invoice() {
         </div>
       </div>
 
-      {/* جدول الفواتير الرئيسي */}
-      <div className="pt-4">
+      {/* جدول الفواتير الرئيسي - مُحاط بـ container نسبي ويحتوي على زر التحميل المباشر في الأعلى يميناً */}
+      <div className="relative pt-12 border rounded-2xl bg-white p-4 shadow-sm">
+        <button 
+          onClick={() => handleDownloadPDFDirectly(currentInvoice?.id)} 
+          disabled={!currentInvoice?.id}
+          className="absolute top-4 right-4 z-10 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-lg transition text-slate-700 flex items-center gap-1 text-xs font-bold shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <Download className="w-3.5 h-3.5" /> Download PDF
+        </button>
         <GenericDataTable
           title={t("invoicesHistoryStatements")}
           columns={invoiceColumns}
