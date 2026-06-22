@@ -16,7 +16,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch"; // استيراد الـ Switch من shadcn
+import { Switch } from "@/components/ui/switch"; 
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import {
@@ -30,7 +30,7 @@ import {
 import DeleteDialog from "./DeleteDialog";
 import LoadingSpinner from "./LoadingSpinner";
 import { useTranslation } from "@/hooks/useTranslation";
-import { useMutation, useQueryClient } from "@tanstack/react-query"; // استيراد الـ Mutation للتعامل مع السويتش
+import { useMutation, useQueryClient } from "@tanstack/react-query"; 
 import api from "@/api/axios";
 import { toast } from "sonner";
 
@@ -40,13 +40,12 @@ export default function GenericDataTable({
   title,
   onAdd,
   onEdit,
-  editApiUrl,   // تأكدي من تمرير editApiUrl من الشاشات الأساسية لتشغيل الـ Switch
+  editApiUrl,   
   deleteApiUrl,
   queryKey,
   isLoading,
   actions = true,
   highlightedId, 
-  // 💡 تم إضافته هنا كـ Prop يستقبله الجدول لتلوين الصف المعدل
 }) {
   const [globalFilter, setGlobalFilter] = useState("");
   const [deleteId, setDeleteId] = useState(null);
@@ -58,23 +57,25 @@ export default function GenericDataTable({
     pageSize: 15,
   });
 
-  // 1. Mutation لتحديث الـ Status فوراً عند تغيير السويتش
-// 1. Mutation لتحديث الـ Status فوراً عند تغيير السويتش
+  // 1. Mutation لتحديث الـ Status أو الـ isActive فوراً عند تغيير السويتش
   const updateStatusMutation = useMutation({
-    mutationFn: async ({ id, newStatus }) => {
-      // 💡 هنا الذكاء: إذا كان الرابط يخص الخصومات، نقوم بتركيبه بالشكل الذي يتوقعه الـ Backend لديكِ
+    mutationFn: async ({ id, newStatus, keyName }) => {
+      // تركيب الرابط المخصص للخصومات أو الرابط العادي لبقية الشاشات
       const url = editApiUrl.includes("discounts") 
         ? `${editApiUrl}/${id}/toggle-status` 
         : `${editApiUrl}/${id}`;
 
-      // نقوم بإرسال الطلب (يمكنك تعديل الـ Body المرسل بناءً على ما يتوقعه الـ API، هنا أرسلنا الحالة الجديدة)
-      return await api.put(url, { status: newStatus });
+      // بناء الـ Body ديناميكياً بناءً على اسم الحقل الممرر (status أو isActive)
+      const requestBody = {};
+      requestBody[keyName] = newStatus;
+
+      return await api.put(url, requestBody);
     },
     onSuccess: () => {
       if (queryKey) {
         queryClient.invalidateQueries([queryKey]);
       }
-      toast.success("updateStatusSuccessfully");
+      toast.success(t("updateStatusSuccessfully") || "Updated successfully");
     },
     onError: (error) => {
       console.error("Failed to update status:", error);
@@ -82,7 +83,7 @@ export default function GenericDataTable({
     }
   });
 
-  // Pre-process and sort data
+  // ترتيب البيانات بناءً على تاريخ الإنشاء
   const sortedData = useMemo(() => {
     if (!Array.isArray(data)) return [];
     return [...data].sort((a, b) => {
@@ -92,7 +93,7 @@ export default function GenericDataTable({
     });
   }, [data]);
 
-  // إضافة عمود الترقيم التلقائي، وعمود العمليات، وتعديل عمود الـ Status ديناميكياً
+  // بناء الأعمدة وفحص حقول الـ Switch
   const tableColumns = useMemo(() => {
     const baseColumns = [
       {
@@ -115,13 +116,15 @@ export default function GenericDataTable({
       },
     ];
 
-    // المرور على الأعمدة الممررة وفحص إذا كان هناك عمود باسم status
+    // المرور على الأعمدة ودعم تحويل status أو isActive إلى Switch تلقائياً
     columns.forEach((col) => {
-      if (col.accessorKey === "status" && editApiUrl) {
+      const isStatusField = col.accessorKey === "status" || col.accessorKey === "isActive";
+      
+      if (isStatusField && editApiUrl) {
         baseColumns.push({
           ...col,
           cell: ({ row }) => {
-            const currentStatus = row.getValue("status");
+            const currentStatus = row.getValue(col.accessorKey);
             const isActive = currentStatus === "active" || currentStatus === "paid" || currentStatus === true || currentStatus === 1;
             const rowId = row.original.id;
 
@@ -131,11 +134,17 @@ export default function GenericDataTable({
                   checked={isActive}
                   disabled={updateStatusMutation.isPending}
                   onCheckedChange={(checked) => {
-                    const newStatus = typeof currentStatus === "string"
-                      ? (currentStatus === "paid" || currentStatus === "unpaid" ? (checked ? "paid" : "unpaid") : (checked ? "active" : "inactive"))
-                      : checked;
+                    // تحديد القيمة الجديدة بناءً على نوع البيانات الأصلي (String أو Boolean)
+                    let newStatus;
+                    if (col.accessorKey === "isActive") {
+                      newStatus = checked;
+                    } else {
+                      newStatus = typeof currentStatus === "string"
+                        ? (currentStatus === "paid" || currentStatus === "unpaid" ? (checked ? "paid" : "unpaid") : (checked ? "active" : "inactive"))
+                        : checked;
+                    }
 
-                    updateStatusMutation.mutate({ id: rowId, newStatus });
+                    updateStatusMutation.mutate({ id: rowId, newStatus, keyName: col.accessorKey });
                   }}
                 />
                 <span className={cn(
@@ -193,7 +202,7 @@ export default function GenericDataTable({
     state: { globalFilter, pagination },
     onGlobalFilterChange: setGlobalFilter,
     onPaginationChange: setPagination,
-    autoResetPageIndex: false, // مدمج لمنع الريسيت لصفحة 1
+    autoResetPageIndex: false, 
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
@@ -287,7 +296,6 @@ export default function GenericDataTable({
                 </TableRow>
               ) : table.getRowModel().rows?.length ? (
                 table.getRowModel().rows.map((row) => {
-                  // 💡 فحص ما إذا كان الصف الحالي هو الصف المعدل لعمل الـ Highlight
                   const isHighlighted = row.original.id === highlightedId;
                   
                   return (
@@ -331,56 +339,48 @@ export default function GenericDataTable({
         </div>
       </div>
 
-{/* PAGINATION */}
-<div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
-  {/* <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 order-2 sm:order-1">
-    {t("pageOf")} <span className="text-slate-700 dark:text-slate-300">{table.getState().pagination.pageIndex + 1}</span> {t("of")}{" "}
-    <span className="text-slate-700 dark:text-slate-300">{table.getPageCount()}</span>
-  </p> */}
+      {/* PAGINATION */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
+        <div className="flex items-center m-auto gap-1.5 order-1 sm:order-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => table.previousPage()}
+            disabled={!table.getCanPreviousPage()}
+            className="h-9 w-9 p-0 rounded-lg border-slate-200"
+          >
+            {isRTL ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+          </Button>
 
-  {/* هنا التعديل: إنشاء مربعات أرقام الصفحات */}
-  <div className="flex items-center  m-auto gap-1.5 order-1 sm:order-2">
-    {/* زر الصفحة السابقة */}
-    <Button
-      variant="outline"
-      size="sm"
-      onClick={() => table.previousPage()}
-      disabled={!table.getCanPreviousPage()}
-      className="h-9 w-9 p-0 rounded-lg border-slate-200"
-    >
-      {isRTL ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-    </Button>
+          {Array.from({ length: table.getPageCount() }, (_, i) => (
+            <Button
+              key={i}
+              variant={table.getState().pagination.pageIndex === i ? "default" : "outline"}
+              size="sm"
+              onClick={() => table.setPageIndex(i)}
+              className={cn(
+                "h-9 w-9 p-0 rounded-lg border-slate-200 font-semibold text-xs transition-all",
+                table.getState().pagination.pageIndex === i 
+                  ? "bg-primary text-white shadow-sm" 
+                  : "hover:bg-slate-50"
+              )}
+            >
+              {i + 1}
+            </Button>
+          ))}
 
-    {/* توليد أرقام الصفحات */}
-    {Array.from({ length: table.getPageCount() }, (_, i) => (
-      <Button
-        key={i}
-        variant={table.getState().pagination.pageIndex === i ? "default" : "outline"}
-        size="sm"
-        onClick={() => table.setPageIndex(i)}
-        className={cn(
-          "h-9 w-9 p-0 rounded-lg border-slate-200 font-semibold text-xs transition-all",
-          table.getState().pagination.pageIndex === i 
-            ? "bg-primary text-white shadow-sm" 
-            : "hover:bg-slate-50"
-        )}
-      >
-        {i + 1}
-      </Button>
-    ))}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => table.nextPage()}
+            disabled={!table.getCanNextPage()}
+            className="h-9 w-9 p-0 rounded-lg border-slate-200"
+          >
+            {isRTL ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+          </Button>
+        </div>
+      </div>
 
-    {/* زر الصفحة التالية */}
-    <Button
-      variant="outline"
-      size="sm"
-      onClick={() => table.nextPage()}
-      disabled={!table.getCanNextPage()}
-      className="h-9 w-9 p-0 rounded-lg border-slate-200"
-    >
-      {isRTL ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-    </Button>
-  </div>
-</div>
       {/* DELETE DIALOG */}
       <DeleteDialog
         isOpen={!!deleteId}

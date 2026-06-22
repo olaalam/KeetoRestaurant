@@ -14,7 +14,7 @@ export default function Discount() {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [selectedFoodIds, setSelectedFoodIds] = useState([]); 
 
-    // جلب البيانات
+    // جلب البيانات من الـ API
     const { data: discounts = [], isLoading } = useQuery({
         queryKey: ['discounts'],
         queryFn: async () => {
@@ -59,12 +59,12 @@ export default function Discount() {
         { accessorKey: 'maxDiscount', header: 'Max Discount' },
         { accessorKey: 'minOrderAmount', header: 'Min Order' },
         { accessorKey: 'usageLimit', header: 'Limit' },
-        { accessorKey: 'startDate', header: 'Start Date', cell: (info) => formatDate(info.getValue()) },
+        // { formatDate(info.getValue()) },
         { accessorKey: 'endDate', header: 'End Date', cell: (info) => formatDate(info.getValue()) },
         { 
-            accessorKey: 'status', 
+            // 💡 هنا سيتعرف الجدول العام تلقائياً على isActive ويقوم ببناء السويتش
+            accessorKey: 'isActive', 
             header: 'Status',
-            cell: ({ row }) => row.original.isActive // ربط السويتش بحالة الـ isActive القادمة من الـ API
         }
     ];
 
@@ -77,7 +77,6 @@ export default function Discount() {
                 isLoading={isLoading}
                 queryKey="discounts"
                 deleteApiUrl="/api/restaurant/discounts"
-                // 💡 نمرر الـ Base URL والجدول سيقوم بتركيب الخاتمة /toggle-status بالداخل ذكياً
                 editApiUrl="/api/restaurant/discounts" 
                 onAdd={() => navigate("/discount/add")}
                 onEdit={(discount) => navigate(`/discount/edit/${discount.id}`, { state: { DiscountData: discount } })}

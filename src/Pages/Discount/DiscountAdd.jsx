@@ -40,7 +40,7 @@ const DiscountAdd = () => {
         {
             name: 'foodIds',
             label: t('food'), // الآن ستعمل بدون مشاكل
-            required: true,
+            required: false,
             type: 'multi-select',
             options: (selectData?.foods || []).map(f => ({
                 value: String(f.id),

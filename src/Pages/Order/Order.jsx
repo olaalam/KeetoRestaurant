@@ -79,10 +79,10 @@ export default function Order() {
 
     const columns = [
         {
-            accessorKey: "orderNumber",
+            accessorKey: "dailyOrderNumber",
             header: t("orderNumber"),
             cell: ({ row }) => (
-                <span className="font-medium text-gray-700">{row.getValue("orderNumber")}</span>
+                <span className="font-medium text-gray-700">{row.getValue("dailyOrderNumber")}</span>
             )
         },
         {
