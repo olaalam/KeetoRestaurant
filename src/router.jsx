@@ -71,6 +71,8 @@ import SettingPageAdd from "./Pages/Setting/SettingAdd";
 import Policy from "./Pages/Policy/Policy";
 import PolicyAdd from "./Pages/Policy/PolicyAdd";
 import Dashboard from "./Pages/Dashboard";
+import Cashiers from "./Pages/Cashier/Cashier";
+import CashierAdd from "./Pages/Cashier/CashierAdd";
 const router = createBrowserRouter([
   {
     path: "/login",
@@ -92,8 +94,9 @@ const router = createBrowserRouter([
         index: true, // ليعرض صفحة Home عند الدخول على "/" مباشرة
         element: <Home />,
       },
-      {path:"/dashboard",
-        element:<Dashboard/>
+      {
+        path: "/dashboard",
+        element: <Dashboard />
       },
       {
         path: "admins",
@@ -463,13 +466,13 @@ const router = createBrowserRouter([
       },
       {
         path: "setting",
-        element: <SettingPage/>,
+        element: <SettingPage />,
       },
       {
         path: "setting/edit/:id",
         element: <SettingPageAdd />,
       },
-            {
+      {
         path: "policy",
         element: <Policy />,
       },
@@ -480,6 +483,18 @@ const router = createBrowserRouter([
       {
         path: "policy/edit/:id",
         element: <PolicyAdd />,
+      },
+      {
+        path: "cashiers",
+        element: <Cashiers />,
+      },
+      {
+        path: "cashiers/add",
+        element: <CashierAdd />,
+      },
+      {
+        path: "cashiers/edit/:id",
+        element: <CashierAdd />,
       },
     ],
   },
