@@ -17,6 +17,7 @@ import {
   Undo2,
 } from "lucide-react";
 import keetoImage from "../../public/WhatsApp Image 2026-05-18 at 11.27.30 AM.jpeg";
+import { icon } from "leaflet";
 
 const KeetoIcon = (props) => (
   <img
@@ -77,6 +78,8 @@ export const getModules = (t, orderCounts = {}) => {
         { title: t("image"), url: "/image", icon: ShoppingBag },
         { title: t("ingredientCategories"), url: "/ingredient-category", icon: ShieldCheck },
         { title: t("ingredients"), url: "/ingredients", icon: ShieldCheck },
+        {title:t("expense-categories"),url: "/expense-categories",icon:ShieldCheck},
+        {title:t("expense"),url: "/expense",icon:ShieldCheck},
       ],
     },
     {

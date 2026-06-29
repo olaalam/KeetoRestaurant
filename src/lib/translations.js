@@ -348,6 +348,15 @@ const translations = {
     veg: "Veg",
     nonveg: "Non-Veg",
     both: "Both",
+
+    //expense-categories
+    Name:"Name",
+    ArabicName:"Arabic Name",
+
+
+    //expense
+    FinancialAccount:"Financial Account Name",
+   
     // setting add
     "restaurantSettings": "Restaurant Settings",
     "foodManagement": "Food Management",
@@ -946,6 +955,14 @@ const translations = {
     amountColumn: "المبلغ",
     dateColumn: "التاريخ",
     methodColumn: "الطريقة",
+
+
+    //expense-categories page
+    Name: "الأسم",
+    ArabicName: "الأسم بالعربية",
+
+
+    FinancialAccount:"الحساب المالي",
     // setting 
     "restaurantSettings": "إعدادات المطعم",
     "foodManagement": "إدارة الطعام",

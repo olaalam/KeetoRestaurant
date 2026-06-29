@@ -71,6 +71,10 @@ import SettingPageAdd from "./Pages/Setting/SettingAdd";
 import Policy from "./Pages/Policy/Policy";
 import PolicyAdd from "./Pages/Policy/PolicyAdd";
 import Dashboard from "./Pages/Dashboard";
+import ExpenseCategories from "./Pages/ExpenseCategories/expense-categories";
+import ExpenseCategoriesAdd from "./Pages/ExpenseCategories/expense-categoriesAdd";
+import Expense from "./Pages/Expense/expense";
+import ExpenseAdd from "./Pages/Expense/expenseAdd";
 import Cashiers from "./Pages/Cashier/Cashier";
 import CashierAdd from "./Pages/Cashier/CashierAdd";
 const router = createBrowserRouter([
@@ -484,6 +488,31 @@ const router = createBrowserRouter([
         path: "policy/edit/:id",
         element: <PolicyAdd />,
       },
+      {
+        path: "expense-categories",
+        element: <ExpenseCategories />
+      },
+      {
+        path: "expense-categories/add",
+        element: <ExpenseCategoriesAdd />
+      },
+      {
+        path: "expense-categories/edit/:id",
+        element: <ExpenseCategoriesAdd />
+      },
+      {
+        path: "expense",
+        element: <Expense />
+      },
+      {
+        path: "expense/add",
+        element: <ExpenseAdd />
+      },
+      {
+        path: "expense/edit/:expenseId",
+        element: <ExpenseAdd />
+      },
+
       {
         path: "cashiers",
         element: <Cashiers />,
