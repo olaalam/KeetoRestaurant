@@ -9,12 +9,21 @@ export default function Cashiers() {
     const navigate = useNavigate();
     const { t } = useTranslation();
 
-    // جلب بيانات الكاشير من الـ API الجديد
+    // جلب بيانات الكاشير وتشكيلها لتتوافق مع الجدول
     const { data: cashiers = [], isLoading } = useQuery({
         queryKey: ['cashiers'],
         queryFn: async () => {
             const res = await api.get('/api/restaurant/cashiers');
-            return res.data.data.data; // تأكد من مطابقة هذا السطر لشكل استجابة الباك اند لديك
+
+            // استخراج المصفوفة الأساسية من ريسبونس الباك إند
+            const rawData = res.data?.data?.data || [];
+
+            // تحويل وتجهيز البيانات لتبسيط الوصول إليها داخل الجدول
+            return rawData.map(item => ({
+                ...item.cashiers, // فك حقول الكاشير الأساسية مباشرة (id, name, status, etc.)
+                branch_id: item.cashiers.branchid, // تحويل الاسم ليتوافق مع الـ accessorKey القديم إذا لزم الأمر
+                financialAccountName: item.FinancialAccounts?.name || t('N/A') // دمج اسم الحساب المالي للعرض
+            }));
         }
     });
 
@@ -22,26 +31,26 @@ export default function Cashiers() {
         {
             accessorKey: "name",
             header: t('name'), // الاسم بالإنجليزي
-            cell: ({ row }) => (
-                <button
-                    onClick={() => navigate(`/cashiers/setting/${row.original.id}`)}
-                    className="text-blue-600 hover:underline font-medium text-left"
-                >
-                    {row.getValue("name")}
-                </button>
-            )
+            // cell: ({ row }) => (
+            //     <button
+            //         onClick={() => navigate(`/cashiers/setting/${row.original.id}`)}
+            //         className="text-blue-600 hover:underline font-medium text-left"
+            //     >
+            //         {row.getValue("name")}
+            //     </button>
+            // )
         },
-        { 
-            accessorKey: 'ar_name', 
+        {
+            accessorKey: 'ar_name',
             header: t('ar_name') // الاسم بالعربي
         },
-        { 
-            accessorKey: 'branch_id', 
-            header: t('branch_id') // آي دي الفرع
+        {
+            accessorKey: 'branch_id', // تم تعديله في الـ map ليقرأ branchid من الباك إند
+            header: t('branch_id')
         },
-        { 
-            accessorKey: 'financialAccountId', 
-            header: t('financialAccountId') // الحساب المالي
+        {
+            accessorKey: 'financialAccountName', // عرض اسم الحساب المالي بدلاً من الـ ID فقط ليكون مفهوماً للمستخدم
+            header: t('financialAccountId')
         },
         {
             accessorKey: "cashier_active",

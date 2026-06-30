@@ -7,19 +7,38 @@ import LoadingSpinner from "@/components/LoadingSpinner";
 import { useTranslation } from "@/hooks/useTranslation";
 
 const CashierAdd = () => {
-  const { id } = useParams();
+  const { id } = useParams(); // التقاط الـ ID من الرابط لمعرفة إذا كنا في وضع التعديل (Edit)
   const { state } = useLocation();
   const navigate = useNavigate();
   const { t } = useTranslation();
 
-  // 1. جلب بيانات الكاشير (في حالة التعديل)
+  // 1. جلب بيانات الكاشير (في حالة التعديل) وتنسيقها لتطابق الحقول بدقة مع الريسبونس المرسل
   const { data: cashierData, isLoading: isFetching } = useQuery({
     queryKey: ["cashier", id],
     queryFn: async () => {
       const { data } = await api.get(`/api/restaurant/cashiers/${id}`);
-      return data.data.data;
+
+      // بناءً على ريسبونس السينجل كاشير: البيانات تكون داخل data.data.data مباشرة
+      const resData = data?.data?.data;
+
+      // إذا كانت البيانات تحتوي على كائن فرعي باسم cashiers نقوم بفكها ومطابقة الحقول
+      if (resData && resData.cashiers) {
+        return {
+          ...resData.cashiers,
+          branch_id: resData.cashiers.branchid, // تحويل branchid ليتطابق مع اسم الحقل المتوقع في الـ combobox
+        };
+      }
+
+      // حالة احتياطية إذا جاءت البيانات بشكل مباشر ومسطح
+      if (resData) {
+        return {
+          ...resData,
+          branch_id: resData.branch_id || resData.branchid
+        };
+      }
+      return null;
     },
-    enabled: !!id && !state?.cashierData,
+    enabled: !!id && !state?.cashierData, // يتم التفعيل فقط في صفحة التعديل (عند وجود ID)
   });
 
   // 2. جلب قائمة الفروع
@@ -27,35 +46,45 @@ const CashierAdd = () => {
     queryKey: ["branches"],
     queryFn: async () => {
       const { data } = await api.get("/api/restaurant/branches");
-      return data.data.data;
+      // التحقق الآمن لضمان عدم إرجاع undefined
+      return data?.data?.data || data?.data || data || [];
     },
   });
 
-  // 3. جلب قائمة الحسابات المالية
+  // 3. جلب قائمة الحسابات المالية وتعديلها لتتناسب مع الريسبونس الجديد
   const { data: financialAccounts = [], isLoading: isAccountsLoading } = useQuery({
     queryKey: ["financialAccounts"],
     queryFn: async () => {
       const { data } = await api.get("/api/restaurant/FinancialAccount");
-      return data.data.data;
+
+      // استخراج المصفوفة الأساسية (data.data) بناءً على الريسبونس المرسل
+      const rawAccounts = data?.data || [];
+
+      // تحويل البيانات لفك كائن account الداخلي وجلب الاسم والمعرف منه
+      return rawAccounts.map(item => ({
+        id: item.account?.id,
+        name: item.account?.name
+      }));
     },
   });
 
   const rawData = state?.cashierData || cashierData;
 
-  // إعداد البيانات الافتراضية بحيث تكون مطابقة للـ JSON المطلوب
-  const initialData = rawData 
-    ? { ...rawData } 
+  // إعداد البيانات الافتراضية للتعديل أو الإضافة الجديدة
+  const initialData = rawData
+    ? { ...rawData }
     : { status: "active", cashier_active: true };
 
-  // تجهيز الخيارات للحقول المنسدلة (Combobox)
+  // تجهيز خيارات الفروع
   const branchOptions = branches.map((branch) => ({
     value: branch.id,
-    label: branch.name, // تأكد أن الاسم موجود في الرد الخاص بالباك اند
+    label: branch.name,
   }));
 
+  // تجهيز خيارات الحسابات المالية
   const accountOptions = financialAccounts.map((account) => ({
     value: account.id,
-    label: account.name, // افترضت أن الحساب له 'name'.. عدلها لو كان اسم الحقل مختلف في الباك اند
+    label: account.name,
   }));
 
   const statusOptions = [
@@ -63,7 +92,7 @@ const CashierAdd = () => {
     { value: "inactive", label: t("inactive") },
   ];
 
-  // بناء الحقول بناءً على الـ JSON المطلوب
+  // بناء حقول الاستمارة
   const cashierFields = [
     { name: "name", label: t("name"), required: true },
     { name: "ar_name", label: t("ar_name"), required: true },
@@ -88,31 +117,23 @@ const CashierAdd = () => {
       required: true,
       options: accountOptions,
     },
-    // {
-    //   name: "cashier_active",
-    //   label: t("cashierActive"),
-    //   type: "checkbox", // افترضت أن كمبوننت AddPage يدعم نوع checkbox للقيم المنطقية (Boolean)
-    //   required: false,
-    // },
   ];
 
-  // عرض الـ Spinner حتى يتم تحميل كافة البيانات المطلوبة للـ dropdowns
+  // عرض الـ Spinner أثناء جلب البيانات الأساسية لمنع الـ Render ببيانات ناقصة
   if ((id && isFetching) || isBranchesLoading || isAccountsLoading) {
     return <LoadingSpinner />;
   }
 
   return (
     <AddPage
-      title={id ? t("editCashier") : t("addCashier")}
-      apiUrl="/api/restaurant/cashiers"
+      title={id ? t("editCashier") : t("addCashier")} // يتغير العنوان تلقائياً بناءً على وضع التعديل
+      apiUrl={`/api/restaurant/cashiers`} // إرسال الرابط الصحيح (رابط التعديل بالـ ID أو الإضافة بدون ID)
+      method={id ? "PUT" : "POST"} // تحديد نوع الطلب لتحديث البيانات عند التعديل
       queryKey="cashiers"
       fields={cashierFields}
-      initialData={initialData}
+      initialData={initialData} // البيانات المعبأة مسبقاً التي تم فكها من الريسبونس الجديد لتملأ المدخلات تلقائياً
       onSuccessAction={(res) => {
-        // التقاط الـ ID الراجع للتوجيه والإضاءة (Highlighting)
         const targetId = res?.data?.data?.id || res?.data?.id || res?.id || initialData?.id;
-        
-        // التوجيه لصفحة الكاشير
         navigate("/cashiers", { state: { highlightedId: targetId } });
       }}
     />
