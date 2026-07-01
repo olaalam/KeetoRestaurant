@@ -39,18 +39,20 @@ export default function DeliveryZone() {
     // 2. تعريف الأعمدة لتطابق الهيكل الجديد ودعم اللغات
     const columns = [
         {
-            accessorKey: 'city.name',
+            id: 'city', // استخدمنا id بدلاً من accessorKey
             header: t('cityname'),
-            // عرض اسم المدينة بناءً على اللغة المختارة
+            // 💡 التعديل هنا: جعلنا الجدول يقرأ الاسمين معاً في الخلفية ليتمكن من البحث فيهما
+            accessorFn: (row) => `${row.city?.name || ''} ${row.city?.nameAr || ''}`,
             cell: ({ row }) => {
                 const city = row.original.city;
                 return <span>{isArabic && city?.nameAr ? city.nameAr : (city?.name || 'N/A')}</span>;
             }
         },
         {
-            accessorKey: 'zone.name',
+            id: 'zone',
             header: t('zoneName'),
-            // عرض اسم المنطقة بناءً على اللغة المختارة مع الأيقونة
+            // نفس الفكرة لتفعيل البحث العربي في اسم المنطقة
+            accessorFn: (row) => `${row.zone?.name || ''} ${row.zone?.nameAr || ''}`,
             cell: ({ row }) => {
                 const zone = row.original.zone;
                 const zoneName = isArabic && zone?.nameAr ? zone.nameAr : (zone?.name || 'N/A');
