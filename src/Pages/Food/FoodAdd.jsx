@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import AddPage from "@/components/AddPage";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
@@ -125,18 +125,70 @@ const FoodAdd = () => {
         navigate("/foods", { state: { highlightedId: targetId } });
       }}
     >
-      {({ register, control, formState: { errors }, setValue, watch }) => {
+      {({ register, control, formState: { errors, submitCount }, setValue, watch }) => {
         const imagePreview = watch("image");
         const selectedCategoryId = watch("categoryid");
 
+        const [activeTab, setActiveTab] = useState("basic");
+
+        // خريطة تربط كل حقل بالتاب الخاص به لمعرفة أين يوجد الخطأ
+        const fieldsByTab = {
+          basic: ["name", "description", "categoryid"],
+          details: ["startTime", "endTime"],
+          pricing: ["price"],
+          // nested field-array errors live under the top-level "variations" key
+          variations: ["variations"],
+          // same idea for the addons field array
+          addon: ["addonsId"],
+        };
+
+        const tabHasError = (tabKey) =>
+          fieldsByTab[tabKey]?.some((fieldName) => errors[fieldName]);
+
+        // عند فشل الحفظ بسبب حقل مطلوب فاضي في تاب آخر، ننتقل تلقائياً لأول تاب فيه خطأ
+        useEffect(() => {
+          if (submitCount > 0) {
+            const erroredTab = Object.keys(fieldsByTab).find((key) =>
+              tabHasError(key),
+            );
+            if (erroredTab) setActiveTab(erroredTab);
+          }
+          // eslint-disable-next-line react-hooks/exhaustive-deps
+        }, [submitCount, errors]);
+
         return (
-          <Tabs defaultValue="basic" className="w-full mt-4">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full mt-4">
             <TabsList className="grid w-full grid-cols-5 mb-6">
-              <TabsTrigger value="basic">{t("basicInfo_tab")}</TabsTrigger>
-              <TabsTrigger value="details">{t("details_tab")}</TabsTrigger>
-              <TabsTrigger value="pricing">{t("pricingStock_tab")}</TabsTrigger>
-              <TabsTrigger value="variations">{t("variations_tab")}</TabsTrigger>
-              <TabsTrigger value="addon">{t("addons_tab2")}</TabsTrigger>
+              <TabsTrigger value="basic" className="relative">
+                {t("basicInfo_tab")}
+                {tabHasError("basic") && (
+                  <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-red-500" />
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="details" className="relative">
+                {t("details_tab")}
+                {tabHasError("details") && (
+                  <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-red-500" />
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="pricing" className="relative">
+                {t("pricingStock_tab")}
+                {tabHasError("pricing") && (
+                  <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-red-500" />
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="variations" className="relative">
+                {t("variations_tab")}
+                {tabHasError("variations") && (
+                  <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-red-500" />
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="addon" className="relative">
+                {t("addons_tab2")}
+                {tabHasError("addon") && (
+                  <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-red-500" />
+                )}
+              </TabsTrigger>
             </TabsList>
 
             {/* Tab 1: Basic Info */}
