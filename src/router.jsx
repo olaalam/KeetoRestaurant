@@ -75,6 +75,10 @@ import ExpenseCategories from "./Pages/ExpenseCategories/expense-categories";
 import ExpenseCategoriesAdd from "./Pages/ExpenseCategories/expense-categoriesAdd";
 import Expense from "./Pages/Expense/expense";
 import ExpenseAdd from "./Pages/Expense/expenseAdd";
+import Cashiers from "./Pages/Cashier/Cashier";
+import CashierAdd from "./Pages/Cashier/CashierAdd";
+import FinancialAccount from "./Pages/FinancialAccounts/FinancialAccount";
+import FinancialAccountAdd from "./Pages/FinancialAccounts/FinancialAccountAdd";
 const router = createBrowserRouter([
   {
     path: "/login",
@@ -96,8 +100,9 @@ const router = createBrowserRouter([
         index: true, // ليعرض صفحة Home عند الدخول على "/" مباشرة
         element: <Home />,
       },
-      {path:"/dashboard",
-        element:<Dashboard/>
+      {
+        path: "/dashboard",
+        element: <Dashboard />
       },
       {
         path: "admins",
@@ -467,13 +472,13 @@ const router = createBrowserRouter([
       },
       {
         path: "setting",
-        element: <SettingPage/>,
+        element: <SettingPage />,
       },
       {
         path: "setting/edit/:id",
         element: <SettingPageAdd />,
       },
-            {
+      {
         path: "policy",
         element: <Policy />,
       },
@@ -486,30 +491,54 @@ const router = createBrowserRouter([
         element: <PolicyAdd />,
       },
       {
-        path:"expense-categories",
-        element:<ExpenseCategories/>
+        path: "expense-categories",
+        element: <ExpenseCategories />
       },
       {
-        path:"expense-categories/add",
-        element:<ExpenseCategoriesAdd/>
+        path: "expense-categories/add",
+        element: <ExpenseCategoriesAdd />
       },
       {
-        path:"expense-categories/edit/:id",
-        element:<ExpenseCategoriesAdd/>
+        path: "expense-categories/edit/:id",
+        element: <ExpenseCategoriesAdd />
       },
       {
-        path:"expense",
-        element:<Expense/>
+        path: "expense",
+        element: <Expense />
       },
       {
-        path:"expense/add",
-        element:<ExpenseAdd/>
+        path: "expense/add",
+        element: <ExpenseAdd />
       },
       {
-        path:"expense/edit/:expenseId",
-        element:<ExpenseAdd/>
+        path: "expense/edit/:expenseId",
+        element: <ExpenseAdd />
       },
 
+      {
+        path: "cashiers",
+        element: <Cashiers />,
+      },
+      {
+        path: "cashiers/add",
+        element: <CashierAdd />,
+      },
+      {
+        path: "cashiers/edit/:id",
+        element: <CashierAdd />,
+      },
+      {
+        path: "financialAccounts",
+        element: <FinancialAccount />,
+      },
+      {
+        path: "financialAccounts/add",
+        element: <FinancialAccountAdd />,
+      },
+      {
+        path: "financialAccounts/edit/:id",
+        element: <FinancialAccountAdd />,
+      },
     ],
   },
 

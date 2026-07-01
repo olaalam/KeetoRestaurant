@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Controller, useForm } from 'react-hook-form'; 
+import { Controller, useForm } from 'react-hook-form';
 import { usePost } from '@/hooks/usePost';
 import { useUpdate } from '@/hooks/useUpdate';
 import { Button } from "@/components/ui/button";
@@ -35,7 +35,7 @@ const AddPage = ({
     const updateMutation = useUpdate(apiUrl, queryKey);
     const { t } = useTranslation();
     const [openCombobox, setOpenCombobox] = useState({});
-    
+
     // استخدام useRef للاحتفاظ بهوية الـ fields دون التسبب في إعادة تشغيل الـ useEffect
     const fieldsRef = useRef(fields);
     useEffect(() => {
@@ -74,33 +74,33 @@ const AddPage = ({
         }
     }, [initialDataString, reset]); // ✅ الآن التبعية مستقرة تماماً ولن تسبب Loop
 
-const onSubmit = (data) => {
-    const payloadToSend = transformPayload ? transformPayload(data) : data;
+    const onSubmit = (data) => {
+        const payloadToSend = transformPayload ? transformPayload(data) : data;
 
-    if (isEdit) {
-        // 💡 إذا كانت الخاصية true نرسل الرابط الأصلي صافي، وإلا نتركه null ليقوم الهوك بدمج الـ id تلقائياً
-        const customUrl = bypassIdInEdit ? apiUrl : null;
+        if (isEdit) {
+            // 💡 إذا كانت الخاصية true نرسل الرابط الأصلي صافي، وإلا نتركه null ليقوم الهوك بدمج الـ id تلقائياً
+            const customUrl = bypassIdInEdit ? apiUrl : null;
 
-        updateMutation.mutate(
-            { 
-                id: initialData?.id || data?.id, 
-                payload: payloadToSend,
-                customUrl: customUrl // 👈 نمرر الرابط المخصص هنا للهوك
-            },
-            {
+            updateMutation.mutate(
+                {
+                    id: initialData?.id || data?.id,
+                    payload: payloadToSend,
+                    customUrl: customUrl // 👈 نمرر الرابط المخصص هنا للهوك
+                },
+                {
+                    onSuccess: (res) => {
+                        onSuccessAction?.(res);
+                    }
+                }
+            );
+        } else {
+            postMutation.mutate(payloadToSend, {
                 onSuccess: (res) => {
                     onSuccessAction?.(res);
                 }
-            }
-        );
-    } else {
-        postMutation.mutate(payloadToSend, {
-            onSuccess: (res) => {
-                onSuccessAction?.(res);
-            }
-        });
-    }
-};
+            });
+        }
+    };
     const isLoading = postMutation.isPending || updateMutation.isPending;
 
     return (
@@ -135,8 +135,8 @@ const onSubmit = (data) => {
                                                 ? fieldItem.options?.filter(o => o.label.toLowerCase().includes(searchVal.toLowerCase()))
                                                 : fieldItem.options;
                                             return (
-                                                <Popover 
-                                                    open={openCombobox[fieldItem.name] || false} 
+                                                <Popover
+                                                    open={openCombobox[fieldItem.name] || false}
                                                     onOpenChange={(isOpen) => {
                                                         setOpenCombobox(prev => ({ ...prev, [fieldItem.name]: isOpen }));
                                                         if (!isOpen) setSearchVal("");
@@ -173,7 +173,7 @@ const onSubmit = (data) => {
                                                                             value={String(option.value)}
                                                                             onSelect={() => {
                                                                                 const selectedValue = String(option.value);
-                                                                                formOnChange(selectedValue); 
+                                                                                formOnChange(selectedValue);
                                                                                 if (fieldItem.onChange) {
                                                                                     fieldItem.onChange(selectedValue);
                                                                                 }
@@ -209,7 +209,7 @@ const onSubmit = (data) => {
                                             const handleToggleOption = (optionValue) => {
                                                 const stringValue = String(optionValue);
                                                 let updatedValue = [];
-                                                
+
                                                 if (safeValue.includes(stringValue)) {
                                                     updatedValue = safeValue.filter(v => v !== stringValue);
                                                 } else {
@@ -232,16 +232,16 @@ const onSubmit = (data) => {
                                                             {fieldItem.options?.map((option) => {
                                                                 const isSelected = safeValue.includes(String(option.value));
                                                                 return (
-                                                                    <SelectItem 
-                                                                        key={option.value} 
+                                                                    <SelectItem
+                                                                        key={option.value}
                                                                         value={String(option.value)}
                                                                         className={isSelected ? "bg-accent text-accent-foreground font-medium" : ""}
                                                                     >
                                                                         <div className="flex items-center gap-2">
-                                                                            <input 
-                                                                                type="checkbox" 
-                                                                                checked={isSelected} 
-                                                                                readOnly 
+                                                                            <input
+                                                                                type="checkbox"
+                                                                                checked={isSelected}
+                                                                                readOnly
                                                                                 className="rounded border-gray-300 text-primary focus:ring-primary h-3 w-3"
                                                                             />
                                                                             {option.label}
@@ -257,8 +257,8 @@ const onSubmit = (data) => {
                                                             {safeValue.map((val) => {
                                                                 const option = fieldItem.options?.find(o => String(o.value) === String(val));
                                                                 return (
-                                                                    <span 
-                                                                        key={val} 
+                                                                    <span
+                                                                        key={val}
                                                                         className="inline-flex items-center gap-1 bg-primary text-primary-foreground text-xs font-medium px-2 py-1 rounded-sm shadow-sm"
                                                                     >
                                                                         {option ? option.label : val}
@@ -305,7 +305,7 @@ const onSubmit = (data) => {
                                                 {value && (
                                                     <div className="relative w-32 h-32 border rounded-lg overflow-hidden bg-gray-50">
                                                         <img
-                                                            src={value} 
+                                                            src={value}
                                                             alt="Preview"
                                                             className="w-full h-full object-cover"
                                                         />
@@ -336,7 +336,8 @@ const onSubmit = (data) => {
                                     <Input
                                         id={fieldItem.name}
                                         type={fieldItem.type || 'text'}
-                                        {...register(fieldItem.name, { 
+                                        step={fieldItem.type === 'number' ? "any" : undefined}
+                                        {...register(fieldItem.name, {
                                             required: fieldItem.required,
                                             valueAsNumber: fieldItem.type === 'number',
                                             onChange: (e) => {

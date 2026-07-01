@@ -6,7 +6,7 @@ import AddPage from '@/components/AddPage';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import MapComponent from '@/components/MapComponent';
 import { useTranslation } from "@/hooks/useTranslation";
-import { MapPin } from "lucide-react";
+import { MapPin, StepBack } from "lucide-react";
 
 const RestaurantAdd = () => {
     const { id } = useParams();
@@ -14,7 +14,7 @@ const RestaurantAdd = () => {
     const navigate = useNavigate();
     const { t } = useTranslation();
     const isEdit = !!id;
-    
+
     const [selectedCityId, setSelectedCityId] = useState('');
     // تعريف الـ State الخاص بالموقع الجغرافي لتفادي أخطاء عدم التعريف
     const [location, setLocation] = useState({ lat: 30.0444, lng: 31.2357 }); // قيم افتراضية (مثال: القاهرة)
@@ -67,12 +67,12 @@ const RestaurantAdd = () => {
 
         return {
             ...rawData,
-            cityId: String(cityId), 
+            cityId: String(cityId),
             zoneId: String(zoneId),
             deliveryFee: rawData.deliveryFee,
             deliveryRadiusKm: rawData.deliveryRadiusKm,
-            lat: String(rawData.lat || ""), 
-            lng: String(rawData.lng || ""), 
+            lat: String(rawData.lat || ""),
+            lng: String(rawData.lng || ""),
         };
     }, [rawData, selectionData.zones]);
 
@@ -94,9 +94,9 @@ const RestaurantAdd = () => {
     // تحديث موقع الخريطة عند تحميل البيانات
     useEffect(() => {
         if (fetchedData?.lat && fetchedData?.lng) {
-            setLocation({ 
-                lat: parseFloat(fetchedData.lat), 
-                lng: parseFloat(fetchedData.lng) 
+            setLocation({
+                lat: parseFloat(fetchedData.lat),
+                lng: parseFloat(fetchedData.lng)
             });
         }
     }, [fetchedData]);
@@ -118,7 +118,7 @@ const RestaurantAdd = () => {
         { name: 'nameAr', label: t('nameAr'), required: true },
         { name: 'nameFr', label: t('nameFr'), required: true },
         { name: 'phoneNumber', label: t('phoneNumberLabel'), type: 'text', required: true },
-        { name: 'deliveryRadiusKm', label: t('deliveryRadiusKm'), type: 'number', required: true },
+        { name: 'deliveryRadiusKm', label: t('deliveryRadiusKm'), type: 'number', step: "0.1", required: true, },
         { name: 'address', label: t('addressLabel'), type: 'text', required: true },
         {
             name: 'cityId',
@@ -132,7 +132,7 @@ const RestaurantAdd = () => {
             onChange: (e) => {
                 const value = e?.target?.value !== undefined ? e.target.value : e;
                 setSelectedCityId(value);
-                
+
                 // تصفير قيمة المنطقة في الفورم عند تغيير المدينة لضمان عدم إرسال داتا متضاربة
                 if (methods) {
                     methods.setValue('zoneId', '', { shouldDirty: true, shouldValidate: true });
@@ -172,7 +172,7 @@ const RestaurantAdd = () => {
             title={t('branchTitle')}
             apiUrl="/api/restaurant/branches"
             queryKey="branches"
-            fields={getFields()} 
+            fields={getFields()}
             initialData={initialData}
             onSuccessAction={() => navigate(-1)}
         >
@@ -186,26 +186,26 @@ const RestaurantAdd = () => {
                         <p className="text-sm text-gray-500 mb-4">Click on the map or drag the marker to set the zone's exact location.</p>
 
                         <div className="border rounded-xl p-1 relative">
-<MapComponent
-    form={methods}
-    selectedLocation={location}
-    setSelectedLocation={setLocation} // 💡 أضيفي هذا السطر هنا لتمرير دالة التحديث للخريطة
-    isMapClickEnabled={true}
-    handleMapClick={(e) => {
-        const { lat, lng } = e.latlng;
-        setLocation({ lat, lng });
+                            <MapComponent
+                                form={methods}
+                                selectedLocation={location}
+                                setSelectedLocation={setLocation} // 💡 أضيفي هذا السطر هنا لتمرير دالة التحديث للخريطة
+                                isMapClickEnabled={true}
+                                handleMapClick={(e) => {
+                                    const { lat, lng } = e.latlng;
+                                    setLocation({ lat, lng });
 
-        methods.setValue('lat', String(lat), { shouldDirty: true, shouldValidate: true });
-        methods.setValue('lng', String(lng), { shouldDirty: true, shouldValidate: true });
-    }}
-    onMarkerDragEnd={(e) => {
-        const { lat, lng } = e.target.getLatLng();
-        setLocation({ lat, lng });
+                                    methods.setValue('lat', String(lat), { shouldDirty: true, shouldValidate: true });
+                                    methods.setValue('lng', String(lng), { shouldDirty: true, shouldValidate: true });
+                                }}
+                                onMarkerDragEnd={(e) => {
+                                    const { lat, lng } = e.target.getLatLng();
+                                    setLocation({ lat, lng });
 
-        methods.setValue('lat', String(lat), { shouldDirty: true, shouldValidate: true });
-        methods.setValue('lng', String(lng), { shouldDirty: true, shouldValidate: true });
-    }}
-/>
+                                    methods.setValue('lat', String(lat), { shouldDirty: true, shouldValidate: true });
+                                    methods.setValue('lng', String(lng), { shouldDirty: true, shouldValidate: true });
+                                }}
+                            />
                         </div>
                     </div>
                 );

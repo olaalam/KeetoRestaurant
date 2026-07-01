@@ -55,6 +55,9 @@ export const getModules = (t, orderCounts = {}) => {
         { title: "Permissions", url: "/permissions", icon: ShieldCheck },
         { title: t("qr"), url: "/qr", icon: ShoppingBag },
         { title: t("policy"), url: "/policy", icon: ShoppingBag },
+        { title: t("cashiers"), url: "/cashiers", icon: UserCog },
+        { title: t("financialAccounts"), url: "/financialAccounts", icon: UserCog },
+
 
       ],
     },
