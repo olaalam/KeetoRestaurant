@@ -381,6 +381,10 @@ export default function OrderDetails() {
     labelKey: order.status,
   };
 
+  // --- إضافة هذا المتغير لتحديد الاسم المعروض للحالة الحالية ---
+  const displayCurrentLabel = order.orderType === "takeaway" && order.status === "out_for_delivery"
+    ? "ready"
+    : currentStatusStyle.labelKey;
   return (
     <div className="w-full mx-auto py-8 px-4 sm:px-6 space-y-6">
       {/* --- تصميم السطرين (يظهر في الموبايل، التابلت، وكل اللابتوبات والشاشات المتوسطة) --- */}
@@ -1169,6 +1173,11 @@ export default function OrderDetails() {
                   const IconComponent = config.icon;
                   const isActive = order.status === status;
 
+                  // --- التعديل هنا لعرض "ready" بدلاً من "out_for_delivery" طلبات الاستلام ---
+                  const displayLabel = order.orderType === "takeaway" && status === "out_for_delivery"
+                    ? "ready"
+                    : config.labelKey;
+
                   return (
                     <Button
                       key={status}
@@ -1179,7 +1188,7 @@ export default function OrderDetails() {
                       }
                       onClick={() => handleStatusChange(status)}
                       className={`h-11 justify-start gap-2 rounded-xl border text-xs font-semibold relative px-3 transition-all duration-200
-              ${isActive
+      ${isActive
                           ? "border-blue-600 bg-blue-50 text-blue-700 font-bold shadow-sm hover:bg-blue-50"
                           : "border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                         }`}
@@ -1190,7 +1199,9 @@ export default function OrderDetails() {
                       <IconComponent
                         className={`w-4 h-4 shrink-0 ${isActive ? "text-blue-600" : "text-gray-400"}`}
                       />
-                      <span className="truncate">{t(config.labelKey)}</span>
+
+                      {/* استخدام الاسم المعدل هنا */}
+                      <span className="truncate">{t(displayLabel)}</span>
                     </Button>
                   );
                 })}

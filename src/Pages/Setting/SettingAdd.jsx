@@ -51,7 +51,7 @@ const SettingPageAdd = () => {
         secondTextColor: "",
         repeatNotification: false,
         repeatNotificationDuration: 5,
-        repeatNotificationInterval: 60,
+        repeatNotificationStatuses: ["pending", "accepted", "preparing", "out_for_delivery"],
         schedules: [
             { dayOfWeek: 0, isOffDay: false, openingTime: "09:00", closingTime: "23:00" },
             { dayOfWeek: 1, isOffDay: false, openingTime: "09:00", closingTime: "23:00" },
@@ -72,6 +72,20 @@ const SettingPageAdd = () => {
             openingTime: s.openingTime ? s.openingTime.substring(0, 5) : "",
             closingTime: s.closingTime ? s.closingTime.substring(0, 5) : ""
         }));
+
+        // معالجة الخطأ في صفحة الإضافة والتعديل للتأكد من أنها مصفوفة صالحة
+        let parsedStatuses = ["pending", "accepted", "preparing", "out_for_delivery"];
+        if (rawData.settings?.repeatNotificationStatuses) {
+            if (typeof rawData.settings.repeatNotificationStatuses === 'string') {
+                try {
+                    parsedStatuses = JSON.parse(rawData.settings.repeatNotificationStatuses);
+                } catch (e) {
+                    parsedStatuses = [];
+                }
+            } else if (Array.isArray(rawData.settings.repeatNotificationStatuses)) {
+                parsedStatuses = rawData.settings.repeatNotificationStatuses;
+            }
+        }
 
         return {
             id: rawData.settings?.id || rawData.id,
@@ -99,7 +113,7 @@ const SettingPageAdd = () => {
             secondTextColor: rawData.settings?.secondTextColor || "",
             repeatNotification: rawData.settings?.repeatNotification ?? false,
             repeatNotificationDuration: rawData.settings?.repeatNotificationDuration ?? 5,
-            repeatNotificationInterval: rawData.settings?.repeatNotificationInterval ?? 60,
+            repeatNotificationStatuses: parsedStatuses,
             schedules: formattedSchedules.length > 0 ? formattedSchedules : defaultInitialData.schedules
         };
     }, [JSON.stringify(rawData)]);
@@ -141,7 +155,8 @@ const SettingPageAdd = () => {
                 secondTextColor: data.secondTextColor || "",
                 repeatNotification: data.repeatNotification ?? false,
                 repeatNotificationDuration: data.repeatNotification ? Number(data.repeatNotificationDuration) : 0,
-                repeatNotificationInterval: data.repeatNotification ? Number(data.repeatNotificationInterval) : 0,
+                // نرسلها كنص JSON String لأن استجابة السيرفر كانت بهذا الشكل (يجب التأكد إذا كان السيرفر يحتاج مصفوفة يمكنك إزالة JSON.stringify)
+                repeatNotificationStatuses: data.repeatNotification ? JSON.stringify(data.repeatNotificationStatuses || []) : JSON.stringify([]),
             },
             schedules: (data.schedules || []).map(schedule => ({
                 dayOfWeek: Number(schedule.dayOfWeek),
@@ -181,7 +196,6 @@ const SettingPageAdd = () => {
                 return (
                     <div className="space-y-8 mt-6 border-t pt-6 col-span-full">
 
-                        {/* General Settings Section */}
                         <div>
                             <h3 className="text-lg font-bold mb-4 text-primary">General Settings</h3>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-muted/20 p-4 rounded-lg">
@@ -215,7 +229,6 @@ const SettingPageAdd = () => {
                                     </div>
                                 ))}
 
-                                {/* حقول الـ Repeat Notification الشرطية */}
                                 {isRepeatNotificationEnabled && (
                                     <>
                                         <div className="space-y-2">
@@ -223,9 +236,23 @@ const SettingPageAdd = () => {
                                             <Input type="number" {...register("repeatNotificationDuration", { valueAsNumber: true })} />
                                         </div>
 
-                                        <div className="space-y-2">
-                                            <Label className="text-gray-700 font-medium">Repeat Notification Interval (Sec)</Label>
-                                            <Input type="number" {...register("repeatNotificationInterval", { valueAsNumber: true })} />
+                                        <div className="space-y-2 md:col-span-2">
+                                            <Label className="text-gray-700 font-medium">Target Statuses for Repeat Notification</Label>
+                                            <div className="flex flex-wrap gap-2 mt-2">
+                                                {["pending", "accepted", "preparing", "out_for_delivery"].map(status => (
+                                                    <label key={status} className="relative cursor-pointer group">
+                                                        <input
+                                                            type="checkbox"
+                                                            value={status}
+                                                            {...register("repeatNotificationStatuses")}
+                                                            className="peer sr-only"
+                                                        />
+                                                        <div className="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 border border-transparent rounded-full select-none transition-all duration-200 peer-checked:bg-blue-50 peer-checked:text-blue-700 peer-checked:border-blue-200 peer-checked:shadow-sm hover:bg-gray-200 peer-focus-visible:ring-2 peer-focus-visible:ring-ring">
+                                                            {status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                                                        </div>
+                                                    </label>
+                                                ))}
+                                            </div>
                                         </div>
                                     </>
                                 )}
@@ -264,7 +291,6 @@ const SettingPageAdd = () => {
 
                         <hr className="my-6" />
 
-                        {/* Working Hours (Schedules) Section */}
                         <div>
                             <div className="flex items-center justify-between mb-4">
                                 <h3 className="text-lg font-bold text-primary">Working Hours (Schedules)</h3>

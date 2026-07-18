@@ -488,7 +488,7 @@ const FoodAdd = () => {
                         options={[
                           { value: "none", label: t("none") },
                           { value: "percentage", label: t("percentage") },
-                          { value: "fixed", label: t("fixedAmount") },
+                          { value: "amount", label: t("fixedAmount") },
                         ]}
                         value={field.value}
                         onChange={field.onChange}

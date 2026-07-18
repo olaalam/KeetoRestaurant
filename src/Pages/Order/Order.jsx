@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/api/axios";
 import GenericDataTable from "@/components/GenericDataTable";
 import { useNavigate } from "react-router-dom";
-import { User, Phone, Eye ,Copy } from "lucide-react";
+import { User, Phone, Eye, Copy } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -138,7 +138,7 @@ export default function Order() {
         </button>
       ),
     },
-{
+    {
       accessorKey: "customerName",
       header: t("customerInfo"),
       cell: ({ row }) => {
@@ -188,39 +188,38 @@ export default function Order() {
         </span>
       ),
     },
- {
-  accessorKey: "rating",
-  header: t("rating"),
-  cell: ({ row }) => {
-    const isDelivery = row.original.rating === "delivery";
-    return (
-      <span
-        className={`px-2.5 py-1 rounded-full text-xs font-medium capitalize ${
-          isDelivery
-            ? "bg-purple-100 text-purple-700"
-            : "bg-blue-100 text-blue-700"
-        }`}
-      >
-        {t(row.original.rating)}
-      </span>
-    );
-  },
-},
-{
-  accessorKey: "ratingComment",
-  header: t("ratingComment"),
-  cell: ({ row }) => {
-    const comment = row.original.ratingComment;
-    return (
-      <span
-        className="text-sm text-gray-600 max-w-[200px] truncate block"
-        title={comment}
-      >
-        {comment || "-"}
-      </span>
-    );
-  },
-},
+    {
+      accessorKey: "rating",
+      header: t("rating"),
+      cell: ({ row }) => {
+        const isDelivery = row.original.rating === "delivery";
+        return (
+          <span
+            className={`px-2.5 py-1 rounded-full text-xs font-medium capitalize ${isDelivery
+                ? "bg-purple-100 text-purple-700"
+                : "bg-blue-100 text-blue-700"
+              }`}
+          >
+            {t(row.original.rating)}
+          </span>
+        );
+      },
+    },
+    {
+      accessorKey: "ratingComment",
+      header: t("ratingComment"),
+      cell: ({ row }) => {
+        const comment = row.original.ratingComment;
+        return (
+          <span
+            className="text-sm text-gray-600 max-w-[200px] truncate block"
+            title={comment}
+          >
+            {comment || "-"}
+          </span>
+        );
+      },
+    },
     {
       accessorKey: "totalAmount",
       header: t("totalAmount"),
@@ -264,11 +263,17 @@ export default function Order() {
             <SelectValue placeholder={t("selectStatus")} />
           </SelectTrigger>
           <SelectContent>
-            {orderStatuses.map((status) => (
-              <SelectItem key={status} value={status} className="capitalize">
-                {t(status)}
-              </SelectItem>
-            ))}
+            {orderStatuses.map((status) => {
+              // التحقق: إذا كان الطلب استلام والحالة "جاري التوصيل"، يتم عرض كلمة "جاهز" بدلاً منها
+              const isTakeawayReady = row.original.orderType === "takeaway" && status === "out_for_delivery";
+              const displayLabel = isTakeawayReady ? "ready" : status;
+
+              return (
+                <SelectItem key={status} value={status} className="capitalize">
+                  {t(displayLabel)}
+                </SelectItem>
+              );
+            })}
           </SelectContent>
         </Select>
       ),

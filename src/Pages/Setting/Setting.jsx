@@ -4,15 +4,17 @@ import api from '@/api/axios';
 import GenericDataTable from '@/components/GenericDataTable';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from "@/hooks/useTranslation";
-import { CalendarDays, X } from 'lucide-react'; // استيراد الأيقونات المناسبة
+import { CalendarDays, X, BellRing, CheckCircle2 } from 'lucide-react';
 
 export default function Setting() {
     const navigate = useNavigate();
     const { t } = useTranslation();
 
-    // حالتان للتحكم في الـ Dialog وبيانات المواعيد المختارة
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [selectedSchedules, setSelectedSchedules] = useState([]);
+
+    const [isStatusesDialogOpen, setIsStatusesDialogOpen] = useState(false);
+    const [selectedStatuses, setSelectedStatuses] = useState([]);
 
     const { data: setting = [], isLoading } = useQuery({
         queryKey: ['setting'],
@@ -21,7 +23,6 @@ export default function Setting() {
             const settingsData = res.data?.data?.settings || {};
             const schedulesData = res.data?.data?.schedules || [];
 
-            // ندمج المواعيد داخل كائن الإعدادات حتى نتمكن من الوصول إليها في حقول الجدول بسهولة
             return [{
                 ...settingsData,
                 schedules: schedulesData
@@ -29,7 +30,6 @@ export default function Setting() {
         }
     });
 
-    // دالة مساعدة لتحويل رقم اليوم إلى نص مترجم
     const getDayName = (dayNum) => {
         const days = [
             t('sunday', { defaultValue: 'Sunday' }),
@@ -83,31 +83,10 @@ export default function Setting() {
             cell: ({ row }) => `${row.original.minDeliveryTime} - ${row.original.maxDeliveryTime} min`
         },
         {
-            accessorKey: "vegType",
-            header: t("vegetarianType", { defaultValue: "Vegetarian Type" })
-        },
-        {
-            accessorKey: "firstColor",
-            header: t("firstColor", { defaultValue: "First Color" })
-        },
-        {
-            accessorKey: "secondColor",
-            header: t("secondColor", { defaultValue: "Second Color" })
-        },
-        {
-            accessorKey: "firstTextColor",
-            header: t("firstTextColor", { defaultValue: "First Text Color" })
-        },
-        {
-            accessorKey: "secondTextColor",
-            header: t("secondTextColor", { defaultValue: "Second Text Color" })
-        },
-        {
             accessorKey: "dineIn",
             header: t("dineIn", { defaultValue: "Dine In" }),
             cell: ({ getValue }) => getValue() ? t("yes", { defaultValue: "Yes" }) : t("no", { defaultValue: "No" })
         },
-        // الأعمدة الجديدة لخاصية تكرار الإشعارات
         {
             accessorKey: "repeatNotification",
             header: t("repeatNotification", { defaultValue: "Repeat Notification" }),
@@ -123,11 +102,40 @@ export default function Setting() {
             cell: ({ getValue, row }) => row.original.repeatNotification ? `${getValue()}` : '-'
         },
         {
-            accessorKey: "repeatNotificationInterval",
-            header: t("repeatNotificationInterval", { defaultValue: "Repeat Interval" }),
-            cell: ({ getValue, row }) => row.original.repeatNotification ? `${getValue()} sec` : '-'
+            id: "repeatNotificationStatuses",
+            header: t("repeatNotificationStatuses", { defaultValue: "Repeat Statuses" }),
+            cell: ({ row }) => {
+                if (!row.original.repeatNotification) return '-';
+
+                // معالجة الخطأ: التأكد من تحويل النص إلى مصفوفة إذا كان قادماً كنص من الـ API
+                let statuses = [];
+                const rawStatuses = row.original.repeatNotificationStatuses;
+                if (typeof rawStatuses === 'string') {
+                    try {
+                        statuses = JSON.parse(rawStatuses);
+                    } catch (error) {
+                        statuses = [];
+                    }
+                } else if (Array.isArray(rawStatuses)) {
+                    statuses = rawStatuses;
+                }
+
+                return (
+                    <button
+                        type="button"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedStatuses(statuses);
+                            setIsStatusesDialogOpen(true);
+                        }}
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-100 rounded-lg transition-colors shadow-sm"
+                    >
+                        <BellRing className="w-3.5 h-3.5" />
+                        {t("viewStatuses", { defaultValue: "View Statuses" })}
+                    </button>
+                );
+            }
         },
-        // العمود الخاص بالمواعيد (Schedules)
         {
             id: "workingHours",
             header: t("workingHours", { defaultValue: "Working Hours" }),
@@ -137,7 +145,7 @@ export default function Setting() {
                     <button
                         type="button"
                         onClick={(e) => {
-                            e.stopPropagation(); // منع حدوث أي أحداث أخرى للسطر عند الضغط
+                            e.stopPropagation();
                             setSelectedSchedules(schedules);
                             setIsDialogOpen(true);
                         }}
@@ -163,11 +171,9 @@ export default function Setting() {
                 onEdit={(settingItem) => navigate(`/setting/edit/${settingItem.id}`)}
             />
 
-            {/* نافذة عرض المواعيد المنبثقة (Schedules Dialog) */}
             {isDialogOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-fade-in">
                     <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden border mx-4">
-                        {/* الهيدر للـ Dialog */}
                         <div className="flex items-center justify-between px-6 py-4 border-b bg-gray-50/50">
                             <div className="flex items-center gap-2">
                                 <CalendarDays className="w-5 h-5 text-primary" />
@@ -175,53 +181,79 @@ export default function Setting() {
                                     {t("workingHours", { defaultValue: "Working Hours" })}
                                 </h3>
                             </div>
+                            <button onClick={() => setIsDialogOpen(false)} className="p-1 rounded-md hover:bg-gray-100 text-gray-500 transition-colors">
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+                        <div className="p-6 space-y-3 max-h-[60vh] overflow-y-auto">
+                            {selectedSchedules.length > 0 ? (
+                                [...selectedSchedules].sort((a, b) => a.dayOfWeek - b.dayOfWeek).map((schedule) => (
+                                    <div key={schedule.id} className="flex items-center justify-between p-3 rounded-lg border bg-gray-50/50 text-sm">
+                                        <span className="font-medium text-gray-700">{getDayName(schedule.dayOfWeek)}</span>
+                                        {schedule.isOffDay ? (
+                                            <span className="px-2 py-0.5 text-xs font-semibold text-red-700 bg-red-50 rounded-md">{t("offDay", { defaultValue: "Closed" })}</span>
+                                        ) : (
+                                            <div className="flex items-center gap-1.5 text-gray-600 font-mono text-xs dir-ltr">
+                                                <span>{schedule.openingTime}</span><span className="text-gray-400">-</span><span>{schedule.closingTime}</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                ))
+                            ) : (
+                                <p className="text-center text-sm text-gray-500 py-4">{t("noSchedulesFound", { defaultValue: "No schedule data available" })}</p>
+                            )}
+                        </div>
+                        <div className="px-6 py-4 border-t bg-gray-50/50 flex justify-end">
+                            <button type="button" onClick={() => setIsDialogOpen(false)} className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border rounded-lg hover:bg-gray-50 transition-colors">
+                                {t("close", { defaultValue: "Close" })}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {isStatusesDialogOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-fade-in">
+                    <div className="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden border mx-4">
+                        <div className="flex items-center justify-between px-6 py-4 border-b bg-gray-50/50">
+                            <div className="flex items-center gap-2">
+                                <BellRing className="w-5 h-5 text-blue-600" />
+                                <h3 className="text-base font-semibold text-gray-900">
+                                    {t("repeatNotificationStatuses", { defaultValue: "Repeat Statuses" })}
+                                </h3>
+                            </div>
                             <button
-                                onClick={() => setIsDialogOpen(false)}
+                                onClick={() => setIsStatusesDialogOpen(false)}
                                 className="p-1 rounded-md hover:bg-gray-100 text-gray-500 transition-colors"
                             >
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
 
-                        {/* محتوى المواعيد */}
-                        <div className="p-6 space-y-3 max-h-[60vh] overflow-y-auto">
-                            {selectedSchedules.length > 0 ? (
-                                [...selectedSchedules]
-                                    .sort((a, b) => a.dayOfWeek - b.dayOfWeek) // ترتيب الأيام تصاعدياً
-                                    .map((schedule) => (
+                        <div className="p-6">
+                            {selectedStatuses.length > 0 ? (
+                                <div className="flex flex-wrap gap-2">
+                                    {selectedStatuses.map((status, index) => (
                                         <div
-                                            key={schedule.id}
-                                            className="flex items-center justify-between p-3 rounded-lg border bg-gray-50/50 text-sm"
+                                            key={index}
+                                            className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 border border-blue-100 rounded-full text-sm font-medium capitalize"
                                         >
-                                            <span className="font-medium text-gray-700">
-                                                {getDayName(schedule.dayOfWeek)}
-                                            </span>
-
-                                            {schedule.isOffDay ? (
-                                                <span className="px-2 py-0.5 text-xs font-semibold text-red-700 bg-red-50 rounded-md">
-                                                    {t("offDay", { defaultValue: "Closed" })}
-                                                </span>
-                                            ) : (
-                                                <div className="flex items-center gap-1.5 text-gray-600 font-mono text-xs dir-ltr">
-                                                    <span>{schedule.openingTime}</span>
-                                                    <span className="text-gray-400">-</span>
-                                                    <span>{schedule.closingTime}</span>
-                                                </div>
-                                            )}
+                                            <CheckCircle2 className="w-4 h-4" />
+                                            {status.replace('_', ' ')}
                                         </div>
-                                    ))
+                                    ))}
+                                </div>
                             ) : (
                                 <p className="text-center text-sm text-gray-500 py-4">
-                                    {t("noSchedulesFound", { defaultValue: "No schedule data available" })}
+                                    {t("noStatusesFound", { defaultValue: "No statuses selected." })}
                                 </p>
                             )}
                         </div>
 
-                        {/* الفوتر الخاص بالإغلاق */}
                         <div className="px-6 py-4 border-t bg-gray-50/50 flex justify-end">
                             <button
                                 type="button"
-                                onClick={() => setIsDialogOpen(false)}
+                                onClick={() => setIsStatusesDialogOpen(false)}
                                 className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border rounded-lg hover:bg-gray-50 transition-colors"
                             >
                                 {t("close", { defaultValue: "Close" })}

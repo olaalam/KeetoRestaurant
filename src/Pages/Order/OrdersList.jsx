@@ -3,10 +3,11 @@ import { useQuery } from "@tanstack/react-query";
 import api from "@/api/axios";
 import GenericDataTable from "@/components/GenericDataTable";
 import { useNavigate } from "react-router-dom";
-import { User, Phone, Eye, Printer } from "lucide-react";
+import { User, Phone, Eye, Printer, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/hooks/useTranslation";
 import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 import useDateRangeStore from "../../store/Usedaterangestore";
 
 export default function OrdersList({ status }) {
@@ -71,29 +72,51 @@ export default function OrdersList({ status }) {
     {
       accessorKey: "customerName",
       header: t("customerInfo"),
-      cell: ({ row }) => (
-        <div className="flex flex-col gap-1">
-          <div className="flex items-center gap-1 font-medium text-gray-800">
-            <User size={14} className="text-gray-500" />
-            {row.original.customerName}
+      cell: ({ row }) => {
+        // دالة نسخ رقم الهاتف
+        const handleCopyPhone = (e) => {
+          e.stopPropagation();
+          if (row.original.customerPhone) {
+            navigator.clipboard.writeText(row.original.customerPhone);
+            toast.success(t("copiedSuccessfully") || "تم نسخ رقم الهاتف بنجاح");
+          }
+        };
+
+        return (
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-1 font-medium text-gray-800">
+              <User size={14} className="text-gray-500" />
+              {row.original.customerName}
+            </div>
+            <div className="flex items-center gap-1.5 text-xs text-gray-500">
+              <div className="flex items-center gap-1">
+                <Phone size={12} />
+                {row.original.customerPhone}
+              </div>
+              {row.original.customerPhone && (
+                <button
+                  type="button"
+                  onClick={handleCopyPhone}
+                  className="text-gray-400 hover:text-primary transition-colors p-1 rounded hover:bg-slate-100"
+                  title={t("copyPhone") || "نسخ الرقم"}
+                >
+                  <Copy size={12} />
+                </button>
+              )}
+            </div>
           </div>
-          <div className="flex items-center gap-1 text-xs text-gray-500">
-            <Phone size={12} />
-            {row.original.customerPhone}
-          </div>
-        </div>
-      ),
+        );
+      },
     },
     {
       accessorKey: "orderType",
       header: t("orderType"),
       cell: ({ row }) => (
         <span
-          className={`px-2 py-1 rounded-full text-xs capitalize ${
-            row.original.orderType === "delivery"
+          className={`px-2 py-1 rounded-full text-xs capitalize ${row.original.orderType === "delivery"
               ? "bg-purple-100 text-purple-700"
               : "bg-blue-100 text-blue-700"
-          }`}
+            }`}
         >
           {t(row.original.orderType)}
         </span>
@@ -113,11 +136,10 @@ export default function OrdersList({ status }) {
       header: t("status"),
       cell: ({ row }) => (
         <span
-          className={`px-2 py-1 rounded-full text-xs capitalize ${
-            row.original.status === "pending"
+          className={`px-2 py-1 rounded-full text-xs capitalize ${row.original.status === "pending"
               ? "bg-yellow-100 text-yellow-700"
               : "bg-green-100 text-green-700"
-          }`}
+            }`}
         >
           {t(row.original.status)}
         </span>
