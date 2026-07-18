@@ -63,14 +63,14 @@ const FoodAdd = () => {
         price: raw.price ? Number(raw.price) : "",
         points: raw.points != null ? Number(raw.points) : "",
         discount_type: raw.discount_type || "none",
-        discount_value: raw.discount_value ? Number(raw.discount_value) : 0,
+        // لو مفيش خصم بنخيلها فاضية مش 0
+        discount_value: raw.discount_value ? Number(raw.discount_value) : "",
         Maximum_Purchase: raw.Maximum_Purchase ? Number(raw.Maximum_Purchase) : 5,
         stock_type: raw.stock_type || "unlimited",
         status: raw.status || "active",
-        
-        // في حالة الـ Edit: لو الباك باعت الفروع غير المختارة (inactive)، بنستنتج الفروع المختارة للـ UI
-        branches: "all", // سيتم التعامل معها أو ضبطها حسب البيانات المرجعة لو رغبتم
-        
+
+        branches: "all",
+
         variations:
           raw.variations?.map((v) => ({
             name: v.name || "",
@@ -106,11 +106,13 @@ const FoodAdd = () => {
   }
 
   const transformBeforeSubmit = (formData) => {
-    const { addonsId: addonsArr, branches, price, ...rest } = formData;
-    
+    const { addonsId: addonsArr, branches, price, discount_type, discount_value, ...rest } = formData;
+
+    // فحص ما إذا كان هناك خصم حقيقي مفعل أم لا
+    const hasDiscount = discount_type && discount_type !== "none" && Number(discount_value) > 0;
+
     let formattedBranches = undefined;
-    
-    // لو تم اختيار فروع معينة في الـ UI وليست "all"
+
     if (branches && branches !== "all") {
       let selectedIds = [];
       if (Array.isArray(branches)) {
@@ -121,16 +123,13 @@ const FoodAdd = () => {
         selectedIds = [branches].filter((v) => v && v !== "all");
       }
 
-      // جلب كل الفروع المتاحة من الـ selectOptions
       const allAvailableBranches = selectOptions?.branches || [];
 
-      // استخراج الفروع التي **لم يقم** المستخدم بتحديدها (غير المختارة)
       const unselectedBranches = allAvailableBranches.filter((b) => {
         const bId = String(b.id || b.branchId);
         return !selectedIds.includes(bId);
       });
 
-      // لو فيه فروع لم يتم اختيارها، نبعتها للباك إند بحالة inactive
       if (unselectedBranches.length > 0) {
         formattedBranches = unselectedBranches.map((b) => ({
           branchId: String(b.id || b.branchId),
@@ -143,7 +142,9 @@ const FoodAdd = () => {
     return {
       ...rest,
       price,
-      // لو اخترنا "all" أو كل الفروع (مفيش فروع غير مختارة)، مش هيبعت مفتاح branches نهائياً
+      // في حالة عدم وجود خصم، يُرسل discount_type كـ "none" و discount_value كـ null
+      discount_type: hasDiscount ? discount_type : "none",
+      discount_value: hasDiscount ? Number(discount_value) : null,
       ...(formattedBranches ? { branches: formattedBranches } : {}),
       allergen_ingredients: Array.isArray(formData.allergen_ingredients)
         ? serializeAllergens(formData.allergen_ingredients)
@@ -171,7 +172,6 @@ const FoodAdd = () => {
 
         const [activeTab, setActiveTab] = useState("basic");
 
-        // خريطة تربط كل حقل بالتاب الخاص به لمعرفة أين يوجد الخطأ
         const fieldsByTab = {
           basic: ["name", "description", "categoryid"],
           details: ["startTime", "endTime"],
@@ -183,7 +183,6 @@ const FoodAdd = () => {
         const tabHasError = (tabKey) =>
           fieldsByTab[tabKey]?.some((fieldName) => errors[fieldName]);
 
-        // عند فشل الحفظ بسبب حقل مطلوب فاضي في تاب آخر، ننتقل تلقائياً لأول تاب فيه خطأ
         useEffect(() => {
           if (submitCount > 0) {
             const erroredTab = Object.keys(fieldsByTab).find((key) =>
@@ -441,8 +440,7 @@ const FoodAdd = () => {
                   )}
                 </div>
 
-                {/* حقل الـ Branches متعدد الاختيارات (Multi-select) */}
-<div className="space-y-2">
+                <div className="space-y-2">
                   <Label>{t("branchesLabel") || "Branches"}</Label>
                   <Controller
                     name="branches"
