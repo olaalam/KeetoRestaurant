@@ -1,6 +1,5 @@
 import React, { useState, useMemo } from "react";
 import { useGet } from "@/hooks/useGet";
-import { usePost } from "@/hooks/usePost";
 import { toast } from 'sonner';
 import api from '@/api/axios';
 import { useTranslation } from "@/hooks/useTranslation";
@@ -15,13 +14,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -39,6 +31,7 @@ import {
   Search,
   Pencil,
   ChevronRight,
+  Store,
 } from "lucide-react";
 import LoadingSpinner from "@/components/LoadingSpinner";
 
@@ -51,14 +44,23 @@ const ICONS_BY_MODULE = {
 export default function PricingProduct({ branchId: branchIdProp }) {
   const { t, isRTL } = useTranslation();
 
-  const [activeTab, setActiveTab] = useState("all");
   const [search, setSearch] = useState("");
-  const [branchId, setBranchId] = useState(branchIdProp || "");
+
+  // ---- multi-select branches state (default: all) ----
+  const [selectedBranchIds, setSelectedBranchIds] = useState(
+    branchIdProp ? [branchIdProp] : ["all"]
+  );
+
+  // ---- multi-select modules state (default: all) ----
+  const [selectedModules, setSelectedModules] = useState(["all"]);
+
   const [selectedSubCategoryId, setSelectedSubCategoryId] = useState(null);
 
   // ---- price edit modal state ----
   const [priceModalItem, setPriceModalItem] = useState(null);
-  const [priceModalValue, setPriceModalValue] = useState("");
+  const [mainItemEdit, setMainItemEdit] = useState({ price: "", status: true });
+  const [variantsEdit, setVariantsEdit] = useState({});
+  const [isSaving, setIsSaving] = useState(false);
 
   // ---- fetch branches + service modules for tabs/select ----
   const { data: selectRes } = useGet("pricing-select", "/api/restaurant/pricing/select");
@@ -77,12 +79,56 @@ export default function PricingProduct({ branchId: branchIdProp }) {
     return [
       { key: "all", label: "All", icon: LayoutGrid, serviceModule: null },
       ...moduleTabs,
-      { key: "branch_pricing", label: "Branch Pricing", icon: Building2, serviceModule: null },
     ];
   }, [apiServiceModules]);
 
-  const activeTabDef = TABS.find((tab) => tab.key === activeTab);
-  const isBranchPricing = activeTab === "branch_pricing";
+  // ---- helper: toggle a branch in the multi-select, auto-fallback to "all" ----
+  const toggleBranch = (id) => {
+    if (id === "all") {
+      setSelectedBranchIds(["all"]);
+      return;
+    }
+    setSelectedBranchIds((prev) => {
+      let next;
+      if (prev.includes("all")) {
+        next = [id];
+      } else if (prev.includes(id)) {
+        next = prev.filter((bId) => bId !== id);
+      } else {
+        next = [...prev, id];
+      }
+      if (branches.length > 0 && next.length === branches.length) return ["all"];
+      if (next.length === 0) return ["all"];
+      return next;
+    });
+  };
+
+  // ---- helper: toggle a module in the multi-select, auto-fallback to "all" ----
+  const toggleModule = (id) => {
+    if (id === "all") {
+      setSelectedModules(["all"]);
+      return;
+    }
+    setSelectedModules((prev) => {
+      let next;
+      if (prev.includes("all")) {
+        next = [id];
+      } else if (prev.includes(id)) {
+        next = prev.filter((mId) => mId !== id);
+      } else {
+        next = [...prev, id];
+      }
+      if (apiServiceModules.length > 0 && next.length === apiServiceModules.length) return ["all"];
+      if (next.length === 0) return ["all"];
+      return next;
+    });
+  };
+
+  const isAllBranches = selectedBranchIds.includes("all");
+  const isAllModules = selectedModules.includes("all");
+
+  const branchIdsParam = isAllBranches ? "all" : selectedBranchIds.join(",");
+  const modulesParam = isAllModules ? "all" : selectedModules.join(",");
 
   // ---- fetch subcategories for the left sidebar filter ----
   const { data: subCategoriesRes } = useGet(
@@ -91,33 +137,31 @@ export default function PricingProduct({ branchId: branchIdProp }) {
   );
   const subCategories = subCategoriesRes?.data?.data?.subcategories || subCategoriesRes?.data?.data || [];
 
-  // 💡 تكوين الرابط الديناميكي بناءً على اختيار القسم الفرعي أو التاب
+  // 💡 تكوين الرابط الديناميكي بناءً على اختيار القسم الفرعي والفروع والوحدات
   const queryParams = new URLSearchParams();
-  if (branchId) {
-    queryParams.append("branchId", branchId);
-  }
-  if (activeTab && activeTab !== "all" && activeTab !== "branch_pricing") {
-    queryParams.append("serviceModule", activeTab);
-  }
 
-  let endpoint = "";
+  if (!isAllBranches && branchIdsParam) {
+    queryParams.append("branchId", branchIdsParam);
+  }
+  if (!isAllModules && modulesParam) {
+    queryParams.append("serviceModule", modulesParam);
+  }
   if (selectedSubCategoryId) {
     queryParams.append("subCategoryId", selectedSubCategoryId);
-    endpoint = `/api/restaurant/pricing/dynamic-menu?${queryParams.toString()}`;
-  } else {
-    const queryString = queryParams.toString();
-    endpoint = queryString ? `/api/restaurant/pricing/dynamic-menu?${queryString}` : `/api/restaurant/pricing/dynamic-menu`;
   }
 
-  const productsQueryKey = ["products", activeTab, selectedSubCategoryId || "all", branchId || "all"];
-  
-  // 💡 استخراج دالة refetch لإعادة إرسال طلب جلب البيانات
+  const queryString = queryParams.toString();
+  const endpoint = queryString
+    ? `/api/restaurant/pricing/dynamic-menu?${queryString}`
+    : `/api/restaurant/pricing/dynamic-menu`;
+
+  const productsQueryKey = ["products", modulesParam || "all", selectedSubCategoryId || "all", branchIdsParam || "all"];
+
   const { data: productsRes, isLoading, refetch } = useGet(
     productsQueryKey,
     endpoint
   );
 
-  // 💡 استخراج المنتجات سواء كانت قادمة من هيكل الـ dynamic-menu (menu) أو الـ food api (items)
   const items = useMemo(() => {
     const resData = productsRes?.data?.data;
     if (!resData) return [];
@@ -127,63 +171,177 @@ export default function PricingProduct({ branchId: branchIdProp }) {
     return [];
   }, [productsRes]);
 
-  // 💡 فلترة المنتجات بناءً على نص البحث (Search Input)
   const filteredItems = useMemo(() => {
     if (!search) return items;
     const lower = search.toLowerCase();
     return items.filter((item) => (item.name || item.nameAr || "").toLowerCase().includes(lower));
   }, [items, search]);
 
-  // ---- price update mutation ----
-  const updateMutation = usePost("/api/restaurant/pricing/product-channel", "post", "dynamic-menu");
-
-  // 💡 دالة عرض السعر الصحيح بناءً على الـ Response الجديد
   const getDisplayPrice = (item) => {
     return item.finalCalculatedPrice ?? item.mainBasePrice ?? item.price ?? "0.00";
   };
 
+  // 💡 جلب حالة الـ Out of Stock (من الـ Food مباشرة لو الكل محدد، أو من الـ channelPricing عند الفلترة)
+  const getIsOutOfStock = (item) => {
+    if (isAllBranches && isAllModules) {
+      return Boolean(
+        item.isOutOfStock ??
+        item.outOfStock ??
+        (item.isAvailable !== undefined ? !item.isAvailable : false)
+      );
+    } else {
+      if (item.channelPricing && item.channelPricing.length > 0) {
+        const matchingCp = item.channelPricing.find((cp) =>
+          (selectedBranchIds.includes("all") || selectedBranchIds.includes(cp.branchId)) &&
+          (selectedModules.includes("all") || selectedModules.includes(cp.serviceModule))
+        );
+        if (matchingCp) {
+          return matchingCp.status === "inactive";
+        }
+      }
+      return Boolean(
+        item.isOutOfStock ??
+        item.outOfStock ??
+        (item.isAvailable !== undefined ? !item.isAvailable : false)
+      );
+    }
+  };
+
+  // 💡 جلب السعر المناسب حسب حالة الفلترة أو الـ channelPricing
+  const getItemPriceForChannel = (item) => {
+    if (isAllBranches && isAllModules) {
+      return Number(getDisplayPrice(item) || 0);
+    } else {
+      if (item.channelPricing && item.channelPricing.length > 0) {
+        const matchingCp = item.channelPricing.find((cp) =>
+          (selectedBranchIds.includes("all") || selectedBranchIds.includes(cp.branchId)) &&
+          (selectedModules.includes("all") || selectedModules.includes(cp.serviceModule))
+        );
+        if (matchingCp && matchingCp.price) {
+          return Number(matchingCp.price);
+        }
+      }
+      return Number(getDisplayPrice(item) || 0);
+    }
+  };
+
+  // ---- Price & Variants Modal Logic ----
   const openPriceModal = (item) => {
     setPriceModalItem(item);
-    setPriceModalValue(String(getDisplayPrice(item) ?? ""));
+
+    // Set Main Product Initial State
+    setMainItemEdit({
+      price: String(getItemPriceForChannel(item) ?? ""),
+      status: !getIsOutOfStock(item)
+    });
+
+    // Set Variations Initial State
+    const vEdit = {};
+    if (item.variations && item.variations.length > 0) {
+      item.variations.forEach(variation => {
+        if (variation.options && variation.options.length > 0) {
+          variation.options.forEach(opt => {
+            vEdit[opt.id] = {
+              price: String(opt.price || "0"),
+              status: opt.isAvailable ?? true
+            };
+          });
+        }
+      });
+    }
+    setVariantsEdit(vEdit);
   };
 
   const closePriceModal = () => {
     setPriceModalItem(null);
-    setPriceModalValue("");
+    setMainItemEdit({ price: "", status: true });
+    setVariantsEdit({});
+  };
+
+  const handleVariantChange = (optId, field, value) => {
+    setVariantsEdit(prev => ({
+      ...prev,
+      [optId]: {
+        ...prev[optId],
+        [field]: value
+      }
+    }));
   };
 
   const savePriceModal = async () => {
     if (!priceModalItem) return;
-    const price = Number(priceModalValue);
-    if (!price || price <= 0) return;
+    setIsSaving(true);
 
-    // 💡 إذ كان التاب "all" أوالـ serviceModule غير محدد نرسل "all"، وإلا نرسل الـ serviceModule الخاص بالتاب الحالي
-    const serviceModuleToSend = (!activeTabDef?.serviceModule || activeTab === "all")
-      ? "all"
-      : activeTabDef.serviceModule;
+    const serviceModuleToSend = isAllModules ? ["all"] : selectedModules;
+    const branchToSend = isAllBranches ? ["all"] : selectedBranchIds;
+
+    const promises = [];
+
+    // 1. Prepare Main Product Payload
+    const mainPayload = {
+      foodId: priceModalItem.id,
+      branchId: branchToSend,
+      serviceModule: serviceModuleToSend,
+      price: Number(mainItemEdit.price),
+      status: mainItemEdit.status ? "active" : "inactive"
+    };
+
+    promises.push(api.post("/api/restaurant/pricing/product-channel", mainPayload));
+
+    // 2. Prepare Variants Payload
+    if (priceModalItem.variations?.length) {
+      priceModalItem.variations.forEach(variation => {
+        variation.options?.forEach(opt => {
+          const editedOpt = variantsEdit[opt.id];
+          if (editedOpt) {
+            const varPayload = {
+              variantId: opt.id,
+              branchId: branchToSend,
+              serviceModule: serviceModuleToSend,
+              price: Number(editedOpt.price),
+              status: editedOpt.status ? "active" : "inactive"
+            };
+            promises.push(api.post("/api/restaurant/pricing/variant-channel", varPayload));
+          }
+        });
+      });
+    }
 
     try {
-      await updateMutation.mutateAsync({
-        foodId: priceModalItem.id,
-        ...(branchId ? { branchId } : {}),
-        serviceModule: serviceModuleToSend,
-        price,
-      });
+      await Promise.all(promises);
+      toast.success(t('statusUpdatedSuccessfully') || 'تم تحديث البيانات بنجاح');
       closePriceModal();
-      refetch(); // 👈 إعادة جلب البيانات بعد تحديث السعر
+      refetch();
     } catch (err) {
-      // toast error handling
+      console.error("Error updating prices/variants:", err);
+      toast.error(t('failedToUpdateStatus') || 'فشل في تحديث البيانات');
+    } finally {
+      setIsSaving(false);
     }
   };
 
   const toggleOutOfStock = async (foodId, currentStockStatus) => {
     try {
-      await api.put(`/api/restaurant/food/${foodId}`, {
-        isOutOfStock: currentStockStatus
-      });
-      
+      if (isAllBranches && isAllModules) {
+        // لو الكل محدد (All)، بنعدل على الـ Food API العام مباشرة
+        await api.put(`/api/restaurant/food/${foodId}`, {
+          isOutOfStock: currentStockStatus
+        });
+      } else {
+        // لو فيه فرع أو خدمة محددة، بنستخدم الـ product-channel
+        const item = items.find((i) => i.id === foodId);
+        const currentPrice = getItemPriceForChannel(item);
+
+        await api.post("/api/restaurant/pricing/product-channel", {
+          foodId: foodId,
+          branchId: selectedBranchIds,
+          serviceModule: selectedModules,
+          price: currentPrice,
+          status: currentStockStatus ? "inactive" : "active"
+        });
+      }
       toast.success(t('statusUpdatedSuccessfully') || 'تم تحديث الحالة بنجاح');
-      refetch(); // إعادة جلب البيانات لتحديث الـ Table بالبيانات الجديدة من السيرفر
+      refetch();
     } catch (error) {
       console.error("Error updating stock status:", error);
       toast.error(t('failedToUpdateStatus') || 'فشل تحديث الحالة');
@@ -199,19 +357,54 @@ export default function PricingProduct({ branchId: branchIdProp }) {
         </h2>
       </div>
 
-      {/* TABS + SEARCH */}
+      {/* BRANCHES ROW (multi-select) */}
+      <div className="flex flex-wrap items-center gap-2">
+        <Button
+          variant={isAllBranches ? "default" : "outline"}
+          onClick={() => toggleBranch("all")}
+          className={cn(
+            "h-10 rounded-xl font-medium gap-2 transition-all",
+            isAllBranches
+              ? "bg-primary text-primary-foreground shadow-sm"
+              : "border-slate-200 text-slate-600 dark:border-slate-800 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50"
+          )}
+        >
+          <Building2 className="h-4 w-4" />
+          <span>{t("all") || "All"}</span>
+        </Button>
+
+        {branches.map((b) => {
+          const isActive = !isAllBranches && selectedBranchIds.includes(b.id);
+          return (
+            <Button
+              key={b.id}
+              variant={isActive ? "default" : "outline"}
+              onClick={() => toggleBranch(b.id)}
+              className={cn(
+                "h-10 rounded-xl font-medium gap-2 transition-all",
+                isActive
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "border-slate-200 text-slate-600 dark:border-slate-800 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50"
+              )}
+            >
+              <Store className="h-4 w-4" />
+              <span>{b.name}</span>
+            </Button>
+          );
+        })}
+      </div>
+
+      {/* TABS (Modules Multi-select) + SEARCH */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex flex-wrap items-center gap-2">
           {TABS.map((tab) => {
             const Icon = tab.icon;
-            const isActive = activeTab === tab.key;
+            const isActive = selectedModules.includes(tab.key);
             return (
               <Button
                 key={tab.key}
                 variant={isActive ? "default" : "outline"}
-                onClick={() => {
-                  setActiveTab(tab.key);
-                }}
+                onClick={() => toggleModule(tab.key)}
                 className={cn(
                   "h-10 rounded-xl font-medium gap-2 transition-all",
                   isActive
@@ -244,30 +437,6 @@ export default function PricingProduct({ branchId: branchIdProp }) {
           />
         </div>
       </div>
-
-      {/* BRANCH SELECTOR */}
-      {isBranchPricing && (
-        <div className="flex items-center gap-3">
-          <span className="text-sm font-medium text-slate-500 dark:text-slate-400">
-            {t("branch") || "Branch"}:
-          </span>
-          <Select
-            value={branchId || undefined}
-            onValueChange={(value) => setBranchId(value)}
-          >
-            <SelectTrigger className="h-10 w-56 rounded-xl border-slate-200 bg-white dark:bg-slate-900 dark:border-slate-800 dark:text-slate-100 shadow-sm">
-              <SelectValue placeholder={t("selectBranch") || "Select branch"} />
-            </SelectTrigger>
-            <SelectContent className="dark:bg-slate-900 dark:border-slate-800">
-              {branches.map((b) => (
-                <SelectItem key={b.id} value={b.id}>
-                  {b.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      )}
 
       {/* SIDEBAR (subcategories) + TABLE */}
       <div className="flex flex-col md:flex-row gap-4 items-start">
@@ -371,13 +540,7 @@ export default function PricingProduct({ branchId: branchIdProp }) {
                         <TableCell className="py-4 px-6 text-center">
                           <div className="flex items-center justify-center">
                             <Switch
-                              checked={
-                                Boolean(
-                                  item.isOutOfStock ?? 
-                                  item.outOfStock ?? 
-                                  (item.isAvailable !== undefined ? !item.isAvailable : false)
-                                )
-                              }
+                              checked={getIsOutOfStock(item)}
                               onCheckedChange={(checked) => {
                                 toggleOutOfStock(item.id, checked);
                               }}
@@ -403,40 +566,93 @@ export default function PricingProduct({ branchId: branchIdProp }) {
         </div>
       </div>
 
-      {/* PRICE EDIT MODAL */}
+      {/* PRICE & VARIANTS EDIT MODAL */}
       <Dialog open={!!priceModalItem} onOpenChange={(open) => !open && closePriceModal()}>
-        <DialogContent className="sm:max-w-sm">
+        <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{t("editPrice") || "Edit Price"}</DialogTitle>
+            <DialogTitle>{t("editPriceAndVariants") || "تعديل السعر والمتغيرات"}</DialogTitle>
           </DialogHeader>
 
           {priceModalItem && (
-            <p className="text-sm text-slate-500 dark:text-slate-400">
-              {(t("updatePriceFor") || "Update price for")}{" "}
-              <span className="font-semibold text-slate-700 dark:text-slate-200">
-                {priceModalItem.name || priceModalItem.nameAr}
-              </span>
-            </p>
+            <div className="space-y-6 mt-2">
+              {/* Main Product Edit */}
+              <div className="p-4 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800">
+                <h3 className="font-semibold text-slate-800 dark:text-slate-200 mb-3">
+                  {priceModalItem.name || priceModalItem.nameAr}
+                  <span className="text-xs font-normal text-slate-500 block">({t("mainProduct") || "المنتج الأساسي"})</span>
+                </h3>
+                <div className="flex items-center gap-4">
+                  <div className="flex-1 space-y-1.5">
+                    <label className="text-xs font-medium text-slate-500">
+                      {t("priceEgp") || "Price (EGP)"}
+                    </label>
+                    <Input
+                      type="number"
+                      value={mainItemEdit.price}
+                      onChange={(e) => setMainItemEdit(prev => ({ ...prev, price: e.target.value }))}
+                      className="h-10"
+                    />
+                  </div>
+                  <div className="space-y-1.5 flex flex-col items-center pt-5">
+                    <label className="text-xs font-medium text-slate-500 whitespace-nowrap">
+                      {t("available") || "متاح"}
+                    </label>
+                    <Switch
+                      checked={mainItemEdit.status}
+                      onCheckedChange={(checked) => setMainItemEdit(prev => ({ ...prev, status: checked }))}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Variations Edit */}
+              {priceModalItem.variations && priceModalItem.variations.length > 0 && (
+                <div className="space-y-4">
+                  <h4 className="font-semibold text-slate-700 dark:text-slate-300 border-b pb-2">
+                    {t("variations") || "الإضافات / المتغيرات"}
+                  </h4>
+
+                  {priceModalItem.variations.map((variation) => (
+                    <div key={variation.id} className="space-y-3">
+                      <p className="text-sm font-medium text-primary">
+                        {isRTL ? (variation.nameAr || variation.name) : (variation.name || variation.nameAr)}
+                      </p>
+
+                      <div className="space-y-2 pl-2 border-l-2 border-slate-100 dark:border-slate-800">
+                        {variation.options?.map(opt => (
+                          <div key={opt.id} className="flex items-center gap-3 bg-white dark:bg-slate-950 p-2 rounded-lg border border-slate-100 dark:border-slate-800 shadow-sm">
+                            <span className="flex-1 text-sm text-slate-600 dark:text-slate-300 truncate">
+                              {isRTL ? (opt.nameAr || opt.name) : (opt.name || opt.nameAr)}
+                            </span>
+
+                            <Input
+                              type="number"
+                              value={variantsEdit[opt.id]?.price ?? ""}
+                              onChange={(e) => handleVariantChange(opt.id, 'price', e.target.value)}
+                              className="w-24 h-8 text-sm"
+                              placeholder="Price"
+                            />
+
+                            <Switch
+                              checked={variantsEdit[opt.id]?.status ?? true}
+                              onCheckedChange={(checked) => handleVariantChange(opt.id, 'status', checked)}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           )}
 
-          <div className="space-y-1.5">
-            <label className="text-xs font-medium text-slate-500 dark:text-slate-400">
-              {t("priceEgp") || "Price (EGP)"}
-            </label>
-            <Input
-              type="number"
-              value={priceModalValue}
-              onChange={(e) => setPriceModalValue(e.target.value)}
-              autoFocus
-              className="h-10 rounded-lg border-primary focus-visible:ring-primary dark:bg-slate-900 dark:text-slate-100"
-            />
-          </div>
-
-          <DialogFooter>
-            <Button variant="outline" onClick={closePriceModal}>
+          <DialogFooter className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
+            <Button variant="outline" onClick={closePriceModal} disabled={isSaving}>
               {t("cancel") || "Cancel"}
             </Button>
-            <Button onClick={savePriceModal} disabled={updateMutation.isPending}>
+            <Button onClick={savePriceModal} disabled={isSaving}>
+              {isSaving ? <LoadingSpinner className="h-4 w-4 mr-2" /> : null}
               {t("save") || "Save"}
             </Button>
           </DialogFooter>

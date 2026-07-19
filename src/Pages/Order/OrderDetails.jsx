@@ -671,15 +671,15 @@ export default function OrderDetails() {
                   </span>
                 </div>
 
-<div className={`flex items-center gap-2.5 text-sm ${(order.status === "cancelled" || order.status === "refund" || order.cancelReason || order.cancel_reason) ? "" : "sm:col-span-2"}`}>
-  <Receipt className="w-4 h-4 text-gray-400 shrink-0" />
-  <span className="text-gray-500 font-medium shrink-0">
-    {t("orderNote") || "ملاحظات الطلب"}:
-  </span>
-  <div className="px-3.5 py-1.5 rounded-xl border-2 border-primary bg-primary/5 font-bold text-gray-900 text-base sm:text-lg">
-    {order.note && order.note.trim() !== "" ? order.note : "-"}
-  </div>
-</div>
+                <div className={`flex items-center gap-2.5 text-sm ${(order.status === "cancelled" || order.status === "refund" || order.cancelReason || order.cancel_reason) ? "" : "sm:col-span-2"}`}>
+                  <Receipt className="w-4 h-4 text-gray-400 shrink-0" />
+                  <span className="text-gray-500 font-medium shrink-0">
+                    {t("orderNote") || "ملاحظات الطلب"}:
+                  </span>
+                  <div className="px-3.5 py-1.5 rounded-xl border-2 border-primary bg-primary/5 font-bold text-gray-900 text-base sm:text-lg">
+                    {order.note && order.note.trim() !== "" ? order.note : "-"}
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -799,13 +799,13 @@ export default function OrderDetails() {
                               <span className="text-gray-300">—</span>
                             )}
                           </td>
-<td className="px-6 py-4 text-xs max-w-[140px]">
-  {item.note && item.note.trim() !== "" ? (
-    <span className="font-bold text-gray-900 text-sm">{item.note}</span>
-  ) : (
-    <span className="text-gray-400 font-semibold text-sm">-</span>
-  )}
-</td>
+                          <td className="px-6 py-4 text-xs max-w-[140px]">
+                            {item.note && item.note.trim() !== "" ? (
+                              <span className="font-bold text-gray-900 text-sm">{item.note}</span>
+                            ) : (
+                              <span className="text-gray-400 font-semibold text-sm">-</span>
+                            )}
+                          </td>
                         </tr>
                       );
                     })}
@@ -1012,12 +1012,12 @@ export default function OrderDetails() {
                 </div>
               )}
 
-{displayAddress && typeof displayAddress === "object" ? (
+              {displayAddress && typeof displayAddress === "object" ? (
                 <>
                   {displayAddress.title && (
                     <div className="flex items-center gap-1.5">
                       <span className="font-semibold text-gray-900">
-                        {t("Address") || "Address"}:
+                        {t("address")}:
                       </span>
                       <span>{displayAddress.title || t("unknown")}</span>
                     </div>
@@ -1390,8 +1390,8 @@ export default function OrderDetails() {
                         key={id}
                         onClick={() => setSelectedDeliveryMan(id)}
                         className={`p-4 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${isSelected
-                            ? "border-2 border-primary bg-primary/5 shadow-2xs"
-                            : "border-gray-200 hover:border-gray-300 bg-white"
+                          ? "border-2 border-primary bg-primary/5 shadow-2xs"
+                          : "border-gray-200 hover:border-gray-300 bg-white"
                           }`}
                       >
                         <div className="flex flex-col gap-0.5">

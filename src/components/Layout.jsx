@@ -44,7 +44,7 @@ export default function Layout() {
   const navigate = useNavigate();
 
   // ---- Notification Sound ----
-  const prevUnreadCountRef = useRef(null);
+  const audioRef = useRef(null);
 
   // تحميل الصوت مسبقاً
   useEffect(() => {
@@ -95,52 +95,17 @@ export default function Layout() {
     refetchIntervalInBackground: true,
   });
 
+  const notifications = notificationsResponse?.data?.data || [];
 
-  
-  // 1. هنضيف الـ Refs دي عشان نراقب الـ ID ونعرف دي أول مرة ولا لأ
-  const latestSeenNotifIdRef = useRef(null);
-  const isFirstFetchRef = useRef(true);
-
-
-  // (نفس كود تحميل الصوت مفيش فيه تغيير)
-  useEffect(() => {
-    const audio = new Audio("/sounds/notification.wav");
-    audio.volume = 0.7;
-    audio.load();
-    audioRef.current = audio;
-
-    const unlock = () => {
-      audio.play().then(() => {
-        audio.pause();
-        audio.currentTime = 0;
-      }).catch(() => { });
-      window.removeEventListener("click", unlock);
-      window.removeEventListener("keydown", unlock);
-    };
-    window.addEventListener("click", unlock);
-    window.addEventListener("keydown", unlock);
-
-    return () => {
-      window.removeEventListener("click", unlock);
-      window.removeEventListener("keydown", unlock);
-    };
-  }, []);
-
-
-const notifications = notificationsResponse?.data?.data || [];
-  
   // 1. جلب بيانات الـ pagination من الـ API مباشرة
   const pagination = notificationsResponse?.data?.pagination;
   const totalItems = pagination?.totalItems ?? notifications.length;
   const unreadCount = pagination?.unreadCount ?? totalItems;
 
-  // ---- Notification Sound & Logic ----
-  const audioRef = useRef(null);
-  
-  const [newOrderPopup, setNewOrderPopup] = useState({ 
-    open: false, 
-    count: 0, 
-    latestNotification: null 
+  const [newOrderPopup, setNewOrderPopup] = useState({
+    open: false,
+    count: 0,
+    latestNotification: null
   });
 
   // 2. مراقبة الإشعارات وإظهار الـ Pop-up باستخدام totalItems
@@ -156,11 +121,11 @@ const notifications = notificationsResponse?.data?.data || [];
     const lastSeenId = localStorage.getItem("lastSeenNotifId");
 
     // يظهر الـ Pop-up فقط إذا كان الإشعار جديداً وغير مقروء ولم يتم عرضه من قبل
-    if (newestId !== lastSeenId && !newestNotification.isRead) {      
-      setNewOrderPopup({ 
-        open: true, 
-        count: totalItems, // تم الاعتماد على totalItems القادم من الباك إند هنا
-        latestNotification: newestNotification 
+    if (newestId !== lastSeenId && !newestNotification.isRead) {
+      setNewOrderPopup({
+        open: true,
+        count: totalItems,
+        latestNotification: newestNotification
       });
       playNotificationSound();
 
@@ -230,6 +195,7 @@ const notifications = notificationsResponse?.data?.data || [];
     if (orderId) {
       navigate(`/orders/details/${orderId}`);
     } else {
+      مفتاح
       navigate('/orders');
     }
   };
@@ -241,64 +207,65 @@ const notifications = notificationsResponse?.data?.data || [];
     <TooltipProvider delayDuration={0}>
       <SidebarProvider dir={isRTL ? "rtl" : "ltr"}>
         {activeModule && <AppSidebar side={isRTL ? "right" : "left"} />}
-{newOrderPopup.open && (
-  <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/20 backdrop-blur-[2px] px-4 z-[999999999]">
-    <div className={`w-full max-w-2xl rounded-2xl border ${isCancelled ? 'border-red-300 dark:border-red-500/50' : 'border-yellow-200 dark:border-yellow-500/30'} bg-white/95 dark:bg-slate-900/95 shadow-[0_20px_60px_rgba(15,23,42,0.18)] dark:shadow-none p-6 sm:p-7`}>
-      
-      {/* Header Icon & Title */}
-      <div className="flex items-center justify-center gap-3 mb-5 text-slate-800 dark:text-slate-200">
-        <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${isCancelled ? 'bg-red-500 text-white' : 'bg-primary text-primary-foreground'} shadow-sm`}>
-          {isCancelled ? <XCircle size={24} /> : <Bell size={22} />}
-        </div>
-        <span className={`text-2xl font-black tracking-tight ${isCancelled ? 'text-red-600 dark:text-red-400' : 'text-slate-900 dark:text-slate-100'}`}>
-          {isCancelled 
-            ? "Order Cancelled ❌"
-            : (t("notifications") || "Notifications")}
-        </span>
-      </div>
+        {newOrderPopup.open && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/20 backdrop-blur-[2px] px-4 z-[999999999]">
+            <div className={`w-full max-w-2xl rounded-2xl border ${isCancelled ? 'border-red-300 dark:border-red-500/50' : 'border-yellow-200 dark:border-yellow-500/30'} bg-white/95 dark:bg-slate-900/95 shadow-[0_20px_60px_rgba(15,23,42,0.18)] dark:shadow-none p-6 sm:p-7`}>
 
-      {/* Body Text */}
-      <div className="flex items-center justify-center text-center text-xl sm:text-2xl font-bold text-slate-800 dark:text-slate-200 leading-relaxed">
-        {isCancelled ? (
-          <span>
-            {`Order #${newOrderPopup.latestNotification?.data?.dailyOrderNumber || ''} was cancelled by the customer.`}
-            {newOrderPopup.latestNotification?.data?.reason && (
-              <span className="block text-lg font-normal text-slate-600 dark:text-slate-400 mt-1">
-                {`Reason: ${newOrderPopup.latestNotification.data.reason}`}
-              </span>
-            )}
-          </span>
-        ) : (
-          <>
-            <span className="mr-2">{newOrderPopup.count}</span>
-            <span>
-              {newOrderPopup.count === 1
-                ? (t("newOrderAlertSingular") || "You have 1 new order, please check.")
-                : (t("newOrderAlert") || "You have new orders, please check.")}
-            </span>
-          </>
+              {/* Header Icon & Title */}
+              <div className="flex items-center justify-center gap-3 mb-5 text-slate-800 dark:text-slate-200">
+                <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${isCancelled ? 'bg-red-500 text-white' : 'bg-primary text-primary-foreground'} shadow-sm`}>
+                  {isCancelled ? <XCircle size={24} /> : <Bell size={22} />}
+                </div>
+                <span className={`text-2xl font-black tracking-tight ${isCancelled ? 'text-red-600 dark:text-red-400' : 'text-slate-900 dark:text-slate-100'}`}>
+                  {isCancelled
+                    ? t("orderCancelledTitle") || "Order Cancelled ❌"
+                    : (t("notifications") || "Notifications")}
+                </span>
+              </div>
+
+              {/* Body Text */}
+              <div className="flex items-center justify-center text-center text-xl sm:text-2xl font-bold text-slate-800 dark:text-slate-200 leading-relaxed">
+                {isCancelled ? (
+                  <span>
+                    {t("orderCancelledDesc")
+                      ? t("orderCancelledDesc").replace("{orderNumber}", newOrderPopup.latestNotification?.data?.dailyOrderNumber || '')
+                      : `Order #${newOrderPopup.latestNotification?.data?.dailyOrderNumber || ''} was cancelled by the customer.`}
+                    {newOrderPopup.latestNotification?.data?.reason && (
+                      <span className="block text-lg font-normal text-slate-600 dark:text-slate-400 mt-1">
+                        {t("cancelReasonLabel") ? `${t("cancelReasonLabel")}: ${newOrderPopup.latestNotification.data.reason}` : `Reason: ${newOrderPopup.latestNotification.data.reason}`}
+                      </span>
+                    )}
+                  </span>
+                ) : (
+                  <span>
+                    {t("newOrdersCountMessage")
+                      ? t("newOrdersCountMessage").replace("{count}", newOrderPopup.count)
+                      : `لديك ${newOrderPopup.count} تنبيه طلب جديد، يرجى التحقق.`}
+                  </span>
+                )}
+              </div>
+
+
+
+              {/* Buttons */}
+              <div className="mt-6 flex flex-col sm:flex-row justify-center gap-3">
+                <button
+                  onClick={handlePopupClose}
+                  className="flex-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 px-4 py-3 text-base font-bold text-slate-700 dark:text-slate-300 shadow-sm transition hover:bg-slate-200 dark:hover:bg-slate-700"
+                >
+                  {t("close") || "Close"}
+                </button>
+
+                <button
+                  onClick={handlePopupCheck}
+                  className={`flex-1 rounded-xl ${isCancelled ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-primary hover:brightness-95 text-primary-foreground'} px-4 py-3 text-base font-bold shadow-sm transition`}
+                >
+                  {t("checkDetails") || "Check Details"}
+                </button>
+              </div>
+            </div>
+          </div>
         )}
-      </div>
-
-      {/* Buttons */}
-      <div className="mt-6 flex flex-col sm:flex-row justify-center gap-3">
-        <button
-          onClick={handlePopupClose}
-          className="flex-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 px-4 py-3 text-base font-bold text-slate-700 dark:text-slate-300 shadow-sm transition hover:bg-slate-200 dark:hover:bg-slate-700"
-        >
-          Close
-        </button>
-
-        <button
-          onClick={handlePopupCheck}
-          className={`flex-1 rounded-xl ${isCancelled ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-primary hover:brightness-95 text-primary-foreground'} px-4 py-3 text-base font-bold shadow-sm transition`}
-        >
-          Check Details
-        </button>
-      </div>
-    </div>
-  </div>
-)}
 
         <main className="relative flex flex-col flex-1 min-w-0 max-h-screen overflow-hidden bg-background">
           <header className="flex-none sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -318,7 +285,7 @@ const notifications = notificationsResponse?.data?.data || [];
                       <button
                         onClick={handleBack}
                         className="p-1.5 rounded-md hover:bg-accent shrink-0 transition-colors group/back"
-                        title="Go back"
+                        title={t("goBack") || "Go back"}
                       >
                         {isRTL ? (
                           <ChevronRight
@@ -391,7 +358,7 @@ const notifications = notificationsResponse?.data?.data || [];
                 <button
                   onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
                   className="rounded-full p-2 text-slate-600 hover:text-primary hover:bg-accent dark:text-slate-300 dark:hover:text-primary transition-colors cursor-pointer"
-                  title={theme === "dark" ? "Light Mode" : "Dark Mode"}
+                  title={theme === "dark" ? (t("lightMode") || "Light Mode") : (t("darkMode") || "Dark Mode")}
                 >
                   {theme === "dark" ? (
                     <Sun size={22} />
@@ -406,12 +373,12 @@ const notifications = notificationsResponse?.data?.data || [];
                     <button className="relative rounded-full p-2 hover:bg-accent transition-colors">
                       <Bell size={24} className="text-slate-600 hover:text-primary transition-colors" />
 
-{/* Badge */}
-{totalItems > 0 && (
-  <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow-sm border border-white dark:border-slate-900">
-    {totalItems > 99 ? '99+' : totalItems}
-  </span>
-)}
+                      {/* Badge */}
+                      {totalItems > 0 && (
+                        <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow-sm border border-white dark:border-slate-900">
+                          {totalItems > 99 ? '99+' : totalItems}
+                        </span>
+                      )}
                     </button>
                   </DropdownMenuTrigger>
 
