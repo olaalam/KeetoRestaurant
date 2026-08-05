@@ -37,6 +37,7 @@ const DiscountAdd = () => {
         { name: 'name', label: 'Name', required: true },
         { name: 'nameAr', label: 'Name (Arabic)', required: true },
         { name: 'nameFr', label: 'Name (French)', required: true },
+        { name: 'logo', label: t('logo'), type: 'file', required: false },
         {
             name: 'foodIds',
             label: t('food'), // الآن ستعمل بدون مشاكل

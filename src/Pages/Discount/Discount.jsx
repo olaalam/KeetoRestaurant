@@ -19,7 +19,8 @@ export default function Discount() {
         queryKey: ['discounts'],
         queryFn: async () => {
             const res = await api.get('/api/restaurant/discounts');
-            return res.data?.data?.data || []; 
+            const result = res.data?.data?.data ?? res.data?.data ?? [];
+            return Array.isArray(result) ? result : [];
         }
     });
 
@@ -39,6 +40,13 @@ export default function Discount() {
 
     const columns = [
         { accessorKey: 'name', header: 'Name' },
+        {
+            accessorKey: 'logo',
+            header: 'Logo',
+            cell: ({ row }) => (
+                <img src={row.original.logo} alt={row.original.name} className="w-10 h-10 object-cover rounded-md" />
+            )
+        },
         { accessorKey: 'nameAr', header: 'Name (Ar)' },
         { accessorKey: 'nameFr', header: 'Name (Fr)' },
         {
