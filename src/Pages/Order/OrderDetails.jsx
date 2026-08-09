@@ -504,29 +504,29 @@ export default function OrderDetails() {
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6 space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="bg-gray-50 p-3 rounded-xl border min-w-0">
-                  <span className="text-xs text-gray-400 block mb-0.5">
+              <div className="space-y-2.5">
+                <div className="flex items-center justify-between gap-3 bg-gray-50 px-3.5 py-2.5 rounded-xl border">
+                  <span className="text-xs font-medium text-gray-400 shrink-0">
                     {t("orderType") || "نوع الطلب"}
                   </span>
-                  <span className="text-sm font-bold text-gray-800 capitalize break-words">
+                  <span className="text-sm font-bold text-gray-800 capitalize text-right truncate">
                     {order.orderType}
                   </span>
                 </div>
-                <div className="bg-gray-50 p-3 rounded-xl border min-w-0">
-                  <span className="text-xs text-gray-400 block mb-0.5">
+                <div className="flex items-center justify-between gap-3 bg-gray-50 px-3.5 py-2.5 rounded-xl border">
+                  <span className="text-xs font-medium text-gray-400 shrink-0">
                     {t("orderSource") || "مصدر الطلب"}
                   </span>
-                  <span className="text-sm font-bold text-gray-800 capitalize break-words">
+                  <span className="text-sm font-bold text-gray-800 capitalize text-right truncate">
                     {order.orderSource?.replace("_", " ")}
                   </span>
                 </div>
-                <div className="bg-gray-50 p-3 rounded-xl border min-w-0">
-                  <span className="text-xs text-gray-400 block mb-0.5">
+                <div className="flex items-center justify-between gap-3 bg-gray-50 px-3.5 py-2.5 rounded-xl border">
+                  <span className="text-xs font-medium text-gray-400 shrink-0">
                     {t("paymentMethod") || "طريقة الدفع "}
                   </span>
-                  <span className="text-sm font-bold text-gray-800 capitalize break-words">
-                    {order.paymentMethodName}
+                  <span className="text-sm font-bold text-gray-800 capitalize text-right truncate">
+                    {order.paymentMethodName?.replace(/_/g, " ")}
                   </span>
                 </div>
               </div>
