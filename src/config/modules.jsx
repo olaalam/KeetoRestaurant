@@ -74,6 +74,7 @@ export const getModules = (t, orderCounts = {}) => {
       key: "content",
       items: [
         { title: t("foods"), url: "/foods", icon: Beef },
+        { title: t("points"), url: "/points", icon: Beef },
         { title: t("subCategories"), url: "/sub-categories", icon: Library },
         { title: t("modifier"), url: "/addons", icon: Settings2 },
         { title: t("image"), url: "/image", icon: ShoppingBag },

@@ -177,6 +177,15 @@ const Foods = () => {
             )
         },
         {
+            accessorKey: 'points',
+            header: t('points'),
+            cell: ({ row }) => (
+                <span className="font-medium text-slate-700">
+                    {row.original.points ?? '-'}
+                </span>
+            )
+        },
+        {
             accessorKey: 'category',
             header: t('category'),
             cell: ({ row }) => (

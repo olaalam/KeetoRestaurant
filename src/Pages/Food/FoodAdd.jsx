@@ -61,6 +61,7 @@ const FoodAdd = () => {
         endTime: raw.endTime || raw.end_time || "",
         search_tags: raw.search_tags || "",
         price: raw.price ? Number(raw.price) : "",
+        points: raw.points != null ? Number(raw.points) : "",
         discount_type: raw.discount_type || "none",
         discount_value: raw.discount_value ? Number(raw.discount_value) : 0,
         Maximum_Purchase: raw.Maximum_Purchase ? Number(raw.Maximum_Purchase) : 5,
@@ -426,6 +427,11 @@ const FoodAdd = () => {
                 <div className="space-y-2">
                   <Label>{t("discountValueLabel")}</Label>
                   <Input type="number" {...register("discount_value", { valueAsNumber: true })} />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>{t("points")}</Label>
+                  <Input type="number" {...register("points", { valueAsNumber: true })} />
                 </div>
 
                 <div className="space-y-2">

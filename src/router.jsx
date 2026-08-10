@@ -79,6 +79,8 @@ import Cashiers from "./Pages/Cashier/Cashier";
 import CashierAdd from "./Pages/Cashier/CashierAdd";
 import FinancialAccount from "./Pages/FinancialAccounts/FinancialAccount";
 import FinancialAccountAdd from "./Pages/FinancialAccounts/FinancialAccountAdd";
+import Points from "./Pages/Points/Points";
+import PointsAdd from "./Pages/Points/PointsAdd";
 const router = createBrowserRouter([
   {
     path: "/login",
@@ -538,6 +540,18 @@ const router = createBrowserRouter([
       {
         path: "financialAccounts/edit/:id",
         element: <FinancialAccountAdd />,
+      },
+      {
+        path: "points",
+        element: <Points />
+      },
+      {
+        path: "points/add",
+        element: <PointsAdd />
+      },
+      {
+        path: "points/edit/:pointId",
+        element: <PointsAdd />
       },
     ],
   },

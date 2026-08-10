@@ -202,6 +202,7 @@ const translations = {
 
     // Food list page (extra)
     price: "Price",
+    points: "Points",
     ingredients: "Ingredients",
     foodsMenu: "Foods Menu",
 
@@ -233,6 +234,7 @@ const translations = {
     discountTypeLabel: "Discount Type",
     discountValueLabel: "Discount Value",
     maxPurchaseLabel: "Maximum Purchase Limit",
+    points: "Points",
     stockTypeLabel: "Stock Type",
     statusLabel: "Status",
     noDiscount: "No Discount",
@@ -867,6 +869,7 @@ const translations = {
     discountTypeLabel: "نوع الخصم",
     discountValueLabel: "قيمة الخصم",
     maxPurchaseLabel: "الحد الأقصى للشراء",
+    points: "النقاط",
     stockTypeLabel: "نوع المخزون",
     statusLabel: "الحالة",
     noDiscount: "بدون خصم",
