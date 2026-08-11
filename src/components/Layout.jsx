@@ -5,7 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AppSidebar } from "./AppSidebar";
 import useSidebarStore from "@/store/useSidebarStore";
 import useAuthStore from "@/store/useAuthStore";
-import { LogOut, ChevronLeft, ChevronRight, UserCircle2, Bell } from "lucide-react";
+import { LogOut, ChevronLeft, ChevronRight, UserCircle2, Bell, ShoppingBag } from "lucide-react";
 
 import {
   DropdownMenu,
@@ -25,7 +25,7 @@ import { getModules } from "@/config/modules";
 export default function Layout() {
   const storedModule = useSidebarStore((state) => state.activeModule);
   const setActiveModule = useSidebarStore((state) => state.setActiveModule);
-  const { setLogout , user} = useAuthStore((state) => state);
+  const { setLogout, user } = useAuthStore((state) => state);
   const { t, isRTL } = useTranslation();
 
   // نجيب الـ module بالترجمة الحالية
@@ -35,8 +35,8 @@ export default function Layout() {
     : null;
 
 
-// اسم المطعم أو المستخدم (حسب الحقل المخزن بالـ ستور، هنا نأخذ الـ name الموجود بالصورة)
-const restaurantName = user?.restaurantName || "Keeto";
+  // اسم المطعم أو المستخدم (حسب الحقل المخزن بالـ ستور، هنا نأخذ الـ name الموجود بالصورة)
+  const restaurantName = user?.restaurantName || "Keeto";
 
 
   const location = useLocation();
@@ -58,7 +58,7 @@ const restaurantName = user?.restaurantName || "Keeto";
       audio.play().then(() => {
         audio.pause();
         audio.currentTime = 0;
-      }).catch(() => {});
+      }).catch(() => { });
       window.removeEventListener("click", unlock);
       window.removeEventListener("keydown", unlock);
     };
@@ -95,7 +95,7 @@ const restaurantName = user?.restaurantName || "Keeto";
     refetchInterval: 30000, // كل 30 ثانية
     refetchIntervalInBackground: true, // حتى لو التاب مش active
   });
-  
+
   // استخراج مصفوفة الإشعارات وحساب العدد الغير مقروء
   const notifications = notificationsResponse?.data?.data || [];
   const unreadCount = notifications.filter((n) => !n.isRead).length;
@@ -138,7 +138,7 @@ const restaurantName = user?.restaurantName || "Keeto";
       navigate("/");
       setActiveModule(null);
     } else {
-      navigate(-1); 
+      navigate(-1);
     }
   };
 
@@ -148,27 +148,27 @@ const restaurantName = user?.restaurantName || "Keeto";
       setActiveModule(null);
     }
   }, [location.pathname, setActiveModule]);
-// 2. دالة التعامل مع الضغط على الإشعار
-const handleNotificationClick = async (notification) => {
+  // 2. دالة التعامل مع الضغط على الإشعار
+  const handleNotificationClick = async (notification) => {
     // نجيب الـ orderId من جوة الـ data اللي مبعوتة في الإشعار
     const orderId = notification?.data?.orderId;
 
     if (orderId) {
-        // توجيه المستخدم لصفحة تفاصيل الأوردر مباشرة
-        navigate(`/orders/details/${orderId}`);
+      // توجيه المستخدم لصفحة تفاصيل الأوردر مباشرة
+      navigate(`/orders/details/${orderId}`);
     }
 
     // [اختياري ولكنه ممتاز لتجربة المستخدم]: تحويل الإشعار لـ Read عبر الـ API
     if (!notification.isRead) {
-        try {
-            await api.put(`/api/restaurant/notifications/${notification.id}/read`);
-            // هنا ممكن تعملي invalidate للـ query بتاعة الإشعارات عشان الجرس يتحدث
-            // queryClient.invalidateQueries({ queryKey: ['notifications'] });
-        } catch (error) {
-            console.error("Failed to mark notification as read:", error);
-        }
+      try {
+        await api.put(`/api/restaurant/notifications/${notification.id}/read`);
+        // هنا ممكن تعملي invalidate للـ query بتاعة الإشعارات عشان الجرس يتحدث
+        // queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      } catch (error) {
+        console.error("Failed to mark notification as read:", error);
+      }
     }
-};
+  };
 
   return (
     <TooltipProvider delayDuration={0}>
@@ -178,7 +178,7 @@ const handleNotificationClick = async (notification) => {
         <main className="relative flex flex-col flex-1 min-w-0 max-h-screen overflow-hidden bg-background">
           <header className="flex-none sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
             <div className="flex items-center justify-between p-4 h-16">
-              
+
               {/* Left Section */}
               <div className="flex items-center gap-4 overflow-hidden">
                 {activeModule && <SidebarTrigger className="shrink-0" />}
@@ -215,14 +215,14 @@ const handleNotificationClick = async (notification) => {
                       </span>
                     </div>
                   ) : (
-<div className="flex flex-col">
-    <span className="font-bold text-lg tracking-tight text-slate-800 dark:text-slate-100">
-      {t("home")}
-    </span>
-    <span className="text-xs text-muted-foreground font-medium">
-      {restaurantName}
-    </span>
-  </div>
+                    <div className="flex flex-col">
+                      <span className="font-bold text-lg tracking-tight text-slate-800 dark:text-slate-100">
+                        {t("home")}
+                      </span>
+                      <span className="text-xs text-muted-foreground font-medium">
+                        {restaurantName}
+                      </span>
+                    </div>
                   )}
                 </div>
               </div>
@@ -236,16 +236,26 @@ const handleNotificationClick = async (notification) => {
 
               {/* Right Section: Notifications & Profile */}
               <div className="flex items-center gap-3">
+                {/* Orders Button */}
+                <button
+                  onClick={() => navigate("/orders")}
+                  className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 text-primary hover:bg-primary hover:text-white transition-all duration-200 font-semibold text-sm shadow-sm active:scale-95"
+                  title={t("orders") || "Orders"}
+                >
+                  <ShoppingBag size={20} className="shrink-0" />
+                  <span>{t("orders") || "Orders"}</span>
+                </button>
+
 
                 {/* Language Switcher */}
                 <LanguageSwitcher />
-                
+
                 {/* Notification Dropdown */}
-<DropdownMenu>
+                <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <button className="relative rounded-full p-2 hover:bg-accent transition-colors">
                       <Bell size={24} className="text-slate-600 hover:text-primary transition-colors" />
-                      
+
                       {/* Badge */}
                       {unreadCount > 0 && (
                         <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow-sm border border-white dark:border-slate-900">
@@ -278,7 +288,7 @@ const handleNotificationClick = async (notification) => {
                         notifications.map((notification) => (
                           <div
                             key={notification.id}
-                    
+
                             onClick={() => {
                               const orderId = notification?.data?.orderId;
                               if (orderId) {
@@ -288,15 +298,14 @@ const handleNotificationClick = async (notification) => {
                                 handleMarkAsRead(notification.id);
                               }
                             }}
-                            className={`p-4 border-b last:border-b-0 flex flex-col gap-1.5 transition-colors cursor-pointer ${
-                              notification.isRead ? 'bg-white hover:bg-slate-50' : 'bg-blue-50/50 hover:bg-blue-50'
-                            }`}
+                            className={`p-4 border-b last:border-b-0 flex flex-col gap-1.5 transition-colors cursor-pointer ${notification.isRead ? 'bg-white hover:bg-slate-50' : 'bg-blue-50/50 hover:bg-blue-50'
+                              }`}
                           >
                             <div className="flex justify-between items-start gap-3">
                               <h4 className={`text-sm leading-tight ${notification.isRead ? 'font-medium text-slate-700' : 'font-bold text-slate-900'}`}>
                                 {notification.title}
                               </h4>
-                              
+
                               {!notification.isRead && (
                                 <button
                                   onClick={(e) => {

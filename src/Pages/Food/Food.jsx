@@ -16,21 +16,20 @@ import { useTranslation } from "@/hooks/useTranslation";
 
 const Foods = () => {
     const navigate = useNavigate();
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const [selectedVariations, setSelectedVariations] = useState(null);
     const location = useLocation();
-    
+
     // حالات إدارة المكونات
     const [ingredientsDialogOpen, setIngredientsDialogOpen] = useState(false);
     const [currentFoodId, setCurrentFoodId] = useState(null);
     const [selectedIngredients, setSelectedIngredients] = useState([]);
     const [highlightedId, setHighlightedId] = useState(null);
-    
+
     // 💡 حالات إدارة تعديل السعر السريع
     const [priceDialogOpen, setPriceDialogOpen] = useState(false);
     const [foodToUpdatePrice, setFoodToUpdatePrice] = useState(null); // هنيشيل فيه الـ id والـ name
     const [newPrice, setNewPrice] = useState('');
-
     const [pagination, setPagination] = useState({
         pageIndex: 0,
         pageSize: 15,
@@ -68,6 +67,37 @@ const Foods = () => {
         'post', // أو 'patch' / 'put' حسب الـ API
         'foods'
     );
+// 1. دالة لقراءة اللغة الحالية بشكل صحيح من LocalStorage أو i18n
+const getActualLanguage = (i18n) => {
+    // محاولة قراءة اللغة من الـ localStorage الخاصة بـ keeto
+    try {
+        const storedLangData = localStorage.getItem('keeto-language');
+        if (storedLangData) {
+            const parsedData = JSON.parse(storedLangData);
+            if (parsedData?.state?.language) {
+                return parsedData.state.language; // هترجع "en" أو "ar"
+            }
+        }
+    } catch (error) {
+        console.error("Error reading language from local storage", error);
+    }
+    
+    // لو فشلت المحاولة، نعتمد على i18n أو الافتراضي "ar"
+    return i18n?.language || "ar";
+};
+
+// 2. دالة جلب الاسم حسب اللغة 
+const getLocalizedName = (item, currentLang) => {
+    if (!item) return '-';
+    
+    const isArabic = currentLang?.startsWith('ar');
+
+    if (isArabic) {
+        return item.nameAr || item.name || '-';
+    } else {
+        return item.name || item.nameAr || '-';
+    }
+};
 
     useEffect(() => {
         if (location.state?.highlightedId && foods) {
@@ -124,9 +154,9 @@ const Foods = () => {
                 price: Number(newPrice)
                 // لو الباك بيطلب بقية الداتا، يفضل تبعتي السعر بس لو المسار مخصص لتحديث السعر السريع
             });
-            
+
             // عمل تحديث للبيانات في الجدول بعد النجاح
-            refetch(); 
+            refetch();
             setPriceDialogOpen(false);
         } catch (error) {
             console.error("Error updating price:", error);
@@ -150,23 +180,31 @@ const Foods = () => {
                 );
             }
         },
-        {
-            accessorKey: 'name',
-            header: t('foodName'),
-            cell: ({ row }) => (
-                <span className="capitalize font-medium">{row.original.name}</span>
-            )
-        },
+{
+    id: 'foodName',
+    header: t('foodName'),
+    cell: ({ row }) => {
+        const food = row.original;
+        const currentLang = getActualLanguage(i18n); // 💡 هنا استخدام الدالة الجديدة
+        const displayName = getLocalizedName(food, currentLang);
+
+        return (
+            <span className="capitalize font-medium">
+                {displayName}
+            </span>
+        );
+    }
+},
         {
             accessorKey: 'price',
             header: t('price'),
             cell: ({ row }) => (
                 // 💡 جعلنا منطقة السعر قابلة للضغط ويوضح للمستخدم إنها تفاعلية عن طريق الـ hover وايقونة القلم الصغيرة
-                <div 
+                <div
                     className="flex items-center gap-2 font-medium text-green-600 cursor-pointer hover:bg-slate-50 p-1.5 rounded-md transition-colors w-fit"
                     onClick={() => {
-                        setFoodToUpdatePrice({ id: row.original.id, name: row.original.name });
-                        setNewPrice(row.original.price); // وضع السعر الحالي كقيمة افتراضية في الـ Input
+                        setFoodToUpdatePrice(row.original); // تمرير عنصر الطعام كاملاً
+                        setNewPrice(row.original.price);
                         setPriceDialogOpen(true);
                     }}
                     title={t('editPrice') || 'تعديل السعر'}
@@ -185,15 +223,21 @@ const Foods = () => {
                 </span>
             )
         },
-        {
-            accessorKey: 'category',
-            header: t('category'),
-            cell: ({ row }) => (
-                <Badge variant="secondary" className="capitalize">
-                    {row.original.category?.name || '-'}
-                </Badge>
-            )
-        },
+{
+    accessorKey: 'category',
+    header: t('category'),
+    cell: ({ row }) => {
+        const category = row.original.category;
+        const currentLang = getActualLanguage(i18n); // 💡
+        const catName = getLocalizedName(category, currentLang);
+
+        return (
+            <Badge variant="secondary" className="capitalize">
+                {catName}
+            </Badge>
+        );
+    }
+},
         {
             accessorKey: 'assign_ingredients',
             header: t('ingredients'),
@@ -267,7 +311,10 @@ const Foods = () => {
                             {t('editPrice') || 'تعديل السعر'}
                         </DialogTitle>
                         <DialogDescription>
-                            {t('updatePriceFor') || 'تعديل سعر المنتج:'} <span className="font-bold text-slate-900">{foodToUpdatePrice?.name}</span>
+                            {t('updatePriceFor') || 'تعديل سعر المنتج:'} {' '}
+                            <span className="font-bold text-slate-900">
+                                {(i18n?.language === 'ar' ? foodToUpdatePrice?.nameAr : foodToUpdatePrice?.name) || foodToUpdatePrice?.name}
+                            </span>
                         </DialogDescription>
                     </DialogHeader>
 
@@ -338,9 +385,7 @@ const Foods = () => {
                     </div>
                 </DialogContent>
             </Dialog>
-
             {/* Assign Ingredients Dialog */}
-            {/* ... كود الـ Assign Ingredients Dialog الحالي بدون تغيير ... */}
             <Dialog open={ingredientsDialogOpen} onOpenChange={setIngredientsDialogOpen}>
                 <DialogContent className="max-w-md">
                     <DialogHeader>
@@ -357,6 +402,13 @@ const Foods = () => {
                         {ingredientsOptions.length > 0 ? (
                             ingredientsOptions.map((ing) => {
                                 const isSelected = selectedIngredients.find(i => i.ingredientId === ing.id);
+
+                                // 💡 تحديد اسم المكون بناءً على اللغة الحالية
+                                const currentLang = i18n?.language || "ar";
+                                const ingName = currentLang === 'ar'
+                                    ? (ing.nameAr || ing.name)
+                                    : (ing.name || ing.nameAr);
+
                                 return (
                                     <div
                                         key={ing.id}
@@ -369,7 +421,8 @@ const Foods = () => {
                                                 onCheckedChange={() => handleIngredientToggle(ing.id)}
                                             />
                                             <Label htmlFor={`ing-${ing.id}`} className="font-semibold cursor-pointer">
-                                                {ing.name}
+                                                {/* 💡 هنا بيتم عرض الاسم بحسب اللغة */}
+                                                {ingName}
                                             </Label>
                                         </div>
 

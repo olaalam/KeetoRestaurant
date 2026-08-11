@@ -20,12 +20,12 @@ export default function Setting() {
             const res = await api.get('/api/restaurant/restaurantsetting');
             const settingsData = res.data?.data?.settings || {};
             const schedulesData = res.data?.data?.schedules || [];
-            
+
             // ندمج المواعيد داخل كائن الإعدادات حتى نتمكن من الوصول إليها في حقول الجدول بسهولة
             return [{
                 ...settingsData,
                 schedules: schedulesData
-            }]; 
+            }];
         }
     });
 
@@ -87,6 +87,14 @@ export default function Setting() {
             header: t("vegetarianType", { defaultValue: "Vegetarian Type" })
         },
         {
+            accessorKey: "firstColor",
+            header: t("firstColor", { defaultValue: "First Color" })
+        },
+        {
+            accessorKey: "secondColor",
+            header: t("secondColor", { defaultValue: "Second Color" })
+        },
+        {
             accessorKey: "dineIn",
             header: t("dineIn", { defaultValue: "Dine In" }),
             cell: ({ getValue }) => getValue() ? t("yes", { defaultValue: "Yes" }) : t("no", { defaultValue: "No" })
@@ -139,7 +147,7 @@ export default function Setting() {
                                     {t("workingHours", { defaultValue: "Working Hours" })}
                                 </h3>
                             </div>
-                            <button 
+                            <button
                                 onClick={() => setIsDialogOpen(false)}
                                 className="p-1 rounded-md hover:bg-gray-100 text-gray-500 transition-colors"
                             >
@@ -151,29 +159,29 @@ export default function Setting() {
                         <div className="p-6 space-y-3 max-h-[60vh] overflow-y-auto">
                             {selectedSchedules.length > 0 ? (
                                 [...selectedSchedules]
-                                .sort((a, b) => a.dayOfWeek - b.dayOfWeek) // ترتيب الأيام تصاعدياً
-                                .map((schedule) => (
-                                    <div 
-                                        key={schedule.id} 
-                                        className="flex items-center justify-between p-3 rounded-lg border bg-gray-50/50 text-sm"
-                                    >
-                                        <span className="font-medium text-gray-700">
-                                            {getDayName(schedule.dayOfWeek)}
-                                        </span>
-                                        
-                                        {schedule.isOffDay ? (
-                                            <span className="px-2 py-0.5 text-xs font-semibold text-red-700 bg-red-50 rounded-md">
-                                                {t("offDay", { defaultValue: "Closed" })}
+                                    .sort((a, b) => a.dayOfWeek - b.dayOfWeek) // ترتيب الأيام تصاعدياً
+                                    .map((schedule) => (
+                                        <div
+                                            key={schedule.id}
+                                            className="flex items-center justify-between p-3 rounded-lg border bg-gray-50/50 text-sm"
+                                        >
+                                            <span className="font-medium text-gray-700">
+                                                {getDayName(schedule.dayOfWeek)}
                                             </span>
-                                        ) : (
-                                            <div className="flex items-center gap-1.5 text-gray-600 font-mono text-xs dir-ltr">
-                                                <span>{schedule.openingTime}</span>
-                                                <span className="text-gray-400">-</span>
-                                                <span>{schedule.closingTime}</span>
-                                            </div>
-                                        )}
-                                    </div>
-                                ))
+
+                                            {schedule.isOffDay ? (
+                                                <span className="px-2 py-0.5 text-xs font-semibold text-red-700 bg-red-50 rounded-md">
+                                                    {t("offDay", { defaultValue: "Closed" })}
+                                                </span>
+                                            ) : (
+                                                <div className="flex items-center gap-1.5 text-gray-600 font-mono text-xs dir-ltr">
+                                                    <span>{schedule.openingTime}</span>
+                                                    <span className="text-gray-400">-</span>
+                                                    <span>{schedule.closingTime}</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))
                             ) : (
                                 <p className="text-center text-sm text-gray-500 py-4">
                                     {t("noSchedulesFound", { defaultValue: "No schedule data available" })}

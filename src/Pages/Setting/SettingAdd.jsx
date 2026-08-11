@@ -45,6 +45,8 @@ const SettingPageAdd = () => {
         maxDeliveryTime: 45,
         isAlwaysOpen: false,
         isSameTimeEveryDay: false,
+        firstColor: "",
+        secondColor: "",
         schedules: [
             { dayOfWeek: 0, isOffDay: false, openingTime: "09:00", closingTime: "23:00" },
             { dayOfWeek: 1, isOffDay: false, openingTime: "09:00", closingTime: "23:00" },
@@ -87,6 +89,8 @@ const SettingPageAdd = () => {
             maxDeliveryTime: rawData.settings?.maxDeliveryTime ?? 45,
             isAlwaysOpen: rawData.settings?.isAlwaysOpen ?? false,
             isSameTimeEveryDay: rawData.settings?.isSameTimeEveryDay ?? false,
+            firstColor: rawData.settings?.firstColor || "",
+            secondColor: rawData.settings?.secondColor || "",
             schedules: formattedSchedules.length > 0 ? formattedSchedules : defaultInitialData.schedules
         };
         // تحويل الكائن لنص بيضمن استقرار الـ useMemo ومنع الـ Infinite Loops تماماً مع الـ Forms
@@ -122,7 +126,9 @@ const SettingPageAdd = () => {
                 minDeliveryTime: Number(data.minDeliveryTime) || 15,
                 maxDeliveryTime: Number(data.maxDeliveryTime) || 45,
                 isAlwaysOpen: data.isAlwaysOpen ?? false,
-                isSameTimeEveryDay: data.isSameTimeEveryDay ?? false
+                isSameTimeEveryDay: data.isSameTimeEveryDay ?? false,
+                firstColor: data.firstColor || "",
+                secondColor: data.secondColor || ""
             },
             schedules: (data.schedules || []).map(schedule => ({
                 dayOfWeek: Number(schedule.dayOfWeek),
@@ -183,6 +189,7 @@ const SettingPageAdd = () => {
                                     { name: "canEditOrder", label: "Can Edit Order" },
                                     { name: "isAlwaysOpen", label: "Is Always Open" },
                                     { name: "isSameTimeEveryDay", label: "Same Time Every Day" },
+
                                 ].map((sw) => (
                                     <div key={sw.name} className="flex items-center justify-between p-3 border rounded bg-white shadow-sm">
                                         <Label htmlFor={sw.name} className="cursor-pointer font-medium text-sm text-gray-700">{sw.label}</Label>
@@ -195,18 +202,18 @@ const SettingPageAdd = () => {
                                         />
                                     </div>
                                 ))}
-
                                 <div className="space-y-2">
-                                    <Label className="text-gray-700 font-medium">Vegetarian Type (Veg Type)</Label>
-                                    <input {...register("vegType")} className="w-full p-2 border rounded-md text-sm h-10 bg-white" placeholder="BOTH" />
+                                    <Label className="text-gray-700 font-medium">first color</Label>
+                                    <Input type="input" {...register("firstColor",)} />
+                                </div>
+                                
+                                <div className="space-y-2">
+                                    <Label className="text-gray-700 font-medium">Second Color</Label>
+                                    <Input type="input" {...register("secondColor")} />
                                 </div>
                                 <div className="space-y-2">
                                     <Label className="text-gray-700 font-medium">Min Order Amount (EGP)</Label>
                                     <Input type="number" {...register("minOrderAmount", { valueAsNumber: true })} />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label className="text-gray-700 font-medium">Min Delivery Time (Minutes)</Label>
-                                    <Input type="number" {...register("minDeliveryTime", { valueAsNumber: true })} />
                                 </div>
                                 <div className="space-y-2">
                                     <Label className="text-gray-700 font-medium">Max Delivery Time (Minutes)</Label>
