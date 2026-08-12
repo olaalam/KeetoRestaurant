@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate, Outlet } from "react-router-dom";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -45,6 +45,7 @@ export default function Layout() {
   // ---- Notification Sound ----
   const prevUnreadCountRef = useRef(null);
   const audioRef = useRef(null);
+  const [newOrderPopup, setNewOrderPopup] = useState({ open: false, count: 0 });
 
   // تحميل الصوت مسبقاً وفتح الـ AudioContext بعد أول تفاعل من المستخدم
   useEffect(() => {
@@ -106,9 +107,13 @@ export default function Layout() {
       prevUnreadCountRef.current = unreadCount;
       return;
     }
+
     if (unreadCount > prevUnreadCountRef.current) {
+      const incomingCount = unreadCount - prevUnreadCountRef.current;
+      setNewOrderPopup({ open: true, count: incomingCount });
       playNotificationSound();
     }
+
     prevUnreadCountRef.current = unreadCount;
   }, [unreadCount]);
 
@@ -170,10 +175,59 @@ export default function Layout() {
     }
   };
 
+  const handlePopupClose = () => {
+    setNewOrderPopup({ open: false, count: 0 });
+  };
+
+  const handlePopupCheck = () => {
+    handlePopupClose();
+    navigate('/orders');
+  };
+
   return (
     <TooltipProvider delayDuration={0}>
       <SidebarProvider dir={isRTL ? "rtl" : "ltr"}>
         {activeModule && <AppSidebar side={isRTL ? "right" : "left"} />}
+
+        {newOrderPopup.open && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/20 backdrop-blur-[2px] px-4">
+            <div className="w-full max-w-2xl rounded-2xl border border-yellow-200 bg-white/95 shadow-[0_20px_60px_rgba(15,23,42,0.18)] p-6 sm:p-7">
+              <div className="flex items-center justify-center gap-3 mb-5 text-slate-800">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
+                  <Bell size={22} />
+                </div>
+                <span className="text-2xl font-black tracking-tight text-slate-900">
+                  {t("notifications") || "Notifications"}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-center text-center text-xl sm:text-2xl font-bold text-slate-800 leading-relaxed">
+                <span className="mr-2">{newOrderPopup.count}</span>
+                <span>
+                  {newOrderPopup.count === 1
+                    ? (t("newOrderAlertSingular") || "You have 1 new order, please check.")
+                    : (t("newOrderAlert") || "You have new orders, please check.")}
+                </span>
+              </div>
+
+              <div className="mt-6 flex flex-col sm:flex-row justify-center gap-3">
+                <button
+                  onClick={handlePopupClose}
+                  className="flex-1 rounded-xl border border-red-200 bg-red-500 px-4 py-3 text-base font-bold text-white shadow-sm transition hover:bg-red-600"
+                >
+                  {t("close") || "Close"}
+                </button>
+
+                <button
+                  onClick={handlePopupCheck}
+                  className="flex-1 rounded-xl bg-primary px-4 py-3 text-base font-bold text-primary-foreground shadow-sm transition hover:brightness-95"
+                >
+                  {t("okLetMeCheck") || "OK, let me check"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         <main className="relative flex flex-col flex-1 min-w-0 max-h-screen overflow-hidden bg-background">
           <header className="flex-none sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
@@ -89,7 +89,17 @@ export default function OrderDetails() {
   const queryClient = useQueryClient();
 
   const [dialogConfig, setDialogConfig] = useState({ open: false, type: null });
-  const [isInvoiceOpen, setIsInvoiceOpen] = useState(false); // State للتحكم في فتح وإغلاق الفاتورة
+  const [isInvoiceOpen, setIsInvoiceOpen] = useState(false);
+  const [pdfUrl, setPdfUrl] = useState("");
+  const [isInvoiceLoading, setIsInvoiceLoading] = useState(false);
+
+  useEffect(() => {
+    return () => {
+      if (pdfUrl) {
+        URL.revokeObjectURL(pdfUrl);
+      }
+    };
+  }, [pdfUrl]);
 
   const orderStatuses = [
     "pending",
@@ -164,15 +174,52 @@ export default function OrderDetails() {
     }
   };
 
-  // دالة لطباعة الفاتورة مباشرة من الـ Dialog
+  const handleOpenInvoice = async () => {
+    if (!orderId) return;
+
+    try {
+      setIsInvoiceLoading(true);
+      setIsInvoiceOpen(true);
+
+      if (pdfUrl) {
+        URL.revokeObjectURL(pdfUrl);
+        setPdfUrl("");
+      }
+
+      const response = await api.get(`/api/restaurant/order/${orderId}/invoice`, {
+        responseType: "blob",
+      });
+
+      const blob = new Blob([response.data], {
+        type: response.headers?.["content-type"] || "application/pdf",
+      });
+
+      const nextPdfUrl = URL.createObjectURL(blob);
+      setPdfUrl(nextPdfUrl);
+    } catch (error) {
+      console.error("Failed to fetch order invoice PDF:", error);
+      toast.error(t("failedToDownloadInvoice") || "فشل في تحميل الفاتورة");
+      setIsInvoiceOpen(false);
+    } finally {
+      setIsInvoiceLoading(false);
+    }
+  };
+
   const handlePrintInvoice = () => {
-    const printContent =
-      document.getElementById("invoice-print-area")?.innerHTML;
-    const originalContent = document.body.innerHTML;
-    if (printContent) {
-      document.body.innerHTML = printContent;
-      window.print();
-      window.location.reload(); // لإعادة تحميل الصفحة واستعادة العناصر الأصلية
+    if (!pdfUrl) return;
+
+    const printWindow = window.open(pdfUrl, "_blank");
+    if (printWindow) {
+      printWindow.focus();
+      setTimeout(() => printWindow.print(), 500);
+    }
+  };
+
+  const closeInvoiceDialog = () => {
+    setIsInvoiceOpen(false);
+    if (pdfUrl) {
+      URL.revokeObjectURL(pdfUrl);
+      setPdfUrl("");
     }
   };
 
@@ -198,33 +245,33 @@ export default function OrderDetails() {
   return (
     <div className="w-full mx-auto py-8 px-4 sm:px-6 space-y-6">
       <div className="w-full flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white p-4 sm:p-5 rounded-2xl border shadow-sm">
-        
+
         {/* الجزء الأيسر: زر العودة، رقم الطلب، الشارات المعبرة */}
         {/* كل العناصر هنا موحدة بارتفاع h-11 عشان تبقى متناسبة مع بعض */}
         <div className="flex flex-1 items-center gap-3 flex-wrap w-full">
-<Button
-  size="icon"
-  className="w-12 h-12 rounded-2xl bg-yellow-400 hover:bg-yellow-500 text-gray-900 border-none shadow-sm shrink-0 transition-all"
-  onClick={() => navigate("/orders")}
->
-  <ArrowLeft className="w-6 h-6 rtl:rotate-180" />
-</Button>
+          <Button
+            size="icon"
+            className="w-12 h-12 rounded-2xl bg-yellow-400 hover:bg-yellow-500 text-gray-900 border-none shadow-sm shrink-0 transition-all"
+            onClick={() => navigate("/orders")}
+          >
+            <ArrowLeft className="w-6 h-6 rtl:rotate-180" />
+          </Button>
           {/* رقم الطلب اليومي بشكل واضح وموحد الارتفاع مع باقي العناصر */}
-<div className="flex items-center justify-center gap-1.5 min-w-[3rem] bg-gray-100/80 px-3 py-1.5 rounded-xl border border-gray-200/80 shrink-0">
+          <div className="flex items-center justify-center gap-1.5 min-w-[3rem] bg-gray-100/80 px-3 py-1.5 rounded-xl border border-gray-200/80 shrink-0">
 
-  <span className="text-xs font-bold text-gray-500 uppercase">
+            <span className="text-xs font-bold text-gray-500 uppercase">
 
-    Order #
+              Order #
 
-  </span>
+            </span>
 
-  <span className="text-xl font-black text-gray-900 tracking-tight">
+            <span className="text-xl font-black text-gray-900 tracking-tight">
 
-    {order.dailyOrderNumber}
+              {order.dailyOrderNumber}
 
-  </span>
+            </span>
 
-</div>
+          </div>
 
           <Separator orientation="vertical" className="h-8 hidden sm:block bg-gray-200" />
 
@@ -245,21 +292,13 @@ export default function OrderDetails() {
                 className="bg-amber-50/70 border-amber-200 text-amber-800 h-11 font-semibold rounded-xl px-3.5 text-sm flex items-center gap-2 shadow-sm leading-none"
               >
                 <ShoppingBag className="w-4 h-4 text-amber-600" />
-                <span className="capitalize">{order.orderType}</span>
+                <span className="capitalize">
+                  {document.documentElement.dir === "rtl"
+                    ? (order.orderType === "delivery" ? "توصيل" : order.orderType === "takeaway" ? "استلام" : order.orderType)
+                    : order.orderType}
+                </span>
               </Badge>
             )}
-
-            {/* 3. مصدر الطلب (Online Order / POS) */}
-            {order.orderSource && (
-              <Badge
-                variant="outline"
-                className="bg-blue-50/70 border-blue-200 text-blue-800 h-11 font-semibold rounded-xl px-3.5 text-sm flex items-center gap-2 shadow-sm leading-none"
-              >
-                <Store className="w-4 h-4 text-blue-600" />
-                <span className="capitalize">{order.orderSource?.replace(/_/g, " ")}</span>
-              </Badge>
-            )}
-
             {/* 4. طريقة الدفع (Cash on Delivery / Online / Card) */}
             {(order.paymentMethodName || order.paymentMethodNameAr) && (
               <Badge
@@ -274,6 +313,22 @@ export default function OrderDetails() {
                 </span>
               </Badge>
             )}
+            {/* 3. مصدر الطلب (Online Order / POS) */}
+            {order.orderSource && (
+              <Badge
+                variant="outline"
+                className="bg-blue-50/70 border-blue-200 text-blue-800 h-11 font-semibold rounded-xl px-3.5 text-sm flex items-center gap-2 shadow-sm leading-none"
+              >
+                <Store className="w-4 h-4 text-blue-600" />
+                <span className="capitalize">
+      {document.documentElement.dir === "rtl"
+        ? (order.orderSource === "online_order" ? "طلب أونلاين" : order.orderSource?.replace(/_/g, " "))
+        : order.orderSource?.replace(/_/g, " ")}
+    </span>
+              </Badge>
+            )}
+
+
           </div>
         </div>
 
@@ -310,7 +365,7 @@ export default function OrderDetails() {
 
           {/* زر فتح الفاتورة */}
           <Button
-            onClick={() => setIsInvoiceOpen(true)}
+            onClick={handleOpenInvoice}
             className="rounded-xl gap-2 h-11 px-5 font-semibold text-sm bg-primary text-white shadow-sm hover:bg-primary/90"
           >
             <Receipt className="w-4 h-4" />
@@ -320,19 +375,19 @@ export default function OrderDetails() {
       </div>
 
       {/* شبكة البيانات الأساسية */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        <div className="space-y-6">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <div className="space-y-6 xl:col-span-2">
 
           {/* كارت تفاصيل الطلب الأساسية (رقم الطلب - التاريخ - النوع - المصدر - الفرع - طريقة الدفع - ملاحظات) */}
           <Card className="rounded-2xl border shadow-sm overflow-hidden bg-white">
             <CardHeader className="border-b bg-gray-50/50 px-6 py-4">
               <CardTitle className="text-md font-bold text-gray-800 flex items-center gap-2">
                 <Info className="w-5 h-5 text-primary" />
-                {t("orderDetails") || "تفاصيل الطلب"}
+                {t("order Details") || "تفاصيل الطلب"}
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
 
                 <div className="flex items-center gap-2.5 text-sm">
                   <Store className="w-4 h-4 text-gray-400 shrink-0" />
@@ -376,180 +431,181 @@ export default function OrderDetails() {
                   </span>
                 </div>
 
-                {order.note && (
-                  <div className="flex items-start gap-2.5 text-sm sm:col-span-2">
-                    <Receipt className="w-4 h-4 text-gray-400 shrink-0 mt-0.5" />
-                    <span className="text-gray-500 font-medium shrink-0">
-                      {t("orderNote") || "ملاحظات الطلب"}:
-                    </span>
-                    <span className="font-semibold text-gray-900">
-                      {order.note}
-                    </span>
-                  </div>
-                )}
+                <div className="flex items-start gap-2.5 text-sm sm:col-span-2">
+                  <Receipt className="w-4 h-4 text-gray-400 shrink-0 mt-0.5" />
+                  <span className="text-gray-500 font-medium shrink-0">
+                    {t("orderNote") || "ملاحظات الطلب"}:
+                  </span>
+                  <span className="font-semibold text-gray-900">
+                    {order.note && order.note.trim() !== "" ? order.note : (t("noNotes") || "لا توجد ملاحظات")}
+                  </span>
+                </div>
               </div>
             </CardContent>
           </Card>
 
-<Card className="rounded-2xl border shadow-sm overflow-hidden bg-white">
-  <CardHeader className="border-b bg-gray-50/50 px-6 py-4">
-    <CardTitle className="text-md font-bold text-gray-800 flex items-center gap-2">
-      <ShoppingBag className="w-5 h-5 text-primary" />
-      {t("orderItems") || "مكونات الطلب"}
-    </CardTitle>
-  </CardHeader>
-  <CardContent className="p-0">
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm border-collapse">
-        <thead>
-          <tr className="bg-gray-50/80 border-b text-gray-500 text-xs uppercase tracking-wide">
-            <th className="px-4 py-3 text-left rtl:text-right font-semibold w-12 border-e border-gray-200/70">
-              #
-            </th>
-            <th className="px-4 py-3 text-left rtl:text-right font-semibold border-e border-gray-200/70">
-              {t("product") || "المنتج"}
-            </th>
-            <th className="px-4 py-3 text-left rtl:text-right font-semibold border-e border-gray-200/70">
-              {t("variations") || "الخيارات"}
-            </th>
-            {/* عمود الـ Add-ons الجديد */}
-            <th className="px-4 py-3 text-left rtl:text-right font-semibold border-e border-gray-200/70">
-              {t("addOns") || "الإضافات (Add-ons)"}
-            </th>
-            <th className="px-6 py-3 text-left rtl:text-right font-semibold">
-              {t("notes") || "ملاحظات"}
-            </th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-gray-100">
-          {order.items?.map((item, index) => {
-            // دعم لمسميات المصفوفتين سواء كانت addOns أو addons
-            const itemAddons = item.addOns || item.addons || [];
+          <Card className="rounded-2xl border shadow-sm overflow-hidden bg-white">
+            <CardHeader className="border-b bg-gray-50/50 px-6 py-4">
+              <CardTitle className="text-md font-bold text-gray-800 flex items-center gap-2">
+                <ShoppingBag className="w-5 h-5 text-primary" />
+                {t("orderItems") || "مكونات الطلب"}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm border-collapse">
+                  <thead>
+                    <tr className="bg-gray-50/80 border-b text-gray-500 text-xs uppercase tracking-wide">
+                      <th className="px-4 py-3 text-left rtl:text-right font-semibold w-12 border-e border-gray-200/70">
+                        #
+                      </th>
+                      <th className="px-4 py-3 text-left rtl:text-right font-semibold border-e border-gray-200/70">
+                        {t("product") || "المنتج"}
+                      </th>
+                      <th className="px-4 py-3 text-left rtl:text-right font-semibold border-e border-gray-200/70">
+                        {t("variations") || "الخيارات"}
+                      </th>
+                      {/* عمود الـ Add-ons الجديد */}
+                      <th className="px-4 py-3 text-left rtl:text-right font-semibold border-e border-gray-200/70">
+                        {t("addOns") || "الإضافات (Add-ons)"}
+                      </th>
+                      <th className="px-6 py-3 text-left rtl:text-right font-semibold">
+                        {t("notes") || "ملاحظات"}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {order.items?.map((item, index) => {
+                      // دعم لمسميات المصفوفتين سواء كانت addOns أو addons
+                      const itemAddons = item.addOns || item.addons || [];
 
-            return (
-              <tr
-                key={item.id || index}
-                className="hover:bg-gray-50/50 transition-colors align-top"
-              >
-                {/* 1. الرقم */}
-                <td className="px-4 py-4 text-gray-400 font-semibold border-e border-gray-100">
-                  {index + 1}
-                </td>
-
-                {/* 2. المنتج */}
-<td className="px-4 py-4 border-e border-gray-100">
-  <div className="flex flex-col items-start gap-1 min-w-[120px]">
-    {/* صورة المنتج */}
-    <img
-      src={item.foodImage}
-      alt={item.foodName}
-      className="w-12 h-12 rounded-lg object-cover border bg-gray-50 shadow-sm flex-shrink-0 mb-1"
-    />
-
-    {/* اسم المنتج */}
-    <p className="font-bold text-gray-900 text-sm">
-      {item.foodName}
-    </p>
-
-    {/* السعر */}
-    <p className="text-xs font-bold text-red-700">
-      Price: {parseFloat(item.basePrice || item.unitPrice || 0).toFixed(2)}
-    </p>
-
-    {/* الكمية */}
-    <p className="text-xs font-medium text-gray-600">
-      Qty: {item.quantity || item.qty || 1}
-    </p>
-  </div>
-</td>
-
-                {/* 3. الخيارات (Variations) */}
-                <td className="px-4 py-4 border-e border-gray-100">
-                  {item.variations && item.variations.length > 0 ? (
-                    <div className="space-y-1.5">
-                      {item.variations.map((v, idx) => (
-                        <div
-                          key={v.variationId || idx}
-                          className="flex flex-col text-xs bg-gray-50 border border-gray-200/60 rounded-lg px-2.5 py-1.5 w-fit shadow-2xs"
+                      return (
+                        <tr
+                          key={item.id || index}
+                          className="hover:bg-gray-50/50 transition-colors align-top"
                         >
-                          <span className="text-gray-400 font-medium">
-                            {document.documentElement.dir === "rtl"
-                              ? v.variationNameAr
-                              : v.variationName}
-                          </span>
-                          <span className="font-semibold text-gray-800">
-                            {document.documentElement.dir === "rtl"
-                              ? v.optionNameAr
-                              : v.optionName}
-                            {parseFloat(v.additionalPrice) > 0 && (
-                              <span className="text-primary font-bold">
-                                {" "}
-                                +{parseFloat(v.additionalPrice).toFixed(2)}
+                          {/* 1. الرقم */}
+                          <td className="px-4 py-4 text-gray-400 font-semibold border-e border-gray-100">
+                            {index + 1}
+                          </td>
+
+                          {/* 2. المنتج */}
+                          <td className="px-4 py-4 border-e border-gray-100">
+                            <div className="flex flex-col items-start gap-1 min-w-[120px]">
+                              {/* صورة المنتج */}
+                              <img
+                                src={item.foodImage}
+                                alt={item.foodName}
+                                className="w-12 h-12 rounded-lg object-cover border bg-gray-50 shadow-sm flex-shrink-0 mb-1"
+                              />
+
+                              {/* اسم المنتج */}
+                              {/* اسم المنتج */}
+                              <p className="font-bold text-gray-900 text-sm">
+                                {document.documentElement.dir === "rtl" && item.foodNameAr
+                                  ? item.foodNameAr
+                                  : item.foodName}
+                              </p>
+
+                              {/* السعر */}
+                              <p className="text-xs font-bold text-red-700">
+                                Price: {parseFloat(item.basePrice || item.unitPrice || 0).toFixed(2)}
+                              </p>
+
+                              {/* الكمية */}
+                              <p className="text-xs font-medium text-gray-600">
+                                Qty: {item.quantity || item.qty || 1}
+                              </p>
+                            </div>
+                          </td>
+
+                          {/* 3. الخيارات (Variations) */}
+                          <td className="px-4 py-4 border-e border-gray-100">
+                            {item.variations && item.variations.length > 0 ? (
+                              <div className="space-y-1.5">
+                                {item.variations.map((v, idx) => (
+                                  <div
+                                    key={v.variationId || idx}
+                                    className="flex flex-col text-xs bg-gray-50 border border-gray-200/60 rounded-lg px-2.5 py-1.5 w-fit shadow-2xs"
+                                  >
+                                    <span className="text-gray-400 font-medium">
+                                      {document.documentElement.dir === "rtl"
+                                        ? v.variationNameAr
+                                        : v.variationName}
+                                    </span>
+                                    <span className="font-semibold text-gray-800">
+                                      {document.documentElement.dir === "rtl"
+                                        ? v.optionNameAr
+                                        : v.optionName}
+                                      {parseFloat(v.additionalPrice) > 0 && (
+                                        <span className="text-primary font-bold">
+                                          {" "}
+                                          +{parseFloat(v.additionalPrice).toFixed(2)}
+                                        </span>
+                                      )}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <span className="text-gray-300">—</span>
+                            )}
+                          </td>
+
+                          {/* 4. الإضافات (Add-ons) */}
+                          <td className="px-4 py-4 border-e border-gray-100">
+                            {itemAddons.length > 0 ? (
+                              <div className="space-y-1.5">
+                                {itemAddons.map((addon, idx) => (
+                                  <div
+                                    key={addon.id || idx}
+                                    className="flex flex-col text-xs bg-amber-50/60 border border-amber-200/50 rounded-lg px-2.5 py-1.5 w-fit"
+                                  >
+                                    <span className="font-semibold text-gray-800">
+                                      {document.documentElement.dir === "rtl"
+                                        ? addon.addonNameAr || addon.nameAr || addon.name
+                                        : addon.addonName || addon.name}
+                                      {parseFloat(addon.price || addon.additionalPrice || 0) > 0 && (
+                                        <span className="text-primary font-bold">
+                                          {" "}
+                                          +{parseFloat(addon.price || addon.additionalPrice).toFixed(2)}
+                                        </span>
+                                      )}
+                                    </span>
+                                    {addon.quantity && addon.quantity > 1 && (
+                                      <span className="text-gray-400 text-[10px]">
+                                        الكمية: {addon.quantity}
+                                      </span>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <span className="text-gray-300">—</span>
+                            )}
+                          </td>
+
+                          {/* 5. الملاحظات */}
+                          <td className="px-6 py-4 text-gray-500 text-xs max-w-[140px]">
+                            {item.note || (
+                              <span className="text-gray-300">
+                                {t("noNotes") || "لا توجد ملاحظات"}
                               </span>
                             )}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <span className="text-gray-300">—</span>
-                  )}
-                </td>
-
-                {/* 4. الإضافات (Add-ons) */}
-                <td className="px-4 py-4 border-e border-gray-100">
-                  {itemAddons.length > 0 ? (
-                    <div className="space-y-1.5">
-                      {itemAddons.map((addon, idx) => (
-                        <div
-                          key={addon.id || idx}
-                          className="flex flex-col text-xs bg-amber-50/60 border border-amber-200/50 rounded-lg px-2.5 py-1.5 w-fit"
-                        >
-                          <span className="font-semibold text-gray-800">
-                            {document.documentElement.dir === "rtl"
-                              ? addon.addonNameAr || addon.nameAr || addon.name
-                              : addon.addonName || addon.name}
-                            {parseFloat(addon.price || addon.additionalPrice || 0) > 0 && (
-                              <span className="text-primary font-bold">
-                                {" "}
-                                +{parseFloat(addon.price || addon.additionalPrice).toFixed(2)}
-                              </span>
-                            )}
-                          </span>
-                          {addon.quantity && addon.quantity > 1 && (
-                            <span className="text-gray-400 text-[10px]">
-                              الكمية: {addon.quantity}
-                            </span>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <span className="text-gray-300">—</span>
-                  )}
-                </td>
-
-                {/* 5. الملاحظات */}
-                <td className="px-6 py-4 text-gray-500 text-xs max-w-[140px]">
-                  {item.note || (
-                    <span className="text-gray-300">
-                      {t("noNotes") || "لا توجد ملاحظات"}
-                    </span>
-                  )}
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
-  </CardContent>
-</Card>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
           <Card className="rounded-2xl border shadow-sm bg-white">
             <CardHeader className="border-b bg-gray-50/50 px-6 py-4">
               <CardTitle className="text-md font-bold text-gray-800 flex items-center gap-2">
                 <Receipt className="w-5 h-5 text-primary" />
-                {t("paymentSummary") || "ملخص الحساب للفاتورة"}
+                {t("payment Summary") || "ملخص الحساب للفاتورة"}
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6 space-y-3.5">
@@ -599,7 +655,7 @@ export default function OrderDetails() {
 
 
         {/* العمود الأيمن: التحكم بالحالات وبيانات العميل */}
-        <div className="space-y-6">
+        <div className="space-y-6 xl:col-span-1">
           {/* العمود الأيسر: محتويات الفاتورة والمنتجات */}
           <div className="xl:col-span-2 space-y-6">
             <Card className="rounded-2xl border border-gray-100 shadow-sm bg-white p-6">
@@ -607,7 +663,7 @@ export default function OrderDetails() {
               <div className="flex items-center gap-2 mb-4">
                 <User className="w-5 h-5 text-red-900 fill-red-900" />
                 <h3 className="text-lg font-bold text-gray-900">
-                  {t("customerDetails") || "Customer Information"}
+                  {t("customer Details") || "Customer Information"}
                 </h3>
               </div>
 
@@ -665,12 +721,12 @@ export default function OrderDetails() {
                   <>
                     {/* Title / Full Address Text */}
                     {order.address.title && (
-
                       <div className="flex items-center gap-1.5">
                         <span className="font-semibold text-gray-900">{t("Address") || "Address"}:</span>
-                        <span> {order.address.title || t("unknown")}</span>
+                        <span>{order.address.title || t("unknown")}</span>
                       </div>
                     )}
+
                     {/* Street / Road */}
                     <div className="flex items-center gap-1.5">
                       <span className="font-semibold text-gray-900">{t("street") || "Road"}:</span>
@@ -689,40 +745,36 @@ export default function OrderDetails() {
                       <span>{order.address.floor || "-"}</span>
                     </div>
 
-
+                    {/* Apartment */}
+                    {order.address.apartment && (
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-semibold text-gray-900">{t("apartment") || "Apartment"}:</span>
+                        <span>{order.address.apartment || "-"}</span>
+                      </div>
+                    )}
 
                     {/* Landmark */}
                     {order.address.landmark && (
-                      <div className="text-gray-700">
-                        {order.address.landmark}
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-semibold text-gray-900">{t("landmark") || "Landmark"}:</span>
+                        <span className="text-gray-700">{order.address.landmark}</span>
                       </div>
                     )}
 
                     {/* Map Link */}
                     {order.address.lat && order.address.lng && (
-
-                      <a
-
-                        href={`https://www.google.com/maps?q=${order.address.lat},${order.address.lng}`}
-
-                        target="_blank"
-
-                        rel="noopener noreferrer"
-
-                        className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline rtl:pr-6 ltr:pl-6"
-
-                      >
-
-
-                        <div className="flex items-center gap-1.5">
-                          <span className="font-semibold text-gray-900">{t("Address") || "Address"}:</span>
-                          <span>                         <MapPin className="w-3.5 h-3.5" />
-
-                            {t("viewOnMap") || "عرض على الخريطة"}
-                          </span>
-                        </div>
-                      </a>
-
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-semibold text-gray-900">{t("locationMap") || "Location Map"}:</span>
+                        <a
+                          href={`https://www.google.com/maps?q=${order.address.lat},${order.address.lng}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-sm font-semibold text-primary hover:underline"
+                        >
+                          <MapPin className="w-3.5 h-3.5" />
+                          {t("viewOnMap") || "عرض على الخريطة"}
+                        </a>
+                      </div>
                     )}
                   </>
                 ) : (
@@ -733,14 +785,12 @@ export default function OrderDetails() {
                 )}
               </div>
             </Card>
-
-
           </div>
           <Card className="rounded-2xl border shadow-sm bg-white overflow-hidden">
             <CardHeader className="border-b bg-gray-50/50 px-6 py-4">
               <CardTitle className="text-sm font-bold text-gray-800 flex items-center gap-2">
                 <Info className="w-4 h-4 text-primary" />
-                {t("changeOrderStatus") || "تعديل حالة الطلب"}
+                {t("change Order Status") || "تعديل حالة الطلب"}
               </CardTitle>
             </CardHeader>
             <CardContent className="p-4 grid grid-cols-2 gap-2.5">
@@ -780,176 +830,36 @@ export default function OrderDetails() {
       </div>
 
       {/* مكوّن الـ Dialog الخاص بعرض وتصميم الفاتورة */}
-      <Dialog open={isInvoiceOpen} onOpenChange={setIsInvoiceOpen}>
-        <DialogContent className="max-w-md rounded-2xl p-6 bg-white shadow-xl overflow-hidden sm:max-w-lg">
-          <DialogHeader className="flex flex-row justify-between items-center border-b pb-4">
-            <DialogTitle className="text-md font-bold text-gray-800 flex items-center gap-2">
-              <Receipt className="w-5 h-5 text-primary" />
-              {t("orderInvoice") || "فاتورة الطلب"}
-            </DialogTitle>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handlePrintInvoice}
-              className="rounded-xl gap-1.5 text-xs font-semibold"
-            >
-              <Printer className="w-4 h-4" />
-              {t("print") || "طباعة"}
-            </Button>
-          </DialogHeader>
+      <Dialog
+        open={isInvoiceOpen}
+        onOpenChange={(open) => {
+          if (open) {
+            setIsInvoiceOpen(true);
+            return;
+          }
+          closeInvoiceDialog();
+        }}
+      >
+        <DialogContent className="max-w-4xl rounded-2xl p-3 bg-white shadow-xl overflow-hidden">
 
-          {/* منطقة الفاتورة القابلة للطباعة والتصفح */}
-          <div
-            id="invoice-print-area"
-            className="py-4 space-y-4 max-h-[70vh] overflow-y-auto px-1"
-          >
-            {/* ترويسة الفاتورة */}
-            <div className="text-center space-y-1">
-              <h2 className="text-xl font-black text-gray-900 capitalize">
-                {order.restaurant?.name || "Keeto"}
-              </h2>
-              <p className="text-xs text-gray-400 font-medium">
-                {order.branch?.name}
-              </p>
-              <p className="text-xs text-gray-500 dir-ltr">
-                {new Date(order.createdAt).toLocaleString()}
-              </p>
-            </div>
 
-            <Separator className="border-dashed" />
-
-            {/* بيانات الفاتورة الأساسية */}
-            <div className="text-xs space-y-2 text-gray-600 bg-gray-50 p-3 rounded-xl border">
-              <div className="flex justify-between">
-                <span className="font-medium">
-                  {t("invoiceNo") || "رقم الفاتورة"}:
-                </span>
-                <span className="font-bold text-gray-900">
-                  {order.orderNumber}
-                </span>
+          <div className="py-3 min-h-[70vh] flex items-center justify-center bg-slate-50 rounded-xl border overflow-hidden">
+            {isInvoiceLoading ? (
+              <div className="flex flex-col items-center gap-3 text-slate-500">
+                <Loader2 className="w-8 h-8 animate-spin" />
+                <span>{t("loading") || "جاري التحميل..."}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="font-medium">
-                  {t("dailyNo") || "الرقم اليومي"}:
-                </span>
-                <span className="font-bold text-gray-900">
-                  #{order.dailyOrderNumber}
-                </span>
+            ) : pdfUrl ? (
+              <iframe
+                src={pdfUrl}
+                title="Order Invoice PDF"
+                className="w-full h-[75vh] border-0 rounded-lg"
+              />
+            ) : (
+              <div className="text-sm text-slate-500">
+                {t("failedToDownloadInvoice") || "لم يتم تحميل الفاتورة"}
               </div>
-              <div className="flex justify-between">
-                <span className="font-medium">
-                  {t("customerName") || "اسم العميل"}:
-                </span>
-                <span className="font-semibold text-gray-900">
-                  {order.customer?.name}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="font-medium">
-                  {t("paymentMethod") || "طريقة الدفع"}:
-                </span>
-                <span className="font-semibold text-gray-900">
-                  {order.paymentMethodNameAr || order.paymentMethodName}
-                </span>
-              </div>
-            </div>
-
-            <Separator className="border-dashed" />
-
-            {/* جدول أو قائمة المنتجات */}
-            <div className="space-y-3">
-              <div className="flex justify-between text-xs font-bold text-gray-400 px-1">
-                <span>{t("item") || "الصنف"}</span>
-                <span>{t("total") || "الإجمالي"}</span>
-              </div>
-              <div className="space-y-2">
-                {order.items?.map((item) => (
-                  <div key={item.id} className="space-y-1">
-                    <div className="flex justify-between items-start text-sm gap-4">
-                      <div className="space-y-0.5">
-                        <p className="font-semibold text-gray-900">
-                          {item.foodName}
-                        </p>
-                        <p className="text-xs text-gray-400">
-                          {item.quantity} ×{" "}
-                          {parseFloat(item.basePrice).toFixed(2)}{" "}
-                          {t("currency") || "EGP"}
-                        </p>
-                      </div>
-                      <span className="font-bold text-gray-900 shrink-0">
-                        {parseFloat(item.totalPrice).toFixed(2)}
-                      </span>
-                    </div>
-
-                    {/* طباعة الإضافات في الفاتورة */}
-                    {item.variations && item.variations.length > 0 && (
-                      <div className="rtl:pr-4 ltr:pl-4 text-xs text-gray-500 space-y-0.5 border-r-2 rtl:border-gray-200 ltr:border-l-2">
-                        {item.variations.map((v, idx) => (
-                          <div
-                            key={v.variationId || idx}
-                            className="flex justify-between"
-                          >
-                            <span>
-                              {document.documentElement.dir === "rtl"
-                                ? v.variationNameAr
-                                : v.variationName}
-                              :{" "}
-                              {document.documentElement.dir === "rtl"
-                                ? v.optionNameAr
-                                : v.optionName}
-                            </span>
-                            {parseFloat(v.additionalPrice) > 0 && (
-                              <span>
-                                +{parseFloat(v.additionalPrice).toFixed(2)}
-                              </span>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <Separator className="border-dashed" />
-
-            {/* ملخص الحساب النهائي داخل الفاتورة */}
-            <div className="space-y-2 text-sm bg-gray-50/50 p-3 rounded-xl border">
-              <div className="flex justify-between text-gray-600 text-xs">
-                <span>{t("subtotal") || "المجموع الفرعي"}</span>
-                <span className="font-medium text-gray-900">
-                  {parseFloat(order.subtotal).toFixed(2)}
-                </span>
-              </div>
-              <div className="flex justify-between text-gray-600 text-xs">
-                <span>{t("serviceFee") || "رسوم الخدمة"}</span>
-                <span className="font-medium text-gray-900">
-                  {parseFloat(order.serviceFee).toFixed(2)}
-                </span>
-              </div>
-              <div className="flex justify-between text-gray-600 text-xs">
-                <span>{t("deliveryFee") || "رسوم التوصيل"}</span>
-                <span className="font-medium text-gray-900">
-                  {parseFloat(order.deliveryFee).toFixed(2)}
-                </span>
-              </div>
-              <Separator className="my-1 border-gray-200" />
-              <div className="flex justify-between items-center pt-0.5">
-                <span className="font-bold text-gray-900">
-                  {t("totalAmount") || "الإجمالي النهائي"}
-                </span>
-                <span className="text-lg font-black text-primary">
-                  {parseFloat(order.totalAmount).toFixed(2)}{" "}
-                  {t("currency") || "EGP"}
-                </span>
-              </div>
-            </div>
-
-            {/* تذييل شكر الفاتورة */}
-            {/* <div className="text-center pt-2">
-                            <p className="text-xs text-gray-400 font-medium">شكرًا لتعاملكم معنا!</p>
-                        </div> */}
+            )}
           </div>
         </DialogContent>
       </Dialog>
