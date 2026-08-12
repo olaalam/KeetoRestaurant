@@ -150,8 +150,8 @@ export default function OrderDetails() {
     onError: (error) => {
       toast.error(
         error?.response?.data?.message ||
-          t("statusUpdateError") ||
-          "فشل في تحديث الحالة",
+        t("statusUpdateError") ||
+        "فشل في تحديث الحالة",
       );
     },
   });
@@ -196,43 +196,96 @@ export default function OrderDetails() {
   };
 
   return (
-    <div className="container mx-auto py-8 px-4 max-w-7xl space-y-6">
-      {/* الهيدر العلوي المحتوي على أزرار التحكم ورقم الطلب وزر فتح الفاتورة */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-4 rounded-2xl border shadow-sm">
-        <div className="flex items-center gap-3">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="rounded-xl"
-            onClick={() => navigate("/orders")}
-          >
-            <ArrowLeft className="w-5 h-5 rtl:rotate-180" />
-          </Button>
-          <div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-lg font-bold text-gray-900">
-                {t("orderDetails") || "تفاصيل الطلب"}
-              </h1>
+    <div className="w-full mx-auto py-8 px-4 sm:px-6 space-y-6">
+      <div className="w-full flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white p-4 sm:p-5 rounded-2xl border shadow-sm">
+        
+        {/* الجزء الأيسر: زر العودة، رقم الطلب، الشارات المعبرة */}
+        {/* كل العناصر هنا موحدة بارتفاع h-11 عشان تبقى متناسبة مع بعض */}
+        <div className="flex flex-1 items-center gap-3 flex-wrap w-full">
+<Button
+  size="icon"
+  className="w-12 h-12 rounded-2xl bg-yellow-400 hover:bg-yellow-500 text-gray-900 border-none shadow-sm shrink-0 transition-all"
+  onClick={() => navigate("/orders")}
+>
+  <ArrowLeft className="w-6 h-6 rtl:rotate-180" />
+</Button>
+          {/* رقم الطلب اليومي بشكل واضح وموحد الارتفاع مع باقي العناصر */}
+<div className="flex items-center justify-center gap-1.5 min-w-[3rem] bg-gray-100/80 px-3 py-1.5 rounded-xl border border-gray-200/80 shrink-0">
+
+  <span className="text-xs font-bold text-gray-500 uppercase">
+
+    Order #
+
+  </span>
+
+  <span className="text-xl font-black text-gray-900 tracking-tight">
+
+    {order.dailyOrderNumber}
+
+  </span>
+
+</div>
+
+          <Separator orientation="vertical" className="h-8 hidden sm:block bg-gray-200" />
+
+          {/* مصفوفة الشارات (Badges) - كلها بنفس الارتفاع h-11 وحجم خط موحد text-sm */}
+          <div className="flex items-center gap-2.5 flex-wrap">
+            {/* 1. حالة الطلب */}
+            <Badge
+              className={`${currentStatusStyle.color} h-11 font-bold rounded-xl border px-3.5 text-sm flex items-center gap-2 shadow-sm leading-none`}
+            >
+              <StatusIcon className="w-4 h-4" />
+              {t(currentStatusStyle.labelKey)}
+            </Badge>
+
+            {/* 2. نوع الطلب (Takeaway / Delivery / Dine-in) */}
+            {order.orderType && (
               <Badge
-                className={`${currentStatusStyle.color} font-semibold rounded-lg border px-2.5 py-0.5 text-xs flex items-center gap-1`}
+                variant="outline"
+                className="bg-amber-50/70 border-amber-200 text-amber-800 h-11 font-semibold rounded-xl px-3.5 text-sm flex items-center gap-2 shadow-sm leading-none"
               >
-                <StatusIcon className="w-3.5 h-3.5" />
-                {t(currentStatusStyle.labelKey)}
+                <ShoppingBag className="w-4 h-4 text-amber-600" />
+                <span className="capitalize">{order.orderType}</span>
               </Badge>
-            </div>
-            <p className="text-xs text-gray-400 mt-0.5 font-medium">
-              {order.dailyOrderNumber}
-            </p>
+            )}
+
+            {/* 3. مصدر الطلب (Online Order / POS) */}
+            {order.orderSource && (
+              <Badge
+                variant="outline"
+                className="bg-blue-50/70 border-blue-200 text-blue-800 h-11 font-semibold rounded-xl px-3.5 text-sm flex items-center gap-2 shadow-sm leading-none"
+              >
+                <Store className="w-4 h-4 text-blue-600" />
+                <span className="capitalize">{order.orderSource?.replace(/_/g, " ")}</span>
+              </Badge>
+            )}
+
+            {/* 4. طريقة الدفع (Cash on Delivery / Online / Card) */}
+            {(order.paymentMethodName || order.paymentMethodNameAr) && (
+              <Badge
+                variant="outline"
+                className="bg-emerald-50/70 border-emerald-200 text-emerald-800 h-11 font-semibold rounded-xl px-3.5 text-sm flex items-center gap-2 shadow-sm leading-none"
+              >
+                <CreditCard className="w-4 h-4 text-emerald-600" />
+                <span className="capitalize">
+                  {document.documentElement.dir === "rtl" && order.paymentMethodNameAr
+                    ? order.paymentMethodNameAr
+                    : order.paymentMethodName?.replace(/_/g, " ")}
+                </span>
+              </Badge>
+            )}
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        {/* الجزء الأيمن: أزرار التنقل بين الطلبات وزر الفاتورة */}
+        {/* نفس الارتفاع h-11 لكل الأزرار عشان تبقى متساوية مع الشارات والبوكس */}
+        <div className="flex items-center gap-3 w-full lg:w-auto lg:justify-end shrink-0 pt-2 lg:pt-0">
           {/* أزرار التنقل بين الطلب السابق والتالي */}
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
               size="sm"
-              className="rounded-xl gap-1.5 h-10 px-3 font-semibold"
+              className="rounded-xl gap-1.5 h-11 px-4 font-semibold text-sm"
               disabled={!previousOrder}
               onClick={() =>
                 previousOrder && navigate(`/orders/details/${previousOrder.id}`)
@@ -244,7 +297,7 @@ export default function OrderDetails() {
             <Button
               variant="outline"
               size="sm"
-              className="rounded-xl gap-1.5 h-10 px-3 font-semibold"
+              className="rounded-xl gap-1.5 h-11 px-4 font-semibold text-sm"
               disabled={!nextOrder}
               onClick={() =>
                 nextOrder && navigate(`/orders/details/${nextOrder.id}`)
@@ -255,10 +308,10 @@ export default function OrderDetails() {
             </Button>
           </div>
 
-          {/* زر فتح الفاتورة بداخل Dialog */}
+          {/* زر فتح الفاتورة */}
           <Button
             onClick={() => setIsInvoiceOpen(true)}
-            className="rounded-xl gap-2 h-11 px-5 font-semibold bg-primary text-white shadow-sm hover:bg-primary/90"
+            className="rounded-xl gap-2 h-11 px-5 font-semibold text-sm bg-primary text-white shadow-sm hover:bg-primary/90"
           >
             <Receipt className="w-4 h-4" />
             {t("viewInvoice") || "عرض الفاتورة"}
@@ -267,181 +320,231 @@ export default function OrderDetails() {
       </div>
 
       {/* شبكة البيانات الأساسية */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        {/* العمود الأيسر: محتويات الفاتورة والمنتجات */}
-        <div className="xl:col-span-2 space-y-6">
-          <Card className="rounded-2xl border shadow-sm bg-white">
-            <CardHeader className="border-b bg-gray-50/50 px-6 py-4">
-              <CardTitle className="text-md font-bold text-gray-800 flex items-center gap-2">
-                <User className="w-5 h-5 text-primary" />
-                {t("customerDetails") || "بيانات العميل"}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-6 space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center text-primary font-bold text-sm">
-                  {order.customer?.name?.charAt(0).toUpperCase() || "C"}
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-gray-900">
-                    {order.customer?.name || t("unknown")}
-                  </p>
-                  <p className="text-xs text-gray-400">{t("customer")}</p>
-                </div>
-              </div>
-              <Separator className="bg-gray-100" />
-              <div className="space-y-3">
-                <div className="flex items-center justify-between w-full text-sm text-gray-600">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <Phone className="w-4 h-4 text-gray-400" />
-                    <span className="text-gray-500 font-medium">
-                      {t("contact") || "Contact"}:
-                    </span>
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        <div className="space-y-6">
 
-                    {order.customer?.phone && (
-                      <a
-                        href={`https://wa.me/${order.customer.phone.replace(/[^0-9]/g, "")}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-green-600 hover:text-green-700 transition-colors mx-0.5"
-                        title="WhatsApp"
-                      >
-                        <svg
-                          className="w-4 h-4 fill-current"
-                          viewBox="0 0 24 24"
-                        >
-                          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L0 24l6.335-1.662c1.746.953 3.71 1.454 5.709 1.455h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
-                        </svg>
-                      </a>
-                    )}
-
-                    <span className="font-semibold text-gray-900">
-                      {order.customer?.phone || t("notAvailable")}
-                    </span>
-
-                    {order.customer?.phone && (
-                      <button
-                        onClick={() => {
-                          navigator.clipboard.writeText(order.customer.phone);
-                          toast.success(
-                            t("phoneCopied") || "تم نسخ رقم الهاتف بنجاح",
-                          );
-                        }}
-                        className="inline-flex items-center text-gray-400 hover:text-gray-700 transition-colors ml-1.5"
-                        title="Copy Phone Number"
-                      >
-                        <Copy className="w-3.5 h-3.5" />
-                      </button>
-                    )}
-                  </div>
-                </div>
-                {order.customer?.email && (
-                  <div className="flex items-center gap-2 text-sm text-gray-600 break-all">
-                    <Mail className="w-4 h-4 text-gray-400" />
-                    <span>{order.customer?.email}</span>
-                  </div>
-                )}
-
-                <div className="flex items-start gap-2 text-sm text-gray-600">
-                  <MapPin className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
-                  <span>
-                    {order?.address && typeof order.address === "object"
-                      ? `${order.address.title || ""} - ${order.address.street || ""} (عمارة: ${order.address.number || "-"}, دور: ${order.address.floor || "-"})`
-                      : order?.address || t("notSpecified")}
-                  </span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          {/* كارت تفاصيل الطلب الأساسية (رقم الطلب - التاريخ - النوع - المصدر - الفرع - طريقة الدفع - ملاحظات) */}
           <Card className="rounded-2xl border shadow-sm overflow-hidden bg-white">
             <CardHeader className="border-b bg-gray-50/50 px-6 py-4">
               <CardTitle className="text-md font-bold text-gray-800 flex items-center gap-2">
-                <ShoppingBag className="w-5 h-5 text-primary" />
-                {t("orderItems") || "مكونات الطلب"}
+                <Info className="w-5 h-5 text-primary" />
+                {t("orderDetails") || "تفاصيل الطلب"}
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-0 divide-y">
-              {order.items?.map((item) => (
-                <div
-                  key={item.id}
-                  className="p-6 flex flex-col gap-3 hover:bg-gray-50/30 transition-colors"
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex gap-4">
-                      <img
-                        src={item.foodImage}
-                        alt={item.foodName}
-                        className="w-16 h-16 rounded-xl object-cover border bg-gray-50 shadow-sm flex-shrink-0"
-                      />
-                      <div className="space-y-1">
-                        <h4 className="font-semibold text-gray-900 text-base">
-                          {item.foodName}
-                        </h4>
-                        {item.foodDescription && (
-                          <p className="text-xs text-gray-400 max-w-md line-clamp-2">
-                            {item.foodDescription}
-                          </p>
-                        )}
-                        <p className="text-sm text-gray-600 font-medium">
-                          {t("quantity") || "الكمية"}:{" "}
-                          <span className="text-primary font-bold">
-                            {item.quantity}
-                          </span>
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right flex flex-col justify-center h-16">
-                      <span className="text-base font-bold text-gray-900">
-                        {parseFloat(item.totalPrice).toFixed(2)}{" "}
-                        {t("currency") || "EGP"}
-                      </span>
-                      {item.quantity > 1 && (
-                        <span className="text-xs text-gray-400">
-                          {parseFloat(item.basePrice).toFixed(2)} / {t("unit")}
-                        </span>
-                      )}
-                    </div>
-                  </div>
+            <CardContent className="p-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
 
-                  {/* عرض الإضافات (Variations) هنا إن وجدت */}
-                  {item.variations && item.variations.length > 0 && (
-                    <div className="rtl:mr-20 ltr:ml-20 bg-gray-50 p-3 rounded-xl border border-gray-100 space-y-1">
-                      <p className="text-xs font-bold text-gray-500 mb-1">
-                        {t("variations") || "الإضافات:"}
-                      </p>
+                <div className="flex items-center gap-2.5 text-sm">
+                  <Store className="w-4 h-4 text-gray-400 shrink-0" />
+                  <span className="text-gray-500 font-medium">
+                    {t("branch") || "الفرع"}:
+                  </span>
+                  <span className="font-semibold text-gray-900">
+                    {order.branch?.name || order.restaurant?.name || t("notAvailable")}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2.5 text-sm">
+                  <Store className="w-4 h-4 text-gray-400 shrink-0" />
+                  <span className="text-gray-500 font-medium">
+                    {t("zone") || "المنطقة"}:
+                  </span>
+                  <span className="font-semibold text-gray-900">
+                    {order.zone?.name || t("notAvailable")}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2.5 text-sm">
+                  <Calendar className="w-4 h-4 text-gray-400 shrink-0" />
+                  <span className="text-gray-500 font-medium">
+                    {t("orderDate") || "تاريخ الطلب"}:
+                  </span>
+                  <span className="font-semibold text-gray-900 dir-ltr">
+                    {order.createdAt
+                      ? new Date(order.createdAt).toLocaleDateString()
+                      : t("notAvailable")}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2.5 text-sm">
+                  <Clock className="w-4 h-4 text-gray-400 shrink-0" />
+                  <span className="text-gray-500 font-medium">
+                    {t("orderTime") || "وقت الطلب"}:
+                  </span>
+                  <span className="font-semibold text-gray-900 dir-ltr">
+                    {order.createdAt
+                      ? new Date(order.createdAt).toLocaleTimeString()
+                      : t("notAvailable")}
+                  </span>
+                </div>
+
+                {order.note && (
+                  <div className="flex items-start gap-2.5 text-sm sm:col-span-2">
+                    <Receipt className="w-4 h-4 text-gray-400 shrink-0 mt-0.5" />
+                    <span className="text-gray-500 font-medium shrink-0">
+                      {t("orderNote") || "ملاحظات الطلب"}:
+                    </span>
+                    <span className="font-semibold text-gray-900">
+                      {order.note}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+<Card className="rounded-2xl border shadow-sm overflow-hidden bg-white">
+  <CardHeader className="border-b bg-gray-50/50 px-6 py-4">
+    <CardTitle className="text-md font-bold text-gray-800 flex items-center gap-2">
+      <ShoppingBag className="w-5 h-5 text-primary" />
+      {t("orderItems") || "مكونات الطلب"}
+    </CardTitle>
+  </CardHeader>
+  <CardContent className="p-0">
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm border-collapse">
+        <thead>
+          <tr className="bg-gray-50/80 border-b text-gray-500 text-xs uppercase tracking-wide">
+            <th className="px-4 py-3 text-left rtl:text-right font-semibold w-12 border-e border-gray-200/70">
+              #
+            </th>
+            <th className="px-4 py-3 text-left rtl:text-right font-semibold border-e border-gray-200/70">
+              {t("product") || "المنتج"}
+            </th>
+            <th className="px-4 py-3 text-left rtl:text-right font-semibold border-e border-gray-200/70">
+              {t("variations") || "الخيارات"}
+            </th>
+            {/* عمود الـ Add-ons الجديد */}
+            <th className="px-4 py-3 text-left rtl:text-right font-semibold border-e border-gray-200/70">
+              {t("addOns") || "الإضافات (Add-ons)"}
+            </th>
+            <th className="px-6 py-3 text-left rtl:text-right font-semibold">
+              {t("notes") || "ملاحظات"}
+            </th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-gray-100">
+          {order.items?.map((item, index) => {
+            // دعم لمسميات المصفوفتين سواء كانت addOns أو addons
+            const itemAddons = item.addOns || item.addons || [];
+
+            return (
+              <tr
+                key={item.id || index}
+                className="hover:bg-gray-50/50 transition-colors align-top"
+              >
+                {/* 1. الرقم */}
+                <td className="px-4 py-4 text-gray-400 font-semibold border-e border-gray-100">
+                  {index + 1}
+                </td>
+
+                {/* 2. المنتج */}
+<td className="px-4 py-4 border-e border-gray-100">
+  <div className="flex flex-col items-start gap-1 min-w-[120px]">
+    {/* صورة المنتج */}
+    <img
+      src={item.foodImage}
+      alt={item.foodName}
+      className="w-12 h-12 rounded-lg object-cover border bg-gray-50 shadow-sm flex-shrink-0 mb-1"
+    />
+
+    {/* اسم المنتج */}
+    <p className="font-bold text-gray-900 text-sm">
+      {item.foodName}
+    </p>
+
+    {/* السعر */}
+    <p className="text-xs font-bold text-red-700">
+      Price: {parseFloat(item.basePrice || item.unitPrice || 0).toFixed(2)}
+    </p>
+
+    {/* الكمية */}
+    <p className="text-xs font-medium text-gray-600">
+      Qty: {item.quantity || item.qty || 1}
+    </p>
+  </div>
+</td>
+
+                {/* 3. الخيارات (Variations) */}
+                <td className="px-4 py-4 border-e border-gray-100">
+                  {item.variations && item.variations.length > 0 ? (
+                    <div className="space-y-1.5">
                       {item.variations.map((v, idx) => (
                         <div
                           key={v.variationId || idx}
-                          className="flex justify-between items-center text-xs text-gray-700"
+                          className="flex flex-col text-xs bg-gray-50 border border-gray-200/60 rounded-lg px-2.5 py-1.5 w-fit shadow-2xs"
                         >
-                          <span>
-                            <span className="text-gray-400 font-medium">
-                              {document.documentElement.dir === "rtl"
-                                ? v.variationNameAr
-                                : v.variationName}
-                              :
-                            </span>{" "}
-                            <span className="font-semibold text-gray-800">
-                              {document.documentElement.dir === "rtl"
-                                ? v.optionNameAr
-                                : v.optionName}
-                            </span>
+                          <span className="text-gray-400 font-medium">
+                            {document.documentElement.dir === "rtl"
+                              ? v.variationNameAr
+                              : v.variationName}
                           </span>
-                          {parseFloat(v.additionalPrice) > 0 && (
-                            <span className="text-gray-500 font-medium">
-                              +{parseFloat(v.additionalPrice).toFixed(2)}{" "}
-                              {t("currency") || "EGP"}
+                          <span className="font-semibold text-gray-800">
+                            {document.documentElement.dir === "rtl"
+                              ? v.optionNameAr
+                              : v.optionName}
+                            {parseFloat(v.additionalPrice) > 0 && (
+                              <span className="text-primary font-bold">
+                                {" "}
+                                +{parseFloat(v.additionalPrice).toFixed(2)}
+                              </span>
+                            )}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <span className="text-gray-300">—</span>
+                  )}
+                </td>
+
+                {/* 4. الإضافات (Add-ons) */}
+                <td className="px-4 py-4 border-e border-gray-100">
+                  {itemAddons.length > 0 ? (
+                    <div className="space-y-1.5">
+                      {itemAddons.map((addon, idx) => (
+                        <div
+                          key={addon.id || idx}
+                          className="flex flex-col text-xs bg-amber-50/60 border border-amber-200/50 rounded-lg px-2.5 py-1.5 w-fit"
+                        >
+                          <span className="font-semibold text-gray-800">
+                            {document.documentElement.dir === "rtl"
+                              ? addon.addonNameAr || addon.nameAr || addon.name
+                              : addon.addonName || addon.name}
+                            {parseFloat(addon.price || addon.additionalPrice || 0) > 0 && (
+                              <span className="text-primary font-bold">
+                                {" "}
+                                +{parseFloat(addon.price || addon.additionalPrice).toFixed(2)}
+                              </span>
+                            )}
+                          </span>
+                          {addon.quantity && addon.quantity > 1 && (
+                            <span className="text-gray-400 text-[10px]">
+                              الكمية: {addon.quantity}
                             </span>
                           )}
                         </div>
                       ))}
                     </div>
+                  ) : (
+                    <span className="text-gray-300">—</span>
                   )}
-                </div>
-              ))}
-            </CardContent>
-          </Card>
+                </td>
 
+                {/* 5. الملاحظات */}
+                <td className="px-6 py-4 text-gray-500 text-xs max-w-[140px]">
+                  {item.note || (
+                    <span className="text-gray-300">
+                      {t("noNotes") || "لا توجد ملاحظات"}
+                    </span>
+                  )}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  </CardContent>
+</Card>
           <Card className="rounded-2xl border shadow-sm bg-white">
             <CardHeader className="border-b bg-gray-50/50 px-6 py-4">
               <CardTitle className="text-md font-bold text-gray-800 flex items-center gap-2">
@@ -494,85 +597,145 @@ export default function OrderDetails() {
           </Card>
         </div>
 
+
         {/* العمود الأيمن: التحكم بالحالات وبيانات العميل */}
         <div className="space-y-6">
-          <Card className="rounded-2xl border shadow-sm bg-white">
-            <CardHeader className="border-b bg-gray-50/50 px-6 py-4">
-              <CardTitle className="text-md font-bold text-gray-800 flex items-center gap-2">
-                <Store className="w-5 h-5 text-primary" />
-                {t("fulfillmentInfo") || "تفاصيل التنفيذ"}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-6 space-y-4">
-              <div className="space-y-2.5">
-                <div className="flex items-center justify-between gap-3 bg-gray-50 px-3.5 py-2.5 rounded-xl border">
-                  <span className="text-xs font-medium text-gray-400 shrink-0">
-                    {t("orderType") || "نوع الطلب"}
-                  </span>
-                  <span className="text-sm font-bold text-gray-800 capitalize text-right truncate">
-                    {order.orderType}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between gap-3 bg-gray-50 px-3.5 py-2.5 rounded-xl border">
-                  <span className="text-xs font-medium text-gray-400 shrink-0">
-                    {t("orderSource") || "مصدر الطلب"}
-                  </span>
-                  <span className="text-sm font-bold text-gray-800 capitalize text-right truncate">
-                    {order.orderSource?.replace("_", " ")}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between gap-3 bg-gray-50 px-3.5 py-2.5 rounded-xl border">
-                  <span className="text-xs font-medium text-gray-400 shrink-0">
-                    {t("paymentMethod") || "طريقة الدفع "}
-                  </span>
-                  <span className="text-sm font-bold text-gray-800 capitalize text-right truncate">
-                    {order.paymentMethodName?.replace(/_/g, " ")}
-                  </span>
-                </div>
+          {/* العمود الأيسر: محتويات الفاتورة والمنتجات */}
+          <div className="xl:col-span-2 space-y-6">
+            <Card className="rounded-2xl border border-gray-100 shadow-sm bg-white p-6">
+              {/* Header */}
+              <div className="flex items-center gap-2 mb-4">
+                <User className="w-5 h-5 text-red-900 fill-red-900" />
+                <h3 className="text-lg font-bold text-gray-900">
+                  {t("customerDetails") || "Customer Information"}
+                </h3>
               </div>
 
-              <Separator className="bg-gray-100" />
+              {/* Content - Stacked Items */}
+              <div className="space-y-2 text-sm text-gray-800">
+                {/* Name */}
+                <div className="flex items-center gap-1.5">
+                  <span className="font-semibold text-gray-900">{t("name") || "Name"}:</span>
+                  <span>{order.customer?.name || t("unknown")}</span>
+                </div>
 
-              <div className="space-y-2.5">
-                <div className="flex items-start gap-2.5 text-sm text-gray-600">
-                  <Store className="w-4 h-4 text-gray-400 mt-0.5" />
-                  <div>
-                    <span className="font-medium text-gray-900">
-                      {order.branch?.name}
-                    </span>
-                    <span className="text-xs text-gray-400 block">
-                      {t("branch") || "الفرع المسؤول"}
-                    </span>
-                  </div>
+                {/* Contact (Phone, WhatsApp, Copy) */}
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="font-semibold text-gray-900">{t("contact") || "Contact"}:</span>
+                  {order.customer?.phone ? (
+                    <div className="flex items-center gap-1.5">
+                      <a
+                        href={`https://wa.me/${order.customer.phone.replace(/[^0-9]/g, "")}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-green-600 hover:text-green-700 transition-colors"
+                        title="WhatsApp"
+                      >
+                        <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L0 24l6.335-1.662c1.746.953 3.71 1.454 5.709 1.455h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+                        </svg>
+                      </a>
+                      <span className="font-normal">{order.customer.phone}</span>
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(order.customer.phone);
+                          toast.success(t("phoneCopied") || "تم نسخ رقم الهاتف بنجاح");
+                        }}
+                        className="text-gray-400 hover:text-gray-600 transition-colors"
+                        title="Copy Phone Number"
+                      >
+                        <Copy className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ) : (
+                    <span>{t("notAvailable")}</span>
+                  )}
                 </div>
-                <div className="flex items-start gap-2.5 text-sm text-gray-600">
-                  <Hash className="w-4 h-4 text-gray-400 mt-0.5" />
-                  <div>
-                    <span className="font-medium text-gray-900">
-                      #{order.dailyOrderNumber}
-                    </span>
-                    <span className="text-xs text-gray-400 block">
-                      {t("dailyOrderNumber") || "رقم الطلب اليومي"}
-                    </span>
+
+                {/* Email */}
+                {order.customer?.email && (
+                  <div className="flex items-center gap-1.5 break-all">
+                    <span className="font-semibold text-gray-900">{t("email") || "Email"}:</span>
+                    <span>{order.customer.email}</span>
                   </div>
-                </div>
+                )}
+
+                {/* Address Details - Listed Line by Line */}
+                {order?.address && typeof order.address === "object" ? (
+                  <>
+                    {/* Title / Full Address Text */}
+                    {order.address.title && (
+
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-semibold text-gray-900">{t("Address") || "Address"}:</span>
+                        <span> {order.address.title || t("unknown")}</span>
+                      </div>
+                    )}
+                    {/* Street / Road */}
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-semibold text-gray-900">{t("street") || "Road"}:</span>
+                      <span>{order.address.street || "-"}</span>
+                    </div>
+
+                    {/* Building Number */}
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-semibold text-gray-900">{t("buildingNumber") || "Build Num"}:</span>
+                      <span>{order.address.number || "-"}</span>
+                    </div>
+
+                    {/* Floor */}
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-semibold text-gray-900">{t("floor") || "Floor"}:</span>
+                      <span>{order.address.floor || "-"}</span>
+                    </div>
+
+
+
+                    {/* Landmark */}
+                    {order.address.landmark && (
+                      <div className="text-gray-700">
+                        {order.address.landmark}
+                      </div>
+                    )}
+
+                    {/* Map Link */}
+                    {order.address.lat && order.address.lng && (
+
+                      <a
+
+                        href={`https://www.google.com/maps?q=${order.address.lat},${order.address.lng}`}
+
+                        target="_blank"
+
+                        rel="noopener noreferrer"
+
+                        className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline rtl:pr-6 ltr:pl-6"
+
+                      >
+
+
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-semibold text-gray-900">{t("Address") || "Address"}:</span>
+                          <span>                         <MapPin className="w-3.5 h-3.5" />
+
+                            {t("viewOnMap") || "عرض على الخريطة"}
+                          </span>
+                        </div>
+                      </a>
+
+                    )}
+                  </>
+                ) : (
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-semibold text-gray-900">{t("address") || "Address"}:</span>
+                    <span>{order?.address || t("notSpecified")}</span>
+                  </div>
+                )}
               </div>
+            </Card>
 
-              {order.cancelReason && (
-                <>
-                  <Separator className="bg-gray-100" />
-                  <div className="bg-red-50 p-4 rounded-xl border border-red-100">
-                    <span className="text-xs font-bold text-red-700 block mb-1">
-                      {t("cancelReason") || "سبب الإلغاء/الرفض"}:
-                    </span>
-                    <p className="text-sm text-red-600 whitespace-pre-line">
-                      {order.cancelReason}
-                    </p>
-                  </div>
-                </>
-              )}
-            </CardContent>
-          </Card>
+
+          </div>
           <Card className="rounded-2xl border shadow-sm bg-white overflow-hidden">
             <CardHeader className="border-b bg-gray-50/50 px-6 py-4">
               <CardTitle className="text-sm font-bold text-gray-800 flex items-center gap-2">
@@ -596,11 +759,10 @@ export default function OrderDetails() {
                     disabled={updateStatusMutation.isPending}
                     onClick={() => handleStatusChange(status)}
                     className={`h-11 justify-start gap-2 rounded-xl border text-xs font-semibold relative px-3 transition-all duration-200
-                                            ${
-                                              isActive
-                                                ? "border-blue-600 bg-blue-50 text-blue-700 font-bold shadow-sm hover:bg-blue-50"
-                                                : "border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                                            }`}
+                                            ${isActive
+                        ? "border-blue-600 bg-blue-50 text-blue-700 font-bold shadow-sm hover:bg-blue-50"
+                        : "border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                      }`}
                   >
                     {isActive && (
                       <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-blue-600 rounded-full border border-white animate-pulse" />
@@ -614,8 +776,6 @@ export default function OrderDetails() {
               })}
             </CardContent>
           </Card>
-
-          {/* كارت بيانات العميل */}
         </div>
       </div>
 

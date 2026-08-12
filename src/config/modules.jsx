@@ -47,6 +47,27 @@ export const getModules = (t, orderCounts = {}) => {
       key: "dashboard",
       items: [{ title: t("dashboard"), url: "/dashboard", icon: LayoutDashboard }],
     },
+        {
+      name: t("order management"),
+      key: "order",
+      items: [
+        {
+          title: t("orders"),
+          url: "/orders",
+          icon: ShoppingBag,
+          subItems: [
+            { title: `${t("AllOrders")} (${pending})`, url: "/orders", icon: ShoppingBag },
+            { title: `${t("pending")} (${pending})`, url: "/orders/pending", icon: Clock },
+            { title: `${t("accepted")} (${accepted})`, url: "/orders/accepted", icon: CheckCircle2 },
+            { title: `${t("preparing")} (${preparing})`, url: "/orders/preparing", icon: Package },
+            { title: `${t("outForDelivery")} (${outDelivery})`, url: "/orders/out-delivery", icon: Truck },
+            { title: `${t("delivered")} (${delivered})`, url: "/orders/delivered", icon: CheckCheck },
+            { title: `${t("cancelled")} (${cancelled})`, url: "/orders/cancelled", icon: XCircle },
+            { title: `${t("refund")} (${refund})`, url: "/orders/refunded", icon: Undo2 },
+          ],
+        },
+      ],
+    },
     {
       name: t("Setting"),
       key: "management",
@@ -92,27 +113,7 @@ export const getModules = (t, orderCounts = {}) => {
         { title: t("invoice"), url: "/invoice", icon: KeetoIcon },
       ],
     },
-    {
-      name: t("order management"),
-      key: "order",
-      items: [
-        {
-          title: t("orders"),
-          url: "/orders",
-          icon: ShoppingBag,
-          subItems: [
-            { title: `${t("AllOrders")} (${pending})`, url: "/orders", icon: ShoppingBag },
-            { title: `${t("pending")} (${pending})`, url: "/orders/pending", icon: Clock },
-            { title: `${t("accepted")} (${accepted})`, url: "/orders/accepted", icon: CheckCircle2 },
-            { title: `${t("preparing")} (${preparing})`, url: "/orders/preparing", icon: Package },
-            { title: `${t("outForDelivery")} (${outDelivery})`, url: "/orders/out-delivery", icon: Truck },
-            { title: `${t("delivered")} (${delivered})`, url: "/orders/delivered", icon: CheckCheck },
-            { title: `${t("cancelled")} (${cancelled})`, url: "/orders/cancelled", icon: XCircle },
-            { title: `${t("refund")} (${refund})`, url: "/orders/refunded", icon: Undo2 },
-          ],
-        },
-      ],
-    },
+
     {
       name: t("Marketing"),
       key: "marketing",
