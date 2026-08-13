@@ -25,7 +25,7 @@ export default function BrancheMenu() {
     // 2. دالة تحديث الحالة (Mutation)
     const updateStatusMutation = useMutation({
         mutationFn: async ({ id }) => {
-            return await api.patch(`/api/restaurant/branchemenu/${id}/status`);
+            return await api.put(`api/restaurant/branchemenu/${id}`);
         },
         onSuccess: () => {
             toast.success(t("statusUpdatedSuccessfully"));
@@ -80,7 +80,9 @@ export default function BrancheMenu() {
                 deleteApiUrl="/api/restaurant/branchemenu"
                 // 🌟 الحل السحري: تمرير الـ branchId هنا أيضاً عند الإضافة لتستقبله صفحة BrancheMenuAdd
                 onAdd={() => navigate(`/branches/branch_menu/add`, { state: { branchId: restaurantId } })}
-                onEdit={(row) => navigate(`/branches/branch_menu/edit/${row.menuItemId}`, { state: { branchId: restaurantId } })}
+              onEdit={(row) => navigate(`/branches/branch_menu/edit/${row.menuItemId}`, { 
+        state: { branchId: restaurantId, branchemenu: row } 
+    })}
             />
         </div>
     );

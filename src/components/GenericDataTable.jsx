@@ -15,7 +15,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch"; 
+import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import {
@@ -29,7 +29,7 @@ import {
 import DeleteDialog from "./DeleteDialog";
 import LoadingSpinner from "./LoadingSpinner";
 import { useTranslation } from "@/hooks/useTranslation";
-import { useMutation, useQueryClient } from "@tanstack/react-query"; 
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/api/axios";
 import { toast } from "sonner";
 
@@ -39,7 +39,7 @@ export default function GenericDataTable({
   title,
   onAdd,
   onEdit,
-  editApiUrl,   
+  editApiUrl,
   deleteApiUrl,
   queryKey,
   isLoading,
@@ -63,8 +63,8 @@ export default function GenericDataTable({
   const updateStatusMutation = useMutation({
     mutationFn: async ({ id, newStatus, keyName }) => {
       // تركيب الرابط المخصص للخصومات أو الرابط العادي لبقية الشاشات
-      const url = editApiUrl.includes("discounts") 
-        ? `${editApiUrl}/${id}/toggle-status` 
+      const url = editApiUrl.includes("discounts")
+        ? `${editApiUrl}/${id}/toggle-status`
         : `${editApiUrl}/${id}`;
 
       // بناء الـ Body ديناميكياً بناءً على اسم الحقل الممرر (status أو isActive)
@@ -121,16 +121,15 @@ export default function GenericDataTable({
     // المرور على الأعمدة ودعم تحويل status أو isActive إلى Switch تلقائياً
     columns.forEach((col) => {
       const isStatusField = col.accessorKey === "status" || col.accessorKey === "isActive";
-      
+
       if (isStatusField && editApiUrl) {
         baseColumns.push({
           ...col,
           cell: ({ row }) => {
             const currentStatus = row.getValue(col.accessorKey);
             const isActive = currentStatus === "active" || currentStatus === "paid" || currentStatus === true || currentStatus === 1;
-            const rowId = row.original.id;
-
-            return (
+            const rowId = row.original.id || row.original.menuItemId;
+             return (
               <div className="flex items-center justify-center gap-2">
                 <Switch
                   checked={isActive}
@@ -184,7 +183,7 @@ export default function GenericDataTable({
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => setDeleteId(row.original.id)}
+                onClick={() => setDeleteId(row.original.id || row.original.menuItemId)}
                 className="h-8 w-8 text-slate-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-colors"
               >
                 <Trash2 className="h-4 w-4" />
@@ -204,7 +203,7 @@ export default function GenericDataTable({
     state: { globalFilter, pagination },
     onGlobalFilterChange: setGlobalFilter,
     onPaginationChange: setPagination,
-    autoResetPageIndex: false, 
+    autoResetPageIndex: false,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
@@ -299,14 +298,14 @@ export default function GenericDataTable({
               ) : table.getRowModel().rows?.length ? (
                 table.getRowModel().rows.map((row) => {
                   const isHighlighted = String(row.original.id) === String(highlightedId);
-                  
+
                   return (
                     <TableRow
                       key={row.id}
                       className={cn(
                         "group border-b border-slate-50 dark:border-slate-900 transition-all duration-500",
-                        isHighlighted 
-                          ? "bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-100/70 border-l-4 border-l-amber-500 font-semibold" 
+                        isHighlighted
+                          ? "bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-100/70 border-l-4 border-l-amber-500 font-semibold"
                           : "hover:bg-slate-50/40 dark:hover:bg-slate-900/30"
                       )}
                     >
@@ -362,8 +361,8 @@ export default function GenericDataTable({
               onClick={() => table.setPageIndex(i)}
               className={cn(
                 "h-9 w-9 p-0 rounded-lg border-slate-200 font-semibold text-xs transition-all",
-                table.getState().pagination.pageIndex === i 
-                  ? "bg-primary text-white shadow-sm" 
+                table.getState().pagination.pageIndex === i
+                  ? "bg-primary text-white shadow-sm"
                   : "hover:bg-slate-50"
               )}
             >
