@@ -4,13 +4,26 @@ import { Card, CardContent } from "@/components/ui/card";
 import { LayoutGrid, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useTranslation } from "@/hooks/useTranslation";
 
 export default function Home() {
   const setActiveModule = useSidebarStore((s) => s.setActiveModule);
+  const navigate = useNavigate();
   const [globalFilter, setGlobalFilter] = useState("");
   const { t } = useTranslation();
   const modules = getModules(t);
+
+  const getDefaultItemUrl = (module) => {
+    const firstItem = module.items?.[0];
+    if (!firstItem) return "/";
+
+    if (firstItem.subItems?.length) {
+      return firstItem.subItems[0].url;
+    }
+
+    return firstItem.url || "/";
+  };
 
   // منطق الفلترة: نبحث في اسم الموديول أو أسماء العناصر الداخلية
   const filteredModules = modules.filter((module) => {
@@ -62,7 +75,10 @@ export default function Home() {
           return (
             <Card
               key={module.key}
-              onClick={() => setActiveModule(module)}
+              onClick={() => {
+                setActiveModule(module);
+                navigate(getDefaultItemUrl(module));
+              }}
               className="group relative cursor-pointer border border-border/50 bg-card hover:border-primary/50 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 overflow-hidden"
             >
               {/* شريط علوي دقيق يظهر عند الـ hover كتوقيع بصري للكارت */}

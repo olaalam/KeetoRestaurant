@@ -60,6 +60,16 @@ const DeliveryManAdd = () => {
       type: "file", 
       required: !id // مطلوبة في الإضافة فقط
     },
+    { 
+      name: "isActive", 
+      label: t("status") || "الحالة",
+      type: "select",
+      options: [
+        { value: true, label: t("active") || "نشط" },
+        { value: false, label: t("inactive") || "غير نشط" },
+      ],
+      required: true,
+    }
   ];
 
   if (id && isFetching) return <LoadingSpinner />;

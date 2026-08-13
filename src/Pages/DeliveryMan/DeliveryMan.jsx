@@ -4,8 +4,6 @@ import GenericDataTable from "@/components/GenericDataTable";
 import AddPage from "@/components/AddPage";
 import { useGet } from "@/hooks/useGet";
 import { useTranslation } from "@/hooks/useTranslation";
-import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 
 export default function DeliveryMan() {
   // للتبديل بين صفحة الجدول وصفحة الإضافة/التعديل
@@ -16,16 +14,16 @@ export default function DeliveryMan() {
   const [highlightedId, setHighlightedId] = useState(null);
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 15 });
   
-  const { t, isRTL } = useTranslation();
+  const { t } = useTranslation();
 
-  // إعدادات الـ API بناءً على صورتك image_7bdf00.png
+  // إعدادات الـ API
   const apiUrl = "/api/restaurant/delivery-men";
   const queryKey = "delivery-men";
 
   // 1. جلب البيانات باستخدام useGet
   const { data, isLoading } = useGet(queryKey, apiUrl);
   
-  // استخراج المصفوفة من الرد (عدليها بناءً على شكل الرد الفعلي من الباك إند لديكِ)
+  // استخراج المصفوفة من الرد
   const deliveryMenList = data?.data?.data || data?.data || [];
 
   useEffect(() => {
@@ -82,10 +80,21 @@ export default function DeliveryMan() {
     {
       accessorKey: "isActive",
       header: t("status") || "الحالة",
+      // تحسين عرض الحالة بنص شارة (Badge) ملونة
+      cell: ({ row }) => {
+        const active = row.original.isActive;
+        return (
+          <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
+            active ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+          }`}>
+            {active ? (t("active") || "نشط") : (t("inactive") || "غير نشط")}
+          </span>
+        );
+      }
     }
   ];
 
-  // 3. إعداد حقول الفورم لـ AddPage بناءً على الـ JSON المرفق
+  // 3. إعداد حقول الفورم لـ AddPage
   const formFields = [
     { 
       name: "name", 
@@ -109,26 +118,31 @@ export default function DeliveryMan() {
       name: "password", 
       label: t("password") || "كلمة المرور", 
       type: "password", 
-      // جعل كلمة المرور مطلوبة في حالة الإضافة فقط، واختيارية في حالة التعديل
       required: !selectedItem 
     },
     { 
       name: "image", 
       label: t("image") || "الصورة الشخصية", 
       type: "file", 
-      // AddPage يدعم نوع file وسيحوله تلقائياً لـ Base64 
       required: !selectedItem 
     },
+    // 💡 تم إضافة مفتاح isActive هنا كقائمة اختيار (Select)
+    { 
+      name: "isActive", 
+      label: t("status") || "الحالة",
+      type: "select",
+      options: [
+        { value: true, label: t("active") || "نشط" },
+        { value: false, label: t("inactive") || "غير نشط" },
+      ],
+      required: true,
+    }
   ];
-
-
 
   // 4. عرض فورم الإضافة / التعديل
   if (view === "form") {
     return (
       <div className="space-y-4 w-full">
-
-
         <AddPage
           title={t("deliveryMan") || "عامل التوصيل"}
           apiUrl={apiUrl}
@@ -136,7 +150,6 @@ export default function DeliveryMan() {
           method={selectedItem ? "PUT" : "POST"}
           fields={formFields}
           initialData={selectedItem}
-
         />
       </div>
     );
@@ -154,17 +167,14 @@ export default function DeliveryMan() {
       highlightedId={highlightedId}
       pagination={pagination}
       setPagination={setPagination}
-      // تفعيل زر الإضافة
       onAdd={() => {
         setSelectedItem(null);
         setView("form");
       }}
-      // تفعيل زر التعديل (أيقونة القلم)
       onEdit={(row) => {
         setSelectedItem(row);
         setView("form");
       }}
-      // تمرير رابط الحذف لتفعيل أيقونة سلة المهملات
       deleteApiUrl={apiUrl}
     />
   );

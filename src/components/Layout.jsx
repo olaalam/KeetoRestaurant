@@ -181,7 +181,7 @@ export default function Layout() {
 
   const handlePopupCheck = () => {
     handlePopupClose();
-    navigate('/orders');
+    navigate(`/orders/details/${notifications[0]?.data?.orderId || ""}`);
   };
 
   return (
@@ -190,7 +190,7 @@ export default function Layout() {
         {activeModule && <AppSidebar side={isRTL ? "right" : "left"} />}
 
         {newOrderPopup.open && (
-          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/20 backdrop-blur-[2px] px-4">
+          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/20 backdrop-blur-[2px] px-4 z-[999999999]">
             <div className="w-full max-w-2xl rounded-2xl border border-yellow-200 bg-white/95 shadow-[0_20px_60px_rgba(15,23,42,0.18)] p-6 sm:p-7">
               <div className="flex items-center justify-center gap-3 mb-5 text-slate-800">
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
