@@ -73,6 +73,7 @@ export const getModules = (t, orderCounts = {}) => {
       key: "management",
       items: [
         { title: t("admins"), url: "/admins", icon: UserCog },
+        { title: t("deliveryMen"), url: "/delivery-man", icon: UserCog },
         { title: "Permissions", url: "/permissions", icon: ShieldCheck },
         { title: t("qr"), url: "/qr", icon: ShoppingBag },
         { title: t("policy"), url: "/policy", icon: ShoppingBag },

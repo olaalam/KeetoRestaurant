@@ -81,6 +81,8 @@ import FinancialAccount from "./Pages/FinancialAccounts/FinancialAccount";
 import FinancialAccountAdd from "./Pages/FinancialAccounts/FinancialAccountAdd";
 import Points from "./Pages/Points/Points";
 import PointsAdd from "./Pages/Points/PointsAdd";
+import DeliveryMan from "./Pages/DeliveryMan/DeliveryMan";
+import DeliveryManAdd from "./Pages/DeliveryMan/DeliveryManAdd";
 const router = createBrowserRouter([
   {
     path: "/login",
@@ -552,6 +554,19 @@ const router = createBrowserRouter([
       {
         path: "points/edit/:pointId",
         element: <PointsAdd />
+      },
+      {
+        path: "delivery-man",
+        element: <DeliveryMan />
+      },
+      {
+        path: "delivery-man/add",
+        element: <DeliveryManAdd />
+      },
+      {
+        path: "delivery-man/edit/:id",
+        element: <DeliveryManAdd />
+
       },
     ],
   },
