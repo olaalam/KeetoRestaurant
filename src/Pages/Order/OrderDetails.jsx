@@ -433,9 +433,9 @@ export default function OrderDetails() {
                   </span>
                 </div>
                 <div className="flex items-center gap-2.5 text-sm">
-                  <Calendar className="w-4 h-4 text-gray-400 shrink-0" />
+                  <Clock className="w-4 h-4 text-gray-400 shrink-0" />
                   <span className="text-gray-500 font-medium">
-                    {t("orderDate") || "تاريخ الطلب"}:
+                    {t("orderTime") || "وقت الطلب"}:
                   </span>
                   <span className="font-semibold text-gray-900 dir-ltr">
                     {order.createdAt
@@ -445,10 +445,11 @@ export default function OrderDetails() {
                 </div>
 
                 <div className="flex items-center gap-2.5 text-sm">
-                  <Clock className="w-4 h-4 text-gray-400 shrink-0" />
+                                    <Calendar className="w-4 h-4 text-gray-400 shrink-0" />
                   <span className="text-gray-500 font-medium">
-                    {t("orderTime") || "وقت الطلب"}:
+                    {t("orderDate") || "تاريخ الطلب"}:
                   </span>
+
                   <span className="font-semibold text-gray-900 dir-ltr">
                     {order.createdAt
                       ? new Date(order.createdAt).toLocaleTimeString()

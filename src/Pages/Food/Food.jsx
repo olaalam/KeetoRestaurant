@@ -128,12 +128,11 @@ const getLocalizedName = (item, currentLang) => {
             }
         });
     };
-
-    const handleRemovableToggle = (ingredientId) => {
-        setSelectedIngredients(prev =>
-            prev.map(i => i.ingredientId === ingredientId ? { ...i, isRemovable: !i.isRemovable } : i)
-        );
-    };
+const handleRemovableToggle = (ingredientId, checked) => {
+    setSelectedIngredients(prev =>
+        prev.map(i => i.ingredientId === ingredientId ? { ...i, isRemovable: checked } : i)
+    );
+};
 
     const handleSaveIngredients = () => {
         assignMutation.mutate({
@@ -238,29 +237,32 @@ const getLocalizedName = (item, currentLang) => {
         );
     }
 },
-        {
-            accessorKey: 'assign_ingredients',
-            header: t('ingredients'),
-            cell: ({ row }) => (
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                        setCurrentFoodId(row.original.id);
-                        const existing = row.original.ingredients?.map(ing => ({
-                            ingredientId: ing.id,
-                            isRemovable: ing.pivot?.isRemovable ?? true
-                        })) || [];
-                        setSelectedIngredients(existing);
-                        setIngredientsDialogOpen(true);
-                    }}
-                    className="flex items-center gap-2 border-primary text-primary hover:bg-primary/5"
-                >
-                    <PlusCircle className="h-4 w-4" />
-                    {t('assign')}
-                </Button>
-            )
-        },
+{
+    accessorKey: 'assign_ingredients',
+    header: t('ingredients'),
+    cell: ({ row }) => (
+        <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+                setCurrentFoodId(row.original.id);
+                const existing = row.original.ingredients?.map(ing => ({
+                    ingredientId: ing.id,
+                    // 💡 تحويل صريح لـ Boolean وضمان جعلها true
+                    isRemovable: ing.pivot?.isRemovable !== undefined && ing.pivot?.isRemovable !== null
+                        ? Boolean(Number(ing.pivot.isRemovable))
+                        : true
+                })) || [];
+                setSelectedIngredients(existing);
+                setIngredientsDialogOpen(true);
+            }}
+            className="flex items-center gap-2 border-primary text-primary hover:bg-primary/5"
+        >
+            <PlusCircle className="h-4 w-4" />
+            {t('assign')}
+        </Button>
+    )
+},
         {
             accessorKey: 'variations',
             header: t('variations'),
@@ -425,16 +427,15 @@ const getLocalizedName = (item, currentLang) => {
                                                 {ingName}
                                             </Label>
                                         </div>
-
-                                        {isSelected && (
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-[10px] text-muted-foreground font-bold">{t('removable')}</span>
-                                                <Switch
-                                                    checked={isSelected.isRemovable}
-                                                    onCheckedChange={() => handleRemovableToggle(ing.id)}
-                                                />
-                                            </div>
-                                        )}
+{isSelected && (
+    <div className="flex items-center gap-2">
+        <span className="text-[10px] text-muted-foreground font-bold">{t('removable')}</span>
+        <Switch
+            checked={Boolean(isSelected.isRemovable)}
+            onCheckedChange={(checked) => handleRemovableToggle(ing.id, checked)}
+        />
+    </div>
+)}
                                     </div>
                                 );
                             })
