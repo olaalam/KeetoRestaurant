@@ -91,7 +91,7 @@ const DeliveryZoneAdd = () => {
                 setCustomRadiusKm(String(editData.customRadiusKm || editData.coverageAreaRadiusKm));
             }
 
-            const rawCoords = editData.customCoordinates || editData.coordinates;
+            const rawCoords = editData?.customCoordinates || editData?.coordinates;
             if (rawCoords) {
                 if (typeof rawCoords === 'string') {
                     try {
@@ -123,17 +123,17 @@ const DeliveryZoneAdd = () => {
             setDeliveryFee(zone.deliveryFee || '0.00');
             setMinOrderAmount(zone.minOrderAmount || '0.00');
             
-            if (zone.coordinates) {
-                const coords = typeof zone.coordinates === 'string' 
-                    ? JSON.parse(zone.coordinates) 
-                    : zone.coordinates;
+            if (zone?.coordinates) {
+                const coords = typeof zone?.coordinates === 'string' 
+                    ? JSON.parse(zone?.coordinates) 
+                    : zone?.coordinates;
                 setCoordinates(coords);
             } else {
                 setCoordinates([]);
             }
 
-            if (zone.coverageAreaRadiusKm) {
-                setCustomRadiusKm(String(zone.coverageAreaRadiusKm));
+            if (zone?.coverageAreaRadiusKm) {
+                setCustomRadiusKm(String(zone?.coverageAreaRadiusKm));
                 setCoverageType('RADIUS');
             }
         }

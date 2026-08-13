@@ -1,9 +1,9 @@
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Polygon, Circle, Marker, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
-// أيقونة الماركر للنقاط
+// Fix for default marker icons
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
@@ -11,28 +11,28 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 });
 
-// إعادة تحريك مركز الخريطة
+// Component to re-center the map
 const RecenterMap = ({ center }) => {
   const map = useMap();
   useEffect(() => {
-    if (center && center.lat && center.lng) {
+    if (center && center.lat !== undefined && center.lng !== undefined) {
       map.setView([center.lat, center.lng], map.getZoom());
     }
   }, [center, map]);
   return null;
 };
 
-// معالج الضغط على الخريطة حسب نوع التغطية
+// Handle map clicks to update coordinates
 const MapClickHandler = ({ coverageType, setCoordinates }) => {
   useMapEvents({
     click(e) {
       const newPoint = { lat: e.latlng.lat, lng: e.latlng.lng };
 
       if (coverageType === 'RADIUS') {
-        // 🎯 في حالة RADIUS: اختيار نقطة واحدة فقط (السنتر)
+        // In RADIUS mode: Only one center point is allowed
         setCoordinates([newPoint]);
       } else {
-        // 🎯 في حالة POLYGON: إضافة نقطة جديدة لرسم الشكل
+        // In POLYGON mode: Add points to the shape
         setCoordinates((prev) => [...prev, newPoint]);
       }
     },
@@ -46,12 +46,22 @@ export default function InteractiveZoneMap({
   setCoordinates,
   radiusKm = 5,
 }) {
-  // مركز الخريطة الافتراضي
+  const [searchLat, setSearchLat] = useState('');
+  const [searchLng, setSearchLng] = useState('');
+
   const defaultCenter = coordinates.length > 0 && coordinates[0]?.lat 
     ? { lat: Number(coordinates[0].lat), lng: Number(coordinates[0].lng) } 
     : { lat: 31.2156, lng: 29.9553 };
 
-  // إمكانية سحب أي نقطة وتحديث مكانها
+  const [mapCenter, setMapCenter] = useState(defaultCenter);
+
+  // Update map center when external coordinates change
+  useEffect(() => {
+    if (coordinates.length > 0 && coordinates[0]?.lat && coordinates[0]?.lng) {
+      setMapCenter({ lat: Number(coordinates[0].lat), lng: Number(coordinates[0].lng) });
+    }
+  }, [coordinates]);
+
   const handleMarkerDrag = (index, event) => {
     const { lat, lng } = event.target.getLatLng();
     const updated = [...coordinates];
@@ -59,74 +69,127 @@ export default function InteractiveZoneMap({
     setCoordinates(updated);
   };
 
+  // Search logic without refreshing the page
+  const handleSearch = () => {
+    const latNum = parseFloat(searchLat);
+    const lngNum = parseFloat(searchLng);
+
+    if (!isNaN(latNum) && !isNaN(lngNum)) {
+      const newPoint = { lat: latNum, lng: lngNum };
+      setMapCenter(newPoint);
+
+      if (coverageType === 'RADIUS') {
+        setCoordinates([newPoint]);
+      } else {
+        setCoordinates((prev) => [...prev, newPoint]);
+      }
+    }
+  };
+
   const polygonPositions = coordinates.map((c) => [Number(c.lat), Number(c.lng)]);
-  const parsedRadiusInMeters = (parseFloat(radiusKm) || 0) * 1000; // تحويل الكيلومتر إلى أمتار
+  const parsedRadiusInMeters = (parseFloat(radiusKm) || 0) * 1000;
 
   return (
-    <div className="relative w-full h-[450px] rounded-xl overflow-hidden border shadow-sm">
-      <MapContainer 
-        center={defaultCenter} 
-        zoom={12} 
-        className="w-full h-full"
-      >
-        <RecenterMap center={defaultCenter} />
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
+    <div className="space-y-3">
+      {/* Search Bar for Lat and Lng */}
+      <div className="flex flex-wrap items-center gap-2 p-3 bg-slate-50 rounded-xl border shadow-sm">
+        <div className="flex items-center gap-2 flex-1 min-w-[140px]">
+          <span className="text-xs font-semibold text-slate-600">LAT:</span>
+          <input
+            type="number"
+            step="any"
+            placeholder="31.2156"
+            value={searchLat}
+            onChange={(e) => setSearchLat(e.target.value)}
+            className="w-full px-3 py-1.5 text-sm bg-white border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+          />
+        </div>
+        <div className="flex items-center gap-2 flex-1 min-w-[140px]">
+          <span className="text-xs font-semibold text-slate-600">LNG:</span>
+          <input
+            type="number"
+            step="any"
+            placeholder="29.9553"
+            value={searchLng}
+            onChange={(e) => setSearchLng(e.target.value)}
+            className="w-full px-3 py-1.5 text-sm bg-white border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+          />
+        </div>
+        <button
+          type="button"
+          onClick={handleSearch}
+          className="px-4 py-1.5 text-sm font-medium text-white bg-primary hover:bg-primary/90 rounded-md transition-colors shadow-sm"
+        >
+          Search / Pin Point
+        </button>
+      </div>
 
-        <MapClickHandler 
-          coverageType={coverageType} 
-          setCoordinates={setCoordinates} 
-        />
+      {/* Map Display */}
+      <div className="relative w-full h-[450px] rounded-xl overflow-hidden border shadow-sm">
+        <MapContainer 
+          center={mapCenter} 
+          zoom={12} 
+          className="w-full h-full"
+        >
+          <RecenterMap center={mapCenter} />
+          <TileLayer
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          />
 
-        {/* 🟡 1. حالة الـ RADIUS: رسم دايرة تلقائية حول نقطة واحدة فقط */}
-        {coverageType === 'RADIUS' && coordinates.length > 0 && (
-          <>
-            <Circle
-              center={[Number(coordinates[0].lat), Number(coordinates[0].lng)]}
-              radius={parsedRadiusInMeters}
-              pathOptions={{
-                color: '#2563eb',
-                fillColor: '#3b82f6',
-                fillOpacity: 0.3,
-                weight: 2
-              }}
-            />
-            <Marker
-              position={[Number(coordinates[0].lat), Number(coordinates[0].lng)]}
-              draggable={true}
-              eventHandlers={{ dragend: (e) => handleMarkerDrag(0, e) }}
-            />
-          </>
-        )}
+          <MapClickHandler 
+            coverageType={coverageType} 
+            setCoordinates={setCoordinates} 
+          />
 
-        {/* 🔵 2. حالة الـ POLYGON: رسم شكل متعدد النقاط يتم توصيلها معاً */}
-        {coverageType === 'POLYGON' && coordinates.length > 0 && (
-          <>
-            {coordinates.length >= 2 && (
-              <Polygon
-                positions={polygonPositions}
+          {/* RADIUS View */}
+          {coverageType === 'RADIUS' && coordinates.length > 0 && (
+            <>
+              <Circle
+                center={[Number(coordinates[0].lat), Number(coordinates[0].lng)]}
+                radius={parsedRadiusInMeters}
                 pathOptions={{
                   color: '#2563eb',
                   fillColor: '#3b82f6',
-                  fillOpacity: 0.35,
-                  weight: 2.5
+                  fillOpacity: 0.3,
+                  weight: 2
                 }}
               />
-            )}
-            
-            {coordinates.map((coord, idx) => (
               <Marker
-                key={idx}
-                position={[Number(coord.lat), Number(coord.lng)]}
+                position={[Number(coordinates[0].lat), Number(coordinates[0].lng)]}
                 draggable={true}
-                eventHandlers={{ dragend: (e) => handleMarkerDrag(idx, e) }}
+                eventHandlers={{ dragend: (e) => handleMarkerDrag(0, e) }}
               />
-            ))}
-          </>
-        )}
-      </MapContainer>
+            </>
+          )}
+
+          {/* POLYGON View */}
+          {coverageType === 'POLYGON' && coordinates.length > 0 && (
+            <>
+              {coordinates.length >= 2 && (
+                <Polygon
+                  positions={polygonPositions}
+                  pathOptions={{
+                    color: '#2563eb',
+                    fillColor: '#3b82f6',
+                    fillOpacity: 0.35,
+                    weight: 2.5
+                  }}
+                />
+              )}
+              
+              {coordinates.map((coord, idx) => (
+                <Marker
+                  key={idx}
+                  position={[Number(coord.lat), Number(coord.lng)]}
+                  draggable={true}
+                  eventHandlers={{ dragend: (e) => handleMarkerDrag(idx, e) }}
+                />
+              ))}
+            </>
+          )}
+        </MapContainer>
+      </div>
     </div>
   );
 }
