@@ -4,10 +4,12 @@ import AddPage from '@/components/AddPage';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/api/axios';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const CouponAdd = () => {
     const { id } = useParams(); // الحصول على الـ id من الـ URL في حالة التعديل
     const { state } = useLocation();
+    const { t } = useTranslation();
 
     // 1. إذا كانت البيانات موجودة في الـ state (مثلاً ضغطنا تعديل من جدول) نستخدمها فوراً
     // 2. إذا لم تكن موجودة، يمكننا عمل Query لجلب بيانات هذا المشرف تحديداً
@@ -24,17 +26,17 @@ const CouponAdd = () => {
     const initialData = state?.CouponData || CouponData;
 
     const CouponFields = [
-        { name: 'code', label: 'code', required: true },
-        { name: 'name', label: 'name', required: true },
-        { name: 'nameAr', label: 'nameAr', required: true },
-        { name: 'nameFr', label: 'nameFr', required: true },
-        { name: 'maxDiscount', label: 'maxDiscount', type: 'number', required: false },
-        { name: 'discountValue', label: 'discountValue', type: 'number', required: true },
-        { name: 'minOrderAmount', label: 'minOrderAmount', type: 'number', required: false },
-        { name: 'usageLimit', label: 'usageLimit', type: 'number', required: false },
-        { name: 'startDate', label: 'startDate', type: 'date', required: true },
-        { name: 'endDate', label: 'endDate', type: 'date', required: true },
-        { name: 'discountType', label: 'discountType', required: true, type: 'select', options: [{ value: 'percentage', label: 'percentage' }, { value: 'fixed_amount', label: 'fixed_amount' }] },
+        { name: 'code', label: t('code'), required: true },
+        { name: 'name', label: t('name'), required: true },
+        { name: 'nameAr', label: t('nameAr'), required: true },
+        { name: 'nameFr', label: t('nameFr'), required: true },
+        { name: 'maxDiscount', label: t('maxDiscount') || 'Max Discount', type: 'number', required: false },
+        { name: 'discountValue', label: t('discountValue'), type: 'number', required: true },
+        { name: 'minOrderAmount', label: t('minOrderAmount') || 'Min Order Amount', type: 'number', required: false },
+        { name: 'usageLimit', label: t('usageLimit') || 'Usage Limit', type: 'number', required: false },
+        { name: 'startDate', label: t('startDate'), type: 'date', required: true },
+        { name: 'endDate', label: t('endDate'), type: 'date', required: true },
+        { name: 'discountType', label: t('discountType'), required: true, type: 'select', options: [{ value: 'percentage', label: t('percentage') }, { value: 'fixed_amount', label: t('fixedAmount') }] },
 
     ];
 

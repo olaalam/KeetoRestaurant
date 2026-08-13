@@ -4,10 +4,12 @@ import AddPage from '@/components/AddPage';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/api/axios';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const PaymentMethodAdd = () => {
     const { id } = useParams(); // الحصول على الـ id من الـ URL في حالة التعديل
     const { state } = useLocation();
+    const { t } = useTranslation();
 
     // 1. إذا كانت البيانات موجودة في الـ state (مثلاً ضغطنا تعديل من جدول) نستخدمها فوراً
     // 2. إذا لم تكن موجودة، يمكننا عمل Query لجلب بيانات هذا المشرف تحديداً
@@ -24,14 +26,14 @@ const PaymentMethodAdd = () => {
     const initialData = state?.paymentMethodData || paymentMethodData;
 
     const paymentMethodFields = [
-        { name: 'name', label: 'name', required: true },
-        { name: 'nameAr', label: 'nameAr', required: true },
-        { name: 'nameFr', label: 'nameFr', required: true },
-        { name: 'Image', label: 'image', type: 'file', required: true },
-        { name: 'description', label: 'description', required: true },
-        { name: 'descriptionAr', label: 'descriptionAr', required: true },
-        { name: 'descriptionFr', label: 'descriptionFr', required: true },
-        { name: 'type', label: 'type', required: true, type: 'select', options: [{ value: 'manual', label: 'manual' }, { value: 'automatic', label: 'automatic' }] },
+        { name: 'name', label: t('name'), required: true },
+        { name: 'nameAr', label: t('nameAr'), required: true },
+        { name: 'nameFr', label: t('nameFr'), required: true },
+        { name: 'Image', label: t('image'), type: 'file', required: true },
+        { name: 'description', label: t('description'), required: true },
+        { name: 'descriptionAr', label: t('descriptionAr'), required: true },
+        { name: 'descriptionFr', label: t('descriptionFr'), required: true },
+        { name: 'type', label: t('type'), required: true, type: 'select', options: [{ value: 'manual', label: t('manual') }, { value: 'automatic', label: t('automatic') }] },
 
     ];
 

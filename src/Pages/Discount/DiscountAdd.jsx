@@ -34,9 +34,9 @@ const DiscountAdd = () => {
     const initialData = state?.DiscountData || DiscountData;
 
     const DiscountFields = [
-        { name: 'name', label: 'Name', required: true },
-        { name: 'nameAr', label: 'Name (Arabic)', required: true },
-        { name: 'nameFr', label: 'Name (French)', required: true },
+        { name: 'name', label: t('name'), required: true },
+        { name: 'nameAr', label: t('nameAr'), required: true },
+        { name: 'nameFr', label: t('nameFr'), required: true },
         { name: 'logo', label: t('logo'), type: 'file', required: false },
         {
             name: 'foodIds',
@@ -48,20 +48,20 @@ const DiscountAdd = () => {
                 label: f.name
             }))
         },
-        { name: 'maxDiscount', label: 'Max Discount', type: 'number', required: false },
-        { name: 'discountValue', label: 'Discount Value', type: 'number', required: true },
-        { name: 'minOrderAmount', label: 'Min Order Amount', type: 'number', required: false },
-        { name: 'usageLimit', label: 'Usage Limit', type: 'number', required: false },
-        { name: 'startDate', label: 'Start Date', type: 'date', required: true },
-        { name: 'endDate', label: 'End Date', type: 'date', required: true },
+        { name: 'maxDiscount', label: t('maxDiscount'), type: 'number', required: false },
+        { name: 'discountValue', label: t('discountValue'), type: 'number', required: true },
+        { name: 'minOrderAmount', label: t('minOrderAmount'), type: 'number', required: false },
+        { name: 'usageLimit', label: t('usageLimit'), type: 'number', required: false },
+        { name: 'startDate', label: t('startDate'), type: 'date', required: true },
+        { name: 'endDate', label: t('endDate'), type: 'date', required: true },
         { 
             name: 'discountType', 
-            label: 'Discount Type', 
+            label: t('discountType'), 
             required: true, 
             type: 'select', 
             options: [
-                { value: 'percentage', label: 'Percentage' }, 
-                { value: 'fixed_amount', label: 'Fixed Amount' }
+                { value: 'percentage', label: t('percentage') }, 
+                { value: 'fixed_amount', label: t('fixedAmount') }
             ] 
         },
     ];

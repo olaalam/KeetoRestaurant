@@ -6,10 +6,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import login from "../assets/login.png";
 import { useLogin } from "@/hooks/useLogin";
+import { useTranslation } from "@/hooks/useTranslation";
 
 const LoginPage = () => {
     const [showPassword, setShowPassword] = useState(false);
     const navigate = useNavigate();
+    const { t, isRTL } = useTranslation();
 
     // استخدام الهوك الـ Global اللي عملناه
     const { mutate, isPending } = useLogin();
@@ -39,9 +41,9 @@ const LoginPage = () => {
                 {/* الـ Overlay البرتقالي */}
                 <div className="absolute inset-0 flex items-center bg-primary/50 p-12 lg:p-20">
                     <div className="max-w-md text-white">
-                        <h1 className="text-6xl font-black tracking-tighter">WELCOME TO KEETO</h1>
+                        <h1 className="text-6xl font-black tracking-tighter">{t("welcomeKeeto")}</h1>
                         <p className="mt-4 text-xl font-medium opacity-90">
-                            Manage your app & website easily
+                            {t("manageYourApp")}
                         </p>
                     </div>
                 </div>
@@ -55,19 +57,19 @@ const LoginPage = () => {
                     <div className="text-center">
                         <h2 className="text-5xl font-black text-primary tracking-tight">Keeto</h2>
                         <p className="mt-6 text-2xl font-bold text-gray-800">
-                            Signin To Your Restaurant Panel
+                            {t("signinToPanel")}
                         </p>
                     </div>
 
                     <form onSubmit={handleLogin} className="space-y-6">
                         {/* Email */}
                         <div className="space-y-2">
-                            <Label htmlFor="email" className="text-gray-600 font-semibold">Your Email</Label>
+                            <Label htmlFor="email" className="text-gray-600 font-semibold">{t("yourEmail")}</Label>
                             <Input
                                 id="email"
                                 name="email"
                                 type="email"
-                                placeholder="Enter your email"
+                                placeholder={t("enterEmail")}
                                 required
                                 className="h-14 border-gray-200 focus-visible:ring-primary"
                             />
@@ -75,7 +77,7 @@ const LoginPage = () => {
 
                         {/* Password */}
                         <div className="space-y-2">
-                            <Label htmlFor="password" title="Password" className="text-gray-600 font-semibold">Password</Label>
+                            <Label htmlFor="password" title={t("password")} className="text-gray-600 font-semibold">{t("password")}</Label>
                             <div className="relative">
                                 <Input
                                     id="password"
@@ -100,7 +102,7 @@ const LoginPage = () => {
                             disabled={isPending}
                             className="h-14 w-full bg-primary text-lg font-bold text-white hover:bg-primary/80 shadow-lg shadow-orange-200 transition-all active:scale-[0.98]"
                         >
-                            {isPending ? "Signing in..." : "Sign in"}
+                            {isPending ? t("signingIn") : t("signIn")}
                         </Button>
                     </form>
                 </div>

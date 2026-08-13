@@ -4,10 +4,12 @@ import AddPage from '@/components/AddPage';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/api/axios';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const CuisineAdd = () => {
     const { id } = useParams(); // الحصول على الـ id من الـ URL في حالة التعديل
     const { state } = useLocation();
+    const { t } = useTranslation();
 
     // 1. إذا كانت البيانات موجودة في الـ state (مثلاً ضغطنا تعديل من جدول) نستخدمها فوراً
     // 2. إذا لم تكن موجودة، يمكننا عمل Query لجلب بيانات هذا المشرف تحديداً
@@ -24,16 +26,16 @@ const CuisineAdd = () => {
     const initialData = state?.cuisineData || cuisineData;
 
     const cuisineFields = [
-        { name: 'name', label: 'name', required: true },
-        { name: 'nameAr', label: 'nameAr', required: true },
-        { name: 'nameFr', label: 'nameFr', required: true },
-        { name: 'Image', label: 'image', type: 'file', required: true },
-        { name: 'description', label: 'description', required: true },
-        { name: 'descriptionAr', label: 'descriptionAr', required: true },
-        { name: 'descriptionFr', label: 'descriptionFr', required: true },
-        { name: 'meta_description', label: 'meta_description', required: true },
-        { name: 'meta_image', label: 'meta_image', type: 'file', required: true },
-        { name: 'status', label: 'status', required: true, type: 'switch' },
+        { name: 'name', label: t('name'), required: true },
+        { name: 'nameAr', label: t('nameAr'), required: true },
+        { name: 'nameFr', label: t('nameFr'), required: true },
+        { name: 'Image', label: t('image'), type: 'file', required: true },
+        { name: 'description', label: t('description'), required: true },
+        { name: 'descriptionAr', label: t('descriptionAr'), required: true },
+        { name: 'descriptionFr', label: t('descriptionFr'), required: true },
+        { name: 'meta_description', label: t('metaDescription'), required: true },
+        { name: 'meta_image', label: t('metaImage'), type: 'file', required: true },
+        { name: 'status', label: t('status'), required: true, type: 'switch' },
     ];
 
     if (id && isFetching) return <LoadingSpinner />;

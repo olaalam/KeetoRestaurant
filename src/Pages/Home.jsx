@@ -41,17 +41,17 @@ export default function Home() {
       <div className="space-y-5">
         <div>
           <h1 className="text-xl font-bold text-foreground tracking-tight">
-            Modules
+            {t("modules") || "Modules"}
           </h1>
           <p className="text-sm text-muted-foreground mt-0.5">
-            Everything you can manage, in one place
+            {t("everythingInOnePlace") || "Everything you can manage, in one place"}
           </p>
         </div>
 
         <div className="relative w-full max-w-md">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search modules..."
+            placeholder={t("searchModules")}
             value={globalFilter}
             onChange={(e) => setGlobalFilter(e.target.value)}
             className="pl-10 h-11 rounded-xl border-border/60 bg-card shadow-sm focus-visible:ring-primary"

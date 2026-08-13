@@ -4,10 +4,12 @@ import AddPage from '@/components/AddPage';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/api/axios';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const CategoryAdd = () => {
     const { id } = useParams(); // الحصول على الـ id من الـ URL في حالة التعديل
     const { state } = useLocation();
+    const { t } = useTranslation();
 
     // 1. إذا كانت البيانات موجودة في الـ state (مثلاً ضغطنا تعديل من جدول) نستخدمها فوراً
     // 2. إذا لم تكن موجودة، يمكننا عمل Query لجلب بيانات هذا المشرف تحديداً
@@ -24,25 +26,25 @@ const CategoryAdd = () => {
     const initialData = state?.categoryData || categoryData;
 
     const categoryFields = [
-        { name: 'name', label: 'name', required: true },
-        { name: 'nameAr', label: 'nameAr', required: true },
-        { name: 'nameFr', label: 'nameFr', required: true },
-        { name: 'Image', label: 'image', type: 'file', required: true },
-        { name: 'title', label: 'title', required: true },
+        { name: 'name', label: t('name'), required: true },
+        { name: 'nameAr', label: t('nameAr'), required: true },
+        { name: 'nameFr', label: t('nameFr'), required: true },
+        { name: 'Image', label: t('image'), type: 'file', required: true },
+        { name: 'title', label: t('title'), required: true },
         {
             name: 'priority',
-            label: 'priority',
+            label: t('priority'),
             required: true,
             type: 'select',
             options: [
-                { value: 'low', label: 'low' },
-                { value: 'medium', label: 'medium' },
-                { value: 'high', label: 'high' },
+                { value: 'low', label: t('low') },
+                { value: 'medium', label: t('medium') },
+                { value: 'high', label: t('high') },
             ]
         },
-        { name: 'meta_title', label: 'meta_title', required: true },
-        { name: 'meta_image', label: 'meta_image', type: 'file', required: true },
-        { name: 'status', label: 'status', required: true, type: 'switch' },
+        { name: 'meta_title', label: t('metaTitle'), required: true },
+        { name: 'meta_image', label: t('metaImage'), type: 'file', required: true },
+        { name: 'status', label: t('status'), required: true, type: 'switch' },
     ];
 
     if (id && isFetching) return <LoadingSpinner />;

@@ -77,11 +77,11 @@ export default function GenericDataTable({
       if (queryKey) {
         queryClient.invalidateQueries([queryKey]);
       }
-      toast.success(t("updateStatusSuccessfully") || "Updated successfully");
+      toast.success(t("updateStatusSuccessfully"));
     },
     onError: (error) => {
       console.error("Failed to update status:", error);
-      toast.error(t("updateStatusError") || "Failed to update status");
+      toast.error(t("updateStatusError"));
     }
   });
 

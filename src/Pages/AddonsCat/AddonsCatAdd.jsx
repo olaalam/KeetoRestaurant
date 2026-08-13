@@ -4,11 +4,13 @@ import { useQuery } from '@tanstack/react-query';
 import api from '@/api/axios';
 import AddPage from '@/components/AddPage';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const AddonsCatAdd = () => {
     const { id } = useParams();
     const { state } = useLocation();
     const navigate = useNavigate();
+    const { t } = useTranslation();
     // 3. Fetch addon data if editing
     const { data: addonsCategoriesData, isLoading: isFetching } = useQuery({
         queryKey: ['addonsCategories', id],
@@ -22,9 +24,9 @@ const AddonsCatAdd = () => {
     const initialData = state?.addonsCategoriesData || addonsCategoriesData;
 
     const fields = [
-        { name: 'name', label: 'Addon Category Name', required: true },
-        { name: 'nameAr', label: 'Addon Category Name (Arabic)', required: true },
-        { name: 'nameFr', label: 'Addon Category Name (Franko)', required: true },
+        { name: 'name', label: t('addonCategoryName'), required: true },
+        { name: 'nameAr', label: t('addonCategoryNameAr'), required: true },
+        { name: 'nameFr', label: t('addonCategoryNameFr'), required: true },
 
     ];
 

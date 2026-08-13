@@ -4,11 +4,12 @@ import AddPage from '@/components/AddPage';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/api/axios';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const CityAdd = () => {
     const { id } = useParams(); // الحصول على الـ id من الـ URL في حالة التعديل
     const { state } = useLocation();
-
+    const { t } = useTranslation();
     const { data: countries = [], isLoading } = useQuery({
         queryKey: ['countries'],
         queryFn: async () => {
@@ -44,12 +45,12 @@ const CityAdd = () => {
     console.log("Initial Data sent to AddPage:", initialData);
 
     const cityFields = [
-        { name: 'name', label: 'name', required: true },
-        { name: 'nameAr', label: 'nameAr', required: true },
-        { name: 'nameFr', label: 'nameFr', required: true },
+        { name: 'name', label: t('name'), required: true },
+        { name: 'nameAr', label: t('nameAr'), required: true },
+        { name: 'nameFr', label: t('nameFr'), required: true },
         {
             name: 'countryId',
-            label: 'Country',
+            label: t('countries'),
             required: true,
             type: 'select',
             // التأكد من أن الـ options بتستخدم الـ id والـ name الصح

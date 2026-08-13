@@ -85,6 +85,13 @@ const translations = {
     deletingBtn: "Deleting...",
     confirmDelete: "Confirm Delete",
 
+    //notifications
+    newOrderAlert: "New Order Alert",
+    okLetMeCheck: "Ok, let me check",
+    close:"Close",
+
+
+
     // Admin / shared field labels
     adminRoleType: "Admin Role Type",
     branchPermission: "Branch Permission",
@@ -352,13 +359,13 @@ const translations = {
     both: "Both",
 
     //expense-categories
-    Name:"Name",
-    ArabicName:"Arabic Name",
+    Name: "Name",
+    ArabicName: "Arabic Name",
 
 
     //expense
-    FinancialAccount:"Financial Account Name",
-   
+    FinancialAccount: "Financial Account Name",
+
     // setting add
     "restaurantSettings": "Restaurant Settings",
     "foodManagement": "Food Management",
@@ -612,22 +619,104 @@ const translations = {
     "pending": "Pending",
     //QR
     "qrCode": "QR Code",
-  "qrCodeImage": "QR Code Image",
-  "restaurantUrl": "Restaurant URL",
-  "noImage": "No Image",
-  //image 
-  "restaurantImages": "Restaurant Gallery Images",
-  "image": "Image",
-  "imageFile": "Upload Image",
-  "priority": "Display Priority",
-  "noImage": "No Image",
-  //social 
-  "socialMedia": "Social Media",
-  "addSocialMedia": "Add Social Media Link",
-  "editSocialMedia": "Edit Social Media Link",
-  "link": "Profile / Page Link",
-  "icon": "Platform Icon",
-  "noImage": "No Image",
+    "qrCodeImage": "QR Code Image",
+    "restaurantUrl": "Restaurant URL",
+    "noImage": "No Image",
+    //image 
+    "restaurantImages": "Restaurant Gallery Images",
+    "image": "Image",
+    "imageFile": "Upload Image",
+    "priority": "Display Priority",
+    "noImage": "No Image",
+    //social 
+    "socialMedia": "Social Media",
+    "addSocialMedia": "Add Social Media Link",
+    "editSocialMedia": "Edit Social Media Link",
+    "link": "Profile / Page Link",
+    "icon": "Platform Icon",
+    "noImage": "No Image",
+
+    // Login Page
+    "welcomeKeeto": "WELCOME TO KEETO",
+    "manageYourApp": "Manage your app & website easily",
+    "signinToPanel": "Signin To Your Restaurant Panel",
+    "yourEmail": "Your Email",
+    "enterEmail": "Enter your email",
+    "password": "Password",
+    "signingIn": "Signing in...",
+    "signIn": "Sign in",
+    "updatedSuccessfully": "Updated successfully",
+    "failedToUpdateStatusMsg": "Failed to update status",
+
+    // Form Labels & Placeholders
+    "addonCategoryName": "Addon Category Name",
+    "addonCategoryNameAr": "Addon Category Name (Arabic)",
+    "addonCategoryNameFr": "Addon Category Name (French)",
+    "name": "Name",
+    "nameAr": "Name (Arabic)",
+    "nameFr": "Name (French)",
+    "code": "Code",
+    "amount": "Amount",
+    "zoneName": "Zone Name",
+    "exampleCheeseBurger": "e.g. Cheese Burger",
+    "exampleArabic": "مثال: برجر بالجبنة",
+    "exampleFrench": "e.g. Burger au fromage",
+    "briefDescription": "Brief description...",
+    "arabicDescription": "وصف قصير...",
+    "frenchDescription": "Description brève...",
+    "searchModules": "Search modules...",
+    "modules": "Modules",
+    "everythingInOnePlace": "Everything you can manage, in one place",
+
+    // Password Management
+    "changePassword": "Change Password",
+    "oldPassword": "Current Password",
+    "newPassword": "New Password",
+    "confirmPassword": "Confirm New Password",
+    "passwordsDoNotMatch": "Passwords do not match",
+    "passwordTooShort": "Must be at least 6 characters",
+    "updatePasswordBtn": "Update Password",
+    "passwordChangedSuccessfully": "Password changed successfully",
+    "failedToChangePassword": "Failed to change password",
+    "profileUpdatedSuccessfully": "Profile updated successfully",
+    "failedToUpdateProfile": "Failed to update profile",
+
+    // Success & Error Messages
+    "updateStatusSuccessfully": "Status updated successfully",
+    "updateStatusError": "Failed to update status",
+    "withdrawalRequestSuccess": "Withdrawal request sent successfully",
+    "orderStatusUpdatedSuccessfully": "Order status updated successfully",
+    "statusUpdatedSuccess": "Status updated successfully",
+    "statusUpdateError": "Failed to update status",
+
+    // Additional Form Fields
+    "maxDiscount": "Max Discount",
+    "minOrderAmount": "Min Order Amount",
+    "usageLimit": "Usage Limit",
+    "startDate": "Start Date",
+    "endDate": "End Date",
+    "percentage": "Percentage",
+    "fixedAmount": "Fixed Amount",
+    "displayName": "Display Name",
+    "image": "Image",
+    "title": "Title",
+    "priority": "Priority",
+    "metaTitle": "Meta Title",
+    "metaImage": "Meta Image",
+    "metaDescription": "Meta Description",
+    "description": "Description",
+    "descriptionAr": "Description (Arabic)",
+    "descriptionFr": "Description (French)",
+    "type": "Type",
+    "manual": "Manual",
+    "automatic": "Automatic",
+    "sunday": "Sunday",
+    "monday": "Monday",
+    "tuesday": "Tuesday",
+    "wednesday": "Wednesday",
+    "thursday": "Thursday",
+    "friday": "Friday",
+    "saturday": "Saturday",
 
 
 
@@ -965,7 +1054,7 @@ const translations = {
     ArabicName: "الأسم بالعربية",
 
 
-    FinancialAccount:"الحساب المالي",
+    FinancialAccount: "الحساب المالي",
     // setting 
     "restaurantSettings": "إعدادات المطعم",
     "foodManagement": "إدارة الطعام",
@@ -1025,6 +1114,12 @@ const translations = {
     "visa": "فيزا",
     "mastercard": "ماستركارد",
     "wallet": "محفظة إلكترونية",
+    //notifications
+
+    newOrderAlert: "تنبيه طلب جديد",
+    okLetMeCheck: "حسناً، سأتحقق الآن",
+    close: "اغلاق",
+
     // branchemenu
     "branchMenu": "قائمة طعام الفرع",
     "branch": "الفرع",
@@ -1244,22 +1339,104 @@ const translations = {
     "pending": "قيد الانتظار",
     //QR
     "qrCode": "رمز الاستجابة السريعة (QR Code)",
-  "qrCodeImage": "صورة الـ QR Code",
-  "restaurantUrl": "رابط موقع المطعم",
-  "noImage": "لا توجد صورة",
-  // image 
-  "restaurantImages": "صور معرض المطعم",
-  "image": "الصورة",
-  "imageFile": "رفع صورة",
-  "priority": "أولوية الترتيب",
-  "noImage": "لا توجد صورة",
-  //social
-  "socialMedia": "حسابات التواصل الاجتماعي",
-  "addSocialMedia": "إضافة حساب تواصل اجتماعي",
-  "editSocialMedia": "تعديل حساب تواصل اجتماعي",
-  "link": "رابط الحساب / الصفحة",
-  "icon": "أيقونة المنصة",
-  "noImage": "لا توجد صورة",
+    "qrCodeImage": "صورة الـ QR Code",
+    "restaurantUrl": "رابط موقع المطعم",
+    "noImage": "لا توجد صورة",
+    // image 
+    "restaurantImages": "صور معرض المطعم",
+    "image": "الصورة",
+    "imageFile": "رفع صورة",
+    "priority": "أولوية الترتيب",
+    "noImage": "لا توجد صورة",
+    //social
+    "socialMedia": "حسابات التواصل الاجتماعي",
+    "addSocialMedia": "إضافة حساب تواصل اجتماعي",
+    "editSocialMedia": "تعديل حساب تواصل اجتماعي",
+    "link": "رابط الحساب / الصفحة",
+    "icon": "أيقونة المنصة",
+    "noImage": "لا توجد صورة",
+
+    // Login Page
+    "welcomeKeeto": "أهلاً بك في كيتو",
+    "manageYourApp": "إدارة تطبيقك وموقعك بسهولة",
+    "signinToPanel": "تسجيل الدخول إلى لوحة تحكم مطعمك",
+    "yourEmail": "بريدك الإلكتروني",
+    "enterEmail": "أدخل بريدك الإلكتروني",
+    "password": "كلمة المرور",
+    "signingIn": "جارٍ تسجيل الدخول...",
+    "signIn": "تسجيل الدخول",
+    "updatedSuccessfully": "تم التحديث بنجاح",
+    "failedToUpdateStatusMsg": "فشل تحديث الحالة",
+
+    // Form Labels & Placeholders
+    "addonCategoryName": "اسم فئة الإضافات",
+    "addonCategoryNameAr": "اسم فئة الإضافات (عربي)",
+    "addonCategoryNameFr": "اسم فئة الإضافات (فرانكو)",
+    "name": "الاسم",
+    "nameAr": "الاسم (عربي)",
+    "nameFr": "الاسم (فرانكو)",
+    "code": "الكود",
+    "amount": "المبلغ",
+    "zoneName": "اسم المنطقة",
+    "exampleCheeseBurger": "مثال: برجر بالجبنة",
+    "exampleArabic": "مثال: برجر بالجبنة",
+    "exampleFrench": "مثال: برجر بالجبنة",
+    "briefDescription": "وصف قصير...",
+    "arabicDescription": "وصف قصير...",
+    "frenchDescription": "وصف قصير...",
+    "searchModules": "البحث في الأقسام...",
+    "modules": "الأقسام",
+    "everythingInOnePlace": "كل ما يمكنك إدارته في مكان واحد",
+
+    // Password Management
+    "changePassword": "تغيير كلمة المرور",
+    "oldPassword": "كلمة المرور الحالية",
+    "newPassword": "كلمة المرور الجديدة",
+    "confirmPassword": "تأكيد كلمة المرور الجديدة",
+    "passwordsDoNotMatch": "كلمات المرور غير متطابقة",
+    "passwordTooShort": "يجب ألا تقل عن 6 أحرف",
+    "updatePasswordBtn": "تحديث كلمة المرور",
+    "passwordChangedSuccessfully": "تم تغيير كلمة المرور بنجاح",
+    "failedToChangePassword": "فشل تغيير كلمة المرور",
+    "profileUpdatedSuccessfully": "تم تحديث الملف الشخصي بنجاح",
+    "failedToUpdateProfile": "فشل تحديث البيانات",
+
+    // Success & Error Messages
+    "updateStatusSuccessfully": "تم تحديث الحالة بنجاح",
+    "updateStatusError": "فشل تحديث الحالة",
+    "withdrawalRequestSuccess": "تم إرسال طلب السحب بنجاح",
+    "orderStatusUpdatedSuccessfully": "تم تحديث حالة الطلب بنجاح",
+    "statusUpdatedSuccess": "تم تحديث الحالة بنجاح",
+    "statusUpdateError": "فشل تحديث الحالة",
+
+    // Additional Form Fields
+    "maxDiscount": "أقصى خصم",
+    "minOrderAmount": "الحد الأدنى لقيمة الطلب",
+    "usageLimit": "حد الاستخدام",
+    "startDate": "تاريخ البدء",
+    "endDate": "تاريخ الانتهاء",
+    "percentage": "نسبة مئوية",
+    "fixedAmount": "مبلغ ثابت",
+    "displayName": "اسم العرض",
+    "image": "صورة",
+    "title": "عنوان",
+    "priority": "الأولوية",
+    "metaTitle": "العنوان التعريفي",
+    "metaImage": "الصورة التعريفية",
+    "metaDescription": "الوصف التعريفي",
+    "description": "الوصف",
+    "descriptionAr": "الوصف (عربي)",
+    "descriptionFr": "الوصف (فرانكو)",
+    "type": "النوع",
+    "manual": "يدوي",
+    "automatic": "تلقائي",
+    "sunday": "الأحد",
+    "monday": "الاثنين",
+    "tuesday": "الثلاثاء",
+    "wednesday": "الأربعاء",
+    "thursday": "الخميس",
+    "friday": "الجمعة",
+    "saturday": "السبت",
 
 
 

@@ -6,11 +6,13 @@ import AddPage from '@/components/AddPage';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import MapComponent from '@/components/MapComponent';
 import { MapPin } from "lucide-react";
+import { useTranslation } from '@/hooks/useTranslation';
 
 const ZoneAdd = () => {
     const { id } = useParams();
     const { state } = useLocation();
     const navigate = useNavigate();
+    const { t } = useTranslation();
     const isEdit = !!id;
     const [location, setLocation] = useState({ lat: 30.0444, lng: 31.2357 });
 
@@ -64,13 +66,13 @@ const ZoneAdd = () => {
     if (id && (isFetching || isLoadingCities)) return <LoadingSpinner />;
 
     const fields = [
-        { name: 'name', label: 'Zone Name', required: true },
-        { name: 'nameAr', label: 'nameAr', required: true },
-        { name: 'nameFr', label: 'nameFr', required: true },
-        { name: 'displayName', label: 'Display Name', required: true },
+        { name: 'name', label: t('zoneName'), required: true },
+        { name: 'nameAr', label: t('nameAr'), required: true },
+        { name: 'nameFr', label: t('nameFr'), required: true },
+        { name: 'displayName', label: t('name'), required: true },
         {
             name: 'cityId',
-            label: 'City',
+            label: t('cities'),
             type: 'select',
             required: true,
             options: cities?.map(c => ({ label: c.name, value: c.id }))
