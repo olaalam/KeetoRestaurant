@@ -37,7 +37,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"; // استيراد الـ Dialog هنا
+} from "@/components/ui/dialog";
 import api from "@/api/axios";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { useTranslation } from "@/hooks/useTranslation";
@@ -93,6 +93,10 @@ export default function OrderDetails() {
   const [pdfUrl, setPdfUrl] = useState("");
   const [isInvoiceLoading, setIsInvoiceLoading] = useState(false);
 
+  // حالة Dialog وزر تعيين مندوب التوصيل
+  const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
+  const [selectedDeliveryMan, setSelectedDeliveryMan] = useState("");
+
   useEffect(() => {
     return () => {
       if (pdfUrl) {
@@ -123,6 +127,16 @@ export default function OrderDetails() {
       return res.data?.data?.data || res.data?.data;
     },
     enabled: !!orderId,
+  });
+
+  // جلب قائمة المندوبين لخيارات التعيين
+  const { data: deliveryMen = [], isLoading: isDeliveryLoading } = useQuery({
+    queryKey: ["deliveryMenSelect"],
+    queryFn: async () => {
+      const res = await api.get("/api/restaurant/order/select");
+      return res.data?.data?.data || res.data?.data || [];
+    },
+    enabled: isAssignDialogOpen || order?.status === "preparing",
   });
 
   // جلب قائمة الطلبات لتحديد الطلب السابق والتالي
@@ -166,12 +180,44 @@ export default function OrderDetails() {
     },
   });
 
+  // ميوتيشن تعيين مندوب التوصيل
+  const assignDeliveryMutation = useMutation({
+    mutationFn: async (deliveryManId) => {
+      const res = await api.put(`/api/restaurant/order/${orderId}/assign-delivery`, {
+        deliveryManId,
+      });
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(["order", orderId]);
+      queryClient.invalidateQueries(["orders"]);
+      toast.success(t("deliveryManAssignedSuccess") || "تم تعيين مندوب التوصيل بنجاح");
+      setIsAssignDialogOpen(false);
+      setSelectedDeliveryMan("");
+    },
+    onError: (error) => {
+      toast.error(
+        error?.response?.data?.message ||
+        t("assignDeliveryError") ||
+        "فشل في تعيين مندوب التوصيل",
+      );
+    },
+  });
+
   const handleStatusChange = (newStatus) => {
     if (newStatus === "cancelled" || newStatus === "refund") {
       setDialogConfig({ open: true, type: newStatus });
     } else {
       updateStatusMutation.mutate({ status: newStatus });
     }
+  };
+
+  const handleAssignDelivery = () => {
+    if (!selectedDeliveryMan) {
+      toast.error(t("selectDeliveryManFirst") || "يرجى اختيار مندوب توصيل أولاً");
+      return;
+    }
+    assignDeliveryMutation.mutate(selectedDeliveryMan);
   };
 
   const handleOpenInvoice = async () => {
@@ -202,16 +248,6 @@ export default function OrderDetails() {
       setIsInvoiceOpen(false);
     } finally {
       setIsInvoiceLoading(false);
-    }
-  };
-
-  const handlePrintInvoice = () => {
-    if (!pdfUrl) return;
-
-    const printWindow = window.open(pdfUrl, "_blank");
-    if (printWindow) {
-      printWindow.focus();
-      setTimeout(() => printWindow.print(), 500);
     }
   };
 
@@ -247,7 +283,6 @@ export default function OrderDetails() {
       <div className="w-full flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white p-4 sm:p-5 rounded-2xl border shadow-sm">
 
         {/* الجزء الأيسر: زر العودة، رقم الطلب، الشارات المعبرة */}
-        {/* كل العناصر هنا موحدة بارتفاع h-11 عشان تبقى متناسبة مع بعض */}
         <div className="flex flex-1 items-center gap-3 flex-wrap w-full">
           <Button
             size="icon"
@@ -256,26 +291,19 @@ export default function OrderDetails() {
           >
             <ArrowLeft className="w-6 h-6 rtl:rotate-180" />
           </Button>
-          {/* رقم الطلب اليومي بشكل واضح وموحد الارتفاع مع باقي العناصر */}
+
           <div className="flex items-center justify-center gap-1.5 min-w-[3rem] bg-gray-100/80 px-3 py-1.5 rounded-xl border border-gray-200/80 shrink-0">
-
             <span className="text-xs font-bold text-gray-500 uppercase">
-
               Order #
-
             </span>
-
             <span className="text-xl font-black text-gray-900 tracking-tight">
-
               {order.dailyOrderNumber}
-
             </span>
-
           </div>
 
           <Separator orientation="vertical" className="h-8 hidden sm:block bg-gray-200" />
 
-          {/* مصفوفة الشارات (Badges) - كلها بنفس الارتفاع h-11 وحجم خط موحد text-sm */}
+          {/* مصفوفة الشارات */}
           <div className="flex items-center gap-2.5 flex-wrap">
             {/* 1. حالة الطلب */}
             <Badge
@@ -285,7 +313,7 @@ export default function OrderDetails() {
               {t(currentStatusStyle.labelKey)}
             </Badge>
 
-            {/* 2. نوع الطلب (Takeaway / Delivery / Dine-in) */}
+            {/* 2. نوع الطلب */}
             {order.orderType && (
               <Badge
                 variant="outline"
@@ -299,7 +327,8 @@ export default function OrderDetails() {
                 </span>
               </Badge>
             )}
-            {/* 4. طريقة الدفع (Cash on Delivery / Online / Card) */}
+
+            {/* 3. طريقة الدفع */}
             {(order.paymentMethodName || order.paymentMethodNameAr) && (
               <Badge
                 variant="outline"
@@ -313,7 +342,8 @@ export default function OrderDetails() {
                 </span>
               </Badge>
             )}
-            {/* 3. مصدر الطلب (Online Order / POS) */}
+
+            {/* 4. مصدر الطلب */}
             {order.orderSource && (
               <Badge
                 variant="outline"
@@ -321,21 +351,18 @@ export default function OrderDetails() {
               >
                 <Store className="w-4 h-4 text-blue-600" />
                 <span className="capitalize">
-      {document.documentElement.dir === "rtl"
-        ? (order.orderSource === "online_order" ? "طلب أونلاين" : order.orderSource?.replace(/_/g, " "))
-        : order.orderSource?.replace(/_/g, " ")}
-    </span>
+                  {document.documentElement.dir === "rtl"
+                    ? (order.orderSource === "online_order" ? "طلب أونلاين" : order.orderSource?.replace(/_/g, " "))
+                    : order.orderSource?.replace(/_/g, " ")}
+                </span>
               </Badge>
             )}
-
-
           </div>
         </div>
 
-        {/* الجزء الأيمن: أزرار التنقل بين الطلبات وزر الفاتورة */}
-        {/* نفس الارتفاع h-11 لكل الأزرار عشان تبقى متساوية مع الشارات والبوكس */}
+        {/* الجزء الأيمن: أزرار التنقل + زر الفاتورة */}
         <div className="flex items-center gap-3 w-full lg:w-auto lg:justify-end shrink-0 pt-2 lg:pt-0">
-          {/* أزرار التنقل بين الطلب السابق والتالي */}
+          {/* أزرار التنقل بين الطلبات */}
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
@@ -377,8 +404,7 @@ export default function OrderDetails() {
       {/* شبكة البيانات الأساسية */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         <div className="space-y-6 xl:col-span-2">
-
-          {/* كارت تفاصيل الطلب الأساسية (رقم الطلب - التاريخ - النوع - المصدر - الفرع - طريقة الدفع - ملاحظات) */}
+          {/* تفاصيل الطلب */}
           <Card className="rounded-2xl border shadow-sm overflow-hidden bg-white">
             <CardHeader className="border-b bg-gray-50/50 px-6 py-4">
               <CardTitle className="text-md font-bold text-gray-800 flex items-center gap-2">
@@ -388,7 +414,6 @@ export default function OrderDetails() {
             </CardHeader>
             <CardContent className="p-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
-
                 <div className="flex items-center gap-2.5 text-sm">
                   <Store className="w-4 h-4 text-gray-400 shrink-0" />
                   <span className="text-gray-500 font-medium">
@@ -444,6 +469,7 @@ export default function OrderDetails() {
             </CardContent>
           </Card>
 
+          {/* مكونات الطلب */}
           <Card className="rounded-2xl border shadow-sm overflow-hidden bg-white">
             <CardHeader className="border-b bg-gray-50/50 px-6 py-4">
               <CardTitle className="text-md font-bold text-gray-800 flex items-center gap-2">
@@ -465,7 +491,6 @@ export default function OrderDetails() {
                       <th className="px-4 py-3 text-left rtl:text-right font-semibold border-e border-gray-200/70">
                         {t("variations") || "الخيارات"}
                       </th>
-                      {/* عمود الـ Add-ons الجديد */}
                       <th className="px-4 py-3 text-left rtl:text-right font-semibold border-e border-gray-200/70">
                         {t("addOns") || "الإضافات (Add-ons)"}
                       </th>
@@ -476,7 +501,6 @@ export default function OrderDetails() {
                   </thead>
                   <tbody className="divide-y divide-gray-100">
                     {order.items?.map((item, index) => {
-                      // دعم لمسميات المصفوفتين سواء كانت addOns أو addons
                       const itemAddons = item.addOns || item.addons || [];
 
                       return (
@@ -484,42 +508,29 @@ export default function OrderDetails() {
                           key={item.id || index}
                           className="hover:bg-gray-50/50 transition-colors align-top"
                         >
-                          {/* 1. الرقم */}
                           <td className="px-4 py-4 text-gray-400 font-semibold border-e border-gray-100">
                             {index + 1}
                           </td>
-
-                          {/* 2. المنتج */}
                           <td className="px-4 py-4 border-e border-gray-100">
                             <div className="flex flex-col items-start gap-1 min-w-[120px]">
-                              {/* صورة المنتج */}
                               <img
                                 src={item.foodImage}
                                 alt={item.foodName}
                                 className="w-12 h-12 rounded-lg object-cover border bg-gray-50 shadow-sm flex-shrink-0 mb-1"
                               />
-
-                              {/* اسم المنتج */}
-                              {/* اسم المنتج */}
                               <p className="font-bold text-gray-900 text-sm">
                                 {document.documentElement.dir === "rtl" && item.foodNameAr
                                   ? item.foodNameAr
                                   : item.foodName}
                               </p>
-
-                              {/* السعر */}
                               <p className="text-xs font-bold text-red-700">
                                 Price: {parseFloat(item.basePrice || item.unitPrice || 0).toFixed(2)}
                               </p>
-
-                              {/* الكمية */}
                               <p className="text-xs font-medium text-gray-600">
                                 Qty: {item.quantity || item.qty || 1}
                               </p>
                             </div>
                           </td>
-
-                          {/* 3. الخيارات (Variations) */}
                           <td className="px-4 py-4 border-e border-gray-100">
                             {item.variations && item.variations.length > 0 ? (
                               <div className="space-y-1.5">
@@ -551,8 +562,6 @@ export default function OrderDetails() {
                               <span className="text-gray-300">—</span>
                             )}
                           </td>
-
-                          {/* 4. الإضافات (Add-ons) */}
                           <td className="px-4 py-4 border-e border-gray-100">
                             {itemAddons.length > 0 ? (
                               <div className="space-y-1.5">
@@ -584,8 +593,6 @@ export default function OrderDetails() {
                               <span className="text-gray-300">—</span>
                             )}
                           </td>
-
-                          {/* 5. الملاحظات */}
                           <td className="px-6 py-4 text-gray-500 text-xs max-w-[140px]">
                             {item.note || (
                               <span className="text-gray-300">
@@ -601,6 +608,8 @@ export default function OrderDetails() {
               </div>
             </CardContent>
           </Card>
+
+          {/* ملخص الحساب */}
           <Card className="rounded-2xl border shadow-sm bg-white">
             <CardHeader className="border-b bg-gray-50/50 px-6 py-4">
               <CardTitle className="text-md font-bold text-gray-800 flex items-center gap-2">
@@ -653,139 +662,118 @@ export default function OrderDetails() {
           </Card>
         </div>
 
-
-        {/* العمود الأيمن: التحكم بالحالات وبيانات العميل */}
+        {/* العمود الأيمن: بيانات العميل والتحكم بالحالات */}
         <div className="space-y-6 xl:col-span-1">
-          {/* العمود الأيسر: محتويات الفاتورة والمنتجات */}
-          <div className="xl:col-span-2 space-y-6">
-            <Card className="rounded-2xl border border-gray-100 shadow-sm bg-white p-6">
-              {/* Header */}
-              <div className="flex items-center gap-2 mb-4">
-                <User className="w-5 h-5 text-red-900 fill-red-900" />
-                <h3 className="text-lg font-bold text-gray-900">
-                  {t("customer Details") || "Customer Information"}
-                </h3>
+          <Card className="rounded-2xl border border-gray-100 shadow-sm bg-white p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <User className="w-5 h-5 text-red-900 fill-red-900" />
+              <h3 className="text-lg font-bold text-gray-900">
+                {t("customer Details") || "Customer Information"}
+              </h3>
+            </div>
+
+            <div className="space-y-2 text-sm text-gray-800">
+              <div className="flex items-center gap-1.5">
+                <span className="font-semibold text-gray-900">{t("name") || "Name"}:</span>
+                <span>{order.customer?.name || t("unknown")}</span>
               </div>
 
-              {/* Content - Stacked Items */}
-              <div className="space-y-2 text-sm text-gray-800">
-                {/* Name */}
-                <div className="flex items-center gap-1.5">
-                  <span className="font-semibold text-gray-900">{t("name") || "Name"}:</span>
-                  <span>{order.customer?.name || t("unknown")}</span>
-                </div>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="font-semibold text-gray-900">{t("contact") || "Contact"}:</span>
+                {order.customer?.phone ? (
+                  <div className="flex items-center gap-1.5">
+                    <a
+                      href={`https://wa.me/${order.customer.phone.replace(/[^0-9]/g, "")}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-green-600 hover:text-green-700 transition-colors"
+                      title="WhatsApp"
+                    >
+                      <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L0 24l6.335-1.662c1.746.953 3.71 1.454 5.709 1.455h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+                      </svg>
+                    </a>
+                    <span className="font-normal">{order.customer.phone}</span>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(order.customer.phone);
+                        toast.success(t("phoneCopied") || "تم نسخ رقم الهاتف بنجاح");
+                      }}
+                      className="text-gray-400 hover:text-gray-600 transition-colors"
+                      title="Copy Phone Number"
+                    >
+                      <Copy className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ) : (
+                  <span>{t("notAvailable")}</span>
+                )}
+              </div>
 
-                {/* Contact (Phone, WhatsApp, Copy) */}
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="font-semibold text-gray-900">{t("contact") || "Contact"}:</span>
-                  {order.customer?.phone ? (
+              {order.customer?.email && (
+                <div className="flex items-center gap-1.5 break-all">
+                  <span className="font-semibold text-gray-900">{t("email") || "Email"}:</span>
+                  <span>{order.customer.email}</span>
+                </div>
+              )}
+
+              {order?.address && typeof order.address === "object" ? (
+                <>
+                  {order.address.title && (
                     <div className="flex items-center gap-1.5">
+                      <span className="font-semibold text-gray-900">{t("Address") || "Address"}:</span>
+                      <span>{order.address.title || t("unknown")}</span>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-semibold text-gray-900">{t("street") || "Road"}:</span>
+                    <span>{order.address.street || "-"}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-semibold text-gray-900">{t("buildingNumber") || "Build Num"}:</span>
+                    <span>{order.address.number || "-"}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-semibold text-gray-900">{t("floor") || "Floor"}:</span>
+                    <span>{order.address.floor || "-"}</span>
+                  </div>
+                  {order.address.apartment && (
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-semibold text-gray-900">{t("apartment") || "Apartment"}:</span>
+                      <span>{order.address.apartment || "-"}</span>
+                    </div>
+                  )}
+                  {order.address.landmark && (
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-semibold text-gray-900">{t("landmark") || "Landmark"}:</span>
+                      <span className="text-gray-700">{order.address.landmark}</span>
+                    </div>
+                  )}
+                  {order.address.lat && order.address.lng && (
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-semibold text-gray-900">{t("locationMap") || "Location Map"}:</span>
                       <a
-                        href={`https://wa.me/${order.customer.phone.replace(/[^0-9]/g, "")}`}
+                        href={`https://www.google.com/maps?q=${order.address.lat},${order.address.lng}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-green-600 hover:text-green-700 transition-colors"
-                        title="WhatsApp"
+                        className="inline-flex items-center gap-1 text-sm font-semibold text-primary hover:underline"
                       >
-                        <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
-                          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L0 24l6.335-1.662c1.746.953 3.71 1.454 5.709 1.455h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
-                        </svg>
+                        <MapPin className="w-3.5 h-3.5" />
+                        {t("viewOnMap") || "عرض على الخريطة"}
                       </a>
-                      <span className="font-normal">{order.customer.phone}</span>
-                      <button
-                        onClick={() => {
-                          navigator.clipboard.writeText(order.customer.phone);
-                          toast.success(t("phoneCopied") || "تم نسخ رقم الهاتف بنجاح");
-                        }}
-                        className="text-gray-400 hover:text-gray-600 transition-colors"
-                        title="Copy Phone Number"
-                      >
-                        <Copy className="w-3.5 h-3.5" />
-                      </button>
                     </div>
-                  ) : (
-                    <span>{t("notAvailable")}</span>
                   )}
+                </>
+              ) : (
+                <div className="flex items-center gap-1.5">
+                  <span className="font-semibold text-gray-900">{t("address") || "Address"}:</span>
+                  <span>{order?.address || t("notSpecified")}</span>
                 </div>
+              )}
+            </div>
+          </Card>
 
-                {/* Email */}
-                {order.customer?.email && (
-                  <div className="flex items-center gap-1.5 break-all">
-                    <span className="font-semibold text-gray-900">{t("email") || "Email"}:</span>
-                    <span>{order.customer.email}</span>
-                  </div>
-                )}
-
-                {/* Address Details - Listed Line by Line */}
-                {order?.address && typeof order.address === "object" ? (
-                  <>
-                    {/* Title / Full Address Text */}
-                    {order.address.title && (
-                      <div className="flex items-center gap-1.5">
-                        <span className="font-semibold text-gray-900">{t("Address") || "Address"}:</span>
-                        <span>{order.address.title || t("unknown")}</span>
-                      </div>
-                    )}
-
-                    {/* Street / Road */}
-                    <div className="flex items-center gap-1.5">
-                      <span className="font-semibold text-gray-900">{t("street") || "Road"}:</span>
-                      <span>{order.address.street || "-"}</span>
-                    </div>
-
-                    {/* Building Number */}
-                    <div className="flex items-center gap-1.5">
-                      <span className="font-semibold text-gray-900">{t("buildingNumber") || "Build Num"}:</span>
-                      <span>{order.address.number || "-"}</span>
-                    </div>
-
-                    {/* Floor */}
-                    <div className="flex items-center gap-1.5">
-                      <span className="font-semibold text-gray-900">{t("floor") || "Floor"}:</span>
-                      <span>{order.address.floor || "-"}</span>
-                    </div>
-
-                    {/* Apartment */}
-                    {order.address.apartment && (
-                      <div className="flex items-center gap-1.5">
-                        <span className="font-semibold text-gray-900">{t("apartment") || "Apartment"}:</span>
-                        <span>{order.address.apartment || "-"}</span>
-                      </div>
-                    )}
-
-                    {/* Landmark */}
-                    {order.address.landmark && (
-                      <div className="flex items-center gap-1.5">
-                        <span className="font-semibold text-gray-900">{t("landmark") || "Landmark"}:</span>
-                        <span className="text-gray-700">{order.address.landmark}</span>
-                      </div>
-                    )}
-
-                    {/* Map Link */}
-                    {order.address.lat && order.address.lng && (
-                      <div className="flex items-center gap-1.5">
-                        <span className="font-semibold text-gray-900">{t("locationMap") || "Location Map"}:</span>
-                        <a
-                          href={`https://www.google.com/maps?q=${order.address.lat},${order.address.lng}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-sm font-semibold text-primary hover:underline"
-                        >
-                          <MapPin className="w-3.5 h-3.5" />
-                          {t("viewOnMap") || "عرض على الخريطة"}
-                        </a>
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <div className="flex items-center gap-1.5">
-                    <span className="font-semibold text-gray-900">{t("address") || "Address"}:</span>
-                    <span>{order?.address || t("notSpecified")}</span>
-                  </div>
-                )}
-              </div>
-            </Card>
-          </div>
+          {/* كارت تعديل الحالات */}
           <Card className="rounded-2xl border shadow-sm bg-white overflow-hidden">
             <CardHeader className="border-b bg-gray-50/50 px-6 py-4">
               <CardTitle className="text-sm font-bold text-gray-800 flex items-center gap-2">
@@ -793,43 +781,124 @@ export default function OrderDetails() {
                 {t("change Order Status") || "تعديل حالة الطلب"}
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-4 grid grid-cols-2 gap-2.5">
-              {orderStatuses.map((status) => {
-                const config = statusConfig[status] || {
-                  icon: Info,
-                  labelKey: status,
-                };
-                const IconComponent = config.icon;
-                const isActive = order.status === status;
+            <CardContent className="p-4 space-y-3">
+              <div className="grid grid-cols-2 gap-2.5">
+                {orderStatuses.map((status) => {
+                  const config = statusConfig[status] || {
+                    icon: Info,
+                    labelKey: status,
+                  };
+                  const IconComponent = config.icon;
+                  const isActive = order.status === status;
 
-                return (
+                  return (
+                    <Button
+                      key={status}
+                      variant="outline"
+                      disabled={updateStatusMutation.isPending}
+                      onClick={() => handleStatusChange(status)}
+                      className={`h-11 justify-start gap-2 rounded-xl border text-xs font-semibold relative px-3 transition-all duration-200
+                        ${isActive
+                          ? "border-blue-600 bg-blue-50 text-blue-700 font-bold shadow-sm hover:bg-blue-50"
+                          : "border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                        }`}
+                    >
+                      {isActive && (
+                        <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-blue-600 rounded-full border border-white animate-pulse" />
+                      )}
+                      <IconComponent
+                        className={`w-4 h-4 shrink-0 ${isActive ? "text-blue-600" : "text-gray-400"}`}
+                      />
+                      <span className="truncate">{t(config.labelKey)}</span>
+                    </Button>
+                  );
+                })}
+              </div>
+
+              {/* زر تعيين مندوب التوصيل - يظهر أسفل أزرار الحالة عندما تكون الحالة preparing */}
+              {order.status === "preparing" && (
+                <div className="pt-2">
                   <Button
-                    key={status}
-                    variant="outline"
-                    disabled={updateStatusMutation.isPending}
-                    onClick={() => handleStatusChange(status)}
-                    className={`h-11 justify-start gap-2 rounded-xl border text-xs font-semibold relative px-3 transition-all duration-200
-                                            ${isActive
-                        ? "border-blue-600 bg-blue-50 text-blue-700 font-bold shadow-sm hover:bg-blue-50"
-                        : "border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                      }`}
+                    onClick={() => setIsAssignDialogOpen(true)}
+                    className="w-full rounded-xl gap-2 h-11 px-5 font-semibold text-sm bg-primary hover:bg-primary/90 text-white shadow-sm transition-all"
                   >
-                    {isActive && (
-                      <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-blue-600 rounded-full border border-white animate-pulse" />
-                    )}
-                    <IconComponent
-                      className={`w-4 h-4 shrink-0 ${isActive ? "text-blue-600" : "text-gray-400"}`}
-                    />
-                    <span className="truncate">{t(config.labelKey)}</span>
+                    <Truck className="w-4 h-4" />
+                    {t("assignDeliveryMan") || "تعيين مندوب توصيل"}
                   </Button>
-                );
-              })}
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
       </div>
 
-      {/* مكوّن الـ Dialog الخاص بعرض وتصميم الفاتورة */}
+      {/* Dialog تعيين مندوب التوصيل */}
+      <Dialog open={isAssignDialogOpen} onOpenChange={setIsAssignDialogOpen}>
+        <DialogContent className="sm:max-w-md rounded-2xl bg-white p-6 shadow-xl">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-bold text-gray-900 flex items-center gap-2">
+              <Truck className="w-5 h-5 text-primary" />
+              {t("assignDeliveryMan") || "تعيين مندوب توصيل"}
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="py-4 space-y-3">
+            <label className="text-sm font-semibold text-gray-700 block">
+              {t("selectDeliveryMan") || "اختر مندوب التوصيل"}
+            </label>
+
+            {isDeliveryLoading ? (
+              <div className="flex justify-center py-6">
+                <Loader2 className="w-6 h-6 animate-spin text-purple-600" />
+              </div>
+            ) : (
+              <select
+                value={selectedDeliveryMan}
+                onChange={(e) => setSelectedDeliveryMan(e.target.value)}
+                className="w-full h-11 px-3 py-2 bg-white border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/60 font-medium"
+              >
+                <option value="">
+                  {t("chooseDeliveryMan") || "-- اختر من القائمة --"}
+                </option>
+                {deliveryMen.map((man) => (
+                  <option
+                    key={man.id || man._id || man.value}
+                    value={man.id || man._id || man.value}
+                  >
+                    {man.name || man.fullName || man.label}{" "}
+                    {man.phone ? `(${man.phone})` : ""}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4 border-t">
+            <Button
+              variant="outline"
+              className="rounded-xl px-4"
+              onClick={() => {
+                setIsAssignDialogOpen(false);
+                setSelectedDeliveryMan("");
+              }}
+            >
+              {t("cancel") || "إلغاء"}
+            </Button>
+            <Button
+              className="rounded-xl bg-primary hover:bg-primary/90 text-white px-5 font-semibold"
+              disabled={assignDeliveryMutation.isPending || !selectedDeliveryMan}
+              onClick={handleAssignDelivery}
+            >
+              {assignDeliveryMutation.isPending && (
+                <Loader2 className="w-4 h-4 animate-spin ml-2" />
+              )}
+              {t("confirm") || "تأكيد التعيين"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog عرض الفاتورة */}
       <Dialog
         open={isInvoiceOpen}
         onOpenChange={(open) => {
@@ -841,8 +910,6 @@ export default function OrderDetails() {
         }}
       >
         <DialogContent className="max-w-4xl rounded-2xl p-3 bg-white shadow-xl overflow-hidden">
-
-
           <div className="py-3 min-h-[70vh] flex items-center justify-center bg-slate-50 rounded-xl border overflow-hidden">
             {isInvoiceLoading ? (
               <div className="flex flex-col items-center gap-3 text-slate-500">
@@ -864,6 +931,7 @@ export default function OrderDetails() {
         </DialogContent>
       </Dialog>
 
+      {/* Dialog السبب عند الإلغاء أو الرفض */}
       <ReasonDialog
         isOpen={dialogConfig.open}
         onClose={() => setDialogConfig({ open: false, type: null })}

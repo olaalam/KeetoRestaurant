@@ -1,7 +1,8 @@
-import React, { useState } from "react";
-import GenericDataTable from "@/components/GenericDataTable"; // تأكدي من مسار الاستيراد الصحيح
-import AddPage from "@/components/AddPage"; // تأكدي من مسار الاستيراد الصحيح
-import { useGet } from "@/hooks/useGet"; // تأكدي من مسار الاستيراد الصحيح
+import React, { useState, useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import GenericDataTable from "@/components/GenericDataTable";
+import AddPage from "@/components/AddPage";
+import { useGet } from "@/hooks/useGet";
 import { useTranslation } from "@/hooks/useTranslation";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -10,6 +11,10 @@ export default function DeliveryMan() {
   // للتبديل بين صفحة الجدول وصفحة الإضافة/التعديل
   const [view, setView] = useState("list"); 
   const [selectedItem, setSelectedItem] = useState(null);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [highlightedId, setHighlightedId] = useState(null);
+  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 15 });
   
   const { t, isRTL } = useTranslation();
 
@@ -22,6 +27,25 @@ export default function DeliveryMan() {
   
   // استخراج المصفوفة من الرد (عدليها بناءً على شكل الرد الفعلي من الباك إند لديكِ)
   const deliveryMenList = data?.data?.data || data?.data || [];
+
+  useEffect(() => {
+    if (location.state?.highlightedId && deliveryMenList.length) {
+      const index = deliveryMenList.findIndex(item => String(item.id) === String(location.state.highlightedId));
+
+      if (index !== -1) {
+        const pageIndex = Math.floor(index / pagination.pageSize);
+        setPagination(prev => ({ ...prev, pageIndex }));
+        setHighlightedId(location.state.highlightedId);
+
+        const timer = setTimeout(() => {
+          setHighlightedId(null);
+          navigate(location.pathname, { replace: true, state: {} });
+        }, 3500);
+
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [location.state, deliveryMenList, pagination.pageSize, navigate, location.pathname]);
 
   // 2. إعداد أعمدة الجدول لـ GenericDataTable
   const columns = [
@@ -54,6 +78,10 @@ export default function DeliveryMan() {
     {
       accessorKey: "email",
       header: t("email") || "البريد الإلكتروني",
+    },
+    {
+      accessorKey: "isActive",
+      header: t("status") || "الحالة",
     }
   ];
 
@@ -122,6 +150,10 @@ export default function DeliveryMan() {
       data={deliveryMenList}
       isLoading={isLoading}
       queryKey={queryKey}
+      editApiUrl={apiUrl}
+      highlightedId={highlightedId}
+      pagination={pagination}
+      setPagination={setPagination}
       // تفعيل زر الإضافة
       onAdd={() => {
         setSelectedItem(null);

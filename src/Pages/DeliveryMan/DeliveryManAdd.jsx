@@ -74,9 +74,9 @@ const DeliveryManAdd = () => {
       onSuccessAction={(res) => {
         // 💡 التقاط الـ ID الراجع من السيرفر عند الإضافة، أو الـ ID الموجود مسبقاً عند التعديل
         const targetId = res?.data?.data?.id || res?.data?.id || res?.id || initialData?.id;
-        
+
         // 💡 التوجيه لصفحة عمال التوصيل وتمرير الـ ID المضيء داخل الـ state
-        navigate("/delivery-men", { state: { highlightedId: targetId } });
+        navigate("/delivery-man", { state: { highlightedId: targetId } });
       }}
     />
   );
