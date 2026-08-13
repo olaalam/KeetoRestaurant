@@ -17,11 +17,9 @@ export default function Admin() {
     useEffect(() => {
         if (location.state?.highlightedId) {
             setHighlightedId(location.state.highlightedId);
-            
-            // إخفاء الوميض بعد 4 ثوانٍ ليعود الصف لطبيعته
+
             const timer = setTimeout(() => {
                 setHighlightedId(null);
-                // تفريغ الـ state حتى لا يضيء مجدداً عند عمل ريفريش للصفحة
                 navigate(location.pathname, { replace: true, state: {} });
             }, 4000);
 

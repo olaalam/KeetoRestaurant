@@ -17,11 +17,9 @@ export default function Addons() {
     useEffect(() => {
         if (location.state?.highlightedId) {
             setHighlightedId(location.state.highlightedId);
-            
-            // مسح التلوين التلقائي بعد 4 ثوانٍ ليعود الجدول لشكلة الطبيعي
+
             const timer = setTimeout(() => {
                 setHighlightedId(null);
-                // تفريغ الـ state الخاص بالـ router حتى لا يضيء الصف مجدداً عند عمل ريفريش
                 navigate(location.pathname, { replace: true, state: {} });
             }, 4000);
 

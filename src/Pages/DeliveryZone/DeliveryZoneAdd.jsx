@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { useParams, useLocation } from 'react-router-dom';
+import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import AddPage from '@/components/AddPage';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/api/axios';
@@ -14,6 +14,7 @@ import InteractiveZoneMap from './InteractiveZoneMap';
 const DeliveryZoneAdd = () => {
     const { id } = useParams();
     const location = useLocation();
+    const navigate = useNavigate();
     const { t } = useTranslation();
 
     const isEdit = Boolean(id);
@@ -222,7 +223,17 @@ const DeliveryZoneAdd = () => {
             fields={fields}
            initialData={initialValues}
             transformPayload={transformPayload}
-            onSuccessAction={() => window.history.back()}
+            onSuccessAction={(res) => {
+                const targetId = String(
+                    res?.data?.data?.id ||
+                    res?.data?.id ||
+                    res?.id ||
+                    id ||
+                    selectedZoneId
+                );
+
+                navigate('/delivery-zones', { state: { highlightedId: targetId } });
+            }}
         >
             {() => (
                 selectedZoneId ? (

@@ -101,7 +101,7 @@ const getLocalizedName = (item, currentLang) => {
 
     useEffect(() => {
         if (location.state?.highlightedId && foods) {
-            const index = foods.findIndex(item => item.id === location.state.highlightedId);
+            const index = foods.findIndex(item => String(item.id) === String(location.state.highlightedId));
 
             if (index !== -1) {
                 const pageIndex = Math.floor(index / pagination.pageSize);
@@ -116,7 +116,7 @@ const getLocalizedName = (item, currentLang) => {
                 return () => clearTimeout(timer);
             }
         }
-    }, [location.state, foods]);
+    }, [location.state, foods, pagination.pageSize]);
 
     const handleIngredientToggle = (ingredientId) => {
         setSelectedIngredients(prev => {

@@ -1,5 +1,4 @@
 import React, { useState, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
 import {
   useReactTable,
   getCoreRowModel,
@@ -45,17 +44,20 @@ export default function GenericDataTable({
   queryKey,
   isLoading,
   actions = true,
-  highlightedId, 
+  highlightedId,
+  pagination: controlledPagination,
+  setPagination: setControlledPagination,
 }) {
   const [globalFilter, setGlobalFilter] = useState("");
   const [deleteId, setDeleteId] = useState(null);
-  const navigate = useNavigate();
   const { t, isRTL } = useTranslation();
   const queryClient = useQueryClient();
-  const [pagination, setPagination] = useState({
+  const [internalPagination, setInternalPagination] = useState({
     pageIndex: 0,
     pageSize: 15,
   });
+  const pagination = controlledPagination ?? internalPagination;
+  const setPagination = setControlledPagination ?? setInternalPagination;
 
   // 1. Mutation لتحديث الـ Status أو الـ isActive فوراً عند تغيير السويتش
   const updateStatusMutation = useMutation({
@@ -296,7 +298,7 @@ export default function GenericDataTable({
                 </TableRow>
               ) : table.getRowModel().rows?.length ? (
                 table.getRowModel().rows.map((row) => {
-                  const isHighlighted = row.original.id === highlightedId;
+                  const isHighlighted = String(row.original.id) === String(highlightedId);
                   
                   return (
                     <TableRow

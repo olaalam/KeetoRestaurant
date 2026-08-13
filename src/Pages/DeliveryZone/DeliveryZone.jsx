@@ -1,14 +1,17 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/api/axios';
 import GenericDataTable from '@/components/GenericDataTable';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { MapPin } from "lucide-react";
 import { useTranslation } from "@/hooks/useTranslation";
 
 export default function DeliveryZone() {
     const navigate = useNavigate();
-    const { t } = useTranslation(); // نأخذ t فقط كما هو معرف داخل الـ hook الخاص بكِ
+    const location = useLocation();
+    const { t } = useTranslation();
+    const [highlightedId, setHighlightedId] = useState(null);
+    const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 15 });
 
     // 💡 الحل البديل والأقوى: قراءة اللغة مباشرة من الـ Local Storage الخاص بالتطبيق
     const getLanguage = () => {
@@ -35,6 +38,25 @@ export default function DeliveryZone() {
             return res.data?.data?.data || [];
         }
     });
+
+    useEffect(() => {
+        if (location.state?.highlightedId && deliveryFees.length) {
+            const index = deliveryFees.findIndex(item => String(item.id) === String(location.state.highlightedId));
+
+            if (index !== -1) {
+                const pageIndex = Math.floor(index / pagination.pageSize);
+                setPagination(prev => ({ ...prev, pageIndex }));
+                setHighlightedId(location.state.highlightedId);
+
+                const timer = setTimeout(() => {
+                    setHighlightedId(null);
+                    navigate(location.pathname, { replace: true, state: {} });
+                }, 3500);
+
+                return () => clearTimeout(timer);
+            }
+        }
+    }, [location.state, deliveryFees, pagination.pageSize, navigate, location.pathname]);
 
     // 2. تعريف الأعمدة لتطابق الهيكل الجديد ودعم اللغات
     const columns = [
@@ -90,6 +112,9 @@ export default function DeliveryZone() {
                 queryKey="DeliveryZone"
                 deleteApiUrl="/api/restaurant/restaurant-zone-delivery-fees"
                 editApiUrl="/api/restaurant/restaurant-zone-delivery-fees"
+                highlightedId={highlightedId}
+                pagination={pagination}
+                setPagination={setPagination}
                 onAdd={() => navigate("/delivery-zones/add")}
                 onEdit={(item) => navigate(`/delivery-zones/edit/${item.id}`, { state: { DeliveryZoneData: item } })}
             />
