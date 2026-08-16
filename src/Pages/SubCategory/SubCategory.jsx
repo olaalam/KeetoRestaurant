@@ -44,6 +44,7 @@ export default function SubCategory() {
             }
         },
         { accessorKey: 'order_level', header: t('orderLevelColumn') },
+        { accessorKey: 'status', header: t('status') }, // 💡 إضافة عمود الحالة هنا
     ];
 
     return (
@@ -55,6 +56,7 @@ export default function SubCategory() {
                 isLoading={isLoading}
                 queryKey="subcategories"
                 deleteApiUrl="/api/restaurant/subcategories"
+                editApiUrl="/api/restaurant/subcategories" // 💡 مطلوب لتفعيل السويتش التلقائي لتحديث الحالة
                 onAdd={() => navigate("/sub-categories/add")}
                 onEdit={(city) => navigate(`/sub-categories/edit/${city.id}`)}
             />

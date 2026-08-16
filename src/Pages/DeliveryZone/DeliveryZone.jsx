@@ -39,9 +39,17 @@ export default function DeliveryZone() {
         }
     });
 
-    useEffect(() => {
+useEffect(() => {
         if (location.state?.highlightedId && deliveryFees.length) {
-            const index = deliveryFees.findIndex(item => String(item.id) === String(location.state.highlightedId));
+            // 💡 فرز البيانات بنفس منطق GenericDataTable تماماً
+            const sortedDeliveryFees = [...deliveryFees].sort((a, b) => {
+                const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+                const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+                return bTime - aTime;
+            });
+
+            // البحث في المصفوفة المُرتبة وليست الخام
+            const index = sortedDeliveryFees.findIndex(item => String(item.id) === String(location.state.highlightedId));
 
             if (index !== -1) {
                 const pageIndex = Math.floor(index / pagination.pageSize);
