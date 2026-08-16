@@ -148,13 +148,18 @@ export default function OrderDetails() {
     },
   });
 
+  // تحديد الطلب السابق والتالي (القائمة مرتبة تنازلياً حسب الأحدث)
   const currentOrderIndex = ordersList.findIndex((o) => o.id === orderId);
+  
+  // الطلب السابق (الأقدم زمنياً): index + 1
   const previousOrder =
-    currentOrderIndex > 0 ? ordersList[currentOrderIndex - 1] : null;
-  const nextOrder =
     currentOrderIndex !== -1 && currentOrderIndex < ordersList.length - 1
       ? ordersList[currentOrderIndex + 1]
       : null;
+
+  // الطلب التالي (الأحدث زمنياً): index - 1
+  const nextOrder =
+    currentOrderIndex > 0 ? ordersList[currentOrderIndex - 1] : null;
 
   // ميوتيشن تحديث الحالة
   const updateStatusMutation = useMutation({
@@ -183,15 +188,22 @@ export default function OrderDetails() {
   // ميوتيشن تعيين مندوب التوصيل
   const assignDeliveryMutation = useMutation({
     mutationFn: async (deliveryManId) => {
+      // 1. تعيين المندوب
       const res = await api.put(`/api/restaurant/order/${orderId}/assign-delivery`, {
         deliveryManId,
       });
+
+      // 2. تحويل حالة الطلب إلى out_for_delivery تلقائياً
+      await api.put(`/api/restaurant/order/${orderId}`, {
+        status: "out_for_delivery",
+      });
+
       return res.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries(["order", orderId]);
       queryClient.invalidateQueries(["orders"]);
-      toast.success(t("deliveryManAssignedSuccess") || "تم تعيين مندوب التوصيل بنجاح");
+      toast.success(t("deliveryManAssignedSuccess") || "تم تعيين مندوب التوصيل وتحويل الطلب بنجاح");
       setIsAssignDialogOpen(false);
       setSelectedDeliveryMan("");
     },
@@ -420,7 +432,7 @@ export default function OrderDetails() {
                     {t("branch") || "الفرع"}:
                   </span>
                   <span className="font-semibold text-gray-900">
-                    {order.branch?.name || order.restaurant?.name || t("notAvailable")}
+                    {order.branch?.name || t("Delivery")}
                   </span>
                 </div>
                 <div className="flex items-center gap-2.5 text-sm">
@@ -432,6 +444,21 @@ export default function OrderDetails() {
                     {order.zone?.name || t("notAvailable")}
                   </span>
                 </div>
+
+                {/* تاريخ الطلب */}
+                <div className="flex items-center gap-2.5 text-sm">
+                  <Calendar className="w-4 h-4 text-gray-400 shrink-0" />
+                  <span className="text-gray-500 font-medium">
+                    {t("orderDate") || "تاريخ الطلب"}:
+                  </span>
+                  <span className="font-semibold text-gray-900 dir-ltr">
+                    {order.createdAt
+                      ? new Date(order.createdAt).toLocaleDateString("en-GB")
+                      : t("notAvailable")}
+                  </span>
+                </div>
+
+                {/* وقت الطلب */}
                 <div className="flex items-center gap-2.5 text-sm">
                   <Clock className="w-4 h-4 text-gray-400 shrink-0" />
                   <span className="text-gray-500 font-medium">
@@ -439,20 +466,10 @@ export default function OrderDetails() {
                   </span>
                   <span className="font-semibold text-gray-900 dir-ltr">
                     {order.createdAt
-                      ? new Date(order.createdAt).toLocaleDateString()
-                      : t("notAvailable")}
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-2.5 text-sm">
-                                    <Calendar className="w-4 h-4 text-gray-400 shrink-0" />
-                  <span className="text-gray-500 font-medium">
-                    {t("orderDate") || "تاريخ الطلب"}:
-                  </span>
-
-                  <span className="font-semibold text-gray-900 dir-ltr">
-                    {order.createdAt
-                      ? new Date(order.createdAt).toLocaleTimeString()
+                      ? new Date(order.createdAt).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })
                       : t("notAvailable")}
                   </span>
                 </div>
@@ -816,7 +833,7 @@ export default function OrderDetails() {
                 })}
               </div>
 
-              {/* زر تعيين مندوب التوصيل - يظهر أسفل أزرار الحالة عندما تكون الحالة preparing */}
+              {/* زر تعيين مندوب التوصيل */}
               {order.status === "preparing" && (
                 <div className="pt-2">
                   <Button

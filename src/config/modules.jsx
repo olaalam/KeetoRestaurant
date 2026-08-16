@@ -47,7 +47,7 @@ export const getModules = (t, orderCounts = {}) => {
       key: "dashboard",
       items: [{ title: t("dashboard"), url: "/dashboard", icon: LayoutDashboard }],
     },
-        {
+    {
       name: t("order management"),
       key: "order",
       items: [
@@ -60,10 +60,10 @@ export const getModules = (t, orderCounts = {}) => {
             { title: `${t("pending")} (${pending})`, url: "/orders/pending", icon: Clock },
             { title: `${t("accepted")} (${accepted})`, url: "/orders/accepted", icon: CheckCircle2 },
             { title: `${t("preparing")} (${preparing})`, url: "/orders/preparing", icon: Package },
-            { title: `${t("outForDelivery")} (${outDelivery})`, url: "/orders/out-delivery", icon: Truck },
+            { title: `${t("outForDelivery")} (${outDelivery})`, url: "/orders/out-for-delivery", icon: Truck },
             { title: `${t("delivered")} (${delivered})`, url: "/orders/delivered", icon: CheckCheck },
             { title: `${t("cancelled")} (${cancelled})`, url: "/orders/cancelled", icon: XCircle },
-            { title: `${t("refund")} (${refund})`, url: "/orders/refunded", icon: Undo2 },
+            { title: `${t("refund")} (${refund})`, url: "/orders/refund", icon: Undo2 },
           ],
         },
       ],
@@ -72,15 +72,11 @@ export const getModules = (t, orderCounts = {}) => {
       name: t("Setting"),
       key: "management",
       items: [
-        { title: t("admins"), url: "/admins", icon: UserCog },
-        { title: t("deliveryMen"), url: "/delivery-man", icon: UserCog },
+
         { title: "Permissions", url: "/permissions", icon: ShieldCheck },
         { title: t("qr"), url: "/qr", icon: ShoppingBag },
         { title: t("policy"), url: "/policy", icon: ShoppingBag },
-        { title: t("cashiers"), url: "/cashiers", icon: UserCog },
-        { title: t("financialAccounts"), url: "/financialAccounts", icon: UserCog },
-
-
+        { title: t("setting"), url: "/setting", icon: ShoppingBag },
       ],
     },
     {
@@ -96,14 +92,11 @@ export const getModules = (t, orderCounts = {}) => {
       key: "content",
       items: [
         { title: t("foods"), url: "/foods", icon: Beef },
-        { title: t("points"), url: "/points", icon: Beef },
-        { title: t("subCategories"), url: "/sub-categories", icon: Library },
         { title: t("modifier"), url: "/addons", icon: Settings2 },
-        { title: t("image"), url: "/image", icon: ShoppingBag },
         { title: t("ingredientCategories"), url: "/ingredient-category", icon: ShieldCheck },
         { title: t("ingredients"), url: "/ingredients", icon: ShieldCheck },
-        {title:t("expense-categories"),url: "/expense-categories",icon:ShieldCheck},
-        {title:t("expense"),url: "/expense",icon:ShieldCheck},
+        { title: t("subCategories"), url: "/sub-categories", icon: Library },
+
       ],
     },
     {
@@ -125,9 +118,34 @@ export const getModules = (t, orderCounts = {}) => {
         { title: t("rating"), url: "/rating", icon: ShoppingBag },
         { title: t("popup"), url: "/popup", icon: ShoppingBag },
         { title: t("banner"), url: "/slider", icon: ShoppingBag },
-        { title: t("setting"), url: "/setting", icon: ShoppingBag },
+        { title: t("points"), url: "/points", icon: Beef },
+        { title: t("galleryimage"), url: "/image", icon: ShoppingBag },
+
       ],
     },
+    {
+      name: t("Financial Management"),
+      key: "financial",
+      items: [
+        { title: t("expense-categories"), url: "/expense-categories", icon: ShieldCheck },
+        { title: t("expense"), url: "/expense", icon: ShieldCheck },
+        { title: t("financialAccounts"), url: "/financialAccounts", icon: UserCog },
+
+
+      ],
+    },
+    {
+      name: t("Users"),
+      key: "users",
+      items: [
+        { title: t("admins"), url: "/admins", icon: UserCog },
+        { title: t("deliveryMen"), url: "/delivery-man", icon: UserCog },
+        { title: t("cashiers"), url: "/cashiers", icon: UserCog },
+
+
+      ],
+    },
+
   ];
 };
 

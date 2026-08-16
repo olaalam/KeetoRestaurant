@@ -329,9 +329,9 @@ const router = createBrowserRouter([
         element: <OrdersList status="delivered" />,
       },
       {
-        path: "orders/out-delivery",
-        // ملحوظة: اتأكد إن الـ API بياخدها "out-delivery" بالشرطة ولا "out_delivery" وعدلها في الـ status على أساسه
-        element: <OrdersList status="out-delivery" />,
+        path: "orders/out-for-delivery",
+        // ملحوظة: اتأكد إن الـ API بياخدها "out-for-delivery" بالشرطة ولا "out_delivery" وعدلها في الـ status على أساسه
+        element: <OrdersList status="out-for-delivery" />,
       },
       {
         path: "orders/cancelled",
@@ -342,8 +342,8 @@ const router = createBrowserRouter([
         element: <OrdersList status="rejected" />,
       },
       {
-        path: "orders/refunded", // تم تعديل الإسبيلنج من refuned لـ refunded
-        element: <OrdersList status="refunded" />,
+        path: "orders/refund", // تم تعديل الإسبيلنج من refuned لـ refund
+        element: <OrdersList status="refund" />,
       },
 
       {

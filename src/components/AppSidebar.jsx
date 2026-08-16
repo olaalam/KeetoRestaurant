@@ -14,7 +14,7 @@ import { Link, useLocation } from "react-router-dom";
 import useSidebarStore from "@/store/useSidebarStore";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useState, useEffect } from "react"; // 1. تمت إضافة useEffect هنا
 import {
   LogOut,
   HelpCircle,
@@ -25,37 +25,52 @@ import {
 } from "lucide-react";
 import { useTranslation } from "@/hooks/useTranslation";
 import { getModules } from "@/config/modules";
-import { useQuery } from "@tanstack/react-query"; // 1. استيراد useQuery
-import api from "@/api/axios"; // 2. استيراد الـ API
+import { useQuery } from "@tanstack/react-query"; 
+import api from "@/api/axios"; 
 import useAuthStore from "@/store/useAuthStore";
 
 export function AppSidebar({ side = "left" }) {
   const { open } = useSidebar();
   const location = useLocation();
   const storedModule = useSidebarStore((s) => s.activeModule);
-  const [openMenus, setOpenMenus] = useState([]);
+  const [openMenus, setOpenMenus] = useState([]); // تبدأ فارغة[cite: 6]
   const { t , isRTL } = useTranslation();
   const { user } = useAuthStore((state) => state);
   const restaurantName = user?.restaurantName || "Keeto";
 
-
-  // 3. جلب إحصائيات الطلبات من الـ Backend
   const { data: orderCounts = { totalOrders: 0, statusCounts: {} } } = useQuery({
     queryKey: ['order-statistics'],
     queryFn: async () => {
       const res = await api.get('/api/restaurant/order/numbers');
-
-      console.log('Order counts data:', res.data.data.data);
       return res.data.data.data;
     },
     refetchInterval: 30000,
   });
 
-  // 4. تمرير الترجمة والأرقام إلى دالة getModules
   const translatedModules = getModules(t, orderCounts);
   const activeModule = storedModule
     ? translatedModules.find((m) => m.key === storedModule.key) || storedModule
     : null;
+
+  // 2. الكود الجديد: يفتح القائمة الرئيسية تلقائياً إذا كان المسار الحالي بداخلها
+  useEffect(() => {
+    if (activeModule && activeModule.items) {
+      const activeParentMenu = activeModule.items.find(item =>
+        item.subItems?.some(subItem => location.pathname.includes(subItem.url)) ||
+        location.pathname.includes(item.url)
+      );
+
+      if (activeParentMenu) {
+        setOpenMenus(prev => {
+          // يضيف القائمة لتفتح تلقائياً إذا لم تكن مفتوحة بالفعل
+          if (!prev.includes(activeParentMenu.title)) {
+            return [...prev, activeParentMenu.title];
+          }
+          return prev;
+        });
+      }
+    }
+  }, [location.pathname, activeModule]);
 
   const toggleMenu = (title) => {
     setOpenMenus((prev) =>
@@ -69,7 +84,7 @@ export function AppSidebar({ side = "left" }) {
 
   return (
     <Sidebar side={side} variant="sidebar" collapsible="icon">
-<SidebarHeader className="flex justify-center py-5">
+      <SidebarHeader className="flex justify-center py-5">
         <h2 className="text-2xl font-black text-primary text-center">
           {restaurantName}
         </h2>
@@ -86,12 +101,10 @@ export function AppSidebar({ side = "left" }) {
                   !open ? "justify-center" : isRTL ? "flex-row-reverse pl-2" : "px-2"
                 }`}
               >
-                {/* السهم اللي هيلف تلقائياً لو السيستم عربي أو إنجليزي */}
                 <span className={`transform transition-transform ${isRTL ? "rotate-180" : ""}`}>
                   <ChevronLeft size={20} className="shrink-0" />
                 </span>
                 
-                {/* هيظهر النص فقط لو الـ Sidebar مفتوح */}
                 {open && <span className="text-sm">{t("backToHome")}</span>}
               </Link>
             </SidebarMenuButton>
@@ -102,7 +115,6 @@ export function AppSidebar({ side = "left" }) {
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupContent>
-
             <SidebarMenu className="space-y-1 px-2">
               {activeModule.items.map((item) => {
                 const active = location.pathname === item.url;
@@ -112,7 +124,6 @@ export function AppSidebar({ side = "left" }) {
 
                 return (
                   <div key={item.title}>
-                    {/* Main Item */}
                     <SidebarMenuItem>
                       <SidebarMenuButton
                         asChild={!hasSubItems}
@@ -149,7 +160,6 @@ export function AppSidebar({ side = "left" }) {
                       </SidebarMenuButton>
                     </SidebarMenuItem>
 
-                    {/* Sub Items */}
                     {hasSubItems && isOpen && open && (
                       <div className="ml-6 mt-1 space-y-1 overflow-hidden transition-all">
                         {item.subItems.map((subItem) => {

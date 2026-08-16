@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/api/axios';
 import GenericDataTable from '@/components/GenericDataTable';
 import { useNavigate } from 'react-router-dom';
-import { User, Phone, Eye, Loader2 } from "lucide-react";
+import { User, Phone, Eye } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from 'sonner';
 import { useTranslation } from "@/hooks/useTranslation";
@@ -35,11 +35,18 @@ export default function Order() {
         }
     });
 
+    // تعديل الـ URL هنا ليصبح ديناميكيًا حسب الحالة
     const updateStatusMutation = useMutation({
         mutationFn: async ({ orderId, status, cancelReasonId }) => {
-            const payload = { status };
+            // تحويل out_for_delivery إلى out-for-delivery
+            const formattedStatus = status.replace(/_/g, '-');
+
+            // إرسال formattedStatus في الـ payload حتى يقرأه الباك إند بشكل صحيح
+            const payload = { orderId, status: formattedStatus };
             if (cancelReasonId) payload.cancelReasonId = cancelReasonId;
-            const { data } = await api.put(`/api/restaurant/order/${orderId}`, payload);
+
+            // استخدام الـ URL الجديد (مثال: /api/restaurant/order/out-for-delivery) بدون الـ ID في النهاية
+            const { data } = await api.put(`/api/restaurant/order/${formattedStatus}`, payload);
             return data;
         },
         onSuccess: (data, variables) => {
@@ -47,17 +54,7 @@ export default function Order() {
             toast.success(t("orderStatusUpdatedSuccessfully"));
             setDialogConfig({ open: false, type: null, orderId: null });
 
-            const routeMap = {
-                "pending": "pending",
-                "accepted": "accepted",
-                "preparing": "preparing",
-                "out_for_delivery": "out-delivery",
-                "delivered": "delivered",
-                "cancelled": "cancelled",
-                "refund": "refunded",
-                "rejected": "rejected"
-            };
-            const targetRoute = routeMap[variables.status];
+            const targetRoute = variables.status.replace(/_/g, '-');
             if (targetRoute) {
                 navigate(`/orders/${targetRoute}`);
             }
@@ -82,7 +79,13 @@ export default function Order() {
             accessorKey: "dailyOrderNumber",
             header: t("orderNumber"),
             cell: ({ row }) => (
-                <span className="font-medium text-gray-700">{row.getValue("dailyOrderNumber")}</span>
+                <button
+                    type="button"
+                    onClick={() => navigate(`/orders/details/${row.original.id}`)}
+                    className="font-medium text-blue-600 hover:text-blue-800 hover:underline transition-colors cursor-pointer"
+                >
+                    {row.getValue("dailyOrderNumber")}
+                </button>
             )
         },
         {
@@ -211,7 +214,6 @@ export default function Order() {
                 actions={false}
             />
 
-            {/* استخدام المكون الموحد للإلغاء والرفض */}
             <ReasonDialog 
                 isOpen={dialogConfig.open}
                 onClose={() => setDialogConfig({ open: false, type: null, orderId: null })}

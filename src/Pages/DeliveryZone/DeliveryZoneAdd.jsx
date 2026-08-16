@@ -69,15 +69,15 @@ const DeliveryZoneAdd = () => {
 
     const editData = fetchedItemData || location.state?.DeliveryZoneData;
 
-    // 3️⃣ 🎯 تعبئة الحالات وتأخير ظهور الفورم لحد ما كل حاجة تجهز
+// 3️⃣ 🎯 تعبئة الحالات وتأخير ظهور الفورم لحد ما كل حاجة تجهز
     useEffect(() => {
         if (!isEdit) {
-            setDataLoaded(true); // لو إضافة جديدة، افتح الفورم على طول
+            setDataLoaded(true);
             return;
         }
 
-        // لو في وضع التعديل، استنى لما داتا التعديل وقوائم الاختيارات كلها تيجي
-        if (editData && selectionData.cities.length > 0) {
+        // ⚠️ التعديل هنا: ضفنا !dataLoaded عشان الكود يشتغل مرة واحدة فقط وميمسحش الداتا
+        if (editData && selectionData.cities.length > 0 && !dataLoaded) {
             const cId = String(editData.city?.id || editData.cityId || '');
             const zId = String(editData.zone?.id || editData.zoneId || '');
 
@@ -86,29 +86,40 @@ const DeliveryZoneAdd = () => {
 
             setDeliveryFee(String(editData.deliveryFee ?? '0.00'));
             setMinOrderAmount(String(editData.minOrderAmount ?? '0.00'));
-            setCoverageType(editData.coverageType || 'RADIUS');
+            
+            // تحديد النوع
+            const apiCoverageType = editData.coverageType || 'RADIUS';
+            setCoverageType(apiCoverageType);
             
             if (editData.customRadiusKm || editData.coverageAreaRadiusKm) {
                 setCustomRadiusKm(String(editData.customRadiusKm || editData.coverageAreaRadiusKm));
             }
 
-            const rawCoords = editData?.customCoordinates || editData?.coordinates;
+            // ⚠️ التعديل هنا: استخراج الإحداثيات بشكل آمن (الـ custom أولاً، ثم الـ default)
+            let rawCoords = editData?.customCoordinates;
+            if (!rawCoords || (Array.isArray(rawCoords) && rawCoords.length === 0)) {
+                rawCoords = editData?.zone?.defaultCoordinates || editData?.coordinates;
+            }
+            
             if (rawCoords) {
-                if (typeof rawCoords === 'string') {
+                if (Array.isArray(rawCoords)) {
+                    setCoordinates(rawCoords);
+                } else if (typeof rawCoords === 'string') {
                     try {
                         setCoordinates(JSON.parse(rawCoords));
                     } catch (e) {
                         setCoordinates([]);
                     }
-                } else if (Array.isArray(rawCoords)) {
-                    setCoordinates(rawCoords);
+                } else {
+                     setCoordinates([]);
                 }
             }
 
             // 🎯 دلوقتي بس الفورم مسموح لها تظهر
             setDataLoaded(true);
         }
-    }, [isEdit, editData, selectionData]);
+    // ⚠️ أضفنا dataLoaded في مصفوفة الاعتمادات هنا
+    }, [isEdit, editData, selectionData, dataLoaded]);
 
     // 4️⃣ فلترة المناطق بناءً على المدينة (هتكون متفلترة صح لأننا أخرنا الرندر)
     const filteredZones = useMemo(() => {
@@ -149,19 +160,22 @@ const DeliveryZoneAdd = () => {
         }
     };
 
-    const fields = [
+const fields = [
         {
             name: 'cityId',
             label: t('city') || 'City',
             required: true,
             type: 'select',
             value: selectedCityId,
-            defaultValue: selectedCityId, // 💡 ضرورية جداً لمكونات react-hook-form
+            defaultValue: selectedCityId,
             options: selectionData.cities.map(c => ({
                 value: String(c.id),
                 label: isAr ? (c.nameAr || c.displayNameAr || c.name) : c.name
             })),
             onChange: (val) => {
+                // ⚠️ لمنع مسح الإحداثيات عند التحميل الأولي
+                if (val === selectedCityId) return; 
+                
                 setSelectedCityId(val);
                 setSelectedZoneId('');
                 setCoordinates([]);
@@ -173,13 +187,17 @@ const DeliveryZoneAdd = () => {
             required: true,
             type: 'select',
             value: selectedZoneId,
-            defaultValue: selectedZoneId, // 💡 ضرورية جداً
+            defaultValue: selectedZoneId,
             options: filteredZones.map(z => ({
                 value: String(z.id),
                 label: isAr ? (z.nameAr || z.displayNameAr || z.name) : z.name
             })),
             disabled: !selectedCityId,
-            onChange: (val) => handleZoneChange(val)
+            onChange: (val) => {
+                // ⚠️ لمنع تشغيل الدالة بالخطأ واستبدال الإحداثيات المخصصة بالافتراضية
+                if (val === selectedZoneId) return; 
+                handleZoneChange(val);
+            }
         }
     ];
 

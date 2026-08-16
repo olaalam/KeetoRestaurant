@@ -55,10 +55,17 @@ export default function InteractiveZoneMap({
 
   const [mapCenter, setMapCenter] = useState(defaultCenter);
 
-  // Update map center when external coordinates change
+// Update map center and search inputs when external coordinates change
   useEffect(() => {
     if (coordinates.length > 0 && coordinates[0]?.lat && coordinates[0]?.lng) {
-      setMapCenter({ lat: Number(coordinates[0].lat), lng: Number(coordinates[0].lng) });
+      const latVal = Number(coordinates[0].lat);
+      const lngVal = Number(coordinates[0].lng);
+      
+      setMapCenter({ lat: latVal, lng: lngVal });
+      
+      // 💡 الكود الجديد: وضع الإحداثيات تلقائياً في حقول البحث LAT و LNG
+      setSearchLat(String(latVal));
+      setSearchLng(String(lngVal));
     }
   }, [coordinates]);
 
@@ -67,6 +74,36 @@ export default function InteractiveZoneMap({
     const updated = [...coordinates];
     updated[index] = { lat, lng };
     setCoordinates(updated);
+  };
+  const handleLatChange = (e) => {
+    const val = e.target.value;
+    
+    if (val.includes(',')) {
+      const parts = val.split(',');
+      const latPart = parts[0]?.trim();
+      const lngPart = parts[1]?.trim();
+
+      setSearchLat(latPart || '');
+      if (lngPart) {
+        setSearchLng(lngPart);
+      }
+
+      // تحديد النقطة على الخريطة تلقائياً فور اللصق
+      const latNum = parseFloat(latPart);
+      const lngNum = parseFloat(lngPart);
+      if (!isNaN(latNum) && !isNaN(lngNum)) {
+        const newPoint = { lat: latNum, lng: lngNum };
+        setMapCenter(newPoint);
+
+        if (coverageType === 'RADIUS') {
+          setCoordinates([newPoint]);
+        } else {
+          setCoordinates((prev) => [...prev, newPoint]);
+        }
+      }
+    } else {
+      setSearchLat(val);
+    }
   };
 
   // Search logic without refreshing the page
@@ -91,16 +128,16 @@ export default function InteractiveZoneMap({
 
   return (
     <div className="space-y-3">
-      {/* Search Bar for Lat and Lng */}
+{/* Search Bar for Lat and Lng */}
       <div className="flex flex-wrap items-center gap-2 p-3 bg-slate-50 rounded-xl border shadow-sm">
         <div className="flex items-center gap-2 flex-1 min-w-[140px]">
           <span className="text-xs font-semibold text-slate-600">LAT:</span>
           <input
-            type="number"
+            type="text" // تم تغييرها إلى text لتقبل اللصق المباشر للإحداثيات بالفاصلة
             step="any"
-            placeholder="31.2156"
+            placeholder="31.2156, 29.9553"
             value={searchLat}
-            onChange={(e) => setSearchLat(e.target.value)}
+            onChange={handleLatChange} // 💡 ربطها بالدالة الجديدة
             className="w-full px-3 py-1.5 text-sm bg-white border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
           />
         </div>
