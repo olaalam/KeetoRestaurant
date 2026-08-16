@@ -290,16 +290,29 @@ export default function Layout() {
 
               {/* Right Section: Notifications & Profile */}
               <div className="flex items-center gap-3">
-                {/* Orders Button */}
-                <button
-                  onClick={() => navigate("/orders")}
-                  className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 text-primary hover:bg-primary hover:text-white transition-all duration-200 font-semibold text-sm shadow-sm active:scale-95"
-                  title={t("orders") || "Orders"}
-                >
-                  <ShoppingBag size={20} className="shrink-0" />
-                  <span>{t("orders") || "Orders"}</span>
-                </button>
+{/* Orders Button */}
+<button
+  onClick={() => {
+    // البحث عن موديول الطلبات الفعلي من قائمة الموديولات لضمان وجود مصفوفة الـ items والخصائص الكاملة
+    const ordersModule = translatedModules.find(
+      (m) => 
+        m.key === "orders" || 
+        m.key === "orders-management" || 
+        m.path === "/orders" ||
+        (m.name && m.name.toLowerCase().includes("order"))
+    );
 
+    if (ordersModule) {
+      setActiveModule(ordersModule);
+    }
+    navigate("/orders");
+  }}
+  className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 text-primary hover:bg-primary hover:text-white transition-all duration-200 font-semibold text-sm shadow-sm active:scale-95"
+  title={t("orders") || "Orders"}
+>
+  <ShoppingBag size={20} className="shrink-0" />
+  <span>{t("orders") || "Orders"}</span>
+</button>
 
                 {/* Language Switcher */}
                 <LanguageSwitcher />

@@ -14,7 +14,7 @@ import { Link, useLocation } from "react-router-dom";
 import useSidebarStore from "@/store/useSidebarStore";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { useState, useEffect } from "react"; // 1. تمت إضافة useEffect هنا
+import { useState, useEffect } from "react";
 import {
   LogOut,
   HelpCircle,
@@ -33,8 +33,8 @@ export function AppSidebar({ side = "left" }) {
   const { open } = useSidebar();
   const location = useLocation();
   const storedModule = useSidebarStore((s) => s.activeModule);
-  const [openMenus, setOpenMenus] = useState([]); // تبدأ فارغة[cite: 6]
-  const { t , isRTL } = useTranslation();
+  const [openMenus, setOpenMenus] = useState([]);
+  const { t, isRTL } = useTranslation();
   const { user } = useAuthStore((state) => state);
   const restaurantName = user?.restaurantName || "Keeto";
 
@@ -52,7 +52,6 @@ export function AppSidebar({ side = "left" }) {
     ? translatedModules.find((m) => m.key === storedModule.key) || storedModule
     : null;
 
-  // 2. الكود الجديد: يفتح القائمة الرئيسية تلقائياً إذا كان المسار الحالي بداخلها
   useEffect(() => {
     if (activeModule && activeModule.items) {
       const activeParentMenu = activeModule.items.find(item =>
@@ -62,7 +61,6 @@ export function AppSidebar({ side = "left" }) {
 
       if (activeParentMenu) {
         setOpenMenus(prev => {
-          // يضيف القائمة لتفتح تلقائياً إذا لم تكن مفتوحة بالفعل
           if (!prev.includes(activeParentMenu.title)) {
             return [...prev, activeParentMenu.title];
           }
@@ -116,7 +114,8 @@ export function AppSidebar({ side = "left" }) {
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu className="space-y-1 px-2">
-              {activeModule.items.map((item) => {
+              {/* Safe check using optional chaining */}
+              {activeModule.items?.map((item) => {
                 const active = location.pathname === item.url;
                 const IconComponent = item.icon;
                 const hasSubItems = item.subItems?.length > 0;
@@ -132,9 +131,11 @@ export function AppSidebar({ side = "left" }) {
                         {hasSubItems ? (
                           <button
                             onClick={() => toggleMenu(item.title)}
-                            className={`flex items-center w-full gap-3 px-3 py-2 rounded-xl transition-all duration-200 cursor-pointer ${open ? "gap-3 px-3 py-2 justify-start" : "justify-center py-2"
-                              } ${active ? "bg-primary text-white shadow-md" : "text-gray-600 hover:bg-gray-200"
-                              }`}
+                            className={`flex items-center w-full gap-3 px-3 py-2 rounded-xl transition-all duration-200 cursor-pointer ${
+                              open ? "gap-3 px-3 py-2 justify-start" : "justify-center py-2"
+                            } ${
+                              active ? "bg-primary text-white shadow-md" : "text-gray-600 hover:bg-gray-200"
+                            }`}
                           >
                             {IconComponent ? <IconComponent size={20} /> : <HelpCircle size={20} />}
                             {open && (
@@ -149,9 +150,11 @@ export function AppSidebar({ side = "left" }) {
                         ) : (
                           <Link
                             to={item.url}
-                            className={`flex items-center w-full gap-3 px-3 py-2 rounded-xl transition-all duration-200 cursor-pointer ${open ? "gap-3 px-3 py-2 justify-start" : "justify-center py-2"
-                              } ${active ? "bg-primary text-white shadow-md" : "text-gray-600 hover:bg-gray-200"
-                              }`}
+                            className={`flex items-center w-full gap-3 px-3 py-2 rounded-xl transition-all duration-200 cursor-pointer ${
+                              open ? "gap-3 px-3 py-2 justify-start" : "justify-center py-2"
+                            } ${
+                              active ? "bg-primary text-white shadow-md" : "text-gray-600 hover:bg-gray-200"
+                            }`}
                           >
                             {IconComponent ? <IconComponent size={20} /> : <HelpCircle size={20} />}
                             {open && <span className="text-sm font-medium">{item.title}</span>}
@@ -162,7 +165,8 @@ export function AppSidebar({ side = "left" }) {
 
                     {hasSubItems && isOpen && open && (
                       <div className="ml-6 mt-1 space-y-1 overflow-hidden transition-all">
-                        {item.subItems.map((subItem) => {
+                        {/* Safe check using optional chaining for subItems */}
+                        {item.subItems?.map((subItem) => {
                           const isSubActive = location.pathname === subItem.url;
                           const SubIcon = subItem.icon;
 
@@ -171,8 +175,9 @@ export function AppSidebar({ side = "left" }) {
                               <SidebarMenuButton asChild>
                                 <Link
                                   to={subItem.url}
-                                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all ${isSubActive ? "bg-primary text-white" : "text-gray-500 hover:bg-gray-100"
-                                    }`}
+                                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all ${
+                                    isSubActive ? "bg-primary text-white" : "text-gray-500 hover:bg-gray-100"
+                                  }`}
                                 >
                                   {SubIcon && <SubIcon size={16} />}
                                   <span>{subItem.title}</span>
@@ -192,7 +197,6 @@ export function AppSidebar({ side = "left" }) {
       </SidebarContent>
 
       <SidebarFooter className="p-2">
-
       </SidebarFooter>
     </Sidebar>
   );
