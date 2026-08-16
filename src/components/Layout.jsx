@@ -179,11 +179,25 @@ export default function Layout() {
     setNewOrderPopup({ open: false, count: 0 });
   };
 
+// دالة التعامل مع الضغط على زر الإشعار المنبثق
   const handlePopupCheck = () => {
     handlePopupClose();
+    
+    // البحث عن موديول الطلبات لتفعيل الـ Sidebar الخاص به
+    const ordersModule = translatedModules.find(
+      (m) => 
+        m.key === "orders" || 
+        m.key === "orders-management" || 
+        m.path === "/orders" ||
+        (m.name && m.name.toLowerCase().includes("order"))
+    );
+
+    if (ordersModule) {
+      setActiveModule(ordersModule);
+    }
+
     navigate(`/orders/details/${notifications[0]?.data?.orderId || ""}`);
   };
-
   return (
     <TooltipProvider delayDuration={0}>
       <SidebarProvider dir={isRTL ? "rtl" : "ltr"}>
