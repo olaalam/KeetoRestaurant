@@ -179,15 +179,15 @@ export default function Layout() {
     setNewOrderPopup({ open: false, count: 0 });
   };
 
-// دالة التعامل مع الضغط على زر الإشعار المنبثق
+  // دالة التعامل مع الضغط على زر الإشعار المنبثق
   const handlePopupCheck = () => {
     handlePopupClose();
-    
+
     // البحث عن موديول الطلبات لتفعيل الـ Sidebar الخاص به
     const ordersModule = translatedModules.find(
-      (m) => 
-        m.key === "orders" || 
-        m.key === "orders-management" || 
+      (m) =>
+        m.key === "orders" ||
+        m.key === "orders-management" ||
         m.path === "/orders" ||
         (m.name && m.name.toLowerCase().includes("order"))
     );
@@ -304,29 +304,29 @@ export default function Layout() {
 
               {/* Right Section: Notifications & Profile */}
               <div className="flex items-center gap-3">
-{/* Orders Button */}
-<button
-  onClick={() => {
-    // البحث عن موديول الطلبات الفعلي من قائمة الموديولات لضمان وجود مصفوفة الـ items والخصائص الكاملة
-    const ordersModule = translatedModules.find(
-      (m) => 
-        m.key === "orders" || 
-        m.key === "orders-management" || 
-        m.path === "/orders" ||
-        (m.name && m.name.toLowerCase().includes("order"))
-    );
+                {/* Orders Button */}
+                <button
+                  onClick={() => {
+                    // البحث عن موديول الطلبات الفعلي من قائمة الموديولات لضمان وجود مصفوفة الـ items والخصائص الكاملة
+                    const ordersModule = translatedModules.find(
+                      (m) =>
+                        m.key === "orders" ||
+                        m.key === "orders-management" ||
+                        m.path === "/orders" ||
+                        (m.name && m.name.toLowerCase().includes("order"))
+                    );
 
-    if (ordersModule) {
-      setActiveModule(ordersModule);
-    }
-    navigate("/orders");
-  }}
-  className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 text-primary hover:bg-primary hover:text-white transition-all duration-200 font-semibold text-sm shadow-sm active:scale-95"
-  title={t("orders") || "Orders"}
->
-  <ShoppingBag size={20} className="shrink-0" />
-  <span>{t("orders") || "Orders"}</span>
-</button>
+                    if (ordersModule) {
+                      setActiveModule(ordersModule);
+                    }
+                    navigate("/orders");
+                  }}
+                  className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 text-primary hover:bg-primary hover:text-white transition-all duration-200 font-semibold text-sm shadow-sm active:scale-95"
+                  title={t("orders") || "Orders"}
+                >
+                  <ShoppingBag size={20} className="shrink-0" />
+                  <span>{t("orders") || "Orders"}</span>
+                </button>
 
                 {/* Language Switcher */}
                 <LanguageSwitcher />
@@ -369,18 +369,26 @@ export default function Layout() {
                         notifications.map((notification) => (
                           <div
                             key={notification.id}
-
                             onClick={() => {
                               const orderId = notification?.data?.orderId;
                               if (orderId) {
+                                const ordersModule = translatedModules.find(
+                                  (m) =>
+                                    m.key === "orders" ||
+                                    m.key === "orders-management" ||
+                                    m.path === "/orders" ||
+                                    (m.name && m.name.toLowerCase().includes("order"))
+                                );
+                                if (ordersModule) {
+                                  setActiveModule(ordersModule);
+                                }
                                 navigate(`/orders/details/${orderId}`);
                               }
                               if (!notification.isRead) {
                                 handleMarkAsRead(notification.id);
                               }
                             }}
-                            className={`p-4 border-b last:border-b-0 flex flex-col gap-1.5 transition-colors cursor-pointer ${notification.isRead ? 'bg-white hover:bg-slate-50' : 'bg-blue-50/50 hover:bg-blue-50'
-                              }`}
+                            className={`p-4 border-b last:border-b-0 flex flex-col gap-1.5 transition-colors cursor-pointer ${notification.isRead ? 'bg-white hover:bg-slate-50' : 'bg-blue-50/50 hover:bg-blue-50'}`}
                           >
                             <div className="flex justify-between items-start gap-3">
                               <h4 className={`text-sm leading-tight ${notification.isRead ? 'font-medium text-slate-700' : 'font-bold text-slate-900'}`}>
