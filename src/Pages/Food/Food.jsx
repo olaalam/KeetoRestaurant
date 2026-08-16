@@ -6,13 +6,14 @@ import api from '@/api/axios';
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { ListTree, PlusCircle, CheckCircle2, Pencil } from "lucide-react"; // 💡 أضفنا أيقونة القلم
+import { ListTree, PlusCircle, CheckCircle2, Pencil } from "lucide-react"; 
 import { usePost } from '@/hooks/usePost';
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input"; // 💡 أضفنا الـ Input لتعديل السعر
+import { Input } from "@/components/ui/input"; 
 import { useTranslation } from "@/hooks/useTranslation";
+import { toast } from 'sonner'; // 💡 استيراد الـ toast للتنبيهات
 
 const Foods = () => {
     const navigate = useNavigate();
@@ -26,17 +27,17 @@ const Foods = () => {
     const [selectedIngredients, setSelectedIngredients] = useState([]);
     const [highlightedId, setHighlightedId] = useState(null);
 
-    // 💡 حالات إدارة تعديل السعر السريع
+    // حالات إدارة تعديل السعر السريع
     const [priceDialogOpen, setPriceDialogOpen] = useState(false);
-    const [foodToUpdatePrice, setFoodToUpdatePrice] = useState(null); // هنيشيل فيه الـ id والـ name
+    const [foodToUpdatePrice, setFoodToUpdatePrice] = useState(null); 
     const [newPrice, setNewPrice] = useState('');
     const [pagination, setPagination] = useState({
         pageIndex: 0,
         pageSize: 15,
     });
 
-    // جلب بيانات الأطعمة للجدول
-    const { data: foods = [], isLoading, refetch } = useQuery({ // 💡 أضفنا refetch لتحديث الجدول بعد تعديل السعر
+    // جلب بيانات الأطعمة للجدول[cite: 3]
+    const { data: foods = [], isLoading, refetch } = useQuery({ 
         queryKey: ['foods'],
         queryFn: async () => {
             const res = await api.get('/api/restaurant/food');
@@ -44,7 +45,7 @@ const Foods = () => {
         }
     });
 
-    // جلب قائمة المكونات المتاحة
+    // جلب قائمة المكونات المتاحة[cite: 3]
     const { data: ingredientsOptions = [] } = useQuery({
         queryKey: ['ingredients-select'],
         queryFn: async () => {
@@ -53,51 +54,53 @@ const Foods = () => {
         }
     });
 
-    // هوك الإرسال للمكونات
+    // هوك الإرسال للمكونات[cite: 3]
     const assignMutation = usePost(
         `/api/restaurant/food/assign-ingredients/${currentFoodId}`,
         'post',
         'foods'
     );
 
-    // 💡 هوك إرسال السعر الجديد للباك إند
-    // ملحوظة: لو الباك إند بيحتاج مسار ديناميكي زي /update-price/${id}، تقدري تستخدمي api.patch مباشرة جوا دالة الحفظ
-    const updatePriceMutation = usePost(
-        `/api/restaurant/food/update-price/${foodToUpdatePrice?.id}`, // تأكدي من المسار الصحيح من الباك إند عندك
-        'post', // أو 'patch' / 'put' حسب الـ API
-        'foods'
-    );
-// 1. دالة لقراءة اللغة الحالية بشكل صحيح من LocalStorage أو i18n
-const getActualLanguage = (i18n) => {
-    // محاولة قراءة اللغة من الـ localStorage الخاصة بـ keeto
-    try {
-        const storedLangData = localStorage.getItem('keeto-language');
-        if (storedLangData) {
-            const parsedData = JSON.parse(storedLangData);
-            if (parsedData?.state?.language) {
-                return parsedData.state.language; // هترجع "en" أو "ar"
-            }
+    // 💡 دالة تحديث حالة النفاذ (isOutOfStock) للسعر أو المنتج
+    const handleStockToggle = async (foodId, currentStockStatus) => {
+        try {
+            await api.put(`/api/restaurant/food/${foodId}`, {
+                isOutOfStock: !currentStockStatus
+            });
+            toast.success(t('statusUpdatedSuccessfully') || 'تم تحديث الحالة بنجاح');
+            refetch();
+        } catch (error) {
+            console.error("Error updating stock status:", error);
+            toast.error(t('failedToUpdateStatus') || 'فشل تحديث الحالة');
         }
-    } catch (error) {
-        console.error("Error reading language from local storage", error);
-    }
-    
-    // لو فشلت المحاولة، نعتمد على i18n أو الافتراضي "ar"
-    return i18n?.language || "ar";
-};
+    };
 
-// 2. دالة جلب الاسم حسب اللغة 
-const getLocalizedName = (item, currentLang) => {
-    if (!item) return '-';
-    
-    const isArabic = currentLang?.startsWith('ar');
+    // 1. دالة لقراءة اللغة الحالية بشكل صحيح من LocalStorage أو i18n[cite: 3]
+    const getActualLanguage = (i18n) => {
+        try {
+            const storedLangData = localStorage.getItem('keeto-language');
+            if (storedLangData) {
+                const parsedData = JSON.parse(storedLangData);
+                if (parsedData?.state?.language) {
+                    return parsedData.state.language; 
+                }
+            }
+        } catch (error) {
+            console.error("Error reading language from local storage", error);
+        }
+        return i18n?.language || "ar";
+    };
 
-    if (isArabic) {
-        return item.nameAr || item.name || '-';
-    } else {
-        return item.name || item.nameAr || '-';
-    }
-};
+    // 2. دالة جلب الاسم حسب اللغة[cite: 3]
+    const getLocalizedName = (item, currentLang) => {
+        if (!item) return '-';
+        const isArabic = currentLang?.startsWith('ar');
+        if (isArabic) {
+            return item.nameAr || item.name || '-';
+        } else {
+            return item.name || item.nameAr || '-';
+        }
+    };
 
     useEffect(() => {
         if (location.state?.highlightedId && foods) {
@@ -128,11 +131,12 @@ const getLocalizedName = (item, currentLang) => {
             }
         });
     };
-const handleRemovableToggle = (ingredientId, checked) => {
-    setSelectedIngredients(prev =>
-        prev.map(i => i.ingredientId === ingredientId ? { ...i, isRemovable: checked } : i)
-    );
-};
+
+    const handleRemovableToggle = (ingredientId, checked) => {
+        setSelectedIngredients(prev =>
+            prev.map(i => i.ingredientId === ingredientId ? { ...i, isRemovable: checked } : i)
+        );
+    };
 
     const handleSaveIngredients = () => {
         assignMutation.mutate({
@@ -142,23 +146,21 @@ const handleRemovableToggle = (ingredientId, checked) => {
         });
     };
 
-    // 💡 دالة حفظ السعر الجديد
+    // دالة حفظ السعر الجديد[cite: 3]
     const handleSavePrice = async () => {
         if (!newPrice || isNaN(newPrice) || Number(newPrice) <= 0) return;
 
-        // لو الـ usePost عندك مش بتدعم تغيير الـ URL ديناميكياً بسهولة لكل طلب، يفضل نعملها بـ api.put/post مباشرة هنا:
         try {
-            // هنبعت الطلب للباك إند (عدلي المسار والـ Method بناءً على الـ API Documentation عندك)
             await api.put(`/api/restaurant/food/${foodToUpdatePrice.id}`, {
                 price: Number(newPrice)
-                // لو الباك بيطلب بقية الداتا، يفضل تبعتي السعر بس لو المسار مخصص لتحديث السعر السريع
             });
 
-            // عمل تحديث للبيانات في الجدول بعد النجاح
             refetch();
             setPriceDialogOpen(false);
+            toast.success(t('statusUpdatedSuccessfully') || 'تم تحديث السعر بنجاح');
         } catch (error) {
             console.error("Error updating price:", error);
+            toast.error(t('failedToUpdateStatus') || 'فشل تحديث السعر');
         }
     };
 
@@ -179,30 +181,29 @@ const handleRemovableToggle = (ingredientId, checked) => {
                 );
             }
         },
-{
-    id: 'foodName',
-    header: t('foodName'),
-    cell: ({ row }) => {
-        const food = row.original;
-        const currentLang = getActualLanguage(i18n); // 💡 هنا استخدام الدالة الجديدة
-        const displayName = getLocalizedName(food, currentLang);
+        {
+            id: 'foodName',
+            header: t('foodName'),
+            cell: ({ row }) => {
+                const food = row.original;
+                const currentLang = getActualLanguage(i18n); 
+                const displayName = getLocalizedName(food, currentLang);
 
-        return (
-            <span className="capitalize font-medium">
-                {displayName}
-            </span>
-        );
-    }
-},
+                return (
+                    <span className="capitalize font-medium">
+                        {displayName}
+                    </span>
+                );
+            }
+        },
         {
             accessorKey: 'price',
             header: t('price'),
             cell: ({ row }) => (
-                // 💡 جعلنا منطقة السعر قابلة للضغط ويوضح للمستخدم إنها تفاعلية عن طريق الـ hover وايقونة القلم الصغيرة
                 <div
                     className="flex items-center gap-2 font-medium text-green-600 cursor-pointer hover:bg-slate-50 p-1.5 rounded-md transition-colors w-fit"
                     onClick={() => {
-                        setFoodToUpdatePrice(row.original); // تمرير عنصر الطعام كاملاً
+                        setFoodToUpdatePrice(row.original); 
                         setNewPrice(row.original.price);
                         setPriceDialogOpen(true);
                     }}
@@ -222,47 +223,67 @@ const handleRemovableToggle = (ingredientId, checked) => {
                 </span>
             )
         },
-{
-    accessorKey: 'category',
-    header: t('category'),
-    cell: ({ row }) => {
-        const category = row.original.category;
-        const currentLang = getActualLanguage(i18n); // 💡
-        const catName = getLocalizedName(category, currentLang);
+        {
+            accessorKey: 'category',
+            header: t('category'),
+            cell: ({ row }) => {
+                const category = row.original.category;
+                const currentLang = getActualLanguage(i18n); 
+                const catName = getLocalizedName(category, currentLang);
 
-        return (
-            <Badge variant="secondary" className="capitalize">
-                {catName}
-            </Badge>
-        );
-    }
-},
-{
-    accessorKey: 'assign_ingredients',
-    header: t('ingredients'),
-    cell: ({ row }) => (
-        <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-                setCurrentFoodId(row.original.id);
-                const existing = row.original.ingredients?.map(ing => ({
-                    ingredientId: ing.id,
-                    // 💡 تحويل صريح لـ Boolean وضمان جعلها true
-                    isRemovable: ing.pivot?.isRemovable !== undefined && ing.pivot?.isRemovable !== null
-                        ? Boolean(Number(ing.pivot.isRemovable))
-                        : true
-                })) || [];
-                setSelectedIngredients(existing);
-                setIngredientsDialogOpen(true);
-            }}
-            className="flex items-center gap-2 border-primary text-primary hover:bg-primary/5"
-        >
-            <PlusCircle className="h-4 w-4" />
-            {t('assign')}
-        </Button>
-    )
-},
+                return (
+                    <Badge variant="secondary" className="capitalize">
+                        {catName}
+                    </Badge>
+                );
+            }
+        },
+        // 💡 عمود الـ isOutOfStock الجديد مع زر Switch تفاعلي
+        {
+            accessorKey: 'isOutOfStock',
+            header: t('isOutOfStock') || 'غير متوفر',
+            cell: ({ row }) => {
+                const food = row.original;
+                const isOutOfStock = Boolean(food.isOutOfStock);
+
+                return (
+                    <div className="flex items-center gap-2">
+                        <Switch
+                            checked={isOutOfStock}
+                            onCheckedChange={() => handleStockToggle(food.id, isOutOfStock)}
+                        />
+                        <span className={`text-xs font-medium ${isOutOfStock ? 'text-red-500' : 'text-green-600'}`}>
+                            {isOutOfStock ? (t('outOfStock') || 'غير متاح') : (t('available') || 'متاح')}
+                        </span>
+                    </div>
+                );
+            }
+        },
+        {
+            accessorKey: 'assign_ingredients',
+            header: t('ingredients'),
+            cell: ({ row }) => (
+                <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                        setCurrentFoodId(row.original.id);
+                        const existing = row.original.ingredients?.map(ing => ({
+                            ingredientId: ing.id,
+                            isRemovable: ing.pivot?.isRemovable !== undefined && ing.pivot?.isRemovable !== null
+                                ? Boolean(Number(ing.pivot.isRemovable))
+                                : true
+                        })) || [];
+                        setSelectedIngredients(existing);
+                        setIngredientsDialogOpen(true);
+                    }}
+                    className="flex items-center gap-2 border-primary text-primary hover:bg-primary/5"
+                >
+                    <PlusCircle className="h-4 w-4" />
+                    {t('assign')}
+                </Button>
+            )
+        },
         {
             accessorKey: 'variations',
             header: t('variations'),
@@ -304,7 +325,7 @@ const handleRemovableToggle = (ingredientId, checked) => {
                 setPagination={setPagination}
             />
 
-            {/* 💡 Quick Edit Price Dialog */}
+            {/* Quick Edit Price Dialog[cite: 3] */}
             <Dialog open={priceDialogOpen} onOpenChange={setPriceDialogOpen}>
                 <DialogContent className="max-w-sm">
                     <DialogHeader>
@@ -348,9 +369,8 @@ const handleRemovableToggle = (ingredientId, checked) => {
                 </DialogContent>
             </Dialog>
 
-            {/* Variations Dialog */}
+            {/* Variations Dialog[cite: 3] */}
             <Dialog open={!!selectedVariations} onOpenChange={() => setSelectedVariations(null)}>
-                {/* ... كود الـ Variations Dialog الحالي بدون تغيير ... */}
                 <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>{t('productVariationsTitle')}</DialogTitle>
@@ -387,7 +407,8 @@ const handleRemovableToggle = (ingredientId, checked) => {
                     </div>
                 </DialogContent>
             </Dialog>
-            {/* Assign Ingredients Dialog */}
+
+            {/* Assign Ingredients Dialog[cite: 3] */}
             <Dialog open={ingredientsDialogOpen} onOpenChange={setIngredientsDialogOpen}>
                 <DialogContent className="max-w-md">
                     <DialogHeader>
@@ -404,8 +425,6 @@ const handleRemovableToggle = (ingredientId, checked) => {
                         {ingredientsOptions.length > 0 ? (
                             ingredientsOptions.map((ing) => {
                                 const isSelected = selectedIngredients.find(i => i.ingredientId === ing.id);
-
-                                // 💡 تحديد اسم المكون بناءً على اللغة الحالية
                                 const currentLang = i18n?.language || "ar";
                                 const ingName = currentLang === 'ar'
                                     ? (ing.nameAr || ing.name)
@@ -423,19 +442,18 @@ const handleRemovableToggle = (ingredientId, checked) => {
                                                 onCheckedChange={() => handleIngredientToggle(ing.id)}
                                             />
                                             <Label htmlFor={`ing-${ing.id}`} className="font-semibold cursor-pointer">
-                                                {/* 💡 هنا بيتم عرض الاسم بحسب اللغة */}
                                                 {ingName}
                                             </Label>
                                         </div>
-{isSelected && (
-    <div className="flex items-center gap-2">
-        <span className="text-[10px] text-muted-foreground font-bold">{t('removable')}</span>
-        <Switch
-            checked={Boolean(isSelected.isRemovable)}
-            onCheckedChange={(checked) => handleRemovableToggle(ing.id, checked)}
-        />
-    </div>
-)}
+                                        {isSelected && (
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-[10px] text-muted-foreground font-bold">{t('removable')}</span>
+                                                <Switch
+                                                    checked={Boolean(isSelected.isRemovable)}
+                                                    onCheckedChange={(checked) => handleRemovableToggle(ing.id, checked)}
+                                                />
+                                            </div>
+                                        )}
                                     </div>
                                 );
                             })

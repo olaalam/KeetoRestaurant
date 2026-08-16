@@ -1,15 +1,21 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/api/axios';
 import GenericDataTable from '@/components/GenericDataTable';
 import { useNavigate } from 'react-router-dom';
 import { User, Phone, Eye, Printer } from "lucide-react"; 
 import { Button } from '@/components/ui/button';
-import { useTranslation } from "@/hooks/useTranslation"; // استيراد الهوك
+import { useTranslation } from "@/hooks/useTranslation";
+import { Input } from "@/components/ui/input";
 
 export default function OrdersList({ status }) {
     const navigate = useNavigate();
-    const { t } = useTranslation(); // تفعيل الهوك
+    const { t } = useTranslation();
+
+    const [selectedDate, setSelectedDate] = useState(() => {
+        const today = new Date();
+        return today.toISOString().split('T')[0];
+    });
 
     const { data: orders = [], isLoading } = useQuery({
         queryKey: ['orders', status],
@@ -44,12 +50,16 @@ export default function OrdersList({ status }) {
 
     const columns = [
         {
-            accessorKey: "orderNumber",
+            accessorKey: "dailyOrderNumber",
             header: t("orderNumber"),
             cell: ({ row }) => (
-                <span className="font-medium text-gray-700">
-                    {row.getValue("orderNumber")}
-                </span>
+                <button
+                    type="button"
+                    onClick={() => navigate(`/orders/details/${row.original.id}`)}
+                    className="font-medium text-blue-600 hover:text-blue-800 hover:underline transition-colors cursor-pointer"
+                >
+                    {row.getValue("dailyOrderNumber")}
+                </button>
             )
         },
         {
@@ -146,15 +156,40 @@ export default function OrdersList({ status }) {
         }
     ];
 
-    // جعل عنوان الجدول ديناميكي ومترجم بناءً على الـ status الممرر
+    const filteredOrders = useMemo(() => {
+        if (!selectedDate) return orders;
+        return orders.filter(order => {
+            if (!order.createdAt) return false;
+            const orderDate = new Date(order.createdAt).toISOString().split('T')[0];
+            return orderDate === selectedDate;
+        });
+    }, [orders, selectedDate]);
+
     const tableTitle = `${t(status)} ${t("orders")}`;
 
     return (
         <div className="container mx-auto py-10">
+            <div className="flex items-center gap-4 mb-6 bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
+                <label className="text-sm font-bold text-slate-700">{t("filterByDate") || "Filter by Date"}:</label>
+                <Input 
+                    type="date" 
+                    value={selectedDate} 
+                    onChange={(e) => setSelectedDate(e.target.value)}
+                    className="w-48 h-10"
+                />
+                <Button 
+                    variant="outline" 
+                    onClick={() => setSelectedDate("")}
+                    className="h-10"
+                >
+                    {t("clearFilter") || "Clear Filter"}
+                </Button>
+            </div>
+
             <GenericDataTable
                 title={tableTitle}
                 columns={columns}
-                data={orders}
+                data={filteredOrders}
                 isLoading={isLoading}
                 queryKey={`orders-${status}`}
                 onEdit={false}
