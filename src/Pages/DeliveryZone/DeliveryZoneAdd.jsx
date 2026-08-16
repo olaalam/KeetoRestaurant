@@ -35,24 +35,25 @@ const DeliveryZoneAdd = () => {
     // الحالات
     const [selectedCityId, setSelectedCityId] = useState('');
     const [selectedZoneId, setSelectedZoneId] = useState('');
+    const [selectedBranchId, setSelectedBranchId] = useState(''); // 💡 حالة الفرع الجديد
     const [coverageType, setCoverageType] = useState('RADIUS'); 
     const [deliveryFee, setDeliveryFee] = useState('0.00');
     const [minOrderAmount, setMinOrderAmount] = useState('0.00');
     const [customRadiusKm, setCustomRadiusKm] = useState('5.00');
     const [coordinates, setCoordinates] = useState([]);
     
-    // 💡 Flag جديد بيمنع الفورم تترسم لحد ما كل الداتا تكون جاهزة ومترتبة
     const [dataLoaded, setDataLoaded] = useState(false);
 
-    // 1️⃣ جلب قائمة الخيارات
-    const { data: selectionData = { zones: [], cities: [] }, isLoading: isLoadingZones } = useQuery({
+    // 1️⃣ جلب قائمة الخيارات (تضمنت الفروع branches)
+    const { data: selectionData = { zones: [], cities: [], branches: [] }, isLoading: isLoadingZones } = useQuery({
         queryKey: ['DeliveryZonesSelect'],
         queryFn: async () => {
             const res = await api.get('/api/restaurant/restaurant-zone-delivery-fees/select');
             const responseData = res.data?.data?.data || res.data?.data || {};
             return {
                 zones: responseData.zonesselect || [],
-                cities: responseData.citiesselect || []
+                cities: responseData.citiesselect || [],
+                branches: responseData.branchesselect || responseData.branches || [] // 💡 جلب الفروع
             };
         }
     });
@@ -69,25 +70,25 @@ const DeliveryZoneAdd = () => {
 
     const editData = fetchedItemData || location.state?.DeliveryZoneData;
 
-// 3️⃣ 🎯 تعبئة الحالات وتأخير ظهور الفورم لحد ما كل حاجة تجهز
+    // 3️⃣ 🎯 تعبئة الحالات وتأخير ظهور الفورم لحد ما كل حاجة تجهز
     useEffect(() => {
         if (!isEdit) {
             setDataLoaded(true);
             return;
         }
 
-        // ⚠️ التعديل هنا: ضفنا !dataLoaded عشان الكود يشتغل مرة واحدة فقط وميمسحش الداتا
         if (editData && selectionData.cities.length > 0 && !dataLoaded) {
             const cId = String(editData.city?.id || editData.cityId || '');
             const zId = String(editData.zone?.id || editData.zoneId || '');
+            const bId = String(editData.branch?.id || editData.branchId || ''); // 💡 قراءة الفرع عند التعديل
 
             setSelectedCityId(cId);
             setSelectedZoneId(zId);
+            setSelectedBranchId(bId); // 💡 تعيين قيمة الفرع
 
             setDeliveryFee(String(editData.deliveryFee ?? '0.00'));
             setMinOrderAmount(String(editData.minOrderAmount ?? '0.00'));
             
-            // تحديد النوع
             const apiCoverageType = editData.coverageType || 'RADIUS';
             setCoverageType(apiCoverageType);
             
@@ -95,7 +96,6 @@ const DeliveryZoneAdd = () => {
                 setCustomRadiusKm(String(editData.customRadiusKm || editData.coverageAreaRadiusKm));
             }
 
-            // ⚠️ التعديل هنا: استخراج الإحداثيات بشكل آمن (الـ custom أولاً، ثم الـ default)
             let rawCoords = editData?.customCoordinates;
             if (!rawCoords || (Array.isArray(rawCoords) && rawCoords.length === 0)) {
                 rawCoords = editData?.zone?.defaultCoordinates || editData?.coordinates;
@@ -115,17 +115,24 @@ const DeliveryZoneAdd = () => {
                 }
             }
 
-            // 🎯 دلوقتي بس الفورم مسموح لها تظهر
             setDataLoaded(true);
         }
-    // ⚠️ أضفنا dataLoaded في مصفوفة الاعتمادات هنا
     }, [isEdit, editData, selectionData, dataLoaded]);
 
-    // 4️⃣ فلترة المناطق بناءً على المدينة (هتكون متفلترة صح لأننا أخرنا الرندر)
+    // 4️⃣ فلترة المناطق بناءً على المدينة
     const filteredZones = useMemo(() => {
         if (!selectedCityId) return [];
         return selectionData.zones.filter(z => String(z.cityId) === String(selectedCityId));
     }, [selectedCityId, selectionData.zones]);
+
+    // 💡 5️⃣ فلترة الفروع بناءً على المدينة (أو المنطقة إذا كانت مرتبطة بها)
+    const filteredBranches = useMemo(() => {
+        if (!selectedCityId) return [];
+        return selectionData.branches.filter(b => {
+            const branchCityId = b.cityId || b.city_id;
+            return !branchCityId || String(branchCityId) === String(selectedCityId);
+        });
+    }, [selectedCityId, selectionData.branches]);
 
     const handleZoneChange = (zoneId) => {
         setSelectedZoneId(zoneId);
@@ -160,7 +167,7 @@ const DeliveryZoneAdd = () => {
         }
     };
 
-const fields = [
+    const fields = [
         {
             name: 'cityId',
             label: t('city') || 'City',
@@ -173,11 +180,11 @@ const fields = [
                 label: isAr ? (c.nameAr || c.displayNameAr || c.name) : c.name
             })),
             onChange: (val) => {
-                // ⚠️ لمنع مسح الإحداثيات عند التحميل الأولي
                 if (val === selectedCityId) return; 
                 
                 setSelectedCityId(val);
                 setSelectedZoneId('');
+                setSelectedBranchId(''); // 💡 تصفير الفرع عند تغير المدينة
                 setCoordinates([]);
             }
         },
@@ -194,9 +201,26 @@ const fields = [
             })),
             disabled: !selectedCityId,
             onChange: (val) => {
-                // ⚠️ لمنع تشغيل الدالة بالخطأ واستبدال الإحداثيات المخصصة بالافتراضية
                 if (val === selectedZoneId) return; 
                 handleZoneChange(val);
+            }
+        },
+        // 💡 إضافة حقل الفرع (Branch) ليظهر بعد الـ Zone مباشرة
+        {
+            name: 'branchId',
+            label: t('branch') || 'Branch',
+            required: true,
+            type: 'select',
+            value: selectedBranchId,
+            defaultValue: selectedBranchId,
+            options: filteredBranches.map(b => ({
+                value: String(b.id),
+                label: isAr ? (b.nameAr || b.name) : b.name
+            })),
+            disabled: !selectedCityId,
+            onChange: (val) => {
+                if (val === selectedBranchId) return;
+                setSelectedBranchId(val);
             }
         }
     ];
@@ -205,6 +229,7 @@ const fields = [
         const payload = {
             cityId: formData.cityId || selectedCityId,
             zoneId: formData.zoneId || selectedZoneId,
+            branchId: formData.branchId || selectedBranchId, // 💡 إرسال الفرع ضمن الـ Payload
             coverageType: coverageType,
             deliveryFee: parseFloat(deliveryFee),
             minOrderAmount: parseFloat(minOrderAmount),
@@ -219,7 +244,6 @@ const fields = [
         return payload;
     };
 
-    // ⛔ منع الرندر تماماً لحد ما الداتا تجهز 100%
     if (isLoadingZones || (isEdit && isLoadingItem) || !dataLoaded) {
         return <LoadingSpinner />;
     }
@@ -227,19 +251,20 @@ const fields = [
     const initialValues = {
         cityId: selectedCityId,
         zoneId: selectedZoneId,
+        branchId: selectedBranchId, // 💡 القيمة الابتدائية للفرع
         deliveryFee: deliveryFee,
         minOrderAmount: minOrderAmount,
     };
 
     return (
         <AddPage
-            key={`form-${selectedCityId}-${selectedZoneId}`} // 💡 بيجبر الفورم تتبني من جديد بالقيم الحالية
+            key={`form-${selectedCityId}-${selectedZoneId}-${selectedBranchId}`}
             title={t('deliveryZoneFee') || 'Delivery Zone Fee'}
             apiUrl={isEdit ? `/api/restaurant/restaurant-zone-delivery-fees/${id}` : '/api/restaurant/restaurant-zone-delivery-fees'}
             method={isEdit ? 'PUT' : 'POST'}
             queryKey="DeliveryZone"
             fields={fields}
-           initialData={initialValues}
+            initialData={initialValues}
             transformPayload={transformPayload}
             onSuccessAction={(res) => {
                 const targetId = String(
