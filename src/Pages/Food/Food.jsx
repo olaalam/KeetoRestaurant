@@ -6,14 +6,14 @@ import api from '@/api/axios';
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { ListTree, PlusCircle, CheckCircle2, Pencil } from "lucide-react"; 
+import { ListTree, PlusCircle, CheckCircle2, Pencil, Store } from "lucide-react"; 
 import { usePost } from '@/hooks/usePost';
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input"; 
 import { useTranslation } from "@/hooks/useTranslation";
-import { toast } from 'sonner'; // 💡 استيراد الـ toast للتنبيهات
+import { toast } from 'sonner';
 
 const Foods = () => {
     const navigate = useNavigate();
@@ -31,12 +31,17 @@ const Foods = () => {
     const [priceDialogOpen, setPriceDialogOpen] = useState(false);
     const [foodToUpdatePrice, setFoodToUpdatePrice] = useState(null); 
     const [newPrice, setNewPrice] = useState('');
+
+    // حالات إدارة تحكم الفروع (Branch Product Control)
+    const [branchControlOpen, setBranchControlOpen] = useState(false);
+    const [selectedFoodForBranch, setSelectedFoodForBranch] = useState(null);
+
     const [pagination, setPagination] = useState({
         pageIndex: 0,
         pageSize: 15,
     });
 
-    // جلب بيانات الأطعمة للجدول[cite: 3]
+    // جلب بيانات الأطعمة للجدول[cite: 1]
     const { data: foods = [], isLoading, refetch } = useQuery({ 
         queryKey: ['foods'],
         queryFn: async () => {
@@ -45,7 +50,7 @@ const Foods = () => {
         }
     });
 
-    // جلب قائمة المكونات المتاحة[cite: 3]
+    // جلب قائمة المكونات المتاحة[cite: 1]
     const { data: ingredientsOptions = [] } = useQuery({
         queryKey: ['ingredients-select'],
         queryFn: async () => {
@@ -54,14 +59,41 @@ const Foods = () => {
         }
     });
 
-    // هوك الإرسال للمكونات[cite: 3]
+    // جلب حالة توفر المنتج في الفروع باستخدام الـ Query Params المطلوبة (foodId)[cite: 1]
+    const { data: branchAvailability = [], isLoading: isLoadingBranches, refetch: refetchBranches } = useQuery({
+        queryKey: ['branch-availability', selectedFoodForBranch?.id],
+        queryFn: async () => {
+            const res = await api.get('/api/restaurant/food-locks/availability', {
+                params: { foodId: selectedFoodForBranch.id }
+            });
+            return res.data.data?.data || [];
+        },
+        enabled: branchControlOpen && !!selectedFoodForBranch?.id,
+    });
+
+    // هوك الإرسال للمكونات[cite: 1]
     const assignMutation = usePost(
         `/api/restaurant/food/assign-ingredients/${currentFoodId}`,
         'post',
         'foods'
     );
 
-    // 💡 دالة تحديث حالة النفاذ (isOutOfStock) للسعر أو المنتج
+    // دالة تبديل قفل/فتح المنتج لكل فرع بناءً على الـ Response الجديد[cite: 2]
+    const handleBranchLockToggle = async (branchId, currentIsAvailable) => {
+        try {
+            // إذا كان متاحاً حالياً (`true`)، فعند الضغط سنقوم بقفله (`isLocked: true`)
+            await api.put(`/api/restaurant/food-locks/${branchId}/food/${selectedFoodForBranch.id}/lock`, {
+                isLocked: currentIsAvailable
+            });
+            toast.success(t('statusUpdatedSuccessfully') || 'تم تحديث حالة الفروع بنجاح');
+            refetchBranches();
+        } catch (error) {
+            console.error("Error updating branch lock status:", error);
+            toast.error(t('failedToUpdateStatus') || 'فشل تحديث حالة الفرع');
+        }
+    };
+
+    // دالة تحديث حالة النفاذ (isOutOfStock) للسعر أو المنتج[cite: 1]
     const handleStockToggle = async (foodId, currentStockStatus) => {
         try {
             await api.put(`/api/restaurant/food/${foodId}`, {
@@ -75,7 +107,6 @@ const Foods = () => {
         }
     };
 
-    // 1. دالة لقراءة اللغة الحالية بشكل صحيح من LocalStorage أو i18n[cite: 3]
     const getActualLanguage = (i18n) => {
         try {
             const storedLangData = localStorage.getItem('keeto-language');
@@ -91,7 +122,6 @@ const Foods = () => {
         return i18n?.language || "ar";
     };
 
-    // 2. دالة جلب الاسم حسب اللغة[cite: 3]
     const getLocalizedName = (item, currentLang) => {
         if (!item) return '-';
         const isArabic = currentLang?.startsWith('ar');
@@ -146,7 +176,6 @@ const Foods = () => {
         });
     };
 
-    // دالة حفظ السعر الجديد[cite: 3]
     const handleSavePrice = async () => {
         if (!newPrice || isNaN(newPrice) || Number(newPrice) <= 0) return;
 
@@ -238,7 +267,6 @@ const Foods = () => {
                 );
             }
         },
-        // 💡 عمود الـ isOutOfStock الجديد مع زر Switch تفاعلي
         {
             accessorKey: 'isOutOfStock',
             header: t('isOutOfStock') || 'غير متوفر',
@@ -258,6 +286,24 @@ const Foods = () => {
                     </div>
                 );
             }
+        },
+        {
+            id: 'branchControl',
+            header: t('branchControl') || 'فروع المنتج',
+            cell: ({ row }) => (
+                <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                        setSelectedFoodForBranch(row.original);
+                        setBranchControlOpen(true);
+                    }}
+                    className="flex items-center gap-2 border-primary text-primary hover:bg-primary/5"
+                >
+                    <Store className="h-4 w-4" />
+                    {t('branches') || 'الفروع'}
+                </Button>
+            )
         },
         {
             accessorKey: 'assign_ingredients',
@@ -302,10 +348,6 @@ const Foods = () => {
                 );
             }
         },
-        {
-            accessorKey: 'status',
-            header: t('status'),
-        },
     ];
 
     return (
@@ -325,7 +367,7 @@ const Foods = () => {
                 setPagination={setPagination}
             />
 
-            {/* Quick Edit Price Dialog[cite: 3] */}
+            {/* Quick Edit Price Dialog[cite: 1] */}
             <Dialog open={priceDialogOpen} onOpenChange={setPriceDialogOpen}>
                 <DialogContent className="max-w-sm">
                     <DialogHeader>
@@ -369,7 +411,53 @@ const Foods = () => {
                 </DialogContent>
             </Dialog>
 
-            {/* Variations Dialog[cite: 3] */}
+            {/* Branch Product Control Dialog متطابق مع الـ Response الجديد[cite: 2] */}
+            <Dialog open={branchControlOpen} onOpenChange={setBranchControlOpen}>
+                <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle className="text-xl font-bold">
+                            {t('branchProductControl') || 'Branch Product Control'}
+                        </DialogTitle>
+                        <DialogDescription>
+                            {t('totalBranches') || 'Total branches'}: {branchAvailability.length}
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-3 mt-4">
+                        {isLoadingBranches ? (
+                            <div className="text-center py-8 text-muted-foreground">
+                                {t('loading') || 'جار تحميل الفروع...'}
+                            </div>
+                        ) : branchAvailability.length > 0 ? (
+                            branchAvailability.map((branch) => {
+                                const isAvailable = Boolean(branch.isAvailable);
+                                const currentLang = i18n?.language || "ar";
+                                const branchName = currentLang === 'ar' 
+                                    ? (branch.branchNameAr || branch.branchName) 
+                                    : (branch.branchName || branch.branchNameAr);
+
+                                return (
+                                    <div key={branch.branchId} className="flex items-center justify-between p-3.5 border rounded-xl bg-slate-50 shadow-sm">
+                                        <span className="font-semibold text-slate-800">
+                                            {branchName || 'فرع بدون اسم'}
+                                        </span>
+                                        <Switch
+                                            checked={isAvailable}
+                                            onCheckedChange={() => handleBranchLockToggle(branch.branchId, isAvailable)}
+                                        />
+                                    </div>
+                                );
+                            })
+                        ) : (
+                            <p className="text-center text-muted-foreground py-8">
+                                {t('noBranchesFound') || 'لا توجد فروع متاحة'}
+                            </p>
+                        )}
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            {/* Variations Dialog[cite: 1] */}
             <Dialog open={!!selectedVariations} onOpenChange={() => setSelectedVariations(null)}>
                 <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
                     <DialogHeader>
@@ -408,7 +496,7 @@ const Foods = () => {
                 </DialogContent>
             </Dialog>
 
-            {/* Assign Ingredients Dialog[cite: 3] */}
+            {/* Assign Ingredients Dialog[cite: 1] */}
             <Dialog open={ingredientsDialogOpen} onOpenChange={setIngredientsDialogOpen}>
                 <DialogContent className="max-w-md">
                     <DialogHeader>
