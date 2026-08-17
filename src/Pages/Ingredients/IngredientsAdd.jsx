@@ -34,10 +34,16 @@ const IngredientsAdd = () => {
     const rawData = state?.ingredientData || ingredientData;
 
     const initialData = React.useMemo(() => {
-        if (!rawData) return null;
+        if (!rawData) {
+            // قيم افتراضية عند إضافة مكون جديد
+            return {
+                isEssential: true
+            };
+        }
         return {
             ...rawData,
-            categoryId: rawData.categoryId || rawData.category?.id
+            categoryId: rawData.categoryId || rawData.category?.id,
+            isEssential: rawData.isEssential ?? true, // تعيين true إذا لم تكن موجودة
         };
     }, [rawData]);
 
@@ -60,6 +66,16 @@ const IngredientsAdd = () => {
             options: [
                 { value: "true", label: t('inStock') }, 
                 { value: "false", label: t('outOfStock') }
+            ] 
+        },
+        { 
+            name: "isEssential", 
+            label: t('isEssential') || "Essential", 
+            type: "select", 
+            required: true, 
+            options: [
+                { value: "true", label: t('yes') || "Yes" }, 
+                { value: "false", label: t('no') || "No" }
             ] 
         },
     ];

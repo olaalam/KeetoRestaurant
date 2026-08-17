@@ -96,6 +96,7 @@ export const getModules = (t, orderCounts = {}) => {
         { title: t("ingredientCategories"), url: "/ingredient-category", icon: ShieldCheck },
         { title: t("ingredients"), url: "/ingredients", icon: ShieldCheck },
         { title: t("subCategories"), url: "/sub-categories", icon: Library },
+          { title: t("OutOfStock"), url: "/out-of-stock", icon: Library },
 
       ],
     },
@@ -141,6 +142,8 @@ export const getModules = (t, orderCounts = {}) => {
         { title: t("admins"), url: "/admins", icon: UserCog },
         { title: t("deliveryMen"), url: "/delivery-man", icon: UserCog },
         { title: t("cashiers"), url: "/cashiers", icon: UserCog },
+        { title: t("users"), url: "/users", icon: UserCog },
+
 
 
       ],

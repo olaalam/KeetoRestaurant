@@ -55,6 +55,7 @@ const MapComponent = ({
     form,
     onMarkerDragEnd,
     isMapClickEnabled,
+    radiusKm, // 💡 استقبال قيمة الكيلومترات هنا
 }) => {
     const watchedAddress = form.watch("address");
     
@@ -66,21 +67,24 @@ const MapComponent = ({
     const [suggestions, setSuggestions] = useState([]);
     const [isSearching, setIsSearching] = useState(false);
 
-    // 💡 2. تأثير جانبي لتحديث موقع الخريطة والـ Marker فوراً عند الكتابة اليدوية داخل الحقول
-useEffect(() => {
-    const latNum = parseFloat(watchedLat);
-    const lngNum = parseFloat(watchedLng);
+    // 💡 2. تحويل قيمة الكيلومترات إلى أمتار لأن مكتبة Leaflet تتوقع الأبعاد بالمتر
+    const radiusInMeters = (parseFloat(radiusKm) || 0) * 1000;
 
-    // التأكد من أن القيم المدخلة هي أرقام صالحة
-    if (!isNaN(latNum) && !isNaN(lngNum)) {
-        // شرط لمنع الـ Infinite Loop + التأكد من أن الدالة ممررة وموجودة 💡
-        if (latNum !== selectedLocation.lat || lngNum !== selectedLocation.lng) {
-            if (typeof setSelectedLocation === "function") {
-                setSelectedLocation({ lat: latNum, lng: lngNum });
+    // 💡 3. تأثير جانبي لتحديث موقع الخريطة والـ Marker فوراً عند الكتابة اليدوية داخل الحقول
+    useEffect(() => {
+        const latNum = parseFloat(watchedLat);
+        const lngNum = parseFloat(watchedLng);
+
+        // التأكد من أن القيم المدخلة هي أرقام صالحة
+        if (!isNaN(latNum) && !isNaN(lngNum)) {
+            // شرط لمنع الـ Infinite Loop + التأكد من أن الدالة ممررة وموجودة 💡
+            if (latNum !== selectedLocation.lat || lngNum !== selectedLocation.lng) {
+                if (typeof setSelectedLocation === "function") {
+                    setSelectedLocation({ lat: latNum, lng: lngNum });
+                }
             }
         }
-    }
-}, [watchedLat, watchedLng, selectedLocation, setSelectedLocation]);
+    }, [watchedLat, watchedLng, selectedLocation, setSelectedLocation]);
 
     // دالة جلب الاقتراحات من خوادم OpenStreetMap أثناء الكتابة
     useEffect(() => {
@@ -191,11 +195,14 @@ useEffect(() => {
                             handleMapClick={handleMapClick}
                             isMapClickEnabled={isMapClickEnabled}
                         />
-                        <Circle
-                            center={selectedLocation}
-                            pathOptions={{ fillColor: 'blue', color: 'blue' }}
-                            radius={500}
-                        />
+                        {/* 💡 ربط نصف قطر الدائرة بالمتر بدلاً من 500 الثابتة */}
+                        {radiusInMeters > 0 && (
+                            <Circle
+                                center={selectedLocation}
+                                pathOptions={{ fillColor: 'blue', color: 'blue' }}
+                                radius={radiusInMeters}
+                            />
+                        )}
                     </MapContainer>
                 ) : (
                     <div className="flex items-center justify-center w-full h-full bg-gray-200 text-gray-500">

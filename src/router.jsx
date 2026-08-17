@@ -83,6 +83,9 @@ import Points from "./Pages/Points/Points";
 import PointsAdd from "./Pages/Points/PointsAdd";
 import DeliveryMan from "./Pages/DeliveryMan/DeliveryMan";
 import DeliveryManAdd from "./Pages/DeliveryMan/DeliveryManAdd";
+import OutOfStockIngredients from "./Pages/OutOfStockList/OutOfStockList"; 
+import Users from "./Pages/Users/Users";
+import UsersAdd from "./Pages/Users/UsersAdd";
 const router = createBrowserRouter([
   {
     path: "/login",
@@ -566,6 +569,19 @@ const router = createBrowserRouter([
       {
         path: "delivery-man/edit/:id",
         element: <DeliveryManAdd />
+
+      },
+            {
+        path: "out-of-stock",
+        element: <OutOfStockIngredients />
+      },
+            {
+        path: "users",
+        element: <Users />
+      },
+      {
+        path: "users/edit/:id",
+        element: <UsersAdd />
 
       },
     ],

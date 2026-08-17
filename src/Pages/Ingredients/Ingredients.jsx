@@ -71,6 +71,15 @@ export default function Ingredients() {
             }
         },
         {
+            accessorKey: 'isEssential',
+            header: t('isEssential') || "Essential",
+            cell: ({ row }) => (
+                <span className={`text-xs px-2 py-1 rounded-md font-medium ${row.original.isEssential ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}`}>
+                    {row.original.isEssential ? (t("yes") || "Yes") : (t("no") || "No")}
+                </span>
+            )
+        },
+        {
             accessorKey: "view_foods",
             header: t('foods'),
             cell: ({ row }) => (

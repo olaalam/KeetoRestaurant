@@ -168,7 +168,7 @@ const RestaurantAdd = () => {
     ];
 
     return (
-        <AddPage
+<AddPage
             title={t('branchTitle')}
             apiUrl="/api/restaurant/branches"
             queryKey="branches"
@@ -177,6 +177,9 @@ const RestaurantAdd = () => {
             onSuccessAction={() => navigate(-1)}
         >
             {(methods) => {
+                // --- جديد: مراقبة قيمة حقل الكيلومترات لحظياً ---
+                const currentRadiusKm = methods.watch('deliveryRadiusKm');
+
                 return (
                     <div className="space-y-4 pt-4 border-t">
                         <div className="flex items-center gap-2">
@@ -189,8 +192,10 @@ const RestaurantAdd = () => {
                             <MapComponent
                                 form={methods}
                                 selectedLocation={location}
-                                setSelectedLocation={setLocation} // 💡 أضيفي هذا السطر هنا لتمرير دالة التحديث للخريطة
+                                setSelectedLocation={setLocation}
                                 isMapClickEnabled={true}
+                                // --- جديد: تمرير قيمة الريدياس للخريطة ---
+                                radiusKm={currentRadiusKm} 
                                 handleMapClick={(e) => {
                                     const { lat, lng } = e.latlng;
                                     setLocation({ lat, lng });

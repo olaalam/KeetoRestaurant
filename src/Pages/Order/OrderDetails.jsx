@@ -97,6 +97,10 @@ export default function OrderDetails() {
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const [selectedDeliveryMan, setSelectedDeliveryMan] = useState("");
 
+  // --- جديد: حالة Dialog وقت التحضير ---
+  const [isDurationDialogOpen, setIsDurationDialogOpen] = useState(false);
+  const [preparationDuration, setPreparationDuration] = useState("");
+
   useEffect(() => {
     return () => {
       if (pdfUrl) {
@@ -148,16 +152,11 @@ export default function OrderDetails() {
     },
   });
 
-  // تحديد الطلب السابق والتالي (القائمة مرتبة تنازلياً حسب الأحدث)
   const currentOrderIndex = ordersList.findIndex((o) => o.id === orderId);
-  
-  // الطلب السابق (الأقدم زمنياً): index + 1
   const previousOrder =
     currentOrderIndex !== -1 && currentOrderIndex < ordersList.length - 1
       ? ordersList[currentOrderIndex + 1]
       : null;
-
-  // الطلب التالي (الأحدث زمنياً): index - 1
   const nextOrder =
     currentOrderIndex > 0 ? ordersList[currentOrderIndex - 1] : null;
 
@@ -185,19 +184,40 @@ export default function OrderDetails() {
     },
   });
 
+  // --- جديد: ميوتيشن إرسال وقت التحضير ---
+  const updateDurationMutation = useMutation({
+    mutationFn: async (duration) => {
+      // يمكنك تعديل الـ Key الخاص بـ { duration } حسب ما يستقبله الباك إند
+      const res = await api.put(`/api/restaurant/order/${orderId}/duration`, {
+        duration: duration, 
+      });
+      return res.data;
+    },
+    onSuccess: () => {
+      // بعد نجاح إضافة الوقت، نقوم بتحديث الحالة إلى preparing
+      updateStatusMutation.mutate({ status: "preparing" });
+      setIsDurationDialogOpen(false);
+      setPreparationDuration("");
+      toast.success(t("durationUpdatedSuccess") || "تم تحديد وقت التحضير بنجاح");
+    },
+    onError: (error) => {
+      toast.error(
+        error?.response?.data?.message ||
+        t("durationUpdateError") ||
+        "فشل في تحديد وقت التحضير",
+      );
+    },
+  });
+
   // ميوتيشن تعيين مندوب التوصيل
   const assignDeliveryMutation = useMutation({
     mutationFn: async (deliveryManId) => {
-      // 1. تعيين المندوب
       const res = await api.put(`/api/restaurant/order/${orderId}/assign-delivery`, {
         deliveryManId,
       });
-
-      // 2. تحويل حالة الطلب إلى out_for_delivery تلقائياً
       await api.put(`/api/restaurant/order/${orderId}`, {
         status: "out_for_delivery",
       });
-
       return res.data;
     },
     onSuccess: () => {
@@ -216,9 +236,13 @@ export default function OrderDetails() {
     },
   });
 
+  // --- معدل: دالة تغيير الحالة لاعتراض الـ preparing ---
   const handleStatusChange = (newStatus) => {
     if (newStatus === "cancelled" || newStatus === "refund") {
       setDialogConfig({ open: true, type: newStatus });
+    } else if (newStatus === "preparing") {
+      // نفتح نافذة تحديد الوقت بدلاً من إرسال الحالة مباشرة
+      setIsDurationDialogOpen(true);
     } else {
       updateStatusMutation.mutate({ status: newStatus });
     }
@@ -234,24 +258,19 @@ export default function OrderDetails() {
 
   const handleOpenInvoice = async () => {
     if (!orderId) return;
-
     try {
       setIsInvoiceLoading(true);
       setIsInvoiceOpen(true);
-
       if (pdfUrl) {
         URL.revokeObjectURL(pdfUrl);
         setPdfUrl("");
       }
-
       const response = await api.get(`/api/restaurant/order/${orderId}/invoice`, {
         responseType: "blob",
       });
-
       const blob = new Blob([response.data], {
         type: response.headers?.["content-type"] || "application/pdf",
       });
-
       const nextPdfUrl = URL.createObjectURL(blob);
       setPdfUrl(nextPdfUrl);
     } catch (error) {
@@ -292,6 +311,8 @@ export default function OrderDetails() {
 
   return (
     <div className="w-full mx-auto py-8 px-4 sm:px-6 space-y-6">
+      {/* ... [باقي كود الهيدر والتفاصيل كما هو بدون تغيير] ... */}
+      
       <div className="w-full flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white p-4 sm:p-5 rounded-2xl border shadow-sm">
 
         {/* الجزء الأيسر: زر العودة، رقم الطلب، الشارات المعبرة */}
@@ -374,7 +395,6 @@ export default function OrderDetails() {
 
         {/* الجزء الأيمن: أزرار التنقل + زر الفاتورة */}
         <div className="flex items-center gap-3 w-full lg:w-auto lg:justify-end shrink-0 pt-2 lg:pt-0">
-          {/* أزرار التنقل بين الطلبات */}
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
@@ -402,7 +422,6 @@ export default function OrderDetails() {
             </Button>
           </div>
 
-          {/* زر فتح الفاتورة */}
           <Button
             onClick={handleOpenInvoice}
             className="rounded-xl gap-2 h-11 px-5 font-semibold text-sm bg-primary text-white shadow-sm hover:bg-primary/90"
@@ -413,7 +432,6 @@ export default function OrderDetails() {
         </div>
       </div>
 
-      {/* شبكة البيانات الأساسية */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         <div className="space-y-6 xl:col-span-2">
           {/* تفاصيل الطلب */}
@@ -445,7 +463,6 @@ export default function OrderDetails() {
                   </span>
                 </div>
 
-                {/* تاريخ الطلب */}
                 <div className="flex items-center gap-2.5 text-sm">
                   <Calendar className="w-4 h-4 text-gray-400 shrink-0" />
                   <span className="text-gray-500 font-medium">
@@ -458,7 +475,6 @@ export default function OrderDetails() {
                   </span>
                 </div>
 
-                {/* وقت الطلب */}
                 <div className="flex items-center gap-2.5 text-sm">
                   <Clock className="w-4 h-4 text-gray-400 shrink-0" />
                   <span className="text-gray-500 font-medium">
@@ -813,7 +829,7 @@ export default function OrderDetails() {
                     <Button
                       key={status}
                       variant="outline"
-                      disabled={updateStatusMutation.isPending}
+                      disabled={updateStatusMutation.isPending || updateDurationMutation.isPending}
                       onClick={() => handleStatusChange(status)}
                       className={`h-11 justify-start gap-2 rounded-xl border text-xs font-semibold relative px-3 transition-all duration-200
                         ${isActive
@@ -849,6 +865,56 @@ export default function OrderDetails() {
           </Card>
         </div>
       </div>
+
+      {/* --- جديد: Dialog تحديد وقت التحضير --- */}
+      <Dialog open={isDurationDialogOpen} onOpenChange={setIsDurationDialogOpen}>
+        <DialogContent className="sm:max-w-md rounded-2xl bg-white p-6 shadow-xl">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-bold text-gray-900 flex items-center gap-2">
+              <Clock className="w-5 h-5 text-primary" />
+              {t("setPreparationTime") || "تحديد وقت التحضير"}
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="py-4 space-y-3">
+            <label className="text-sm font-semibold text-gray-700 block">
+              {t("durationInMinutes") || "الوقت التقديري للتحضير (بالدقائق)"}
+            </label>
+            <input
+              type="number"
+              min="1"
+              value={preparationDuration}
+              onChange={(e) => setPreparationDuration(e.target.value)}
+              placeholder="مثال: 15"
+              className="w-full h-11 px-3 py-2 bg-white border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/60 font-medium"
+            />
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4 border-t">
+            <Button
+              variant="outline"
+              className="rounded-xl px-4"
+              onClick={() => {
+                setIsDurationDialogOpen(false);
+                setPreparationDuration("");
+              }}
+            >
+              {t("cancel") || "إلغاء"}
+            </Button>
+            <Button
+              className="rounded-xl bg-primary hover:bg-primary/90 text-white px-5 font-semibold"
+              disabled={updateDurationMutation.isPending || !preparationDuration}
+              onClick={() => updateDurationMutation.mutate(Number(preparationDuration))}
+            >
+              {updateDurationMutation.isPending && (
+                <Loader2 className="w-4 h-4 animate-spin ml-2" />
+              )}
+              {t("confirm") || "تأكيد وبدء التحضير"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+      {/* -------------------------------------- */}
 
       {/* Dialog تعيين مندوب التوصيل */}
       <Dialog open={isAssignDialogOpen} onOpenChange={setIsAssignDialogOpen}>
