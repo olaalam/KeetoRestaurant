@@ -37,6 +37,7 @@ export default function Layout() {
 
   // اسم المطعم أو المستخدم (حسب الحقل المخزن بالـ ستور، هنا نأخذ الـ name الموجود بالصورة)
   const restaurantName = user?.restaurantName || "Keeto";
+  const branchName = user?.branchName || user?.branch?.name;
 
 
   const location = useLocation();
@@ -288,7 +289,7 @@ export default function Layout() {
                         {t("home")}
                       </span>
                       <span className="text-xs text-muted-foreground font-medium">
-                        {restaurantName}
+                        {restaurantName} {branchName ? `- ${branchName}` : ""}
                       </span>
                     </div>
                   )}

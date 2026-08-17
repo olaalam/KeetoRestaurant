@@ -47,6 +47,8 @@ const SettingPageAdd = () => {
         isSameTimeEveryDay: false,
         firstColor: "",
         secondColor: "",
+        firstTextColor: "",
+        secondTextColor: "",
         schedules: [
             { dayOfWeek: 0, isOffDay: false, openingTime: "09:00", closingTime: "23:00" },
             { dayOfWeek: 1, isOffDay: false, openingTime: "09:00", closingTime: "23:00" },
@@ -91,6 +93,8 @@ const SettingPageAdd = () => {
             isSameTimeEveryDay: rawData.settings?.isSameTimeEveryDay ?? false,
             firstColor: rawData.settings?.firstColor || "",
             secondColor: rawData.settings?.secondColor || "",
+            firstTextColor: rawData.settings?.firstTextColor || "",
+            secondTextColor: rawData.settings?.secondTextColor || "",
             schedules: formattedSchedules.length > 0 ? formattedSchedules : defaultInitialData.schedules
         };
         // تحويل الكائن لنص بيضمن استقرار الـ useMemo ومنع الـ Infinite Loops تماماً مع الـ Forms
@@ -128,7 +132,9 @@ const SettingPageAdd = () => {
                 isAlwaysOpen: data.isAlwaysOpen ?? false,
                 isSameTimeEveryDay: data.isSameTimeEveryDay ?? false,
                 firstColor: data.firstColor || "",
-                secondColor: data.secondColor || ""
+                secondColor: data.secondColor || "",
+                firstTextColor: data.firstTextColor || "",
+                secondTextColor: data.secondTextColor || "",
             },
             schedules: (data.schedules || []).map(schedule => ({
                 dayOfWeek: Number(schedule.dayOfWeek),
@@ -206,10 +212,19 @@ const SettingPageAdd = () => {
                                     <Label className="text-gray-700 font-medium">first color</Label>
                                     <Input type="input" {...register("firstColor",)} />
                                 </div>
-                                
+
                                 <div className="space-y-2">
                                     <Label className="text-gray-700 font-medium">Second Color</Label>
                                     <Input type="input" {...register("secondColor")} />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-gray-700 font-medium">first Text color</Label>
+                                    <Input type="input" {...register("firstTextColor",)} />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label className="text-gray-700 font-medium">Second Text Color</Label>
+                                    <Input type="input" {...register("secondTextColor")} />
                                 </div>
                                 <div className="space-y-2">
                                     <Label className="text-gray-700 font-medium">Min Order Amount (EGP)</Label>

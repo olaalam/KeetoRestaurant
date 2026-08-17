@@ -95,6 +95,14 @@ export default function Setting() {
             header: t("secondColor", { defaultValue: "Second Color" })
         },
         {
+            accessorKey: "firstTextColor",
+            header: t("firstTextColor", { defaultValue: "First Color" })
+        },
+        {
+            accessorKey: "secondTextColor",
+            header: t("secondTextColor", { defaultValue: "Second Color" })
+        },
+        {
             accessorKey: "dineIn",
             header: t("dineIn", { defaultValue: "Dine In" }),
             cell: ({ getValue }) => getValue() ? t("yes", { defaultValue: "Yes" }) : t("no", { defaultValue: "No" })
