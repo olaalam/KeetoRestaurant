@@ -81,7 +81,52 @@ const statusConfig = {
     icon: Undo2,
   },
 };
+function PreparationCountdown({ durationInMinutes, startTime }) {
+  const [timeLeft, setTimeLeft] = useState(0);
 
+  useEffect(() => {
+    if (!durationInMinutes || !startTime) return;
+
+    // Calculate total duration end time based on the order start time
+    const startTimestamp = new Date(startTime).getTime();
+    const targetTimestamp = startTimestamp + durationInMinutes * 60 * 1000;
+
+    const calculateTimeLeft = () => {
+      const now = Date.now();
+      const difference = targetTimestamp - now;
+      setTimeLeft(difference > 0 ? difference : 0);
+    };
+
+    calculateTimeLeft();
+    const interval = setInterval(calculateTimeLeft, 1000);
+
+    return () => clearInterval(interval);
+  }, [durationInMinutes, startTime]);
+
+  if (!durationInMinutes) {
+    return <span className="text-gray-400 font-medium">لم يتم التحديد</span>;
+  }
+
+  if (timeLeft <= 0) {
+    return (
+      <span className="text-red-600 font-bold tracking-wider font-mono">
+        00:00:00
+      </span>
+    );
+  }
+
+  const hours = Math.floor((timeLeft / (1000 * 60 * 60)) % 24);
+  const minutes = Math.floor((timeLeft / (1000 * 60)) % 60);
+  const seconds = Math.floor((timeLeft / 1000) % 60);
+
+  const format = (num) => String(num).padStart(2, "0");
+
+  return (
+    <span className="text-primary font-mono font-bold text-base tracking-wider dir-ltr">
+      {format(hours)}:{format(minutes)}:{format(seconds)}
+    </span>
+  );
+}
 export default function OrderDetails() {
   const { orderId } = useParams();
   const navigate = useNavigate();
@@ -178,8 +223,8 @@ export default function OrderDetails() {
     onError: (error) => {
       toast.error(
         error?.response?.data?.message ||
-        t("statusUpdateError") ||
-        "فشل في تحديث الحالة",
+          t("statusUpdateError") ||
+          "فشل في تحديث الحالة",
       );
     },
   });
@@ -187,24 +232,25 @@ export default function OrderDetails() {
   // --- جديد: ميوتيشن إرسال وقت التحضير ---
   const updateDurationMutation = useMutation({
     mutationFn: async (duration) => {
-      // يمكنك تعديل الـ Key الخاص بـ { duration } حسب ما يستقبله الباك إند
       const res = await api.put(`/api/restaurant/order/${orderId}/duration`, {
-        duration: duration, 
+        duration: duration,
       });
       return res.data;
     },
     onSuccess: () => {
-      // بعد نجاح إضافة الوقت، نقوم بتحديث الحالة إلى preparing
-      updateStatusMutation.mutate({ status: "preparing" });
+      // Refresh the order to get the updated durationOrderPreparing value
+      queryClient.invalidateQueries({ queryKey: ["order", orderId] });
       setIsDurationDialogOpen(false);
       setPreparationDuration("");
-      toast.success(t("durationUpdatedSuccess") || "تم تحديد وقت التحضير بنجاح");
+      toast.success(
+        t("durationUpdatedSuccess") || "تم تحديد وقت التحضير بنجاح",
+      );
     },
     onError: (error) => {
       toast.error(
         error?.response?.data?.message ||
-        t("durationUpdateError") ||
-        "فشل في تحديد وقت التحضير",
+          t("durationUpdateError") ||
+          "فشل في تحديد وقت التحضير",
       );
     },
   });
@@ -212,9 +258,12 @@ export default function OrderDetails() {
   // ميوتيشن تعيين مندوب التوصيل
   const assignDeliveryMutation = useMutation({
     mutationFn: async (deliveryManId) => {
-      const res = await api.put(`/api/restaurant/order/${orderId}/assign-delivery`, {
-        deliveryManId,
-      });
+      const res = await api.put(
+        `/api/restaurant/order/${orderId}/assign-delivery`,
+        {
+          deliveryManId,
+        },
+      );
       await api.put(`/api/restaurant/order/${orderId}`, {
         status: "out_for_delivery",
       });
@@ -223,34 +272,36 @@ export default function OrderDetails() {
     onSuccess: () => {
       queryClient.invalidateQueries(["order", orderId]);
       queryClient.invalidateQueries(["orders"]);
-      toast.success(t("deliveryManAssignedSuccess") || "تم تعيين مندوب التوصيل وتحويل الطلب بنجاح");
+      toast.success(
+        t("deliveryManAssignedSuccess") ||
+          "تم تعيين مندوب التوصيل وتحويل الطلب بنجاح",
+      );
       setIsAssignDialogOpen(false);
       setSelectedDeliveryMan("");
     },
     onError: (error) => {
       toast.error(
         error?.response?.data?.message ||
-        t("assignDeliveryError") ||
-        "فشل في تعيين مندوب التوصيل",
+          t("assignDeliveryError") ||
+          "فشل في تعيين مندوب التوصيل",
       );
     },
   });
 
-  // --- معدل: دالة تغيير الحالة لاعتراض الـ preparing ---
   const handleStatusChange = (newStatus) => {
     if (newStatus === "cancelled" || newStatus === "refund") {
       setDialogConfig({ open: true, type: newStatus });
-    } else if (newStatus === "preparing") {
-      // نفتح نافذة تحديد الوقت بدلاً من إرسال الحالة مباشرة
-      setIsDurationDialogOpen(true);
     } else {
+      // Directly update the status without opening the duration dialog
       updateStatusMutation.mutate({ status: newStatus });
     }
   };
 
   const handleAssignDelivery = () => {
     if (!selectedDeliveryMan) {
-      toast.error(t("selectDeliveryManFirst") || "يرجى اختيار مندوب توصيل أولاً");
+      toast.error(
+        t("selectDeliveryManFirst") || "يرجى اختيار مندوب توصيل أولاً",
+      );
       return;
     }
     assignDeliveryMutation.mutate(selectedDeliveryMan);
@@ -265,9 +316,12 @@ export default function OrderDetails() {
         URL.revokeObjectURL(pdfUrl);
         setPdfUrl("");
       }
-      const response = await api.get(`/api/restaurant/order/${orderId}/invoice`, {
-        responseType: "blob",
-      });
+      const response = await api.get(
+        `/api/restaurant/order/${orderId}/invoice`,
+        {
+          responseType: "blob",
+        },
+      );
       const blob = new Blob([response.data], {
         type: response.headers?.["content-type"] || "application/pdf",
       });
@@ -312,9 +366,8 @@ export default function OrderDetails() {
   return (
     <div className="w-full mx-auto py-8 px-4 sm:px-6 space-y-6">
       {/* ... [باقي كود الهيدر والتفاصيل كما هو بدون تغيير] ... */}
-      
-      <div className="w-full flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white p-4 sm:p-5 rounded-2xl border shadow-sm">
 
+      <div className="w-full flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white p-4 sm:p-5 rounded-2xl border shadow-sm">
         {/* الجزء الأيسر: زر العودة، رقم الطلب، الشارات المعبرة */}
         <div className="flex flex-1 items-center gap-3 flex-wrap w-full">
           <Button
@@ -334,7 +387,10 @@ export default function OrderDetails() {
             </span>
           </div>
 
-          <Separator orientation="vertical" className="h-8 hidden sm:block bg-gray-200" />
+          <Separator
+            orientation="vertical"
+            className="h-8 hidden sm:block bg-gray-200"
+          />
 
           {/* مصفوفة الشارات */}
           <div className="flex items-center gap-2.5 flex-wrap">
@@ -355,7 +411,11 @@ export default function OrderDetails() {
                 <ShoppingBag className="w-4 h-4 text-amber-600" />
                 <span className="capitalize">
                   {document.documentElement.dir === "rtl"
-                    ? (order.orderType === "delivery" ? "توصيل" : order.orderType === "takeaway" ? "استلام" : order.orderType)
+                    ? order.orderType === "delivery"
+                      ? "توصيل"
+                      : order.orderType === "takeaway"
+                        ? "استلام"
+                        : order.orderType
                     : order.orderType}
                 </span>
               </Badge>
@@ -369,7 +429,8 @@ export default function OrderDetails() {
               >
                 <CreditCard className="w-4 h-4 text-emerald-600" />
                 <span className="capitalize">
-                  {document.documentElement.dir === "rtl" && order.paymentMethodNameAr
+                  {document.documentElement.dir === "rtl" &&
+                  order.paymentMethodNameAr
                     ? order.paymentMethodNameAr
                     : order.paymentMethodName?.replace(/_/g, " ")}
                 </span>
@@ -385,7 +446,9 @@ export default function OrderDetails() {
                 <Store className="w-4 h-4 text-blue-600" />
                 <span className="capitalize">
                   {document.documentElement.dir === "rtl"
-                    ? (order.orderSource === "online_order" ? "طلب أونلاين" : order.orderSource?.replace(/_/g, " "))
+                    ? order.orderSource === "online_order"
+                      ? "طلب أونلاين"
+                      : order.orderSource?.replace(/_/g, " ")
                     : order.orderSource?.replace(/_/g, " ")}
                 </span>
               </Badge>
@@ -496,7 +559,9 @@ export default function OrderDetails() {
                     {t("orderNote") || "ملاحظات الطلب"}:
                   </span>
                   <span className="font-semibold text-gray-900">
-                    {order.note && order.note.trim() !== "" ? order.note : (t("noNotes") || "لا توجد ملاحظات")}
+                    {order.note && order.note.trim() !== ""
+                      ? order.note
+                      : t("noNotes") || "لا توجد ملاحظات"}
                   </span>
                 </div>
               </div>
@@ -553,12 +618,16 @@ export default function OrderDetails() {
                                 className="w-12 h-12 rounded-lg object-cover border bg-gray-50 shadow-sm flex-shrink-0 mb-1"
                               />
                               <p className="font-bold text-gray-900 text-sm">
-                                {document.documentElement.dir === "rtl" && item.foodNameAr
+                                {document.documentElement.dir === "rtl" &&
+                                item.foodNameAr
                                   ? item.foodNameAr
                                   : item.foodName}
                               </p>
                               <p className="text-xs font-bold text-red-700">
-                                Price: {parseFloat(item.basePrice || item.unitPrice || 0).toFixed(2)}
+                                Price:{" "}
+                                {parseFloat(
+                                  item.basePrice || item.unitPrice || 0,
+                                ).toFixed(2)}
                               </p>
                               <p className="text-xs font-medium text-gray-600">
                                 Qty: {item.quantity || item.qty || 1}
@@ -585,7 +654,10 @@ export default function OrderDetails() {
                                       {parseFloat(v.additionalPrice) > 0 && (
                                         <span className="text-primary font-bold">
                                           {" "}
-                                          +{parseFloat(v.additionalPrice).toFixed(2)}
+                                          +
+                                          {parseFloat(
+                                            v.additionalPrice,
+                                          ).toFixed(2)}
                                         </span>
                                       )}
                                     </span>
@@ -606,12 +678,22 @@ export default function OrderDetails() {
                                   >
                                     <span className="font-semibold text-gray-800">
                                       {document.documentElement.dir === "rtl"
-                                        ? addon.addonNameAr || addon.nameAr || addon.name
+                                        ? addon.addonNameAr ||
+                                          addon.nameAr ||
+                                          addon.name
                                         : addon.addonName || addon.name}
-                                      {parseFloat(addon.price || addon.additionalPrice || 0) > 0 && (
+                                      {parseFloat(
+                                        addon.price ||
+                                          addon.additionalPrice ||
+                                          0,
+                                      ) > 0 && (
                                         <span className="text-primary font-bold">
                                           {" "}
-                                          +{parseFloat(addon.price || addon.additionalPrice).toFixed(2)}
+                                          +
+                                          {parseFloat(
+                                            addon.price ||
+                                              addon.additionalPrice,
+                                          ).toFixed(2)}
                                         </span>
                                       )}
                                     </span>
@@ -708,12 +790,16 @@ export default function OrderDetails() {
 
             <div className="space-y-2 text-sm text-gray-800">
               <div className="flex items-center gap-1.5">
-                <span className="font-semibold text-gray-900">{t("name") || "Name"}:</span>
+                <span className="font-semibold text-gray-900">
+                  {t("name") || "Name"}:
+                </span>
                 <span>{order.customer?.name || t("unknown")}</span>
               </div>
 
               <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="font-semibold text-gray-900">{t("contact") || "Contact"}:</span>
+                <span className="font-semibold text-gray-900">
+                  {t("contact") || "Contact"}:
+                </span>
                 {order.customer?.phone ? (
                   <div className="flex items-center gap-1.5">
                     <a
@@ -731,7 +817,9 @@ export default function OrderDetails() {
                     <button
                       onClick={() => {
                         navigator.clipboard.writeText(order.customer.phone);
-                        toast.success(t("phoneCopied") || "تم نسخ رقم الهاتف بنجاح");
+                        toast.success(
+                          t("phoneCopied") || "تم نسخ رقم الهاتف بنجاح",
+                        );
                       }}
                       className="text-gray-400 hover:text-gray-600 transition-colors"
                       title="Copy Phone Number"
@@ -746,7 +834,9 @@ export default function OrderDetails() {
 
               {order.customer?.email && (
                 <div className="flex items-center gap-1.5 break-all">
-                  <span className="font-semibold text-gray-900">{t("email") || "Email"}:</span>
+                  <span className="font-semibold text-gray-900">
+                    {t("email") || "Email"}:
+                  </span>
                   <span>{order.customer.email}</span>
                 </div>
               )}
@@ -755,37 +845,53 @@ export default function OrderDetails() {
                 <>
                   {order.address.title && (
                     <div className="flex items-center gap-1.5">
-                      <span className="font-semibold text-gray-900">{t("Address") || "Address"}:</span>
+                      <span className="font-semibold text-gray-900">
+                        {t("Address") || "Address"}:
+                      </span>
                       <span>{order.address.title || t("unknown")}</span>
                     </div>
                   )}
                   <div className="flex items-center gap-1.5">
-                    <span className="font-semibold text-gray-900">{t("street") || "Road"}:</span>
+                    <span className="font-semibold text-gray-900">
+                      {t("street") || "Road"}:
+                    </span>
                     <span>{order.address.street || "-"}</span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <span className="font-semibold text-gray-900">{t("buildingNumber") || "Build Num"}:</span>
+                    <span className="font-semibold text-gray-900">
+                      {t("buildingNumber") || "Build Num"}:
+                    </span>
                     <span>{order.address.number || "-"}</span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <span className="font-semibold text-gray-900">{t("floor") || "Floor"}:</span>
+                    <span className="font-semibold text-gray-900">
+                      {t("floor") || "Floor"}:
+                    </span>
                     <span>{order.address.floor || "-"}</span>
                   </div>
                   {order.address.apartment && (
                     <div className="flex items-center gap-1.5">
-                      <span className="font-semibold text-gray-900">{t("apartment") || "Apartment"}:</span>
+                      <span className="font-semibold text-gray-900">
+                        {t("apartment") || "Apartment"}:
+                      </span>
                       <span>{order.address.apartment || "-"}</span>
                     </div>
                   )}
                   {order.address.landmark && (
                     <div className="flex items-center gap-1.5">
-                      <span className="font-semibold text-gray-900">{t("landmark") || "Landmark"}:</span>
-                      <span className="text-gray-700">{order.address.landmark}</span>
+                      <span className="font-semibold text-gray-900">
+                        {t("landmark") || "Landmark"}:
+                      </span>
+                      <span className="text-gray-700">
+                        {order.address.landmark}
+                      </span>
                     </div>
                   )}
                   {order.address.lat && order.address.lng && (
                     <div className="flex items-center gap-1.5">
-                      <span className="font-semibold text-gray-900">{t("locationMap") || "Location Map"}:</span>
+                      <span className="font-semibold text-gray-900">
+                        {t("locationMap") || "Location Map"}:
+                      </span>
                       <a
                         href={`https://www.google.com/maps?q=${order.address.lat},${order.address.lng}`}
                         target="_blank"
@@ -800,13 +906,43 @@ export default function OrderDetails() {
                 </>
               ) : (
                 <div className="flex items-center gap-1.5">
-                  <span className="font-semibold text-gray-900">{t("address") || "Address"}:</span>
+                  <span className="font-semibold text-gray-900">
+                    {t("address") || "Address"}:
+                  </span>
                   <span>{order?.address || t("notSpecified")}</span>
                 </div>
               )}
             </div>
           </Card>
+          {/* Order Duration Card with Live Countdown */}
+          <Card className="rounded-2xl border shadow-sm bg-white overflow-hidden">
+            <CardHeader className="border-b bg-gray-50/50 px-6 py-4">
+              <CardTitle className="text-sm font-bold text-gray-800 flex items-center gap-2">
+                <Clock className="w-4 h-4 text-primary" />
+                {t("orderDuration") || "مدة التحضير"}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-4 flex items-center justify-between">
+              <div className="flex flex-col gap-1">
+                <span className="text-xs font-semibold text-gray-500">
+                  {t("remainingTime") || "الوقت المتبقي:"}
+                </span>
+                <PreparationCountdown
+                  durationInMinutes={order.durationOrderPreparing}
+                  startTime={order.updatedAt || order.createdAt}
+                />
+              </div>
 
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsDurationDialogOpen(true)}
+                className="rounded-xl h-9 px-4 font-semibold text-xs border-primary text-primary hover:bg-primary/5 transition-colors"
+              >
+                {t("add") || "إضافة / تعديل"}
+              </Button>
+            </CardContent>
+          </Card>
           {/* كارت تعديل الحالات */}
           <Card className="rounded-2xl border shadow-sm bg-white overflow-hidden">
             <CardHeader className="border-b bg-gray-50/50 px-6 py-4">
@@ -829,12 +965,16 @@ export default function OrderDetails() {
                     <Button
                       key={status}
                       variant="outline"
-                      disabled={updateStatusMutation.isPending || updateDurationMutation.isPending}
+                      disabled={
+                        updateStatusMutation.isPending ||
+                        updateDurationMutation.isPending
+                      }
                       onClick={() => handleStatusChange(status)}
                       className={`h-11 justify-start gap-2 rounded-xl border text-xs font-semibold relative px-3 transition-all duration-200
-                        ${isActive
-                          ? "border-blue-600 bg-blue-50 text-blue-700 font-bold shadow-sm hover:bg-blue-50"
-                          : "border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                        ${
+                          isActive
+                            ? "border-blue-600 bg-blue-50 text-blue-700 font-bold shadow-sm hover:bg-blue-50"
+                            : "border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                         }`}
                     >
                       {isActive && (
@@ -867,7 +1007,10 @@ export default function OrderDetails() {
       </div>
 
       {/* --- جديد: Dialog تحديد وقت التحضير --- */}
-      <Dialog open={isDurationDialogOpen} onOpenChange={setIsDurationDialogOpen}>
+      <Dialog
+        open={isDurationDialogOpen}
+        onOpenChange={setIsDurationDialogOpen}
+      >
         <DialogContent className="sm:max-w-md rounded-2xl bg-white p-6 shadow-xl">
           <DialogHeader>
             <DialogTitle className="text-lg font-bold text-gray-900 flex items-center gap-2">
@@ -903,8 +1046,12 @@ export default function OrderDetails() {
             </Button>
             <Button
               className="rounded-xl bg-primary hover:bg-primary/90 text-white px-5 font-semibold"
-              disabled={updateDurationMutation.isPending || !preparationDuration}
-              onClick={() => updateDurationMutation.mutate(Number(preparationDuration))}
+              disabled={
+                updateDurationMutation.isPending || !preparationDuration
+              }
+              onClick={() =>
+                updateDurationMutation.mutate(Number(preparationDuration))
+              }
             >
               {updateDurationMutation.isPending && (
                 <Loader2 className="w-4 h-4 animate-spin ml-2" />
@@ -970,7 +1117,9 @@ export default function OrderDetails() {
             </Button>
             <Button
               className="rounded-xl bg-primary hover:bg-primary/90 text-white px-5 font-semibold"
-              disabled={assignDeliveryMutation.isPending || !selectedDeliveryMan}
+              disabled={
+                assignDeliveryMutation.isPending || !selectedDeliveryMan
+              }
               onClick={handleAssignDelivery}
             >
               {assignDeliveryMutation.isPending && (
