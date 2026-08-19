@@ -7,7 +7,7 @@ import { User, Phone, Eye, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/hooks/useTranslation";
 import { Input } from "@/components/ui/input";
-import useDateRangeStore from "@/store/useDateRangeStore";
+import useDateRangeStore from "../../store/Usedaterangestore";
 
 export default function OrdersList({ status }) {
   const navigate = useNavigate();
