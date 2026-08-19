@@ -28,6 +28,7 @@ import { getModules } from "@/config/modules";
 import { useQuery } from "@tanstack/react-query";
 import api from "@/api/axios";
 import useAuthStore from "@/store/useAuthStore";
+import useDateRangeStore from "@/store/useDateRangeStore";
 
 export function AppSidebar({ side = "left" }) {
   const { open } = useSidebar();
@@ -39,14 +40,22 @@ export function AppSidebar({ side = "left" }) {
   const restaurantName = user?.restaurantName || "Keeto";
   const branchName = user?.branchName || user?.branch?.name;
 
-  const { data: orderCounts = { totalOrders: 0, statusCounts: {} } } = useQuery({
-    queryKey: ['order-statistics'],
-    queryFn: async () => {
-      const res = await api.get('/api/restaurant/order/numbers');
-      return res.data.data.data;
+  const { startDate, endDate } = useDateRangeStore();
+
+  const { data: orderCounts = { totalOrders: 0, statusCounts: {} } } = useQuery(
+    {
+      queryKey: ["order-statistics", startDate, endDate],
+      queryFn: async () => {
+        const params = {};
+        if (startDate) params.start_date = startDate;
+        if (endDate) params.end_date = endDate;
+
+        const res = await api.get("/api/restaurant/order/numbers", { params });
+        return res.data.data.data;
+      },
+      refetchInterval: 30000,
     },
-    refetchInterval: 30000,
-  });
+  );
 
   const translatedModules = getModules(t, orderCounts);
   const activeModule = storedModule
@@ -55,13 +64,15 @@ export function AppSidebar({ side = "left" }) {
 
   useEffect(() => {
     if (activeModule && activeModule.items) {
-      const activeParentMenu = activeModule.items.find(item =>
-        item.subItems?.some(subItem => location.pathname.includes(subItem.url)) ||
-        location.pathname.includes(item.url)
+      const activeParentMenu = activeModule.items.find(
+        (item) =>
+          item.subItems?.some((subItem) =>
+            location.pathname.includes(subItem.url),
+          ) || location.pathname.includes(item.url),
       );
 
       if (activeParentMenu) {
-        setOpenMenus(prev => {
+        setOpenMenus((prev) => {
           if (!prev.includes(activeParentMenu.title)) {
             return [...prev, activeParentMenu.title];
           }
@@ -101,10 +112,17 @@ export function AppSidebar({ side = "left" }) {
             >
               <Link
                 to="/"
-                className={`flex items-center gap-2 text-slate-600 hover:text-primary font-medium w-full ${!open ? "justify-center" : isRTL ? "flex-row-reverse pl-2" : "px-2"
-                  }`}
+                className={`flex items-center gap-2 text-slate-600 hover:text-primary font-medium w-full ${
+                  !open
+                    ? "justify-center"
+                    : isRTL
+                      ? "flex-row-reverse pl-2"
+                      : "px-2"
+                }`}
               >
-                <span className={`transform transition-transform ${isRTL ? "rotate-180" : ""}`}>
+                <span
+                  className={`transform transition-transform ${isRTL ? "rotate-180" : ""}`}
+                >
                   <ChevronLeft size={20} className="shrink-0" />
                 </span>
 
@@ -136,16 +154,32 @@ export function AppSidebar({ side = "left" }) {
                         {hasSubItems ? (
                           <button
                             onClick={() => toggleMenu(item.title)}
-                            className={`flex items-center w-full gap-3 px-3 py-2 rounded-xl transition-all duration-200 cursor-pointer ${open ? "gap-3 px-3 py-2 justify-start" : "justify-center py-2"
-                              } ${active ? "bg-primary text-white shadow-md" : "text-gray-600 hover:bg-gray-200"
-                              }`}
+                            className={`flex items-center w-full gap-3 px-3 py-2 rounded-xl transition-all duration-200 cursor-pointer ${
+                              open
+                                ? "gap-3 px-3 py-2 justify-start"
+                                : "justify-center py-2"
+                            } ${
+                              active
+                                ? "bg-primary text-white shadow-md"
+                                : "text-gray-600 hover:bg-gray-200"
+                            }`}
                           >
-                            {IconComponent ? <IconComponent size={20} /> : <HelpCircle size={20} />}
+                            {IconComponent ? (
+                              <IconComponent size={20} />
+                            ) : (
+                              <HelpCircle size={20} />
+                            )}
                             {open && (
                               <>
-                                <span className="text-sm font-medium">{item.title}</span>
+                                <span className="text-sm font-medium">
+                                  {item.title}
+                                </span>
                                 <span className="ml-auto">
-                                  {isOpen ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
+                                  {isOpen ? (
+                                    <ChevronDown size={18} />
+                                  ) : (
+                                    <ChevronRight size={18} />
+                                  )}
                                 </span>
                               </>
                             )}
@@ -153,12 +187,26 @@ export function AppSidebar({ side = "left" }) {
                         ) : (
                           <Link
                             to={item.url}
-                            className={`flex items-center w-full gap-3 px-3 py-2 rounded-xl transition-all duration-200 cursor-pointer ${open ? "gap-3 px-3 py-2 justify-start" : "justify-center py-2"
-                              } ${active ? "bg-primary text-white shadow-md" : "text-gray-600 hover:bg-gray-200"
-                              }`}
+                            className={`flex items-center w-full gap-3 px-3 py-2 rounded-xl transition-all duration-200 cursor-pointer ${
+                              open
+                                ? "gap-3 px-3 py-2 justify-start"
+                                : "justify-center py-2"
+                            } ${
+                              active
+                                ? "bg-primary text-white shadow-md"
+                                : "text-gray-600 hover:bg-gray-200"
+                            }`}
                           >
-                            {IconComponent ? <IconComponent size={20} /> : <HelpCircle size={20} />}
-                            {open && <span className="text-sm font-medium">{item.title}</span>}
+                            {IconComponent ? (
+                              <IconComponent size={20} />
+                            ) : (
+                              <HelpCircle size={20} />
+                            )}
+                            {open && (
+                              <span className="text-sm font-medium">
+                                {item.title}
+                              </span>
+                            )}
                           </Link>
                         )}
                       </SidebarMenuButton>
@@ -176,8 +224,11 @@ export function AppSidebar({ side = "left" }) {
                               <SidebarMenuButton asChild>
                                 <Link
                                   to={subItem.url}
-                                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all ${isSubActive ? "bg-primary text-white" : "text-gray-500 hover:bg-gray-100"
-                                    }`}
+                                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all ${
+                                    isSubActive
+                                      ? "bg-primary text-white"
+                                      : "text-gray-500 hover:bg-gray-100"
+                                  }`}
                                 >
                                   {SubIcon && <SubIcon size={16} />}
                                   <span>{subItem.title}</span>
@@ -196,8 +247,7 @@ export function AppSidebar({ side = "left" }) {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="p-2">
-      </SidebarFooter>
+      <SidebarFooter className="p-2"></SidebarFooter>
     </Sidebar>
   );
 }

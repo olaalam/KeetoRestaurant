@@ -32,6 +32,7 @@ export const getModules = (t, orderCounts = {}) => {
   const counts = orderCounts.statusCounts || {};
 
   // تعريف المتغيرات بوضوح وتوفير قيم افتراضية 0
+  const totalOrders = orderCounts.totalOrders || 0;
   const pending = counts.pending || 0;
   const accepted = counts.accepted || 0;
   const preparing = counts.preparing || 0;
@@ -56,7 +57,7 @@ export const getModules = (t, orderCounts = {}) => {
           url: "/orders",
           icon: ShoppingBag,
           subItems: [
-            { title: `${t("AllOrders")} (${pending})`, url: "/orders", icon: ShoppingBag },
+            { title: `${t("AllOrders")} (${totalOrders})`, url: "/orders", icon: ShoppingBag },
             { title: `${t("pending")} (${pending})`, url: "/orders/pending", icon: Clock },
             { title: `${t("accepted")} (${accepted})`, url: "/orders/accepted", icon: CheckCircle2 },
             { title: `${t("preparing")} (${preparing})`, url: "/orders/preparing", icon: Package },
