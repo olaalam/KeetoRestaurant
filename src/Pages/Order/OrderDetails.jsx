@@ -223,8 +223,8 @@ export default function OrderDetails() {
     onError: (error) => {
       toast.error(
         error?.response?.data?.message ||
-          t("statusUpdateError") ||
-          "فشل في تحديث الحالة",
+        t("statusUpdateError") ||
+        "فشل في تحديث الحالة",
       );
     },
   });
@@ -249,8 +249,8 @@ export default function OrderDetails() {
     onError: (error) => {
       toast.error(
         error?.response?.data?.message ||
-          t("durationUpdateError") ||
-          "فشل في تحديد وقت التحضير",
+        t("durationUpdateError") ||
+        "فشل في تحديد وقت التحضير",
       );
     },
   });
@@ -274,7 +274,7 @@ export default function OrderDetails() {
       queryClient.invalidateQueries(["orders"]);
       toast.success(
         t("deliveryManAssignedSuccess") ||
-          "تم تعيين مندوب التوصيل وتحويل الطلب بنجاح",
+        "تم تعيين مندوب التوصيل وتحويل الطلب بنجاح",
       );
       setIsAssignDialogOpen(false);
       setSelectedDeliveryMan("");
@@ -282,8 +282,8 @@ export default function OrderDetails() {
     onError: (error) => {
       toast.error(
         error?.response?.data?.message ||
-          t("assignDeliveryError") ||
-          "فشل في تعيين مندوب التوصيل",
+        t("assignDeliveryError") ||
+        "فشل في تعيين مندوب التوصيل",
       );
     },
   });
@@ -365,10 +365,130 @@ export default function OrderDetails() {
 
   return (
     <div className="w-full mx-auto py-8 px-4 sm:px-6 space-y-6">
-      {/* ... [باقي كود الهيدر والتفاصيل كما هو بدون تغيير] ... */}
+      {/* --- تصميم السطرين (يظهر في الموبايل، التابلت، وكل اللابتوبات والشاشات المتوسطة) --- */}
+      <div className="flex 2xl:hidden flex-col gap-3 bg-white p-3 sm:p-5 rounded-2xl border shadow-sm mb-6">
 
-      <div className="w-full flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white p-4 sm:p-5 rounded-2xl border shadow-sm">
-        {/* الجزء الأيسر: زر العودة، رقم الطلب، الشارات المعبرة */}
+        {/* السطر الأول: زر العودة + رقم الطلب + الحالة (يسار) | Prev/Next (وسط) | Invoice (يمين) */}
+        <div className="flex items-center justify-between gap-2 w-full">
+          {/* الجانب الأيسر: زر العودة، رقم الطلب، الحالة */}
+          <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+            <Button
+              size="icon"
+              className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-yellow-400 hover:bg-yellow-500 text-gray-900 border-none shadow-sm shrink-0"
+              onClick={() => navigate("/orders")}
+            >
+              <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5 rtl:rotate-180" />
+            </Button>
+
+            <div className="flex items-center gap-1 bg-gray-100/80 px-2 sm:px-3 py-1.5 rounded-xl border border-gray-200/80 shrink-0">
+              <span className="text-[10px] sm:text-xs font-bold text-gray-500 uppercase">Order #</span>
+              <span className="text-sm sm:text-base font-black text-gray-900">{order.dailyOrderNumber}</span>
+            </div>
+
+            <Badge className={`${currentStatusStyle.color} h-9 sm:h-11 font-bold rounded-xl border px-2.5 sm:px-3 text-xs sm:text-sm flex items-center gap-1.5 shadow-sm`}>
+              <StatusIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+              <span className="truncate max-w-[90px] sm:max-w-none">{t(currentStatusStyle.labelKey)}</span>
+            </Badge>
+          </div>
+
+          {/* المنتصف: أزرار السابق والتالي */}
+          <div className="flex items-center gap-1.5 shrink-0">
+            <Button
+              variant="outline"
+              size="sm"
+              className="rounded-xl h-9 sm:h-11 px-2.5 sm:px-3.5 font-semibold text-xs sm:text-sm gap-1"
+              disabled={!previousOrder}
+              onClick={() => previousOrder && navigate(`/orders/details/${previousOrder.id}`)}
+            >
+              <ChevronLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4 rtl:rotate-180" />
+              <span className="hidden sm:inline">{t("previous") || "السابق"}</span>
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="rounded-xl h-9 sm:h-11 px-2.5 sm:px-3.5 font-semibold text-xs sm:text-sm gap-1"
+              disabled={!nextOrder}
+              onClick={() => nextOrder && navigate(`/orders/details/${nextOrder.id}`)}
+            >
+              <span className="hidden sm:inline">{t("next") || "التالي"}</span>
+              <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 rtl:rotate-180" />
+            </Button>
+          </div>
+
+          {/* الجانب الأيمن: زر الفاتورة */}
+          <div className="shrink-0">
+            <Button
+              onClick={handleOpenInvoice}
+              className="rounded-xl h-9 sm:h-11 px-3 sm:px-4 font-semibold text-xs sm:text-sm bg-primary text-white shadow-sm hover:bg-primary/90 gap-1.5"
+            >
+              <Receipt className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+              <span>{t("viewInvoice") || "الفاتورة"}</span>
+            </Button>
+          </div>
+        </div>
+
+        {/* السطر الثاني: Delivery / Cash on Delivery (يسار) | Web (يمين) */}
+        <div className="flex items-center justify-between gap-2 pt-2.5 border-t border-gray-100 w-full">
+          {/* الجانب الأيسر: نوع الطلب وطريقة الدفع */}
+          <div className="flex items-center gap-1.5 sm:gap-2.5 flex-wrap">
+            {order.orderType && (
+              <Badge
+                variant="outline"
+                className="bg-amber-50/70 border-amber-200 text-amber-800 h-8 sm:h-10 font-semibold rounded-xl px-2.5 sm:px-3 text-xs sm:text-sm flex items-center gap-1.5 shadow-sm"
+              >
+                <ShoppingBag className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                <span className="capitalize">
+                  {document.documentElement.dir === "rtl"
+                    ? order.orderType === "delivery"
+                      ? "توصيل"
+                      : order.orderType === "takeaway"
+                        ? "استلام"
+                        : order.orderType
+                    : order.orderType}
+                </span>
+              </Badge>
+            )}
+
+            {(order.paymentMethodName || order.paymentMethodNameAr) && (
+              <Badge
+                variant="outline"
+                className="bg-emerald-50/70 border-emerald-200 text-emerald-800 h-8 sm:h-10 font-semibold rounded-xl px-2.5 sm:px-3 text-xs sm:text-sm flex items-center gap-1.5 shadow-sm"
+              >
+                <CreditCard className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                <span className="capitalize">
+                  {document.documentElement.dir === "rtl" && order.paymentMethodNameAr
+                    ? order.paymentMethodNameAr
+                    : order.paymentMethodName?.replace(/_/g, " ")}
+                </span>
+              </Badge>
+            )}
+          </div>
+
+          {/* الجانب الأيمن: مصدر الطلب (Web) */}
+          <div className="shrink-0">
+            {order.orderSource && (
+              <Badge
+                variant="outline"
+                className="bg-blue-50/70 border-blue-200 text-blue-800 h-8 sm:h-10 font-semibold rounded-xl px-2.5 sm:px-3 text-xs sm:text-sm flex items-center gap-1.5 shadow-sm"
+              >
+                <Store className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                <span className="capitalize">
+                  {document.documentElement.dir === "rtl"
+                    ? order.orderSource === "online_order"
+                      ? "طلب أونلاين"
+                      : order.orderSource?.replace(/_/g, " ")
+                    : order.orderSource?.replace(/_/g, " ")}
+                </span>
+              </Badge>
+            )}
+          </div>
+        </div>
+
+      </div>
+
+
+      {/* --- تصميم السطر الواحد (يظهر فقط في الشاشات العملاقة 2xl وأعلى) --- */}
+      <div className="hidden 2xl:flex w-full items-center justify-between gap-4 bg-white p-5 rounded-2xl border shadow-sm mb-6">
         <div className="flex flex-1 items-center gap-3 flex-wrap w-full">
           <Button
             size="icon"
@@ -389,12 +509,10 @@ export default function OrderDetails() {
 
           <Separator
             orientation="vertical"
-            className="h-8 hidden sm:block bg-gray-200"
+            className="h-8 bg-gray-200"
           />
 
-          {/* مصفوفة الشارات */}
           <div className="flex items-center gap-2.5 flex-wrap">
-            {/* 1. حالة الطلب */}
             <Badge
               className={`${currentStatusStyle.color} h-11 font-bold rounded-xl border px-3.5 text-sm flex items-center gap-2 shadow-sm leading-none`}
             >
@@ -402,7 +520,6 @@ export default function OrderDetails() {
               {t(currentStatusStyle.labelKey)}
             </Badge>
 
-            {/* 2. نوع الطلب */}
             {order.orderType && (
               <Badge
                 variant="outline"
@@ -421,7 +538,6 @@ export default function OrderDetails() {
               </Badge>
             )}
 
-            {/* 3. طريقة الدفع */}
             {(order.paymentMethodName || order.paymentMethodNameAr) && (
               <Badge
                 variant="outline"
@@ -430,14 +546,13 @@ export default function OrderDetails() {
                 <CreditCard className="w-4 h-4 text-emerald-600" />
                 <span className="capitalize">
                   {document.documentElement.dir === "rtl" &&
-                  order.paymentMethodNameAr
+                    order.paymentMethodNameAr
                     ? order.paymentMethodNameAr
                     : order.paymentMethodName?.replace(/_/g, " ")}
                 </span>
               </Badge>
             )}
 
-            {/* 4. مصدر الطلب */}
             {order.orderSource && (
               <Badge
                 variant="outline"
@@ -456,8 +571,7 @@ export default function OrderDetails() {
           </div>
         </div>
 
-        {/* الجزء الأيمن: أزرار التنقل + زر الفاتورة */}
-        <div className="flex items-center gap-3 w-full lg:w-auto lg:justify-end shrink-0 pt-2 lg:pt-0">
+        <div className="flex items-center gap-3 shrink-0">
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
@@ -494,6 +608,7 @@ export default function OrderDetails() {
           </Button>
         </div>
       </div>
+
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         <div className="space-y-6 xl:col-span-2">
@@ -546,9 +661,9 @@ export default function OrderDetails() {
                   <span className="font-semibold text-gray-900 dir-ltr">
                     {order.createdAt
                       ? new Date(order.createdAt).toLocaleTimeString([], {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })
                       : t("notAvailable")}
                   </span>
                 </div>
@@ -619,7 +734,7 @@ export default function OrderDetails() {
                               />
                               <p className="font-bold text-gray-900 text-sm">
                                 {document.documentElement.dir === "rtl" &&
-                                item.foodNameAr
+                                  item.foodNameAr
                                   ? item.foodNameAr
                                   : item.foodName}
                               </p>
@@ -679,23 +794,23 @@ export default function OrderDetails() {
                                     <span className="font-semibold text-gray-800">
                                       {document.documentElement.dir === "rtl"
                                         ? addon.addonNameAr ||
-                                          addon.nameAr ||
-                                          addon.name
+                                        addon.nameAr ||
+                                        addon.name
                                         : addon.addonName || addon.name}
                                       {parseFloat(
                                         addon.price ||
-                                          addon.additionalPrice ||
-                                          0,
+                                        addon.additionalPrice ||
+                                        0,
                                       ) > 0 && (
-                                        <span className="text-primary font-bold">
-                                          {" "}
-                                          +
-                                          {parseFloat(
-                                            addon.price ||
+                                          <span className="text-primary font-bold">
+                                            {" "}
+                                            +
+                                            {parseFloat(
+                                              addon.price ||
                                               addon.additionalPrice,
-                                          ).toFixed(2)}
-                                        </span>
-                                      )}
+                                            ).toFixed(2)}
+                                          </span>
+                                        )}
                                     </span>
                                     {addon.quantity && addon.quantity > 1 && (
                                       <span className="text-gray-400 text-[10px]">
@@ -971,10 +1086,9 @@ export default function OrderDetails() {
                       }
                       onClick={() => handleStatusChange(status)}
                       className={`h-11 justify-start gap-2 rounded-xl border text-xs font-semibold relative px-3 transition-all duration-200
-                        ${
-                          isActive
-                            ? "border-blue-600 bg-blue-50 text-blue-700 font-bold shadow-sm hover:bg-blue-50"
-                            : "border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                        ${isActive
+                          ? "border-blue-600 bg-blue-50 text-blue-700 font-bold shadow-sm hover:bg-blue-50"
+                          : "border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                         }`}
                     >
                       {isActive && (
