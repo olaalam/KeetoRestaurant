@@ -36,39 +36,41 @@ export default function Home() {
   });
 
   return (
-    <div className="p-6 md:p-8 space-y-8 max-w-6xl mx-auto">
+    <div className="p-6 md:p-8 space-y-8 max-w-[1400px] mx-auto">
       {/* الترويسة + السيرش */}
-      <div className="space-y-5">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-xl font-bold text-foreground tracking-tight">
+          <h1 className="text-2xl font-bold text-foreground tracking-tight">
             {t("modules") || "Modules"}
           </h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
+          <p className="text-sm text-muted-foreground mt-1">
             {t("everythingInOnePlace") || "Everything you can manage, in one place"}
           </p>
         </div>
 
-        <div className="relative w-full max-w-md">
+        <div className="relative w-full sm:w-96">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder={t("searchModules")}
             value={globalFilter}
             onChange={(e) => setGlobalFilter(e.target.value)}
-            className="pl-10 h-11 rounded-xl border-border/60 bg-card shadow-sm focus-visible:ring-primary"
+            className="pl-10 h-11 rounded-full border-border/60 bg-card shadow-sm focus-visible:ring-primary"
           />
         </div>
       </div>
 
-      {/* شبكة الكروت */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+      {/* شبكة الكروت بالتصميم الجديد وتأثيرات Hover */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {filteredModules.map((module) => {
-          const Icon = module.icon || LayoutGrid;
+          // جلب الأيقونة من الموديول، وإذا لم تكن موجودة نجلبها من أول عنصر فرعي
+          const Icon = module.icon || module.items?.[0]?.icon || LayoutGrid;
+
           const visibleItems = module.items.filter((item) =>
             globalFilter
               ? item.title.toLowerCase().includes(globalFilter.toLowerCase())
               : true,
           );
-          // وصف الكارت = أسماء كل الأقسام اللي جواه، كاملة من غير قص
+
           const description =
             module.description || visibleItems.map((i) => i.title).join(", ");
 
@@ -79,26 +81,36 @@ export default function Home() {
                 setActiveModule(module);
                 navigate(getDefaultItemUrl(module));
               }}
-              className="group relative cursor-pointer border border-border/50 bg-card hover:border-primary/50 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 overflow-hidden"
+              // الكارت الأساسي (تمت إضافة group للتحكم في العناصر الداخلية عند الـ hover)
+              className="group cursor-pointer border-none rounded-2xl bg-card shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.1)] hover:-translate-y-1 transition-all duration-300"
             >
-              {/* شريط علوي دقيق يظهر عند الـ hover كتوقيع بصري للكارت */}
-              <div className="absolute top-0 left-0 right-0 h-0.5 bg-primary scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-300" />
+              <CardContent className="p-8 flex flex-col items-center text-center h-full justify-center">
 
-              <CardContent className="p-6 flex flex-col items-center text-center gap-3">
-                <div className="h-12 w-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center group-hover:bg-primary group-hover:text-primary-foreground transition-colors duration-300">
-                  <Icon size={22} />
+                {/* 
+                  مربع الأيقونة 
+                  - الحالة العادية: خلفية شفافة بلون الموقع (bg-primary/10) وأيقونة ملونة (text-primary)
+                  - حالة الـ Hover: خلفية صلبة بلون الموقع (group-hover:bg-primary) وأيقونة بلون فاتح (group-hover:text-primary-foreground)
+                */}
+                <div className="h-14 w-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mb-5 group-hover:bg-primary group-hover:text-primary-foreground transition-colors duration-300">
+                  <Icon size={28} strokeWidth={2} />
                 </div>
 
-                <div className="space-y-1.5">
-                  <h2 className="text-sm font-bold text-foreground">
+                {/* العنوان والوصف */}
+                <div className="space-y-2">
+                  {/* 
+                    عنوان الكارت
+                    - حالة الـ Hover: يتغير للون الأساسي (group-hover:text-primary)
+                  */}
+                  <h2 className="text-[17px] font-bold text-foreground group-hover:text-primary transition-colors duration-300">
                     {module.name}
                   </h2>
                   {description && (
-                    <p className="text-sm text-foreground/70 font-medium leading-relaxed">
+                    <p className="text-[13px] text-muted-foreground font-medium leading-relaxed line-clamp-2">
                       {description}
                     </p>
                   )}
                 </div>
+
               </CardContent>
             </Card>
           );
