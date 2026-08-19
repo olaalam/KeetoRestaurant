@@ -1042,10 +1042,10 @@ export default function OrderDetails() {
                 <span className="text-xs font-semibold text-gray-500">
                   {t("remainingTime") || "الوقت المتبقي:"}
                 </span>
-                <PreparationCountdown
-                  durationInMinutes={order.durationOrderPreparing}
-                  startTime={order.updatedAt || order.createdAt}
-                />
+<PreparationCountdown
+  durationInMinutes={order.durationOrderPreparing}
+  startTime={order.createdAt} // تم التغيير من updatedAt إلى createdAt
+/>
               </div>
 
               <Button
