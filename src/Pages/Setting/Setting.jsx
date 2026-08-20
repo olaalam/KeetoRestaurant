@@ -120,7 +120,7 @@ export default function Setting() {
         {
             accessorKey: "repeatNotificationDuration",
             header: t("repeatNotificationDuration", { defaultValue: "Repeat Duration" }),
-            cell: ({ getValue, row }) => row.original.repeatNotification ? `${getValue()} min` : '-'
+            cell: ({ getValue, row }) => row.original.repeatNotification ? `${getValue()}` : '-'
         },
         {
             accessorKey: "repeatNotificationInterval",

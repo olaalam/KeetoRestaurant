@@ -219,7 +219,7 @@ const SettingPageAdd = () => {
                                 {isRepeatNotificationEnabled && (
                                     <>
                                         <div className="space-y-2">
-                                            <Label className="text-gray-700 font-medium">Repeat Notification Duration (Min)</Label>
+                                            <Label className="text-gray-700 font-medium">Repeat Notification Duration</Label>
                                             <Input type="number" {...register("repeatNotificationDuration", { valueAsNumber: true })} />
                                         </div>
 
