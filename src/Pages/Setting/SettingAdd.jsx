@@ -49,6 +49,9 @@ const SettingPageAdd = () => {
         secondColor: "",
         firstTextColor: "",
         secondTextColor: "",
+        repeatNotification: false,
+        repeatNotificationDuration: 5,
+        repeatNotificationInterval: 60,
         schedules: [
             { dayOfWeek: 0, isOffDay: false, openingTime: "09:00", closingTime: "23:00" },
             { dayOfWeek: 1, isOffDay: false, openingTime: "09:00", closingTime: "23:00" },
@@ -59,11 +62,10 @@ const SettingPageAdd = () => {
             { dayOfWeek: 6, isOffDay: false, openingTime: "09:00", closingTime: "23:00" }
         ]
     };
-    // تهيئة البيانات والاحتفاظ بـ id المطعم داخلياً داخل الـ form بدون وضعه في الـ URL
+
     const initialData = React.useMemo(() => {
         if (!rawData) return null;
 
-        // تأمين صيغة الوقت لتكون hh:mm فقط لتناسب حقول الوقت في الـ HTML
         const formattedSchedules = (rawData.schedules || []).map(s => ({
             dayOfWeek: Number(s.dayOfWeek),
             isOffDay: !!s.isOffDay,
@@ -95,9 +97,11 @@ const SettingPageAdd = () => {
             secondColor: rawData.settings?.secondColor || "",
             firstTextColor: rawData.settings?.firstTextColor || "",
             secondTextColor: rawData.settings?.secondTextColor || "",
+            repeatNotification: rawData.settings?.repeatNotification ?? false,
+            repeatNotificationDuration: rawData.settings?.repeatNotificationDuration ?? 5,
+            repeatNotificationInterval: rawData.settings?.repeatNotificationInterval ?? 60,
             schedules: formattedSchedules.length > 0 ? formattedSchedules : defaultInitialData.schedules
         };
-        // تحويل الكائن لنص بيضمن استقرار الـ useMemo ومنع الـ Infinite Loops تماماً مع الـ Forms
     }, [JSON.stringify(rawData)]);
 
     const daysOfWeekOptions = [
@@ -135,6 +139,9 @@ const SettingPageAdd = () => {
                 secondColor: data.secondColor || "",
                 firstTextColor: data.firstTextColor || "",
                 secondTextColor: data.secondTextColor || "",
+                repeatNotification: data.repeatNotification ?? false,
+                repeatNotificationDuration: data.repeatNotification ? Number(data.repeatNotificationDuration) : 0,
+                repeatNotificationInterval: data.repeatNotification ? Number(data.repeatNotificationInterval) : 0,
             },
             schedules: (data.schedules || []).map(schedule => ({
                 dayOfWeek: Number(schedule.dayOfWeek),
@@ -147,15 +154,13 @@ const SettingPageAdd = () => {
 
     if (id && isFetching) return <LoadingSpinner />;
 
-
-
     return (
         <AddPage
             title="Store Settings"
             apiUrl="/api/restaurant/restaurantsetting"
             queryKey={['setting']}
             method="PUT"
-            bypassIdInEdit={true} // 💡 إضافة خاصية مخصصة لإخبار AddPage بعدم دمج الـ ID في الرابط
+            bypassIdInEdit={true}
             transformPayload={handleTransformPayload}
             initialData={initialData || defaultInitialData}
             onSuccessAction={() => {
@@ -171,6 +176,7 @@ const SettingPageAdd = () => {
                 });
 
                 const schedulesWatch = watch("schedules") || [];
+                const isRepeatNotificationEnabled = watch("repeatNotification");
 
                 return (
                     <div className="space-y-8 mt-6 border-t pt-6 col-span-full">
@@ -195,7 +201,7 @@ const SettingPageAdd = () => {
                                     { name: "canEditOrder", label: "Can Edit Order" },
                                     { name: "isAlwaysOpen", label: "Is Always Open" },
                                     { name: "isSameTimeEveryDay", label: "Same Time Every Day" },
-
+                                    { name: "repeatNotification", label: "Repeat Notification" },
                                 ].map((sw) => (
                                     <div key={sw.name} className="flex items-center justify-between p-3 border rounded bg-white shadow-sm">
                                         <Label htmlFor={sw.name} className="cursor-pointer font-medium text-sm text-gray-700">{sw.label}</Label>
@@ -208,28 +214,47 @@ const SettingPageAdd = () => {
                                         />
                                     </div>
                                 ))}
+
+                                {/* حقول الـ Repeat Notification الشرطية */}
+                                {isRepeatNotificationEnabled && (
+                                    <>
+                                        <div className="space-y-2">
+                                            <Label className="text-gray-700 font-medium">Repeat Notification Duration (Min)</Label>
+                                            <Input type="number" {...register("repeatNotificationDuration", { valueAsNumber: true })} />
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <Label className="text-gray-700 font-medium">Repeat Notification Interval (Sec)</Label>
+                                            <Input type="number" {...register("repeatNotificationInterval", { valueAsNumber: true })} />
+                                        </div>
+                                    </>
+                                )}
+
                                 <div className="space-y-2">
-                                    <Label className="text-gray-700 font-medium">first color</Label>
-                                    <Input type="input" {...register("firstColor",)} />
+                                    <Label className="text-gray-700 font-medium">First Color</Label>
+                                    <Input type="input" {...register("firstColor")} />
                                 </div>
 
                                 <div className="space-y-2">
                                     <Label className="text-gray-700 font-medium">Second Color</Label>
                                     <Input type="input" {...register("secondColor")} />
                                 </div>
+
                                 <div className="space-y-2">
-                                    <Label className="text-gray-700 font-medium">first Text color</Label>
-                                    <Input type="input" {...register("firstTextColor",)} />
+                                    <Label className="text-gray-700 font-medium">First Text Color</Label>
+                                    <Input type="input" {...register("firstTextColor")} />
                                 </div>
 
                                 <div className="space-y-2">
                                     <Label className="text-gray-700 font-medium">Second Text Color</Label>
                                     <Input type="input" {...register("secondTextColor")} />
                                 </div>
+
                                 <div className="space-y-2">
                                     <Label className="text-gray-700 font-medium">Min Order Amount (EGP)</Label>
                                     <Input type="number" {...register("minOrderAmount", { valueAsNumber: true })} />
                                 </div>
+
                                 <div className="space-y-2">
                                     <Label className="text-gray-700 font-medium">Max Delivery Time (Minutes)</Label>
                                     <Input type="number" {...register("maxDeliveryTime", { valueAsNumber: true })} />

@@ -96,18 +96,38 @@ export default function Setting() {
         },
         {
             accessorKey: "firstTextColor",
-            header: t("firstTextColor", { defaultValue: "First Color" })
+            header: t("firstTextColor", { defaultValue: "First Text Color" })
         },
         {
             accessorKey: "secondTextColor",
-            header: t("secondTextColor", { defaultValue: "Second Color" })
+            header: t("secondTextColor", { defaultValue: "Second Text Color" })
         },
         {
             accessorKey: "dineIn",
             header: t("dineIn", { defaultValue: "Dine In" }),
             cell: ({ getValue }) => getValue() ? t("yes", { defaultValue: "Yes" }) : t("no", { defaultValue: "No" })
         },
-        // العمود الجديد الخاص بالمواعيد (Schedules)
+        // الأعمدة الجديدة لخاصية تكرار الإشعارات
+        {
+            accessorKey: "repeatNotification",
+            header: t("repeatNotification", { defaultValue: "Repeat Notification" }),
+            cell: ({ getValue }) => (
+                <span className={`px-2 py-1 rounded text-xs ${getValue() ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                    {getValue() ? t("enabled", { defaultValue: "Enabled" }) : t("disabled", { defaultValue: "Disabled" })}
+                </span>
+            )
+        },
+        {
+            accessorKey: "repeatNotificationDuration",
+            header: t("repeatNotificationDuration", { defaultValue: "Repeat Duration" }),
+            cell: ({ getValue, row }) => row.original.repeatNotification ? `${getValue()} min` : '-'
+        },
+        {
+            accessorKey: "repeatNotificationInterval",
+            header: t("repeatNotificationInterval", { defaultValue: "Repeat Interval" }),
+            cell: ({ getValue, row }) => row.original.repeatNotification ? `${getValue()} sec` : '-'
+        },
+        // العمود الخاص بالمواعيد (Schedules)
         {
             id: "workingHours",
             header: t("workingHours", { defaultValue: "Working Hours" }),
