@@ -41,15 +41,6 @@ export default function Restaurant() {
         },
         { accessorKey: 'nameAr', header: t('nameAr') },
         { accessorKey: 'nameFr', header: t('nameFr') },
-        // {
-        //     accessorKey: "logo",
-        //     header: t('logo'),
-        //     cell: ({ row }) => (
-        //         <div className="w-10 h-10 border rounded-full overflow-hidden">
-        //             <img src={row.getValue("logo")} alt="logo" className="w-full h-full object-cover" />
-        //         </div>
-        //     )
-        // },
         { accessorKey: "zone.name", header: t('zoneColumn') },
         {
             accessorKey: "view_food",
@@ -100,14 +91,10 @@ export default function Restaurant() {
                 </button>
             )
         },
+        // تم حذف خاصية cell من هنا ليعمل الـ Switch التلقائي من GenericDataTable
         {
             accessorKey: "status",
             header: t('status'),
-            cell: ({ row }) => (
-                <span className={`px-2 py-1 rounded-full text-xs ${row.original.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                    {t(row.original.status)}
-                </span>
-            )
         },
     ];
 

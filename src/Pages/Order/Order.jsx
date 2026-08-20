@@ -89,10 +89,7 @@ export default function Order() {
       toast.success(t("orderStatusUpdatedSuccessfully"));
       setDialogConfig({ open: false, type: null, orderId: null });
 
-      const targetRoute = variables.status.replace(/_/g, "-");
-      if (targetRoute) {
-        navigate(`/orders/${targetRoute}`);
-      }
+
     },
     onError: (error) => {
       const serverErrorMessage =
