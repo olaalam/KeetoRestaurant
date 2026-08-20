@@ -4,7 +4,13 @@ import { useGet } from '@/hooks/useGet';
 import GenericDataTable from '@/components/GenericDataTable';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Pencil } from 'lucide-react';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog";
 
 export default function OutOfStockFoods() {
     const { t, isRTL } = useTranslation();
@@ -16,7 +22,7 @@ export default function OutOfStockFoods() {
         '/api/restaurant/food/out-of-stock'
     );
 
-    // استخراج المصفوفة بناءً على هيكل الـ JSON المرفق (response.data.data)
+    // استخراج المصفوفة بناءً على هيكل الـ JSON
     const foods = response?.data?.data || [];
 
     // تعريف الأعمدة
@@ -34,7 +40,6 @@ export default function OutOfStockFoods() {
             header: t('category'),
             cell: ({ row }) => {
                 const category = row.original.category;
-                // عرض الاسم بالعربية أو الإنجليزية حسب اللغة الحالية للنظام
                 return isRTL ? (category?.nameAr || category?.name) : (category?.name || category?.nameAr);
             }
         },
@@ -42,7 +47,46 @@ export default function OutOfStockFoods() {
             accessorKey: 'price', 
             header: t('price') 
         },
+        {
+            id: 'unavailableBranches',
+            header: t('unavailableBranches') || (isRTL ? 'الفروع غير المتاحة' : 'Unavailable Branches'),
+            cell: ({ row }) => {
+                const branches = row.original.unavailableBranches || [];
 
+                if (branches.length === 0) {
+                    return <span className="text-gray-400">-</span>;
+                }
+
+                return (
+                    <Dialog>
+                        <DialogTrigger asChild>
+                            <Button variant="outline" size="sm">
+                                {isRTL ? `عرض الفروع (${branches.length})` : `View Branches (${branches.length})`}
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-md">
+                            <DialogHeader>
+                                <DialogTitle>
+                                    {isRTL ? "الفروع غير المتاحة" : "Unavailable Branches"}
+                                </DialogTitle>
+                            </DialogHeader>
+                            <div className="mt-4 max-h-60 overflow-y-auto">
+                                <ul className="space-y-2">
+                                    {branches.map((branch) => (
+                                        <li 
+                                            key={branch.id} 
+                                            className="p-2 rounded-md bg-muted text-sm border"
+                                        >
+                                            {isRTL ? (branch.nameAr || branch.name) : (branch.name || branch.nameAr)}
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        </DialogContent>
+                    </Dialog>
+                );
+            }
+        }
     ];
 
     return (
@@ -53,7 +97,7 @@ export default function OutOfStockFoods() {
                 data={foods}
                 isLoading={isLoading}
                 queryKey="outOfStockFoods"
-                actions={false} // استخدام الأعمدة المعرفة يدوياً بالأعلى
+                actions={false}
             />
         </div>
     );

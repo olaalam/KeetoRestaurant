@@ -5,7 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AppSidebar } from "./AppSidebar";
 import useSidebarStore from "@/store/useSidebarStore";
 import useAuthStore from "@/store/useAuthStore";
-import { LogOut, ChevronLeft, ChevronRight, UserCircle2, Bell, ShoppingBag } from "lucide-react";
+import { LogOut, ChevronLeft, ChevronRight, UserCircle2, Bell, ShoppingBag, XCircle } from "lucide-react";
 
 import {
   DropdownMenu,
@@ -34,11 +34,9 @@ export default function Layout() {
     ? translatedModules.find((m) => m.key === storedModule.key) || storedModule
     : null;
 
-
-  // اسم المطعم أو المستخدم (حسب الحقل المخزن بالـ ستور، هنا نأخذ الـ name الموجود بالصورة)
+  // اسم المطعم أو المستخدم
   const restaurantName = user?.restaurantName || "Keeto";
   const branchName = user?.branchName || user?.branch?.name;
-
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -46,16 +44,21 @@ export default function Layout() {
   // ---- Notification Sound ----
   const prevUnreadCountRef = useRef(null);
   const audioRef = useRef(null);
-  const [newOrderPopup, setNewOrderPopup] = useState({ open: false, count: 0 });
+  
+  // تحديث الستيت لتشمل الإشعار الأخير
+  const [newOrderPopup, setNewOrderPopup] = useState({ 
+    open: false, 
+    count: 0, 
+    latestNotification: null 
+  });
 
-  // تحميل الصوت مسبقاً وفتح الـ AudioContext بعد أول تفاعل من المستخدم
+  // تحميل الصوت مسبقاً
   useEffect(() => {
     const audio = new Audio("/sounds/notification.wav");
     audio.volume = 0.7;
     audio.load();
     audioRef.current = audio;
 
-    // بعض المتصفحات محتاجة تفاعل أول عشان تسمح بالصوت
     const unlock = () => {
       audio.play().then(() => {
         audio.pause();
@@ -94,15 +97,15 @@ export default function Layout() {
       const { data } = await api.get('/api/restaurant/notifications');
       return data;
     },
-    refetchInterval: 30000, // كل 30 ثانية
-    refetchIntervalInBackground: true, // حتى لو التاب مش active
+    refetchInterval: 30000,
+    refetchIntervalInBackground: true,
   });
 
   // استخراج مصفوفة الإشعارات وحساب العدد الغير مقروء
   const notifications = notificationsResponse?.data?.data || [];
   const unreadCount = notifications.filter((n) => !n.isRead).length;
 
-  // شغّل الصوت لما unreadCount يزيد عن القيمة السابقة
+  // شغّل الصوت وتحديث الـ Pop-up عند وجود إشعار جديد
   useEffect(() => {
     if (prevUnreadCountRef.current === null) {
       prevUnreadCountRef.current = unreadCount;
@@ -111,12 +114,18 @@ export default function Layout() {
 
     if (unreadCount > prevUnreadCountRef.current) {
       const incomingCount = unreadCount - prevUnreadCountRef.current;
-      setNewOrderPopup({ open: true, count: incomingCount });
+      const latestNotif = notifications[0] || null; // أحدث إشعار واصل
+      
+      setNewOrderPopup({ 
+        open: true, 
+        count: incomingCount,
+        latestNotification: latestNotif 
+      });
       playNotificationSound();
     }
 
     prevUnreadCountRef.current = unreadCount;
-  }, [unreadCount]);
+  }, [unreadCount, notifications]);
 
   // 2. تحديث الكل كمقروء
   const { mutate: markAllAsRead, isPending: isMarkingAll } = useUpdate(
@@ -154,37 +163,16 @@ export default function Layout() {
       setActiveModule(null);
     }
   }, [location.pathname, setActiveModule]);
-  // 2. دالة التعامل مع الضغط على الإشعار
-  const handleNotificationClick = async (notification) => {
-    // نجيب الـ orderId من جوة الـ data اللي مبعوتة في الإشعار
-    const orderId = notification?.data?.orderId;
-
-    if (orderId) {
-      // توجيه المستخدم لصفحة تفاصيل الأوردر مباشرة
-      navigate(`/orders/details/${orderId}`);
-    }
-
-    // [اختياري ولكنه ممتاز لتجربة المستخدم]: تحويل الإشعار لـ Read عبر الـ API
-    if (!notification.isRead) {
-      try {
-        await api.put(`/api/restaurant/notifications/${notification.id}/read`);
-        // هنا ممكن تعملي invalidate للـ query بتاعة الإشعارات عشان الجرس يتحدث
-        // queryClient.invalidateQueries({ queryKey: ['notifications'] });
-      } catch (error) {
-        console.error("Failed to mark notification as read:", error);
-      }
-    }
-  };
 
   const handlePopupClose = () => {
-    setNewOrderPopup({ open: false, count: 0 });
+    setNewOrderPopup({ open: false, count: 0, latestNotification: null });
   };
 
   // دالة التعامل مع الضغط على زر الإشعار المنبثق
   const handlePopupCheck = () => {
+    const orderId = newOrderPopup.latestNotification?.data?.orderId || notifications[0]?.data?.orderId || "";
     handlePopupClose();
 
-    // البحث عن موديول الطلبات لتفعيل الـ Sidebar الخاص به
     const ordersModule = translatedModules.find(
       (m) =>
         m.key === "orders" ||
@@ -197,52 +185,78 @@ export default function Layout() {
       setActiveModule(ordersModule);
     }
 
-    navigate(`/orders/details/${notifications[0]?.data?.orderId || ""}`);
+    if (orderId) {
+      navigate(`/orders/details/${orderId}`);
+    } else {
+      navigate('/orders');
+    }
   };
+
+  // فحص هل الإشعار الأخير عبارة عن إلغاء طلب
+  const isCancelled = newOrderPopup.latestNotification?.data?.type === "cancel";
+
   return (
     <TooltipProvider delayDuration={0}>
       <SidebarProvider dir={isRTL ? "rtl" : "ltr"}>
         {activeModule && <AppSidebar side={isRTL ? "right" : "left"} />}
+{newOrderPopup.open && (
+  <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/20 backdrop-blur-[2px] px-4 z-[999999999]">
+    <div className={`w-full max-w-2xl rounded-2xl border ${isCancelled ? 'border-red-300' : 'border-yellow-200'} bg-white/95 shadow-[0_20px_60px_rgba(15,23,42,0.18)] p-6 sm:p-7`}>
+      
+      {/* Header Icon & Title */}
+      <div className="flex items-center justify-center gap-3 mb-5 text-slate-800">
+        <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${isCancelled ? 'bg-red-500 text-white' : 'bg-primary text-primary-foreground'} shadow-sm`}>
+          {isCancelled ? <XCircle size={24} /> : <Bell size={22} />}
+        </div>
+        <span className={`text-2xl font-black tracking-tight ${isCancelled ? 'text-red-600' : 'text-slate-900'}`}>
+          {isCancelled 
+            ? "Order Cancelled ❌"
+            : (t("notifications") || "Notifications")}
+        </span>
+      </div>
 
-        {newOrderPopup.open && (
-          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/20 backdrop-blur-[2px] px-4 z-[999999999]">
-            <div className="w-full max-w-2xl rounded-2xl border border-yellow-200 bg-white/95 shadow-[0_20px_60px_rgba(15,23,42,0.18)] p-6 sm:p-7">
-              <div className="flex items-center justify-center gap-3 mb-5 text-slate-800">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
-                  <Bell size={22} />
-                </div>
-                <span className="text-2xl font-black tracking-tight text-slate-900">
-                  {t("notifications") || "Notifications"}
-                </span>
-              </div>
-
-              <div className="flex items-center justify-center text-center text-xl sm:text-2xl font-bold text-slate-800 leading-relaxed">
-                <span className="mr-2">{newOrderPopup.count}</span>
-                <span>
-                  {newOrderPopup.count === 1
-                    ? (t("newOrderAlertSingular") || "You have 1 new order, please check.")
-                    : (t("newOrderAlert") || "You have new orders, please check.")}
-                </span>
-              </div>
-
-              <div className="mt-6 flex flex-col sm:flex-row justify-center gap-3">
-                <button
-                  onClick={handlePopupClose}
-                  className="flex-1 rounded-xl border border-red-200 bg-red-500 px-4 py-3 text-base font-bold text-white shadow-sm transition hover:bg-red-600"
-                >
-                  {t("close") || "Close"}
-                </button>
-
-                <button
-                  onClick={handlePopupCheck}
-                  className="flex-1 rounded-xl bg-primary px-4 py-3 text-base font-bold text-primary-foreground shadow-sm transition hover:brightness-95"
-                >
-                  {t("okLetMeCheck") || "OK, let me check"}
-                </button>
-              </div>
-            </div>
-          </div>
+      {/* Body Text */}
+      <div className="flex items-center justify-center text-center text-xl sm:text-2xl font-bold text-slate-800 leading-relaxed">
+        {isCancelled ? (
+          <span>
+            {`Order #${newOrderPopup.latestNotification?.data?.dailyOrderNumber || ''} was cancelled by the customer.`}
+            {newOrderPopup.latestNotification?.data?.reason && (
+              <span className="block text-lg font-normal text-slate-600 mt-1">
+                {`Reason: ${newOrderPopup.latestNotification.data.reason}`}
+              </span>
+            )}
+          </span>
+        ) : (
+          <>
+            <span className="mr-2">{newOrderPopup.count}</span>
+            <span>
+              {newOrderPopup.count === 1
+                ? (t("newOrderAlertSingular") || "You have 1 new order, please check.")
+                : (t("newOrderAlert") || "You have new orders, please check.")}
+            </span>
+          </>
         )}
+      </div>
+
+      {/* Buttons */}
+      <div className="mt-6 flex flex-col sm:flex-row justify-center gap-3">
+        <button
+          onClick={handlePopupClose}
+          className="flex-1 rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-base font-bold text-slate-700 shadow-sm transition hover:bg-slate-200"
+        >
+          Close
+        </button>
+
+        <button
+          onClick={handlePopupCheck}
+          className={`flex-1 rounded-xl ${isCancelled ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-primary hover:brightness-95 text-primary-foreground'} px-4 py-3 text-base font-bold shadow-sm transition`}
+        >
+          Check Details
+        </button>
+      </div>
+    </div>
+  </div>
+)}
 
         <main className="relative flex flex-col flex-1 min-w-0 max-h-screen overflow-hidden bg-background">
           <header className="flex-none sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -308,7 +322,6 @@ export default function Layout() {
                 {/* Orders Button */}
                 <button
                   onClick={() => {
-                    // البحث عن موديول الطلبات الفعلي من قائمة الموديولات لضمان وجود مصفوفة الـ items والخصائص الكاملة
                     const ordersModule = translatedModules.find(
                       (m) =>
                         m.key === "orders" ||
@@ -399,7 +412,7 @@ export default function Layout() {
                               {!notification.isRead && (
                                 <button
                                   onClick={(e) => {
-                                    e.stopPropagation(); // يمنع انغلاق القائمة والـ onClick الأساسي للكارت
+                                    e.stopPropagation();
                                     handleMarkAsRead(notification.id);
                                   }}
                                   className="shrink-0 text-[10px] font-medium bg-blue-100 text-blue-700 px-2 py-1 rounded hover:bg-blue-200 transition-colors"

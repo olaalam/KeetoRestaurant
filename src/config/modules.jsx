@@ -70,25 +70,6 @@ export const getModules = (t, orderCounts = {}) => {
       ],
     },
     {
-      name: t("Setting"),
-      key: "management",
-      items: [
-
-        { title: "Permissions", url: "/permissions", icon: ShieldCheck },
-        { title: t("qr"), url: "/qr", icon: ShoppingBag },
-        { title: t("policy"), url: "/policy", icon: ShoppingBag },
-        { title: t("setting"), url: "/setting", icon: ShoppingBag },
-      ],
-    },
-    {
-      name: t("location"),
-      key: "location",
-      items: [
-        { title: t("deliveryZones"), url: "/delivery-zones", icon: Truck },
-        { title: t("branches"), url: "/branches", icon: Utensils },
-      ],
-    },
-    {
       name: t("product management"),
       key: "content",
       items: [
@@ -97,19 +78,20 @@ export const getModules = (t, orderCounts = {}) => {
         { title: t("ingredientCategories"), url: "/ingredient-category", icon: ShieldCheck },
         { title: t("ingredients"), url: "/ingredients", icon: ShieldCheck },
         { title: t("subCategories"), url: "/sub-categories", icon: Library },
-          { title: t("OutOfStock"), url: "/out-of-stock", icon: Library },
+        { title: t("OutOfStock"), url: "/out-of-stock", icon: Library },
 
       ],
     },
+
     {
-      name: t("report"),
-      key: "business",
+      name: t("location"),
+      key: "location",
       items: [
-        { title: t("myKeeto"), url: "/mykeeto", icon: KeetoIcon },
-        { title: t("invoice"), url: "/invoice", icon: KeetoIcon },
+        { title: t("deliveryZones"), url: "/delivery-zones", icon: Truck },
+        { title: t("branches"), url: "/branches", icon: Utensils },
+        { title: t("ZoneMap"), url: "/zone-map", icon: Utensils },
       ],
     },
-
     {
       name: t("Marketing"),
       key: "marketing",
@@ -126,6 +108,20 @@ export const getModules = (t, orderCounts = {}) => {
       ],
     },
     {
+      name: t("Users"),
+      key: "users",
+      items: [
+        { title: t("admins"), url: "/admins", icon: UserCog },
+        { title: t("deliveryMen"), url: "/delivery-man", icon: UserCog },
+        { title: t("cashiers"), url: "/cashiers", icon: UserCog },
+        { title: t("users"), url: "/users", icon: UserCog },
+
+
+
+      ],
+    },
+
+    {
       name: t("Financial Management"),
       key: "financial",
       items: [
@@ -137,16 +133,25 @@ export const getModules = (t, orderCounts = {}) => {
       ],
     },
     {
-      name: t("Users"),
-      key: "users",
+      name: t("report"),
+      key: "business",
       items: [
-        { title: t("admins"), url: "/admins", icon: UserCog },
-        { title: t("deliveryMen"), url: "/delivery-man", icon: UserCog },
-        { title: t("cashiers"), url: "/cashiers", icon: UserCog },
-        { title: t("users"), url: "/users", icon: UserCog },
+        { title: t("myKeeto"), url: "/mykeeto", icon: KeetoIcon },
+        { title: t("invoice"), url: "/invoice", icon: KeetoIcon },
+      ],
+    },
 
 
 
+    {
+      name: t("Setting"),
+      key: "management",
+      items: [
+
+        { title: "Permissions", url: "/permissions", icon: ShieldCheck },
+        { title: t("qr"), url: "/qr", icon: ShoppingBag },
+        { title: t("policy"), url: "/policy", icon: ShoppingBag },
+        { title: t("setting"), url: "/setting", icon: ShoppingBag },
       ],
     },
 

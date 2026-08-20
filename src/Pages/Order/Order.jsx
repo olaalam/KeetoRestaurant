@@ -21,13 +21,19 @@ import useDateRangeStore from "../../store/Usedaterangestore";
 export default function Order() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { t } = useTranslation();
+  const { t, language } = useTranslation(); // افتراض وجود language أو i18n.language
 
   const [dialogConfig, setDialogConfig] = useState({
     open: false,
     type: null,
     orderId: null,
   });
+
+  // حالات الفلاتر
+  const [orderSource, setOrderSource] = useState("all");
+  const [cityId, setCityId] = useState("all");
+  const [branchId, setBranchId] = useState("all");
+
   const { startDate, endDate, setStartDate, setEndDate, clearDateRange } =
     useDateRangeStore();
 
@@ -41,32 +47,40 @@ export default function Order() {
     "refund",
   ];
 
+  // جلب خيارات الفلاتر بالمسار الصحيح للريسبونس
+  const { data: selectOptions } = useQuery({
+    queryKey: ["order-select-data"],
+    queryFn: async () => {
+      const res = await api.get("/api/restaurant/order/select-data");
+      return res.data?.data?.data || {};
+    },
+  });
+
+  // جلب الطلبات بالمعلمات المحددة
   const { data: orders = [], isLoading } = useQuery({
-    queryKey: ["orders", startDate, endDate],
+    queryKey: ["orders", startDate, endDate, orderSource, cityId, branchId],
     queryFn: async () => {
       const params = {};
       if (startDate) params.start_date = startDate;
       if (endDate) params.end_date = endDate;
+      if (orderSource && orderSource !== "all") params.orderSource = orderSource;
+      if (cityId && cityId !== "all") params.cityId = cityId;
+      if (branchId && branchId !== "all") params.branchId = branchId;
 
       const res = await api.get(`/api/restaurant/order`, { params });
       return res.data.data.data;
     },
   });
 
-  // تعديل الـ URL هنا ليصبح ديناميكيًا حسب الحالة
   const updateStatusMutation = useMutation({
     mutationFn: async ({ orderId, status, cancelReasonId }) => {
-      // تحويل out_for_delivery إلى out-for-delivery
       const formattedStatus = status.replace(/_/g, "-");
-
-      // إرسال formattedStatus في الـ payload حتى يقرأه الباك إند بشكل صحيح
       const payload = { orderId, status: formattedStatus };
       if (cancelReasonId) payload.cancelReasonId = cancelReasonId;
 
-      // استخدام الـ URL الجديد (مثال: /api/restaurant/order/out-for-delivery) بدون الـ ID في النهاية
       const { data } = await api.put(
-        `/api/restaurant/order/${formattedStatus}`,
-        payload,
+        `/api/restaurant/order/${orderId}`,
+        payload
       );
       return data;
     },
@@ -94,6 +108,23 @@ export default function Order() {
     } else {
       updateStatusMutation.mutate({ orderId, status: newStatus });
     }
+  };
+
+  const handleClearFilters = () => {
+    clearDateRange();
+    setOrderSource("all");
+    setCityId("all");
+    setBranchId("all");
+  };
+
+  // دالة مساعدة لاختيار الاسم بناءً على اللغة المفعلة
+  const getItemName = (item) => {
+    if (!item) return "";
+    const isAr = language === "ar";
+    if (isAr) {
+      return item.nameAr || item.displayNameAr || item.name || item.displayName;
+    }
+    return item.name || item.displayName || item.nameAr || item.displayNameAr;
   };
 
   const columns = [
@@ -148,6 +179,23 @@ export default function Order() {
         <span className="font-semibold text-green-600">
           {row.original.totalAmount} {t("currency")}
         </span>
+      ),
+    },
+    {
+      accessorKey: "orderSource",
+      header: t("orderSource"),
+      cell: ({ row }) => (
+        <span className="font-semibold text-green-600">
+          {row.original.orderSource}
+        </span>
+      ),
+    },
+    {
+      id: "branchZone",
+      accessorFn: (row) => `${row.branchName} - ${row.zoneName}`,
+      header: t("branchName - zoneName"),
+      cell: ({ getValue }) => (
+        <span className="font-semibold text-green-600">{getValue()}</span>
       ),
     },
     {
@@ -210,26 +258,96 @@ export default function Order() {
 
   return (
     <div className="container mx-auto py-10">
-      <div className="flex items-center gap-4 mb-6 bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
-        <label className="text-sm font-bold text-slate-700">
-          {t("startDate") || "Start Date"}:
-        </label>
-        <Input
-          type="date"
-          value={startDate}
-          onChange={(e) => setStartDate(e.target.value)}
-          className="w-48 h-10"
-        />
-        <label className="text-sm font-bold text-slate-700">
-          {t("endDate") || "End Date"}:
-        </label>
-        <Input
-          type="date"
-          value={endDate}
-          onChange={(e) => setEndDate(e.target.value)}
-          className="w-48 h-10"
-        />
-        <Button variant="outline" onClick={clearDateRange} className="h-10">
+      {/* شريط الفلاتر */}
+      <div className="flex flex-wrap items-center gap-4 mb-6 bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
+        {/* Start Date */}
+        <div className="flex items-center gap-2">
+          <label className="text-sm font-bold text-slate-700">
+            {t("startDate") || "Start Date"}:
+          </label>
+          <Input
+            type="date"
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+            className="w-40 h-10"
+          />
+        </div>
+
+        {/* End Date */}
+        <div className="flex items-center gap-2">
+          <label className="text-sm font-bold text-slate-700">
+            {t("endDate") || "End Date"}:
+          </label>
+          <Input
+            type="date"
+            value={endDate}
+            onChange={(e) => setEndDate(e.target.value)}
+            className="w-40 h-10"
+          />
+        </div>
+
+        {/* Order Source Filter */}
+        <div className="flex items-center gap-2">
+          <label className="text-sm font-bold text-slate-700">
+            {t("orderSource") || "Source"}:
+          </label>
+          <Select value={orderSource} onValueChange={setOrderSource}>
+            <SelectTrigger className="w-[170px] h-10">
+              <SelectValue placeholder={t("allSources") || "All Sources"} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t("all") || "All"}</SelectItem>
+              {selectOptions?.sources?.map((src) => (
+                <SelectItem key={src.id} value={src.value}>
+                  {getItemName(src)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* City Filter */}
+        <div className="flex items-center gap-2">
+          <label className="text-sm font-bold text-slate-700">
+            {t("city") || "City"}:
+          </label>
+          <Select value={cityId} onValueChange={setCityId}>
+            <SelectTrigger className="w-[160px] h-10">
+              <SelectValue placeholder={t("allCities") || "All Cities"} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t("all") || "All"}</SelectItem>
+              {selectOptions?.cities?.map((city) => (
+                <SelectItem key={city.id} value={city.id}>
+                  {getItemName(city)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Branch Filter */}
+        <div className="flex items-center gap-2">
+          <label className="text-sm font-bold text-slate-700">
+            {t("branch") || "Branch"}:
+          </label>
+          <Select value={branchId} onValueChange={setBranchId}>
+            <SelectTrigger className="w-[160px] h-10">
+              <SelectValue placeholder={t("allBranches") || "All Branches"} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t("all") || "All"}</SelectItem>
+              {selectOptions?.branches?.map((branch) => (
+                <SelectItem key={branch.id} value={branch.id}>
+                  {getItemName(branch)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Clear Filter Button */}
+        <Button variant="outline" onClick={handleClearFilters} className="h-10">
           {t("clearFilter") || "Clear Filter"}
         </Button>
       </div>

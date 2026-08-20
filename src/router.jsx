@@ -86,6 +86,7 @@ import DeliveryManAdd from "./Pages/DeliveryMan/DeliveryManAdd";
 import OutOfStockIngredients from "./Pages/OutOfStockList/OutOfStockList"; 
 import Users from "./Pages/Users/Users";
 import UsersAdd from "./Pages/Users/UsersAdd";
+import ZoneMap from "./Pages/ZoneMap/ZoneMap";
 const router = createBrowserRouter([
   {
     path: "/login",
@@ -584,6 +585,11 @@ const router = createBrowserRouter([
         element: <UsersAdd />
 
       },
+                  {
+        path: "zone-map",
+        element: <ZoneMap />
+      },
+
     ],
   },
 

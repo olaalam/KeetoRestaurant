@@ -1,38 +1,37 @@
 import React from 'react';
-import AddPage from '@/components/AddPage'; //[cite: 6]
+import AddPage from '@/components/AddPage';
 import { useTranslation } from '@/hooks/useTranslation';
 
 export default function UsersAdd({ initialData, onSuccessAction }) {
     const { t } = useTranslation();
 
     const fields = [
-        { name: 'name', label: t('name'), type: 'text', required: true },
-        { name: 'phone', label: t('phone'), type: 'text', required: true },
+        { name: 'name', label: t('name') || 'Name', type: 'text', required: true },
+        { name: 'phone', label: t('phone') || 'Phone', type: 'text', required: true },
         { 
             name: 'status', 
-            label: t('status'), 
+            label: t('status') || 'Status', 
             type: 'select', 
             options: [
-                { label: t('active'), value: 'active' },
-                { label: t('inactive'), value: 'inactive' }
+                { label: t('active') || 'Active', value: 'active' },
+                { label: t('blocked') || 'Blocked', value: 'blocked' }
             ], 
             required: true 
         },
-        { name: 'photo', label: t('photo'), type: 'file', required: false }
+        { name: 'photo', label: t('photo') || 'Photo', type: 'file', required: false }
     ];
 
     return (
         <AddPage
-            title={t('editUser')}
-            // الرابط هنا سيصبح: /api/restaurant/restaurant-users/8846fb00...
-            apiUrl={`/api/restaurant/restaurant-users/${initialData.id}`} 
+            title={t('editUser') || 'Edit User'}
+            apiUrl={`/api/restaurant/restaurant-users/${initialData?.id}`} 
             queryKey="restaurant-users"
             method="PUT"
             fields={fields}
             initialData={initialData}
-            bypassIdInEdit={true} //[cite: 7]
+            bypassIdInEdit={true}
             onSuccessAction={(res) => {
-                onSuccessAction?.(res); // إغلاق الـ Dialog بعد الحفظ
+                onSuccessAction?.(res);
             }}
         />
     );

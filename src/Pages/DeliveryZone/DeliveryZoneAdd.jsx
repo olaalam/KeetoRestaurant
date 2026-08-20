@@ -11,6 +11,36 @@ import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import InteractiveZoneMap from './InteractiveZoneMap';
 
+// 💡 دالة مساعدة لضمان تحويل الإحداثيات دائماً إلى Array
+const parseCoordinatesToArray = (raw) => {
+    if (!raw) return [];
+    let parsed = raw;
+    
+    if (typeof raw === 'string') {
+        try {
+            parsed = JSON.parse(raw);
+        } catch (e) {
+            return [];
+        }
+    }
+
+    if (Array.isArray(parsed)) {
+        return parsed;
+    }
+
+    // إذا كانت الإحداثيات جاية كـ Object مفرد فيه lat و lng
+    if (typeof parsed === 'object' && parsed !== null) {
+        if ('lat' in parsed || 'latitude' in parsed) {
+            return [parsed];
+        }
+        if (Array.isArray(parsed.coordinates)) {
+            return parsed.coordinates;
+        }
+    }
+
+    return [];
+};
+
 const DeliveryZoneAdd = () => {
     const { id } = useParams();
     const location = useLocation();
@@ -32,10 +62,9 @@ const DeliveryZoneAdd = () => {
         return false;
     }, []);
 
-    // الحالات
     const [selectedCityId, setSelectedCityId] = useState('');
     const [selectedZoneId, setSelectedZoneId] = useState('');
-    const [selectedBranchId, setSelectedBranchId] = useState(''); // 💡 حالة الفرع الجديد
+    const [selectedBranchId, setSelectedBranchId] = useState('');
     const [coverageType, setCoverageType] = useState('RADIUS'); 
     const [deliveryFee, setDeliveryFee] = useState('0.00');
     const [minOrderAmount, setMinOrderAmount] = useState('0.00');
@@ -44,7 +73,6 @@ const DeliveryZoneAdd = () => {
     
     const [dataLoaded, setDataLoaded] = useState(false);
 
-    // 1️⃣ جلب قائمة الخيارات (تضمنت الفروع branches)
     const { data: selectionData = { zones: [], cities: [], branches: [] }, isLoading: isLoadingZones } = useQuery({
         queryKey: ['DeliveryZonesSelect'],
         queryFn: async () => {
@@ -53,12 +81,11 @@ const DeliveryZoneAdd = () => {
             return {
                 zones: responseData.zonesselect || [],
                 cities: responseData.citiesselect || [],
-                branches: responseData.branchesselect || responseData.branches || [] // 💡 جلب الفروع
+                branches: responseData.branchesselect || responseData.branches || []
             };
         }
     });
 
-    // 2️⃣ جلب بيانات العنصر للتعديل
     const { data: fetchedItemData, isLoading: isLoadingItem } = useQuery({
         queryKey: ['DeliveryZoneSingle', id],
         queryFn: async () => {
@@ -70,7 +97,6 @@ const DeliveryZoneAdd = () => {
 
     const editData = fetchedItemData || location.state?.DeliveryZoneData;
 
-    // 3️⃣ 🎯 تعبئة الحالات وتأخير ظهور الفورم لحد ما كل حاجة تجهز
     useEffect(() => {
         if (!isEdit) {
             setDataLoaded(true);
@@ -80,11 +106,11 @@ const DeliveryZoneAdd = () => {
         if (editData && selectionData.cities.length > 0 && !dataLoaded) {
             const cId = String(editData.city?.id || editData.cityId || '');
             const zId = String(editData.zone?.id || editData.zoneId || '');
-            const bId = String(editData.branch?.id || editData.branchId || ''); // 💡 قراءة الفرع عند التعديل
+            const bId = String(editData.branch?.id || editData.branchId || '');
 
             setSelectedCityId(cId);
             setSelectedZoneId(zId);
-            setSelectedBranchId(bId); // 💡 تعيين قيمة الفرع
+            setSelectedBranchId(bId);
 
             setDeliveryFee(String(editData.deliveryFee ?? '0.00'));
             setMinOrderAmount(String(editData.minOrderAmount ?? '0.00'));
@@ -101,31 +127,18 @@ const DeliveryZoneAdd = () => {
                 rawCoords = editData?.zone?.defaultCoordinates || editData?.coordinates;
             }
             
-            if (rawCoords) {
-                if (Array.isArray(rawCoords)) {
-                    setCoordinates(rawCoords);
-                } else if (typeof rawCoords === 'string') {
-                    try {
-                        setCoordinates(JSON.parse(rawCoords));
-                    } catch (e) {
-                        setCoordinates([]);
-                    }
-                } else {
-                     setCoordinates([]);
-                }
-            }
+            // 💡 حماية الإحداثيات عند التعديل
+            setCoordinates(parseCoordinatesToArray(rawCoords));
 
             setDataLoaded(true);
         }
     }, [isEdit, editData, selectionData, dataLoaded]);
 
-    // 4️⃣ فلترة المناطق بناءً على المدينة
     const filteredZones = useMemo(() => {
         if (!selectedCityId) return [];
         return selectionData.zones.filter(z => String(z.cityId) === String(selectedCityId));
     }, [selectedCityId, selectionData.zones]);
 
-    // 💡 5️⃣ فلترة الفروع بناءً على المدينة (أو المنطقة إذا كانت مرتبطة بها)
     const filteredBranches = useMemo(() => {
         if (!selectedCityId) return [];
         return selectionData.branches.filter(b => {
@@ -142,14 +155,8 @@ const DeliveryZoneAdd = () => {
             setDeliveryFee(zone.deliveryFee || '0.00');
             setMinOrderAmount(zone.minOrderAmount || '0.00');
             
-            if (zone?.coordinates) {
-                const coords = typeof zone?.coordinates === 'string' 
-                    ? JSON.parse(zone?.coordinates) 
-                    : zone?.coordinates;
-                setCoordinates(coords);
-            } else {
-                setCoordinates([]);
-            }
+            // 💡 التحويل الآمن لمنع خطأ coordinates.map is not a function
+            setCoordinates(parseCoordinatesToArray(zone?.coordinates));
 
             if (zone?.coverageAreaRadiusKm) {
                 setCustomRadiusKm(String(zone?.coverageAreaRadiusKm));
@@ -181,10 +188,9 @@ const DeliveryZoneAdd = () => {
             })),
             onChange: (val) => {
                 if (val === selectedCityId) return; 
-                
                 setSelectedCityId(val);
                 setSelectedZoneId('');
-                setSelectedBranchId(''); // 💡 تصفير الفرع عند تغير المدينة
+                setSelectedBranchId('');
                 setCoordinates([]);
             }
         },
@@ -205,7 +211,6 @@ const DeliveryZoneAdd = () => {
                 handleZoneChange(val);
             }
         },
-        // 💡 إضافة حقل الفرع (Branch) ليظهر بعد الـ Zone مباشرة
         {
             name: 'branchId',
             label: t('branch') || 'Branch',
@@ -229,7 +234,7 @@ const DeliveryZoneAdd = () => {
         const payload = {
             cityId: formData.cityId || selectedCityId,
             zoneId: formData.zoneId || selectedZoneId,
-            branchId: formData.branchId || selectedBranchId, // 💡 إرسال الفرع ضمن الـ Payload
+            branchId: formData.branchId || selectedBranchId,
             coverageType: coverageType,
             deliveryFee: parseFloat(deliveryFee),
             minOrderAmount: parseFloat(minOrderAmount),
@@ -251,7 +256,7 @@ const DeliveryZoneAdd = () => {
     const initialValues = {
         cityId: selectedCityId,
         zoneId: selectedZoneId,
-        branchId: selectedBranchId, // 💡 القيمة الابتدائية للفرع
+        branchId: selectedBranchId,
         deliveryFee: deliveryFee,
         minOrderAmount: minOrderAmount,
     };
@@ -281,8 +286,6 @@ const DeliveryZoneAdd = () => {
             {() => (
                 selectedZoneId ? (
                     <div className="col-span-full space-y-6 border-t pt-6 mt-4">
-                        
-                        {/* Switch نوع التغطية */}
                         <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg border">
                             <div>
                                 <Label className="text-base font-semibold">
@@ -304,7 +307,6 @@ const DeliveryZoneAdd = () => {
                             </div>
                         </div>
 
-                        {/* الحقول المتاحة */}
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div className="space-y-2">
                                 <Label>{isAr ? 'رسوم التوصيل' : 'Delivery Fee'}</Label>
@@ -339,7 +341,6 @@ const DeliveryZoneAdd = () => {
                             )}
                         </div>
 
-                        {/* الخريطة */}
                         <div className="space-y-2">
                             <div className="flex justify-between items-center">
                                 <Label className="text-base font-semibold">

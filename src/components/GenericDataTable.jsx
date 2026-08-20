@@ -95,108 +95,123 @@ export default function GenericDataTable({
     });
   }, [data]);
 
-  // بناء الأعمدة وفحص حقول الـ Switch
-  const tableColumns = useMemo(() => {
-    const baseColumns = [
-      {
-        id: "rowNumber",
-        header: "#",
-        cell: ({ row, table }) => {
-          const pageIndex = table.getState().pagination.pageIndex;
-          const pageSize = table.getState().pagination.pageSize;
-          const indexInCurrentPage = table
-            .getRowModel()
-            .rows.findIndex((r) => r.id === row.id);
+// بناء الأعمدة وفحص حقول الـ Switch
+const tableColumns = useMemo(() => {
+  const baseColumns = [
+    {
+      id: "rowNumber",
+      header: "#",
+      cell: ({ row, table }) => {
+        const pageIndex = table.getState().pagination.pageIndex;
+        const pageSize = table.getState().pagination.pageSize;
+        const indexInCurrentPage = table
+          .getRowModel()
+          .rows.findIndex((r) => r.id === row.id);
 
-          return (
-            <span className="font-mono text-xs font-semibold text-slate-400">
-              {pageIndex * pageSize + indexInCurrentPage + 1}
-            </span>
-          );
-        },
-        size: 60,
+        return (
+          <span className="font-mono text-xs font-semibold text-slate-400">
+            {pageIndex * pageSize + indexInCurrentPage + 1}
+          </span>
+        );
       },
-    ];
+      size: 60,
+    },
+  ];
 
-    // المرور على الأعمدة ودعم تحويل status أو isActive إلى Switch تلقائياً
-    columns.forEach((col) => {
-      const isStatusField = col.accessorKey === "status" || col.accessorKey === "isActive";
-
-      if (isStatusField && editApiUrl) {
-        baseColumns.push({
-          ...col,
-          cell: ({ row }) => {
-            const currentStatus = row.getValue(col.accessorKey);
-            const isActive = currentStatus === "active" || currentStatus === "paid" || currentStatus === true || currentStatus === 1;
-            const rowId = row.original.id || row.original.menuItemId;
-             return (
-              <div className="flex items-center justify-center gap-2">
-                <Switch
-                  checked={isActive}
-                  disabled={updateStatusMutation.isPending}
-                  onCheckedChange={(checked) => {
-                    // تحديد القيمة الجديدة بناءً على نوع البيانات الأصلي (String أو Boolean)
-                    let newStatus;
-                    if (col.accessorKey === "isActive") {
-                      newStatus = checked;
-                    } else {
-                      newStatus = typeof currentStatus === "string"
-                        ? (currentStatus === "paid" || currentStatus === "unpaid" ? (checked ? "paid" : "unpaid") : (checked ? "active" : "inactive"))
-                        : checked;
-                    }
-
-                    updateStatusMutation.mutate({ id: rowId, newStatus, keyName: col.accessorKey });
-                  }}
-                />
-                <span className={cn(
-                  "text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded-full",
-                  isActive ? "bg-emerald-50 text-emerald-600" : "bg-slate-100 text-slate-500"
-                )}>
-                  {isActive ? t("active") : t("inactive")}
-                </span>
-              </div>
-            );
-          }
-        });
-      } else {
-        baseColumns.push(col);
-      }
-    });
-
-    if (actions) {
-      baseColumns.push({
-        id: "actions",
-        header: t("actionsCol"),
-        cell: ({ row }) => (
-          <div className="flex items-center justify-center gap-1">
-            {onEdit && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => onEdit(row.original)}
-                className="h-8 w-8 text-slate-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-lg transition-colors"
-              >
-                <Pencil className="h-4 w-4" />
-              </Button>
-            )}
-            {deleteApiUrl && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setDeleteId(row.original.id || row.original.menuItemId)}
-                className="h-8 w-8 text-slate-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-colors"
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            )}
-          </div>
-        ),
-      });
+  columns.forEach((col) => {
+    // إذا كان العمود يملك cell خاص مسبقاً (مثل الموجود في Users.jsx)، نستخدمه مباشرة
+    if (col.cell) {
+      baseColumns.push(col);
+      return;
     }
 
-    return baseColumns;
-  }, [columns, onEdit, deleteApiUrl, actions, editApiUrl, updateStatusMutation.isPending]);
+    const isStatusField = col.accessorKey === "status" || col.accessorKey === "isActive";
 
+    if (isStatusField && editApiUrl) {
+      baseColumns.push({
+        ...col,
+        cell: ({ row }) => {
+          const currentStatus = row.getValue(col.accessorKey);
+          const isActive = currentStatus === "active" || currentStatus === "paid" || currentStatus === true || currentStatus === 1;
+          const isBlocked = currentStatus === "blocked";
+          const rowId = row.original.id || row.original.menuItemId;
+
+          return (
+            <div className="flex items-center justify-center gap-2">
+              <Switch
+                checked={isActive}
+                disabled={updateStatusMutation.isPending}
+                onCheckedChange={(checked) => {
+                  let newStatus;
+                  if (col.accessorKey === "isActive") {
+                    newStatus = checked;
+                  } else if (typeof currentStatus === "string") {
+                    if (currentStatus === "paid" || currentStatus === "unpaid") {
+                      newStatus = checked ? "paid" : "unpaid";
+                    } else if (currentStatus === "active" || currentStatus === "blocked") {
+                      newStatus = checked ? "active" : "blocked";
+                    } else {
+                      newStatus = checked ? "active" : "inactive";
+                    }
+                  } else {
+                    newStatus = checked;
+                  }
+
+                  updateStatusMutation.mutate({ id: rowId, newStatus, keyName: col.accessorKey });
+                }}
+              />
+              <span className={cn(
+                "text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded-full",
+                isActive 
+                  ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400" 
+                  : isBlocked 
+                    ? "bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400" 
+                    : "bg-slate-100 text-slate-500"
+              )}>
+                {isActive ? t("active") : isBlocked ? (t("blocked") || "blocked") : t("inactive")}
+              </span>
+            </div>
+          );
+        }
+      });
+    } else {
+      baseColumns.push(col);
+    }
+  });
+
+  if (actions) {
+    baseColumns.push({
+      id: "actions",
+      header: t("actionsCol"),
+      cell: ({ row }) => (
+        <div className="flex items-center justify-center gap-1">
+          {onEdit && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => onEdit(row.original)}
+              className="h-8 w-8 text-slate-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-lg transition-colors"
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
+          )}
+          {deleteApiUrl && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setDeleteId(row.original.id || row.original.menuItemId)}
+              className="h-8 w-8 text-slate-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-colors"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
+      ),
+    });
+  }
+
+  return baseColumns;
+}, [columns, onEdit, deleteApiUrl, actions, editApiUrl, updateStatusMutation.isPending, t]);
   const table = useReactTable({
     data: sortedData,
     columns: tableColumns,
