@@ -1,5 +1,5 @@
 import React from "react";
-import { useGet } from "@/hooks/useGet"; // تأكدي من مسار الـ hook
+import { useGet } from "@/hooks/useGet";
 import GenericDataTable from "@/components/GenericDataTable";
 import { Star } from "lucide-react";
 
@@ -17,11 +17,33 @@ export default function Rating() {
     { 
       accessorKey: "rating", 
       header: "التقييم",
-      cell: ({ row }) => (
-        <div className="flex items-center justify-center gap-1 text-amber-500">
-          {row.original.rating} <Star className="h-4 w-4 fill-amber-500" />
-        </div>
-      )
+      cell: ({ row }) => {
+        const ratingValue = Number(row.original.rating) || 0;
+        
+        return (
+          <div className="flex items-center justify-center gap-1.5">
+            {/* عرض رقم التقييم اختياري بجانب النجوم */}
+            <span className="font-bold text-slate-700 text-xs">{ratingValue}</span>
+            
+            {/* رسم 5 نجوم */}
+            <div className="flex items-center gap-0.5">
+              {[1, 2, 3, 4, 5].map((starIndex) => {
+                const isFilled = starIndex <= ratingValue;
+                return (
+                  <Star
+                    key={starIndex}
+                    className={`h-4 w-4 ${
+                      isFilled 
+                        ? "fill-amber-500 text-amber-500" 
+                        : "fill-slate-200 text-slate-200 dark:fill-slate-800 dark:text-slate-800"
+                    }`}
+                  />
+                );
+              })}
+            </div>
+          </div>
+        );
+      }
     },
     { accessorKey: "comment", header: "التعليق" },
     { 
@@ -51,7 +73,7 @@ export default function Rating() {
         columns={columns}
         data={ratings}
         isLoading={isTableLoading}
-        actions={false} // التقييمات عادة للعرض فقط
+        actions={false}
       />
     </div>
   );

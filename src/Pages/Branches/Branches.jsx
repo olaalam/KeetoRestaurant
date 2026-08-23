@@ -100,6 +100,7 @@ export default function Restaurant() {
 
     return (
         <div className="container mx-auto py-10">
+
             <GenericDataTable
                 title={t('branchesTitle')}
                 columns={columns}
@@ -110,7 +111,10 @@ export default function Restaurant() {
                 editApiUrl="/api/restaurant/branches"
                 onAdd={() => navigate("/branches/add")}
                 onEdit={(branch) => navigate(`/branches/edit/${branch.id}`)}
+                // 👇 الخاصية الجديدة التي تفعل الـ Dialog في هذه الصفحة فقط
+                requireInactiveReason={true} 
             />
+
             {isDialogOpen && (
                 <FoodListDialog
                     restaurantId={selectedRestaurant}

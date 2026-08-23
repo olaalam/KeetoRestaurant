@@ -99,11 +99,13 @@ export const getModules = (t, orderCounts = {}) => {
         { title: t("social"), url: "/social", icon: ShoppingBag },
         { title: t("discount"), url: "/discount", icon: ShoppingBag },
         { title: t("coupon"), url: "/coupon", icon: ShoppingBag },
+                { title: t("freedelivery"), url: "/free-delivery", icon: ShoppingBag },
         { title: t("rating"), url: "/rating", icon: ShoppingBag },
         { title: t("popup"), url: "/popup", icon: ShoppingBag },
         { title: t("banner"), url: "/slider", icon: ShoppingBag },
         { title: t("points"), url: "/points", icon: Beef },
         { title: t("galleryimage"), url: "/image", icon: ShoppingBag },
+         { title: t("upselling"), url: "/upselling", icon: ShoppingBag },
 
       ],
     },
@@ -115,6 +117,7 @@ export const getModules = (t, orderCounts = {}) => {
         { title: t("deliveryMen"), url: "/delivery-man", icon: UserCog },
         { title: t("cashiers"), url: "/cashiers", icon: UserCog },
         { title: t("users"), url: "/users", icon: UserCog },
+                { title: t("blockedusers"), url: "/blocked-users", icon: UserCog },
 
 
 
@@ -148,7 +151,7 @@ export const getModules = (t, orderCounts = {}) => {
       key: "management",
       items: [
 
-        { title: "Permissions", url: "/permissions", icon: ShieldCheck },
+        { title: t("Permissions"), url: "/permissions", icon: ShieldCheck },
         { title: t("qr"), url: "/qr", icon: ShoppingBag },
         { title: t("policy"), url: "/policy", icon: ShoppingBag },
         { title: t("setting"), url: "/setting", icon: ShoppingBag },

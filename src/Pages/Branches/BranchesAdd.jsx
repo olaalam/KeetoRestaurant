@@ -120,6 +120,7 @@ const RestaurantAdd = () => {
         { name: 'phoneNumber', label: t('phoneNumberLabel'), type: 'text', required: true },
         { name: 'deliveryRadiusKm', label: t('deliveryRadiusKm'), type: 'number', step: "0.1", required: true, },
         { name: 'address', label: t('addressLabel'), type: 'text', required: true },
+                { name: 'addressAr', label: t('addressLabelAr'), type: 'text', required: true },
         {
             name: 'cityId',
             label: t('city'),

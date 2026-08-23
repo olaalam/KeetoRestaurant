@@ -159,16 +159,45 @@ export default function Order() {
       header: t("orderType"),
       cell: ({ row }) => (
         <span
-          className={`px-2 py-1 rounded-full text-xs capitalize ${
-            row.original.orderType === "delivery"
-              ? "bg-purple-100 text-purple-700"
-              : "bg-blue-100 text-blue-700"
-          }`}
+          className={`px-2 py-1 rounded-full text-xs capitalize `}
         >
           {t(row.original.orderType)}
         </span>
       ),
     },
+ {
+  accessorKey: "rating",
+  header: t("rating"),
+  cell: ({ row }) => {
+    const isDelivery = row.original.rating === "delivery";
+    return (
+      <span
+        className={`px-2.5 py-1 rounded-full text-xs font-medium capitalize ${
+          isDelivery
+            ? "bg-purple-100 text-purple-700"
+            : "bg-blue-100 text-blue-700"
+        }`}
+      >
+        {t(row.original.rating)}
+      </span>
+    );
+  },
+},
+{
+  accessorKey: "ratingComment",
+  header: t("ratingComment"),
+  cell: ({ row }) => {
+    const comment = row.original.ratingComment;
+    return (
+      <span
+        className="text-sm text-gray-600 max-w-[200px] truncate block"
+        title={comment}
+      >
+        {comment || "-"}
+      </span>
+    );
+  },
+},
     {
       accessorKey: "totalAmount",
       header: t("totalAmount"),
@@ -190,11 +219,12 @@ export default function Order() {
     {
       id: "branchZone",
       accessorFn: (row) => `${row.branchName} - ${row.zoneName}`,
-      header: t("branchName - zoneName"),
+      header: t("branchNamezoneName"),
       cell: ({ getValue }) => (
         <span className="font-semibold text-green-600">{getValue()}</span>
       ),
     },
+
     {
       accessorKey: "status",
       header: t("status"),

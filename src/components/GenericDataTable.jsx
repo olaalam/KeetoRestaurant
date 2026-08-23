@@ -25,6 +25,8 @@ import {
   Search,
   ChevronLeft,
   ChevronRight,
+  AlertCircle,
+  X 
 } from "lucide-react";
 import DeleteDialog from "./DeleteDialog";
 import LoadingSpinner from "./LoadingSpinner";
@@ -47,9 +49,19 @@ export default function GenericDataTable({
   highlightedId,
   pagination: controlledPagination,
   setPagination: setControlledPagination,
+  requireInactiveReason = false,
 }) {
   const [globalFilter, setGlobalFilter] = useState("");
   const [deleteId, setDeleteId] = useState(null);
+  
+  const [inactiveDialog, setInactiveDialog] = useState({
+    isOpen: false,
+    rowId: null,
+    keyName: null,
+    newStatus: null,
+  });
+  const [inactiveReason, setInactiveReason] = useState("");
+
   const { t, isRTL } = useTranslation();
   const queryClient = useQueryClient();
   const [internalPagination, setInternalPagination] = useState({
@@ -59,17 +71,18 @@ export default function GenericDataTable({
   const pagination = controlledPagination ?? internalPagination;
   const setPagination = setControlledPagination ?? setInternalPagination;
 
-  // 1. Mutation لتحديث الـ Status أو الـ isActive فوراً عند تغيير السويتش
   const updateStatusMutation = useMutation({
-    mutationFn: async ({ id, newStatus, keyName }) => {
-      // تركيب الرابط المخصص للخصومات أو الرابط العادي لبقية الشاشات
+    mutationFn: async ({ id, newStatus, keyName, reason }) => {
       const url = editApiUrl.includes("discounts")
         ? `${editApiUrl}/${id}/toggle-status`
         : `${editApiUrl}/${id}`;
 
-      // بناء الـ Body ديناميكياً بناءً على اسم الحقل الممرر (status أو isActive)
       const requestBody = {};
       requestBody[keyName] = newStatus;
+      
+      if (reason) {
+        requestBody.inactiveReason = reason;
+      }
 
       return await api.put(url, requestBody);
     },
@@ -78,6 +91,7 @@ export default function GenericDataTable({
         queryClient.invalidateQueries([queryKey]);
       }
       toast.success(t("updateStatusSuccessfully"));
+      closeInactiveDialog();
     },
     onError: (error) => {
       console.error("Failed to update status:", error);
@@ -85,7 +99,22 @@ export default function GenericDataTable({
     }
   });
 
-  // ترتيب البيانات بناءً على تاريخ الإنشاء
+  const closeInactiveDialog = () => {
+    setInactiveDialog({ isOpen: false, rowId: null, keyName: null, newStatus: null });
+    setInactiveReason("");
+  };
+
+  const submitInactiveReason = () => {
+
+    
+    updateStatusMutation.mutate({
+      id: inactiveDialog.rowId,
+      newStatus: inactiveDialog.newStatus,
+      keyName: inactiveDialog.keyName,
+      reason: inactiveReason
+    });
+  };
+
   const sortedData = useMemo(() => {
     if (!Array.isArray(data)) return [];
     return [...data].sort((a, b) => {
@@ -95,123 +124,129 @@ export default function GenericDataTable({
     });
   }, [data]);
 
-// بناء الأعمدة وفحص حقول الـ Switch
-const tableColumns = useMemo(() => {
-  const baseColumns = [
-    {
-      id: "rowNumber",
-      header: "#",
-      cell: ({ row, table }) => {
-        const pageIndex = table.getState().pagination.pageIndex;
-        const pageSize = table.getState().pagination.pageSize;
-        const indexInCurrentPage = table
-          .getRowModel()
-          .rows.findIndex((r) => r.id === row.id);
-
-        return (
-          <span className="font-mono text-xs font-semibold text-slate-400">
-            {pageIndex * pageSize + indexInCurrentPage + 1}
-          </span>
-        );
-      },
-      size: 60,
-    },
-  ];
-
-  columns.forEach((col) => {
-    // إذا كان العمود يملك cell خاص مسبقاً (مثل الموجود في Users.jsx)، نستخدمه مباشرة
-    if (col.cell) {
-      baseColumns.push(col);
-      return;
-    }
-
-    const isStatusField = col.accessorKey === "status" || col.accessorKey === "isActive";
-
-    if (isStatusField && editApiUrl) {
-      baseColumns.push({
-        ...col,
-        cell: ({ row }) => {
-          const currentStatus = row.getValue(col.accessorKey);
-          const isActive = currentStatus === "active" || currentStatus === "paid" || currentStatus === true || currentStatus === 1;
-          const isBlocked = currentStatus === "blocked";
-          const rowId = row.original.id || row.original.menuItemId;
+  const tableColumns = useMemo(() => {
+    const baseColumns = [
+      {
+        id: "rowNumber",
+        header: "#",
+        cell: ({ row, table }) => {
+          const pageIndex = table.getState().pagination.pageIndex;
+          const pageSize = table.getState().pagination.pageSize;
+          const indexInCurrentPage = table.getRowModel().rows.findIndex((r) => r.id === row.id);
 
           return (
-            <div className="flex items-center justify-center gap-2">
-              <Switch
-                checked={isActive}
-                disabled={updateStatusMutation.isPending}
-                onCheckedChange={(checked) => {
-                  let newStatus;
-                  if (col.accessorKey === "isActive") {
-                    newStatus = checked;
-                  } else if (typeof currentStatus === "string") {
-                    if (currentStatus === "paid" || currentStatus === "unpaid") {
-                      newStatus = checked ? "paid" : "unpaid";
-                    } else if (currentStatus === "active" || currentStatus === "blocked") {
-                      newStatus = checked ? "active" : "blocked";
-                    } else {
-                      newStatus = checked ? "active" : "inactive";
-                    }
-                  } else {
-                    newStatus = checked;
-                  }
-
-                  updateStatusMutation.mutate({ id: rowId, newStatus, keyName: col.accessorKey });
-                }}
-              />
-              <span className={cn(
-                "text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded-full",
-                isActive 
-                  ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400" 
-                  : isBlocked 
-                    ? "bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400" 
-                    : "bg-slate-100 text-slate-500"
-              )}>
-                {isActive ? t("active") : isBlocked ? (t("blocked") || "blocked") : t("inactive")}
-              </span>
-            </div>
+            <span className="font-mono text-xs font-semibold text-slate-400">
+              {pageIndex * pageSize + indexInCurrentPage + 1}
+            </span>
           );
-        }
-      });
-    } else {
-      baseColumns.push(col);
-    }
-  });
+        },
+        size: 60,
+      },
+    ];
 
-  if (actions) {
-    baseColumns.push({
-      id: "actions",
-      header: t("actionsCol"),
-      cell: ({ row }) => (
-        <div className="flex items-center justify-center gap-1">
-          {onEdit && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => onEdit(row.original)}
-              className="h-8 w-8 text-slate-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-lg transition-colors"
-            >
-              <Pencil className="h-4 w-4" />
-            </Button>
-          )}
-          {deleteApiUrl && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setDeleteId(row.original.id || row.original.menuItemId)}
-              className="h-8 w-8 text-slate-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-colors"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          )}
-        </div>
-      ),
+    columns.forEach((col) => {
+      if (col.cell) {
+        baseColumns.push(col);
+        return;
+      }
+
+      const isStatusField = col.accessorKey === "status" || col.accessorKey === "isActive";
+
+      if (isStatusField && editApiUrl) {
+        baseColumns.push({
+          ...col,
+          cell: ({ row }) => {
+            const currentStatus = row.getValue(col.accessorKey);
+            const isActive = currentStatus === "active" || currentStatus === "paid" || currentStatus === true || currentStatus === 1;
+            const isBlocked = currentStatus === "blocked";
+            const rowId = row.original.id || row.original.menuItemId;
+
+            return (
+              <div className="flex items-center justify-center gap-2">
+                <Switch
+                  checked={isActive}
+                  disabled={updateStatusMutation.isPending}
+                  onCheckedChange={(checked) => {
+                    let newStatus;
+                    if (col.accessorKey === "isActive") {
+                      newStatus = checked;
+                    } else if (typeof currentStatus === "string") {
+                      if (currentStatus === "paid" || currentStatus === "unpaid") {
+                        newStatus = checked ? "paid" : "unpaid";
+                      } else if (currentStatus === "active" || currentStatus === "blocked") {
+                        newStatus = checked ? "active" : "blocked";
+                      } else {
+                        newStatus = checked ? "active" : "inactive";
+                      }
+                    } else {
+                      newStatus = checked;
+                    }
+
+                    if (!checked && requireInactiveReason) {
+                      setInactiveDialog({
+                        isOpen: true,
+                        rowId: rowId,
+                        keyName: col.accessorKey,
+                        newStatus: newStatus
+                      });
+                    } else {
+                      updateStatusMutation.mutate({ id: rowId, newStatus, keyName: col.accessorKey });
+                    }
+                  }}
+                />
+                <span className={cn(
+                  "text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded-full",
+                  isActive 
+                    ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400" 
+                    : isBlocked 
+                      ? "bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400" 
+                      : "bg-slate-100 text-slate-500"
+                )}>
+                  {isActive ? t("active") : isBlocked ? (t("blocked") || "blocked") : t("inactive")}
+                </span>
+              </div>
+            );
+          }
+        });
+      } else {
+        baseColumns.push(col);
+      }
     });
-  }
 
-  return baseColumns;
-}, [columns, onEdit, deleteApiUrl, actions, editApiUrl, updateStatusMutation.isPending, t]);
+    if (actions) {
+      baseColumns.push({
+        id: "actions",
+        header: t("actionsCol"),
+        cell: ({ row }) => (
+          <div className="flex items-center justify-center gap-1">
+            {onEdit && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => onEdit(row.original)}
+                className="h-8 w-8 text-slate-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-lg transition-colors"
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
+            )}
+            {deleteApiUrl && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setDeleteId(row.original.id || row.original.menuItemId)}
+                className="h-8 w-8 text-slate-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-colors"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+        ),
+      });
+    }
+
+    return baseColumns;
+  }, [columns, onEdit, deleteApiUrl, actions, editApiUrl, updateStatusMutation.isPending, t, requireInactiveReason]);
+
   const table = useReactTable({
     data: sortedData,
     columns: tableColumns,
@@ -230,7 +265,7 @@ const tableColumns = useMemo(() => {
   });
 
   return (
-    <div className="space-y-6 w-full">
+    <div className="space-y-6 w-full relative">
       {/* HEADER */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2 border-b border-slate-100">
         <div className="flex items-center gap-4">
@@ -249,7 +284,6 @@ const tableColumns = useMemo(() => {
           </div>
         </div>
 
-        {/* Controls Container */}
         <div className="flex items-center gap-3 self-end sm:self-center w-full sm:w-auto">
           <div className="relative w-full sm:w-64">
             <Search className={cn(
@@ -301,10 +335,7 @@ const tableColumns = useMemo(() => {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell
-                    colSpan={tableColumns.length}
-                    className="text-center h-48"
-                  >
+                  <TableCell colSpan={tableColumns.length} className="text-center h-48">
                     <div className="flex flex-col items-center justify-center gap-2 text-slate-400">
                       <LoadingSpinner className="h-6 w-6 text-primary" />
                     </div>
@@ -313,7 +344,6 @@ const tableColumns = useMemo(() => {
               ) : table.getRowModel().rows?.length ? (
                 table.getRowModel().rows.map((row) => {
                   const isHighlighted = String(row.original.id) === String(highlightedId);
-
                   return (
                     <TableRow
                       key={row.id}
@@ -330,10 +360,7 @@ const tableColumns = useMemo(() => {
                           className="py-4 px-6 align-middle text-sm text-slate-600 dark:text-slate-300 font-medium text-center"
                         >
                           <div className="flex items-center justify-center w-full">
-                            {flexRender(
-                              cell.column.columnDef.cell,
-                              cell.getContext(),
-                            )}
+                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
                           </div>
                         </TableCell>
                       ))}
@@ -342,10 +369,7 @@ const tableColumns = useMemo(() => {
                 })
               ) : (
                 <TableRow>
-                  <TableCell
-                    colSpan={tableColumns.length}
-                    className="text-center h-48 text-sm text-slate-400 font-medium"
-                  >
+                  <TableCell colSpan={tableColumns.length} className="text-center h-48 text-sm text-slate-400 font-medium">
                     {t("noDataFound")}
                   </TableCell>
                 </TableRow>
@@ -396,6 +420,55 @@ const tableColumns = useMemo(() => {
           </Button>
         </div>
       </div>
+
+      {/* INACTIVE REASON DIALOG */}
+      {inactiveDialog.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm transition-opacity">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl w-[90%] max-w-md p-6 relative animate-in zoom-in-95 duration-200">
+            <button 
+              onClick={closeInactiveDialog}
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors"
+            >
+              <X size={20} />
+            </button>
+            
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 bg-orange-100 text-orange-600 rounded-full">
+                <AlertCircle size={24} />
+              </div>
+              <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">
+                {t("inactiveReasonTitle") || "سبب الإيقاف"}
+              </h3>
+            </div>
+            
+            <p className="text-sm text-slate-500 mb-4">
+              {t("inactiveReasonDesc") || "يرجى كتابة سبب تحويل الحالة إلى غير مفعل/موقوف للمتابعة."}
+            </p>
+
+            <Input
+              value={inactiveReason}
+              onChange={(e) => setInactiveReason(e.target.value)}
+              placeholder={t("reasonPlaceholder") || "أدخل السبب هنا..."}
+              className="mb-6 h-12"
+              autoFocus
+            />
+
+            <div className="flex gap-3 justify-end">
+              <Button variant="outline" onClick={closeInactiveDialog}>
+                {t("cancel") || "إلغاء"}
+              </Button>
+              <Button 
+                onClick={submitInactiveReason} 
+               
+                className="bg-orange-600 hover:bg-orange-700 text-white"
+              >
+                {updateStatusMutation.isPending ? <LoadingSpinner className="h-4 w-4 mr-2" /> : null}
+                {t("confirm") || "تأكيد الإيقاف"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* DELETE DIALOG */}
       <DeleteDialog

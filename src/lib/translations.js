@@ -319,6 +319,36 @@ const translations = {
     roleNameLabel: "Role Name",
     selectAllPermissions: "Select All Permissions",
     loadingPermissions: "Loading permissions structure...",
+    //dashboard
+    
+  "loadingDashboard": "Loading dashboard data...",
+  "errorLoadingDashboard": "An error occurred while loading the dashboard data.",
+  "restaurantDashboard": "Restaurant Analytics Dashboard",
+  "realTimeReports": "Real-time reports & operational metrics",
+  "updating": "Updating...",
+  "allBranches": "All Branches",
+  "last30Days": "Last 30 Days",
+  "last7Days": "Last 7 Days",
+  "totalRevenue": "Total Revenue",
+  "currency": "EGP",
+  "numberOfOrders": "Number of Orders",
+  "avgOrderValue": "Avg. Order Value",
+  "rating": "Rating",
+  "peakHoursOrders": "Peak Hours (Orders)",
+  "orders": "Orders",
+  "peakDaysRevenue": "Peak Days (Revenue)",
+  "revenueEgp": "Revenue (EGP)",
+  "branchesNetSales": "Branches Net Sales",
+  "netSalesEgp": "Net Sales (EGP)",
+  "appVsWebsite": "App vs Website Orders",
+  "topProductsRevenue": "Top Products by Revenue",
+  "geographicSalesMap": "Geographic Sales Map",
+  "cancellationsBreakdown": "Cancellations Breakdown",
+  "marketBasketAnalysis": "Market Basket Analysis (Top Combos)",
+  "comboName": "Combo Name",
+  "confidencePercent": "Confidence %",
+  "noCombosAvailable": "No combos available",
+
 
     // WalletR page
     restaurantWallet: "Restaurant Wallet",
@@ -477,6 +507,9 @@ const translations = {
     "delivery": "Delivery",
     "pickup": "Pickup",
     "orders": "Orders",
+    "ratingComment":"Rating Comment",
+    orderSource:"Order Source",
+    branchNamezoneName:"BranchName-ZoneName",
 
     "pending": "Pending",
     "accepted": "Accepted",
@@ -722,7 +755,11 @@ const translations = {
     "saturday": "Saturday",
     //modules 
     dashboard: "Dashboard",
-    permissions: "Permissions",
+    Permissions: "Permissions",
+    OutOfStock: "Out of Stock",
+    users:"Users",
+    ZoneMap:  "Zone Map",
+    blockedusers: "Blocked Users",
     "order management": "Order Management",
     orders: "Orders",
     AllOrders: "All Orders",
@@ -768,7 +805,8 @@ const translations = {
     Users: "Users",
     admins: "Admins",
     deliveryMen: "Delivery Men",
-    cashiers: "Cashiers"
+    cashiers: "Cashiers",
+    freedelivery:"Free Delivery",
 
 
 
@@ -1089,6 +1127,36 @@ const translations = {
     roleNameLabel: "اسم الدور",
     selectAllPermissions: "تحديد كل الصلاحيات",
     loadingPermissions: "جارٍ تحميل هيكل الصلاحيات...",
+    //dashboard
+    
+  "loadingDashboard": "جاري تحميل بيانات لوحة التحكم...",
+  "errorLoadingDashboard": "حدث خطأ أثناء تحميل بيانات لوحة التحكم.",
+  "restaurantDashboard": "لوحة تحكم تحليلات المطعم",
+  "realTimeReports": "تقارير مباشرة ومقاييس تشغيلية",
+  "updating": "جاري التحديث...",
+  "allBranches": "جميع الفروع",
+  "last30Days": "آخر 30 يوم",
+  "last7Days": "آخر 7 أيام",
+  "totalRevenue": "إجمالي الإيرادات",
+  "currency": "ج.م",
+  "numberOfOrders": "عدد الطلبات",
+  "avgOrderValue": "متوسط قيمة الطلب",
+  "rating": "التقييم",
+  "peakHoursOrders": "ساعات الذروة (الطلبات)",
+  "orders": "الطلبات",
+  "peakDaysRevenue": "أيام الذروة (الإيرادات)",
+  "revenueEgp": "الإيرادات (ج.م)",
+  "branchesNetSales": "صافي مبيعات الفروع",
+  "netSalesEgp": "صافي المبيعات (ج.م)",
+  "appVsWebsite": "طلبات التطبيق مقابل الموقع",
+  "topProductsRevenue": "أفضل المنتجات حسب الإيرادات",
+  "geographicSalesMap": "خريطة المبيعات الجغرافية",
+  "cancellationsBreakdown": "تفاصيل الإلغاءات",
+  "marketBasketAnalysis": "تحليل سلة المشتريات (أفضل المجموعات)",
+  "comboName": "اسم المجموعة",
+  "confidencePercent": "نسبة الثقة %",
+  "noCombosAvailable": "لا توجد مجموعات متاحة",
+
 
     // WalletR page
     restaurantWallet: "محفظة المطعم",
@@ -1250,6 +1318,9 @@ const translations = {
     "delivery": "توصيل",
     "pickup": "استلام من الفرع",
     "orders": "طلبات",
+    ratingComment:"تعليق التقييم",
+    orderSource:"مصدر الطلب",
+    branchNamezoneName:"اسم الفرع واسم المنطقة",
 
     "pending": "قيد الانتظار",
     "accepted": "مقبول",
@@ -1494,7 +1565,9 @@ const translations = {
     "saturday": "السبت",
     //modules 
     dashboard: "لوحة التحكم",
+    OutOfStock:" المنتهي من المخزن",
     Permissions: "صلاحيات",
+    ZoneMap: "خريطة المناطق",
     "order management": "إدارة الطلبات",
     orders: "الطلبات",
     AllOrders: "كل الطلبات",
@@ -1506,7 +1579,7 @@ const translations = {
     cancelled: "الملغاة",
     refund: "المرتجعات",
     Setting: "الإعدادات",
-    permissions: "الصلاحيات",
+    
     qr: "رمز الاستجابة السريعة",
     policy: "السياسة",
     setting: "الإعداد",
@@ -1538,7 +1611,10 @@ const translations = {
     Users: "المستخدمون",
     admins: "المشرفون",
     deliveryMen: "عاملو التوصيل",
-    cashiers: "الكاشير"
+    cashiers: "الكاشير",
+    blockedusers:"المستحدمين المحظورين",
+    users:"المستخدمين",
+    freedelivery:"توصيل مجاني ",
 
 
 

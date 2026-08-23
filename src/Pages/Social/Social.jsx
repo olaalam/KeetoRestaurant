@@ -22,7 +22,7 @@ export default function Social() {
             id: "platform",
             header: t("platform") || "Platform",
             cell: ({ row }) => {
-                const icon = row.original.platform?.icon || row.original.icon;
+                const icon = row.original.platform?.logo || row.original.icon;
                 const platformName = language === 'ar'
                     ? (row.original.platform?.nameAr || row.original.platform?.name || row.original.name)
                     : (row.original.platform?.name || row.original.platform?.nameAr || row.original.name);
