@@ -68,6 +68,9 @@ const FoodAdd = () => {
         stock_type: raw.stock_type || "unlimited",
         status: raw.status || "active",
         
+        // في حالة الـ Edit: لو الباك باعت الفروع غير المختارة (inactive)، بنستنتج الفروع المختارة للـ UI
+        branches: "all", // سيتم التعامل معها أو ضبطها حسب البيانات المرجعة لو رغبتم
+        
         variations:
           raw.variations?.map((v) => ({
             name: v.name || "",
@@ -103,9 +106,45 @@ const FoodAdd = () => {
   }
 
   const transformBeforeSubmit = (formData) => {
-    const { addonsId: addonsArr, ...rest } = formData;
+    const { addonsId: addonsArr, branches, price, ...rest } = formData;
+    
+    let formattedBranches = undefined;
+    
+    // لو تم اختيار فروع معينة في الـ UI وليست "all"
+    if (branches && branches !== "all") {
+      let selectedIds = [];
+      if (Array.isArray(branches)) {
+        selectedIds = branches
+          .map((b) => (typeof b === "object" ? b.value || b.id || b.branchId : b))
+          .filter((v) => v && v !== "all");
+      } else if (typeof branches === "string") {
+        selectedIds = [branches].filter((v) => v && v !== "all");
+      }
+
+      // جلب كل الفروع المتاحة من الـ selectOptions
+      const allAvailableBranches = selectOptions?.branches || [];
+
+      // استخراج الفروع التي **لم يقم** المستخدم بتحديدها (غير المختارة)
+      const unselectedBranches = allAvailableBranches.filter((b) => {
+        const bId = String(b.id || b.branchId);
+        return !selectedIds.includes(bId);
+      });
+
+      // لو فيه فروع لم يتم اختيارها، نبعتها للباك إند بحالة inactive
+      if (unselectedBranches.length > 0) {
+        formattedBranches = unselectedBranches.map((b) => ({
+          branchId: String(b.id || b.branchId),
+          price: Number(price) || 0,
+          status: "inactive",
+        }));
+      }
+    }
+
     return {
       ...rest,
+      price,
+      // لو اخترنا "all" أو كل الفروع (مفيش فروع غير مختارة)، مش هيبعت مفتاح branches نهائياً
+      ...(formattedBranches ? { branches: formattedBranches } : {}),
       allergen_ingredients: Array.isArray(formData.allergen_ingredients)
         ? serializeAllergens(formData.allergen_ingredients)
         : formData.allergen_ingredients,
@@ -137,9 +176,7 @@ const FoodAdd = () => {
           basic: ["name", "description", "categoryid"],
           details: ["startTime", "endTime"],
           pricing: ["price"],
-          // nested field-array errors live under the top-level "variations" key
           variations: ["variations"],
-          // same idea for the addons field array
           addon: ["addonsId"],
         };
 
@@ -402,6 +439,45 @@ const FoodAdd = () => {
                   {errors.price && (
                     <span className="text-destructive text-xs">{errors.price.message}</span>
                   )}
+                </div>
+
+                {/* حقل الـ Branches متعدد الاختيارات (Multi-select) */}
+<div className="space-y-2">
+                  <Label>{t("branchesLabel") || "Branches"}</Label>
+                  <Controller
+                    name="branches"
+                    control={control}
+                    defaultValue="all"
+                    render={({ field }) => (
+                      <SearchableSelect
+                        isMulti
+                        options={[
+                          { value: "all", label: t("allBranches") || "All Branches" },
+                          ...(selectOptions?.branches?.map((b) => ({
+                            value: String(b.id || b.branchId),
+                            label: b.name,
+                          })) || []),
+                        ]}
+                        value={field.value}
+                        onChange={(val) => {
+                          if (!val || (Array.isArray(val) && val.length === 0)) {
+                            field.onChange("all");
+                            return;
+                          }
+                          const hasAll = Array.isArray(val)
+                            ? val.some((v) => (typeof v === "object" ? v.value === "all" : v === "all"))
+                            : val === "all";
+
+                          if (hasAll) {
+                            field.onChange("all");
+                          } else {
+                            field.onChange(val);
+                          }
+                        }}
+                        placeholder={t("selectBranches") || "Select Branches"}
+                      />
+                    )}
+                  />
                 </div>
 
                 <div className="space-y-2">
