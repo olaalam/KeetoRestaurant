@@ -96,10 +96,10 @@ export default function DetailedFinancialReport() {
         title: "Total Sales",
         value: `${financials?.totalRevenue ?? "0.00"} EGP`,
       },
-      {
-        title: "Delivered Revenue",
-        value: `${financials?.deliveredRevenue ?? "0.00"} EGP`,
-      },
+      // {
+      //   title: "Delivered Revenue",
+      //   value: `${financials?.deliveredRevenue ?? "0.00"} EGP`,
+      // },
       {
         title: "Commission",
         value: `${financials?.totalAppCommission ?? "0.00"} EGP`,
@@ -247,12 +247,12 @@ export default function DetailedFinancialReport() {
       icon: ShoppingBag,
       bgIcon: "bg-orange-100 text-orange-600",
     },
-    {
-      title: t("deliveredRevenue"),
-      value: `${financials?.deliveredRevenue ?? "0.00"} ${t("currency")}`,
-      icon: DollarSign,
-      bgIcon: "bg-green-100 text-green-600",
-    },
+    // {
+    //   title: t("deliveredRevenue"),
+    //   value: `${financials?.deliveredRevenue ?? "0.00"} ${t("currency")}`,
+    //   icon: DollarSign,
+    //   bgIcon: "bg-green-100 text-green-600",
+    // },
     {
       title: t("appCommissionKeeto"),
       value: `${financials?.totalAppCommission ?? "0.00"} ${t("currency")}`,

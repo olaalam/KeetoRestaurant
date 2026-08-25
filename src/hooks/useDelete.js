@@ -7,7 +7,9 @@ export const useDelete = (url, onSuccessKey) => {
 
     return useMutation({
         mutationFn: async (id) => {
-            const { data } = await api.delete(`${url}/${id}`);
+            // التحقق: لو الـ id موجود ومحدد، ادمجه مع الرابط. وإلا استخدم الرابط الأساسي فقط.
+            const endpoint = id ? `${url}/${id}` : url;
+            const { data } = await api.delete(endpoint);
             return data;
         },
         onSuccess: () => {
@@ -17,16 +19,12 @@ export const useDelete = (url, onSuccessKey) => {
             toast.success("success");
         },
         onError: (error) => {
-
-
-            // 💡 استخراج رسالة الخطأ بناءً على الهيكل الراجع من الـ API الخاص بكِ
             const serverErrorMessage = 
-                error?.response?.data?.error?.message ||  // للتعامل مع { error: { message: "..." } }
-                error?.response?.data?.message ||         // للتعامل مع { message: "..." }
-                error?.message ||                          // رسالة Axios الافتراضية (مثل Network Error)
-                'Invalid Credentials';                     // رسالة احتياطية عامة
+                error?.response?.data?.error?.message ||  
+                error?.response?.data?.message ||         
+                error?.message ||                          
+                'Invalid Credentials';                     
 
-            // عرض رسالة الخطأ للمستخدم عبر الـ Toast
             toast.error(serverErrorMessage);
         },
     });

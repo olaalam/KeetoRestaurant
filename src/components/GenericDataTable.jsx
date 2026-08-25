@@ -50,6 +50,7 @@ export default function GenericDataTable({
   pagination: controlledPagination,
   setPagination: setControlledPagination,
   requireInactiveReason = false,
+  deleteWithoutId = false,
 }) {
   const [globalFilter, setGlobalFilter] = useState("");
   const [deleteId, setDeleteId] = useState(null);
@@ -229,11 +230,11 @@ export default function GenericDataTable({
                 <Pencil className="h-4 w-4" />
               </Button>
             )}
-            {deleteApiUrl && (
+{deleteApiUrl && (
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => setDeleteId(row.original.id || row.original.menuItemId)}
+                onClick={() => setDeleteId(deleteWithoutId ? "single" : (row.original.id || row.original.menuItemId))}
                 className="h-8 w-8 text-slate-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-colors"
               >
                 <Trash2 className="h-4 w-4" />
@@ -470,13 +471,13 @@ export default function GenericDataTable({
         </div>
       )}
 
-      {/* DELETE DIALOG */}
+{/* DELETE DIALOG */}
       <DeleteDialog
         isOpen={!!deleteId}
         onClose={() => setDeleteId(null)}
         apiUrl={deleteApiUrl}
         onSuccessKey={queryKey}
-        id={deleteId}
+        id={deleteWithoutId ? null : deleteId} // <-- لو مفعل، ابعت الـ id بـ null
       />
     </div>
   );

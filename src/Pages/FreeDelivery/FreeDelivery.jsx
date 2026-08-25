@@ -69,17 +69,16 @@ export default function FreeDelivery() {
 
     return (
         <div className="p-6">
-            <GenericDataTable
-                title="Free Delivery"
-                columns={columns}
-                data={tableData}
-                isLoading={isLoading}
-                queryKey={queryKey}
-                editApiUrl={apiUrl} // مهم لتشغيل زر الـ Switch وتغيير الحالة[cite: 2]
-                deleteApiUrl={apiUrl} // لتشغيل زر الحذف[cite: 2]
-                onAdd={handleAdd} // يعرض زر الإضافة فقط إذا لم يكن هناك عرض حالي
-                onEdit={(row) => navigate(`/free-delivery/edit`, { state: { initialData: row } })}
-            />
+<GenericDataTable
+        title="Free Delivery"
+        columns={columns}
+        data={tableData}
+        isLoading={isLoading}
+        queryKey={queryKey}
+        deleteApiUrl={apiUrl}
+        deleteWithoutId={true} // <-- تفعيلها هنا فقط لهذه الصفحة!
+        onAdd={handleAdd}
+    />
         </div>
     );
 }

@@ -22,7 +22,10 @@ const DeleteDialog = ({
     const { t } = useTranslation();
 
     const handleConfirm = () => {
-        deleteMutation.mutate(id, {
+        // لو الـ id عبارة عن "single" أو null، نمرر undefined حتى لا يتم إضافته للرابط
+        const actualId = (id === "single" || id === null) ? undefined : id;
+
+        deleteMutation.mutate(actualId, {
             onSuccess: () => {
                 onClose();
             }
