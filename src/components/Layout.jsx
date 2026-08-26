@@ -43,14 +43,6 @@ export default function Layout() {
 
   // ---- Notification Sound ----
   const prevUnreadCountRef = useRef(null);
-  const audioRef = useRef(null);
-  
-  // تحديث الستيت لتشمل الإشعار الأخير
-  const [newOrderPopup, setNewOrderPopup] = useState({ 
-    open: false, 
-    count: 0, 
-    latestNotification: null 
-  });
 
   // تحميل الصوت مسبقاً
   useEffect(() => {
@@ -101,31 +93,75 @@ export default function Layout() {
     refetchIntervalInBackground: true,
   });
 
-  // استخراج مصفوفة الإشعارات وحساب العدد الغير مقروء
+
+  
+  // 1. هنضيف الـ Refs دي عشان نراقب الـ ID ونعرف دي أول مرة ولا لأ
+  const latestSeenNotifIdRef = useRef(null);
+  const isFirstFetchRef = useRef(true);
+
+
+  // (نفس كود تحميل الصوت مفيش فيه تغيير)
+  useEffect(() => {
+    const audio = new Audio("/sounds/notification.wav");
+    audio.volume = 0.7;
+    audio.load();
+    audioRef.current = audio;
+
+    const unlock = () => {
+      audio.play().then(() => {
+        audio.pause();
+        audio.currentTime = 0;
+      }).catch(() => { });
+      window.removeEventListener("click", unlock);
+      window.removeEventListener("keydown", unlock);
+    };
+    window.addEventListener("click", unlock);
+    window.addEventListener("keydown", unlock);
+
+    return () => {
+      window.removeEventListener("click", unlock);
+      window.removeEventListener("keydown", unlock);
+    };
+  }, []);
+
+
   const notifications = notificationsResponse?.data?.data || [];
   const unreadCount = notifications.filter((n) => !n.isRead).length;
 
-  // شغّل الصوت وتحديث الـ Pop-up عند وجود إشعار جديد
-  useEffect(() => {
-    if (prevUnreadCountRef.current === null) {
-      prevUnreadCountRef.current = unreadCount;
-      return;
-    }
+// ---- Notification Sound & Logic ----
+  const audioRef = useRef(null);
+  
+  const [newOrderPopup, setNewOrderPopup] = useState({ 
+    open: false, 
+    count: 0, 
+    latestNotification: null 
+  });
 
-    if (unreadCount > prevUnreadCountRef.current) {
-      const incomingCount = unreadCount - prevUnreadCountRef.current;
-      const latestNotif = notifications[0] || null; // أحدث إشعار واصل
-      
+  // 1. مراقبة الإشعارات وإظهار الـ Pop-up للطلبات الجديدة
+  useEffect(() => {
+    if (isLoadingNotifications || !notifications || notifications.length === 0) return;
+
+    // استخراج أحدث إشعار بناءً على تاريخ الإنشاء (createdAt)
+    const newestNotification = notifications.reduce((latest, current) => {
+      return new Date(current.createdAt) > new Date(latest.createdAt) ? current : latest;
+    }, notifications[0]);
+
+    const newestId = newestNotification.id || newestNotification._id;
+    const lastSeenId = localStorage.getItem("lastSeenNotifId");
+
+    // يظهر الـ Pop-up فقط إذا كان الإشعار جديداً وغير مقروء ولم يتم عرضه من قبل
+    if (newestId !== lastSeenId && !newestNotification.isRead) {      
       setNewOrderPopup({ 
         open: true, 
-        count: incomingCount,
-        latestNotification: latestNotif 
+        count: unreadCount, 
+        latestNotification: newestNotification 
       });
       playNotificationSound();
-    }
 
-    prevUnreadCountRef.current = unreadCount;
-  }, [unreadCount, notifications]);
+      // حفظ معرّف الإشعار في المتصفح لمنع تكراره عند الـ Refresh
+      localStorage.setItem("lastSeenNotifId", newestId);
+    }
+  }, [notifications, isLoadingNotifications, unreadCount]);
 
   // 2. تحديث الكل كمقروء
   const { mutate: markAllAsRead, isPending: isMarkingAll } = useUpdate(

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import GenericDataTable from '@/components/GenericDataTable';
 import { useQuery } from '@tanstack/react-query';
@@ -6,20 +6,32 @@ import api from '@/api/axios';
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { ListTree, PlusCircle, CheckCircle2, Pencil, Store } from "lucide-react"; 
+import { ListTree, PlusCircle, CheckCircle2, Pencil, Store, Filter, X } from "lucide-react";
 import { usePost } from '@/hooks/usePost';
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input"; 
+import { Input } from "@/components/ui/input";
 import { useTranslation } from "@/hooks/useTranslation";
 import { toast } from 'sonner';
+
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 
 const Foods = () => {
     const navigate = useNavigate();
     const { t, i18n } = useTranslation();
     const [selectedVariations, setSelectedVariations] = useState(null);
     const location = useLocation();
+
+    // 💡 حالات الفلترة (Server-Side Filter)
+    const [selectedCategory, setSelectedCategory] = useState('all');
+    const [selectedSubCategory, setSelectedSubCategory] = useState('all');
 
     // حالات إدارة المكونات
     const [ingredientsDialogOpen, setIngredientsDialogOpen] = useState(false);
@@ -29,10 +41,10 @@ const Foods = () => {
 
     // حالات إدارة تعديل السعر السريع
     const [priceDialogOpen, setPriceDialogOpen] = useState(false);
-    const [foodToUpdatePrice, setFoodToUpdatePrice] = useState(null); 
+    const [foodToUpdatePrice, setFoodToUpdatePrice] = useState(null);
     const [newPrice, setNewPrice] = useState('');
 
-    // حالات إدارة تحكم الفروع (Branch Product Control)
+    // حالات إدارة تحكم الفروع
     const [branchControlOpen, setBranchControlOpen] = useState(false);
     const [selectedFoodForBranch, setSelectedFoodForBranch] = useState(null);
 
@@ -41,25 +53,51 @@ const Foods = () => {
         pageSize: 15,
     });
 
-    // جلب بيانات الأطعمة للجدول[cite: 1]
-    const { data: foods = [], isLoading, refetch } = useQuery({ 
-        queryKey: ['foods'],
+    // 💡 جلب بيانات الأطعمة مع تمرير الـ queryParams للباك إند
+    const { data: foods = [], isLoading, refetch } = useQuery({
+        queryKey: ['foods', selectedCategory, selectedSubCategory],
         queryFn: async () => {
-            const res = await api.get('/api/restaurant/food');
+            const params = {};
+            if (selectedCategory !== 'all') params.categoryId = selectedCategory;
+            if (selectedSubCategory !== 'all') params.subCategoryId = selectedSubCategory;
+
+            const res = await api.get('/api/restaurant/food', { params });
             return res.data.data.data;
         }
     });
 
-    // جلب قائمة المكونات المتاحة[cite: 1]
-    const { data: ingredientsOptions = [] } = useQuery({
-        queryKey: ['ingredients-select'],
+    // جلب بيانات الـ Select
+    const { data: selectData = {} } = useQuery({
+        queryKey: ['food-select-data'],
         queryFn: async () => {
             const res = await api.get('/api/restaurant/food/select');
-            return res.data.data.data.ingredients || [];
+            return res.data.data.data || {};
         }
     });
 
-    // جلب حالة توفر المنتج في الفروع باستخدام الـ Query Params المطلوبة (foodId)[cite: 1]
+    // استخراج القوائم المتاحة
+    const categoriesList = selectData.categories || [];
+    const subcategoriesList = selectData.subcategories || [];
+    const ingredientsOptions = selectData.ingredients || [];
+
+    // 💡 تصفية الأقسام الفرعية بناءً على القسم الرئيسي المحدد
+    const availableSubCategories = useMemo(() => {
+        if (selectedCategory === 'all') return subcategoriesList;
+        return subcategoriesList.filter(sub => String(sub.categoryId) === String(selectedCategory));
+    }, [subcategoriesList, selectedCategory]);
+
+    // عند تغيير القسم الرئيسي، نعيد تعيين القسم الفرعي لـ all
+    const handleCategoryChange = (val) => {
+        setSelectedCategory(val);
+        setSelectedSubCategory('all');
+    };
+
+    const handleClearFilter = () => {
+        setSelectedCategory('all');
+        setSelectedSubCategory('all');
+    };
+
+    // جلب حالة توفر المنتج في الفروع
     const { data: branchAvailability = [], isLoading: isLoadingBranches, refetch: refetchBranches } = useQuery({
         queryKey: ['branch-availability', selectedFoodForBranch?.id],
         queryFn: async () => {
@@ -71,17 +109,15 @@ const Foods = () => {
         enabled: branchControlOpen && !!selectedFoodForBranch?.id,
     });
 
-    // هوك الإرسال للمكونات[cite: 1]
+    // هوك الإرسال للمكونات
     const assignMutation = usePost(
         `/api/restaurant/food/assign-ingredients/${currentFoodId}`,
         'post',
         'foods'
     );
 
-    // دالة تبديل قفل/فتح المنتج لكل فرع بناءً على الـ Response الجديد[cite: 2]
     const handleBranchLockToggle = async (branchId, currentIsAvailable) => {
         try {
-            // إذا كان متاحاً حالياً (`true`)، فعند الضغط سنقوم بقفله (`isLocked: true`)
             await api.put(`/api/restaurant/food-locks/${branchId}/food/${selectedFoodForBranch.id}/lock`, {
                 isLocked: currentIsAvailable
             });
@@ -93,7 +129,6 @@ const Foods = () => {
         }
     };
 
-    // دالة تحديث حالة النفاذ (isOutOfStock) للسعر أو المنتج[cite: 1]
     const handleStockToggle = async (foodId, currentStockStatus) => {
         try {
             await api.put(`/api/restaurant/food/${foodId}`, {
@@ -113,7 +148,7 @@ const Foods = () => {
             if (storedLangData) {
                 const parsedData = JSON.parse(storedLangData);
                 if (parsedData?.state?.language) {
-                    return parsedData.state.language; 
+                    return parsedData.state.language;
                 }
             }
         } catch (error) {
@@ -213,9 +248,10 @@ const Foods = () => {
         {
             id: 'foodName',
             header: t('foodName'),
+            accessorFn: (row) => `${row.name || ''} ${row.nameAr || ''}`,
             cell: ({ row }) => {
                 const food = row.original;
-                const currentLang = getActualLanguage(i18n); 
+                const currentLang = getActualLanguage(i18n);
                 const displayName = getLocalizedName(food, currentLang);
 
                 return (
@@ -232,7 +268,7 @@ const Foods = () => {
                 <div
                     className="flex items-center gap-2 font-medium text-green-600 cursor-pointer hover:bg-slate-50 p-1.5 rounded-md transition-colors w-fit"
                     onClick={() => {
-                        setFoodToUpdatePrice(row.original); 
+                        setFoodToUpdatePrice(row.original);
                         setNewPrice(row.original.price);
                         setPriceDialogOpen(true);
                     }}
@@ -255,9 +291,10 @@ const Foods = () => {
         {
             accessorKey: 'category',
             header: t('category'),
+            accessorFn: (row) => `${row.category?.name || ''} ${row.category?.nameAr || ''}`,
             cell: ({ row }) => {
                 const category = row.original.category;
-                const currentLang = getActualLanguage(i18n); 
+                const currentLang = getActualLanguage(i18n);
                 const catName = getLocalizedName(category, currentLang);
 
                 return (
@@ -350,8 +387,72 @@ const Foods = () => {
         },
     ];
 
+    const currentLang = getActualLanguage(i18n);
+
     return (
         <div className="p-6">
+            {/* 💡 شريط الفلترة العلوية */}
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-4 bg-white p-4 rounded-xl border shadow-sm">
+                <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
+                    <div className="flex items-center gap-2 shrink-0">
+                        <Filter className="h-4 w-4 text-slate-500" />
+                        <span className="font-bold text-slate-700 text-sm">
+                            {t('filters') || 'الفلاتر'}:
+                        </span>
+                    </div>
+
+                    {/* فلتر الكاتيجوري الرئيسي */}
+                    <div className="w-full sm:w-56">
+                        <Select value={selectedCategory} onValueChange={handleCategoryChange}>
+                            <SelectTrigger className="w-full">
+                                <SelectValue placeholder={t('category') || 'القسم الرئيسي'} />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">
+                                    {t('allCategories') || 'كل الأقسام الرئيسية'}
+                                </SelectItem>
+                                {categoriesList.map((cat) => (
+                                    <SelectItem key={cat.id} value={String(cat.id)}>
+                                        {getLocalizedName(cat, currentLang)}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    {/* فلتر الساب كاتيجوري الفرعي */}
+                    <div className="w-full sm:w-56">
+                        <Select value={selectedSubCategory} onValueChange={setSelectedSubCategory}>
+                            <SelectTrigger className="w-full">
+                                <SelectValue placeholder={t('subcategory') || 'القسم الفرعي'} />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">
+                                    {t('allSubcategories') || 'كل الأقسام الفرعية'}
+                                </SelectItem>
+                                {availableSubCategories.map((sub) => (
+                                    <SelectItem key={sub.id} value={String(sub.id)}>
+                                        {getLocalizedName(sub, currentLang)}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </div>
+
+                {(selectedCategory !== 'all' || selectedSubCategory !== 'all') && (
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleClearFilter}
+                        className="text-xs text-red-500 hover:text-red-700 hover:bg-red-50 flex items-center gap-1"
+                    >
+                        <X className="h-3.5 w-3.5" />
+                        {t('clearFilter') || 'إلغاء الفلاتر'}
+                    </Button>
+                )}
+            </div>
+
             <GenericDataTable
                 title={t('foodsMenu')}
                 columns={columns}
@@ -367,7 +468,7 @@ const Foods = () => {
                 setPagination={setPagination}
             />
 
-            {/* Quick Edit Price Dialog[cite: 1] */}
+            {/* Quick Edit Price Dialog */}
             <Dialog open={priceDialogOpen} onOpenChange={setPriceDialogOpen}>
                 <DialogContent className="max-w-sm">
                     <DialogHeader>
@@ -411,7 +512,7 @@ const Foods = () => {
                 </DialogContent>
             </Dialog>
 
-            {/* Branch Product Control Dialog متطابق مع الـ Response الجديد[cite: 2] */}
+            {/* Branch Product Control Dialog */}
             <Dialog open={branchControlOpen} onOpenChange={setBranchControlOpen}>
                 <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
                     <DialogHeader>
@@ -431,9 +532,8 @@ const Foods = () => {
                         ) : branchAvailability.length > 0 ? (
                             branchAvailability.map((branch) => {
                                 const isAvailable = Boolean(branch.isAvailable);
-                                const currentLang = i18n?.language || "ar";
-                                const branchName = currentLang === 'ar' 
-                                    ? (branch.branchNameAr || branch.branchName) 
+                                const branchName = currentLang === 'ar'
+                                    ? (branch.branchNameAr || branch.branchName)
                                     : (branch.branchName || branch.branchNameAr);
 
                                 return (
@@ -457,7 +557,7 @@ const Foods = () => {
                 </DialogContent>
             </Dialog>
 
-            {/* Variations Dialog[cite: 1] */}
+            {/* Variations Dialog */}
             <Dialog open={!!selectedVariations} onOpenChange={() => setSelectedVariations(null)}>
                 <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
                     <DialogHeader>
@@ -496,7 +596,7 @@ const Foods = () => {
                 </DialogContent>
             </Dialog>
 
-            {/* Assign Ingredients Dialog[cite: 1] */}
+            {/* Assign Ingredients Dialog */}
             <Dialog open={ingredientsDialogOpen} onOpenChange={setIngredientsDialogOpen}>
                 <DialogContent className="max-w-md">
                     <DialogHeader>
@@ -513,7 +613,6 @@ const Foods = () => {
                         {ingredientsOptions.length > 0 ? (
                             ingredientsOptions.map((ing) => {
                                 const isSelected = selectedIngredients.find(i => i.ingredientId === ing.id);
-                                const currentLang = i18n?.language || "ar";
                                 const ingName = currentLang === 'ar'
                                     ? (ing.nameAr || ing.name)
                                     : (ing.name || ing.nameAr);

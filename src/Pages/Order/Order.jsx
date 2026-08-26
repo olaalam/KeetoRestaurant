@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/api/axios";
 import GenericDataTable from "@/components/GenericDataTable";
 import { useNavigate } from "react-router-dom";
-import { User, Phone, Eye } from "lucide-react";
+import { User, Phone, Eye ,Copy } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -138,21 +138,44 @@ export default function Order() {
         </button>
       ),
     },
-    {
+{
       accessorKey: "customerName",
       header: t("customerInfo"),
-      cell: ({ row }) => (
-        <div className="flex flex-col gap-1">
-          <div className="flex items-center gap-1 font-medium text-gray-800">
-            <User size={14} className="text-gray-500" />
-            {row.original.customerName}
+      cell: ({ row }) => {
+        // دالة نسخ رقم الهاتف
+        const handleCopyPhone = (e) => {
+          e.stopPropagation();
+          if (row.original.customerPhone) {
+            navigator.clipboard.writeText(row.original.customerPhone);
+            toast.success(t("copiedSuccessfully") || "تم نسخ رقم الهاتف بنجاح");
+          }
+        };
+
+        return (
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-1 font-medium text-gray-800">
+              <User size={14} className="text-gray-500" />
+              {row.original.customerName}
+            </div>
+            <div className="flex items-center gap-1.5 text-xs text-gray-500">
+              <div className="flex items-center gap-1">
+                <Phone size={12} />
+                {row.original.customerPhone}
+              </div>
+              {row.original.customerPhone && (
+                <button
+                  type="button"
+                  onClick={handleCopyPhone}
+                  className="text-gray-400 hover:text-primary transition-colors p-1 rounded hover:bg-slate-100"
+                  title={t("copyPhone") || "نسخ الرقم"}
+                >
+                  <Copy size={12} />
+                </button>
+              )}
+            </div>
           </div>
-          <div className="flex items-center gap-1 text-xs text-gray-500">
-            <Phone size={12} />
-            {row.original.customerPhone}
-          </div>
-        </div>
-      ),
+        );
+      },
     },
     {
       accessorKey: "orderType",
