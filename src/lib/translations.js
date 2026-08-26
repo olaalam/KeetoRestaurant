@@ -14,6 +14,7 @@ const translations = {
 
     // Sidebar modules (from modules.jsx)
     dashboard: "Dashboard",
+    PricingProduct:"Pricing Product",
     orders: "Orders",
     foods: "Foods",
     categories: "Categories",
@@ -1581,6 +1582,7 @@ const translations = {
     "saturday": "السبت",
     //modules 
     dashboard: "لوحة التحكم",
+    PricingProduct:"تسعير المنتج",
     OutOfStock: " المنتهي من المخزن",
     Permissions: "صلاحيات",
     ZoneMap: "خريطة المناطق",

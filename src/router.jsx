@@ -83,7 +83,7 @@ import Points from "./Pages/Points/Points";
 import PointsAdd from "./Pages/Points/PointsAdd";
 import DeliveryMan from "./Pages/DeliveryMan/DeliveryMan";
 import DeliveryManAdd from "./Pages/DeliveryMan/DeliveryManAdd";
-import OutOfStockIngredients from "./Pages/OutOfStockList/OutOfStockList"; 
+import OutOfStockIngredients from "./Pages/OutOfStockList/OutOfStockList";
 import Users from "./Pages/Users/Users";
 import UsersAdd from "./Pages/Users/UsersAdd";
 import ZoneMap from "./Pages/ZoneMap/ZoneMap";
@@ -92,6 +92,7 @@ import UpsellingAdd from "./Pages/Upselling/UpsellingAdd";
 import BlockedUsers from "./Pages/BlockedUsers/BlockedUsers";
 import FreeDelivery from "./Pages/FreeDelivery/FreeDelivery";
 import FreeDeliveryAdd from "./Pages/FreeDelivery/FreeDeliveryAdd";
+import PricingProduct from "./Pages/PricingProduct/PricingProduct";
 const router = createBrowserRouter([
   {
     path: "/login",
@@ -577,11 +578,11 @@ const router = createBrowserRouter([
         element: <DeliveryManAdd />
 
       },
-            {
+      {
         path: "out-of-stock",
         element: <OutOfStockIngredients />
       },
-            {
+      {
         path: "users",
         element: <Users />
       },
@@ -590,11 +591,11 @@ const router = createBrowserRouter([
         element: <UsersAdd />
 
       },
-                  {
+      {
         path: "zone-map",
         element: <ZoneMap />
       },
-            {
+      {
         path: "upselling",
         element: <Upselling />
       },
@@ -602,17 +603,21 @@ const router = createBrowserRouter([
         path: "upselling/add",
         element: <UpsellingAdd />
       },
-            {
+      {
         path: "blocked-users",
         element: <BlockedUsers />
       },
-                  {
+      {
         path: "free-delivery",
         element: <FreeDelivery />
       },
       {
         path: "free-delivery/add",
         element: <FreeDeliveryAdd />
+      },
+      {
+        path: "pricing-product",
+        element: <PricingProduct />
       },
 
 

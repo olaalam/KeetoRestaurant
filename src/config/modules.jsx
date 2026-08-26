@@ -79,6 +79,7 @@ export const getModules = (t, orderCounts = {}) => {
         { title: t("ingredients"), url: "/ingredients", icon: ShieldCheck },
         { title: t("subCategories"), url: "/sub-categories", icon: Library },
         { title: t("OutOfStock"), url: "/out-of-stock", icon: Library },
+        { title: t("PricingProduct"), url: "/pricing-product", icon: Library },
 
       ],
     },
@@ -99,13 +100,13 @@ export const getModules = (t, orderCounts = {}) => {
         { title: t("social"), url: "/social", icon: ShoppingBag },
         { title: t("discount"), url: "/discount", icon: ShoppingBag },
         { title: t("coupon"), url: "/coupon", icon: ShoppingBag },
-                { title: t("freedelivery"), url: "/free-delivery", icon: ShoppingBag },
+        { title: t("freedelivery"), url: "/free-delivery", icon: ShoppingBag },
         { title: t("rating"), url: "/rating", icon: ShoppingBag },
         { title: t("popup"), url: "/popup", icon: ShoppingBag },
         { title: t("banner"), url: "/slider", icon: ShoppingBag },
         { title: t("points"), url: "/points", icon: Beef },
         { title: t("galleryimage"), url: "/image", icon: ShoppingBag },
-         { title: t("upselling"), url: "/upselling", icon: ShoppingBag },
+        { title: t("upselling"), url: "/upselling", icon: ShoppingBag },
 
       ],
     },
@@ -117,7 +118,7 @@ export const getModules = (t, orderCounts = {}) => {
         { title: t("deliveryMen"), url: "/delivery-man", icon: UserCog },
         { title: t("cashiers"), url: "/cashiers", icon: UserCog },
         { title: t("users"), url: "/users", icon: UserCog },
-                { title: t("blockedusers"), url: "/blocked-users", icon: UserCog },
+        { title: t("blockedusers"), url: "/blocked-users", icon: UserCog },
 
 
 
