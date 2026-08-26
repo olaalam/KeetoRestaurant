@@ -4,10 +4,10 @@ import GenericDataTable from "@/components/GenericDataTable";
 import { Star } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useTranslation } from "@/hooks/useTranslation";
-
+import { useNavigate } from "react-router-dom";
 export default function Rating() {
   const { t } = useTranslation();
-
+const navigate = useNavigate();
   // 1. بيانات التقييمات العامة (General Ratings)
   const { data: statsData, isLoading: isStatsLoading } = useGet("rating-stats", "/api/restaurant/ratings/stats");
   const { data: ratingsData, isLoading: isTableLoading } = useGet("ratings", "/api/restaurant/ratings");
@@ -34,8 +34,27 @@ export default function Rating() {
   // أعمدة التقييمات العامة (General Ratings)
   const generalColumns = [
     { accessorKey: "customer.name", header: t("customerName") || "Customer Name" },
-    { accessorKey: "order.orderNumber", header: t("orderNumber") || "Order Number" }, // افتراض وجود بيانات الطلب داخل التقييم العام
-    { 
+// { 
+//   accessorKey: "order.orderNumber", 
+//   header: t("orderNumber") || "Order Number",
+//   cell: ({ row }) => {
+//     const orderId = row.original.order?.id;
+//     const orderNumber = row.original.order?.orderNumber;
+
+//     if (!orderId || !orderNumber) return "N/A";
+
+//     return (
+//       <button
+//         type="button"
+//         onClick={() => navigate(`/orders/details/${orderId}`)}
+//         className="font-medium text-blue-600 hover:text-blue-800 hover:underline transition-colors cursor-pointer"
+//       >
+//         {orderNumber}
+//       </button>
+//     );
+//   }
+// }, 
+ { 
       accessorKey: "rating", 
       header: t("rating") || "Rating",
       cell: ({ row }) => {
@@ -75,25 +94,27 @@ export default function Rating() {
   const customerSummary = customerRatingsResponse?.summary || {};
 
   // تجميع وتسطيح الطلبات من بيانات العملاء
-  const flattenedCustomerOrders = [];
-  customerRatingsList.forEach((item) => {
-    const customer = item.customer || {};
-    if (item.orders && Array.isArray(item.orders)) {
-      item.orders.forEach((order) => {
-        flattenedCustomerOrders.push({
-          id: order.orderId,
-          customerName: customer.name || "N/A",
-          customerPhone: customer.phone || "N/A",
-          orderNumber: order.orderNumber || "N/A",
-          orderCreatedAt: order.orderCreatedAt,
-          orderTotalAmount: order.orderTotalAmount || "0.00",
-          orderStatus: order.orderStatus || "N/A",
-          rating: order.rating || 0,
-          ratingComment: order.ratingComment || "",
-        });
+// تجميع وتسطيح الطلبات من بيانات العملاء
+const flattenedCustomerOrders = [];
+customerRatingsList.forEach((item) => {
+  const customer = item.customer || {};
+  if (item.orders && Array.isArray(item.orders)) {
+    item.orders.forEach((order) => {
+      flattenedCustomerOrders.push({
+        id: order.orderId,
+        customerName: customer.name || "N/A",
+        customerPhone: customer.phone || "N/A",
+        customerTotalOrders: item.totalOrders || 0, // 👈 التمرير هنا
+        orderNumber: order.orderNumber || "N/A",
+        orderCreatedAt: order.orderCreatedAt,
+        orderTotalAmount: order.orderTotalAmount || "0.00",
+        orderStatus: order.orderStatus || "N/A",
+        rating: order.rating || 0,
+        ratingComment: order.ratingComment || "",
       });
-    }
-  });
+    });
+  }
+});
 
   // فلترة بيانات الطلبات
   const filteredCustomerOrders = flattenedCustomerOrders.filter((item) => {
@@ -105,45 +126,72 @@ export default function Rating() {
   });
 
   // أعمدة تفاصيل طلبات العملاء والتقييمات
-  const customerOrderColumns = [
-    { accessorKey: "customerName", header: t("customerName") || "Customer Name" },
-    { accessorKey: "customerPhone", header: t("phone") || "Phone Number" },
-    { accessorKey: "orderNumber", header: t("orderNumber") || "Order Number" },
-    { 
-      accessorKey: "orderTotalAmount", 
-      header: t("totalAmount") || "Total Amount",
-      cell: ({ row }) => `${row.original.orderTotalAmount}`
-    },
-    { 
-      accessorKey: "rating", 
-      header: t("rating") || "Rating",
-      cell: ({ row }) => {
-        const ratingValue = Number(row.original.rating) || 0;
-        return (
-          <div className="flex items-center justify-center gap-1.5">
-            <span className="font-bold text-slate-700 text-xs">{ratingValue}</span>
-            <div className="flex items-center gap-0.5">
-              {[1, 2, 3, 4, 5].map((starIndex) => {
-                const isFilled = starIndex <= ratingValue;
-                return (
-                  <Star
-                    key={starIndex}
-                    className={`h-4 w-4 ${isFilled ? "fill-amber-500 text-amber-500" : "fill-slate-200 text-slate-200 dark:fill-slate-800 dark:text-slate-800"}`}
-                  />
-                );
-              })}
-            </div>
+// أعمدة تفاصيل طلبات العملاء والتقييمات
+const customerOrderColumns = [
+  { 
+  accessorKey: "orderNumber", 
+  header: t("orderNumber") || "Order Number",
+  cell: ({ row }) => (
+    <button
+      type="button"
+      onClick={() => navigate(`/orders/details/${row.original.id}`)}
+      className="font-medium text-blue-600 hover:text-blue-800 hover:underline transition-colors cursor-pointer"
+    >
+      {row.getValue("orderNumber")}
+    </button>
+  ),
+},
+  { 
+    accessorKey: "customerName", 
+    header: t("customerName") || "Customer Name",
+    cell: ({ row }) => (
+      <div className="flex items-center gap-2">
+        <span className="font-medium text-slate-800 dark:text-slate-100">
+          {row.original.customerName}
+        </span>
+        <span className="text-[11px] font-semibold text-slate-600 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-md">
+          {row.original.customerTotalOrders || 0} orders
+        </span>
+      </div>
+    )
+  },
+  { accessorKey: "customerPhone", header: t("phone") || "Phone Number" },
+
+  { 
+    accessorKey: "orderTotalAmount", 
+    header: t("totalAmount") || "Total Amount",
+    cell: ({ row }) => `${row.original.orderTotalAmount}`
+  },
+  { 
+    accessorKey: "rating", 
+    header: t("rating") || "Rating",
+    cell: ({ row }) => {
+      const ratingValue = Number(row.original.rating) || 0;
+      return (
+        <div className="flex items-center justify-center gap-1.5">
+          <span className="font-bold text-slate-700 text-xs">{ratingValue}</span>
+          <div className="flex items-center gap-0.5">
+            {[1, 2, 3, 4, 5].map((starIndex) => {
+              const isFilled = starIndex <= ratingValue;
+              return (
+                <Star
+                  key={starIndex}
+                  className={`h-4 w-4 ${isFilled ? "fill-amber-500 text-amber-500" : "fill-slate-200 text-slate-200 dark:fill-slate-800 dark:text-slate-800"}`}
+                />
+              );
+            })}
           </div>
-        );
-      }
-    },
-    { accessorKey: "ratingComment", header: t("comment") || "Comment" },
-    { 
-      accessorKey: "orderCreatedAt", 
-      header: t("date") || "Date",
-      cell: ({ row }) => row.original.orderCreatedAt ? new Date(row.original.orderCreatedAt).toLocaleString() : "N/A"
-    },
-  ];
+        </div>
+      );
+    }
+  },
+  { accessorKey: "ratingComment", header: t("comment") || "Comment" },
+  { 
+    accessorKey: "orderCreatedAt", 
+    header: t("date") || "Date",
+    cell: ({ row }) => row.original.orderCreatedAt ? new Date(row.original.orderCreatedAt).toLocaleString() : "N/A"
+  },
+];
 
   return (
     <div className="p-6 space-y-6">

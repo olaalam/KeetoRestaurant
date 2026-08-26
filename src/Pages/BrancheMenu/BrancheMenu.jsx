@@ -15,15 +15,13 @@ import { Button } from "@/components/ui/button";
 export default function BrancheMenu() {
     const navigate = useNavigate();
     const queryClient = useQueryClient();
-    const { restaurantId } = useParams(); // استقبال المعرف من الرابط الأساسي
+    const { restaurantId } = useParams();
     const { t, i18n } = useTranslation();
 
-    // حالات إدارة تعديل السعر السريع
     const [priceDialogOpen, setPriceDialogOpen] = useState(false);
     const [foodToUpdatePrice, setFoodToUpdatePrice] = useState(null); 
     const [newPrice, setNewPrice] = useState('');
 
-    // 1. جلب البيانات واستخراج refetch لإعادة جلب البيانات عند الحاجة
     const { data: branchemenu = [], isLoading, refetch } = useQuery({
         queryKey: ['branchemenu', restaurantId],
         queryFn: async () => {
@@ -32,7 +30,6 @@ export default function BrancheMenu() {
         }
     });
 
-    // 2. دالة تحديث الحالة (Mutation)
     const updateStatusMutation = useMutation({
         mutationFn: async ({ id }) => {
             return await api.put(`api/restaurant/branchemenu/${id}`);
@@ -46,12 +43,14 @@ export default function BrancheMenu() {
         }
     });
 
-    // 3. دالة حفظ السعر الجديد
     const handleSavePrice = async () => {
         if (!newPrice || isNaN(newPrice) || Number(newPrice) <= 0) return;
-    
+        
+        // استخدام menuItemId أو foodId إذا كان الأول null
+        const targetId = foodToUpdatePrice?.menuItemId || foodToUpdatePrice?.foodId;
+
         try {
-            await api.put(`/api/restaurant/branchemenu/${foodToUpdatePrice.menuItemId}`, {
+            await api.put(`/api/restaurant/branchemenu/${targetId}`, {
                 price: Number(newPrice)
             });
     
@@ -97,20 +96,23 @@ export default function BrancheMenu() {
         {
             accessorKey: 'status',
             header: t('status'),
-            cell: ({ row }) => (
-                <div className="flex items-center justify-center">
-                    <Switch
-                        checked={row.original.status === 'active' || row.original.status === true}
-                        onCheckedChange={() =>
-                            updateStatusMutation.mutate({
-                                id: row.original.menuItemId,
-                                currentStatus: row.original.status
-                            })
-                        }
-                        disabled={updateStatusMutation.isPending}
-                    />
-                </div>
-            )
+            cell: ({ row }) => {
+                const targetId = row.original.menuItemId || row.original.foodId;
+                return (
+                    <div className="flex items-center justify-center">
+                        <Switch
+                            checked={row.original.status === 'active' || row.original.status === true}
+                            onCheckedChange={() =>
+                                updateStatusMutation.mutate({
+                                    id: targetId,
+                                    currentStatus: row.original.status
+                                })
+                            }
+                            disabled={updateStatusMutation.isPending}
+                        />
+                    </div>
+                );
+            }
         },
     ];
 
@@ -123,12 +125,14 @@ export default function BrancheMenu() {
                 isLoading={isLoading}
                 queryKey="branchemenu"
                 deleteApiUrl="/api/restaurant/branchemenu"
-                onEdit={(row) => navigate(`/branches/branch_menu/edit/${row.menuItemId}`, {
-                    state: { branchId: restaurantId, branchemenu: row }
-                })}
+                onEdit={(row) => {
+                    const targetId = row.menuItemId || row.foodId;
+                    navigate(`/branches/branch_menu/edit/${targetId}`, {
+                        state: { branchId: restaurantId, branchemenu: row }
+                    });
+                }}
             />
             
-            {/* Quick Edit Price Dialog */}
             <Dialog open={priceDialogOpen} onOpenChange={setPriceDialogOpen}>
                 <DialogContent className="max-w-sm">
                     <DialogHeader>
