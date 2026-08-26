@@ -30,9 +30,11 @@ export default function BrancheMenu() {
         }
     });
 
-    const updateStatusMutation = useMutation({
-        mutationFn: async ({ id }) => {
-            return await api.put(`api/restaurant/branchemenu/${id}`);
+const updateStatusMutation = useMutation({
+        mutationFn: async ({ id, status }) => {
+            return await api.put(`/api/restaurant/branchemenu/${id}`, {
+                status: status
+            });
         },
         onSuccess: () => {
             toast.success(t("statusUpdatedSuccessfully") || "تم تحديث الحالة بنجاح");
@@ -93,21 +95,29 @@ export default function BrancheMenu() {
             cell: ({ getValue }) => getValue() ? t(getValue().toLowerCase()) : '—'
         },
         { accessorKey: 'stockQty', header: t('stockQty') },
-        {
+{
             accessorKey: 'status',
             header: t('status'),
             cell: ({ row }) => {
+                // إذا كان menuItemId غير موجود أو null، لا تظهر الـ Switch واعرض علامة —
+                if (!row.original.menuItemId) {
+                    return <span className="text-gray-400">—</span>;
+                }
+
                 const targetId = row.original.menuItemId || row.original.foodId;
+                const isActive = row.original.status === 'active' || row.original.status === true;
+                
                 return (
                     <div className="flex items-center justify-center">
                         <Switch
-                            checked={row.original.status === 'active' || row.original.status === true}
-                            onCheckedChange={() =>
+                            checked={isActive}
+                            onCheckedChange={() => {
+                                const newStatus = isActive ? 'inactive' : 'active';
                                 updateStatusMutation.mutate({
                                     id: targetId,
-                                    currentStatus: row.original.status
-                                })
-                            }
+                                    status: newStatus
+                                });
+                            }}
                             disabled={updateStatusMutation.isPending}
                         />
                     </div>
