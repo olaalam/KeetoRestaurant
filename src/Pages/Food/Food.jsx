@@ -33,6 +33,10 @@ const Foods = () => {
     const [selectedCategory, setSelectedCategory] = useState('all');
     const [selectedSubCategory, setSelectedSubCategory] = useState('all');
 
+    // 💡 حالات البحث داخل الـ Select
+    const [categorySearch, setCategorySearch] = useState('');
+    const [subCategorySearch, setSubCategorySearch] = useState('');
+
     // حالات إدارة المكونات
     const [ingredientsDialogOpen, setIngredientsDialogOpen] = useState(false);
     const [currentFoodId, setCurrentFoodId] = useState(null);
@@ -52,6 +56,33 @@ const Foods = () => {
         pageIndex: 0,
         pageSize: 15,
     });
+
+    const getActualLanguage = (i18n) => {
+        try {
+            const storedLangData = localStorage.getItem('keeto-language');
+            if (storedLangData) {
+                const parsedData = JSON.parse(storedLangData);
+                if (parsedData?.state?.language) {
+                    return parsedData.state.language;
+                }
+            }
+        } catch (error) {
+            console.error("Error reading language from local storage", error);
+        }
+        return i18n?.language || "ar";
+    };
+
+    const getLocalizedName = (item, currentLang) => {
+        if (!item) return '-';
+        const isArabic = currentLang?.startsWith('ar');
+        if (isArabic) {
+            return item.nameAr || item.name || '-';
+        } else {
+            return item.name || item.nameAr || '-';
+        }
+    };
+
+    const currentLang = getActualLanguage(i18n);
 
     // 💡 جلب بيانات الأطعمة مع تمرير الـ queryParams للباك إند
     const { data: foods = [], isLoading, refetch } = useQuery({
@@ -86,15 +117,36 @@ const Foods = () => {
         return subcategoriesList.filter(sub => String(sub.categoryId) === String(selectedCategory));
     }, [subcategoriesList, selectedCategory]);
 
-    // عند تغيير القسم الرئيسي، نعيد تعيين القسم الفرعي لـ all
+    // 💡 الأقسام الرئيسية المفلترة حسب نص البحث
+    const filteredCategories = useMemo(() => {
+        if (!categorySearch.trim()) return categoriesList;
+        return categoriesList.filter(cat => {
+            const name = getLocalizedName(cat, currentLang).toLowerCase();
+            return name.includes(categorySearch.toLowerCase());
+        });
+    }, [categoriesList, categorySearch, currentLang]);
+
+    // 💡 الأقسام الفرعية المفلترة حسب نص البحث
+    const filteredSubCategories = useMemo(() => {
+        if (!subCategorySearch.trim()) return availableSubCategories;
+        return availableSubCategories.filter(sub => {
+            const name = getLocalizedName(sub, currentLang).toLowerCase();
+            return name.includes(subCategorySearch.toLowerCase());
+        });
+    }, [availableSubCategories, subCategorySearch, currentLang]);
+
+    // عند تغيير القسم الرئيسي، نعيد تعيين القسم الفرعي ونفرغ نص بحث الساب كاتيجوري
     const handleCategoryChange = (val) => {
         setSelectedCategory(val);
         setSelectedSubCategory('all');
+        setSubCategorySearch('');
     };
 
     const handleClearFilter = () => {
         setSelectedCategory('all');
         setSelectedSubCategory('all');
+        setCategorySearch('');
+        setSubCategorySearch('');
     };
 
     // جلب حالة توفر المنتج في الفروع
@@ -139,31 +191,6 @@ const Foods = () => {
         } catch (error) {
             console.error("Error updating stock status:", error);
             toast.error(t('failedToUpdateStatus') || 'فشل تحديث الحالة');
-        }
-    };
-
-    const getActualLanguage = (i18n) => {
-        try {
-            const storedLangData = localStorage.getItem('keeto-language');
-            if (storedLangData) {
-                const parsedData = JSON.parse(storedLangData);
-                if (parsedData?.state?.language) {
-                    return parsedData.state.language;
-                }
-            }
-        } catch (error) {
-            console.error("Error reading language from local storage", error);
-        }
-        return i18n?.language || "ar";
-    };
-
-    const getLocalizedName = (item, currentLang) => {
-        if (!item) return '-';
-        const isArabic = currentLang?.startsWith('ar');
-        if (isArabic) {
-            return item.nameAr || item.name || '-';
-        } else {
-            return item.name || item.nameAr || '-';
         }
     };
 
@@ -251,7 +278,6 @@ const Foods = () => {
             accessorFn: (row) => `${row.name || ''} ${row.nameAr || ''}`,
             cell: ({ row }) => {
                 const food = row.original;
-                const currentLang = getActualLanguage(i18n);
                 const displayName = getLocalizedName(food, currentLang);
 
                 return (
@@ -294,7 +320,6 @@ const Foods = () => {
             accessorFn: (row) => `${row.category?.name || ''} ${row.category?.nameAr || ''}`,
             cell: ({ row }) => {
                 const category = row.original.category;
-                const currentLang = getActualLanguage(i18n);
                 const catName = getLocalizedName(category, currentLang);
 
                 return (
@@ -387,8 +412,6 @@ const Foods = () => {
         },
     ];
 
-    const currentLang = getActualLanguage(i18n);
-
     return (
         <div className="p-6">
             {/* 💡 شريط الفلترة العلوية */}
@@ -408,10 +431,19 @@ const Foods = () => {
                                 <SelectValue placeholder={t('category') || 'القسم الرئيسي'} />
                             </SelectTrigger>
                             <SelectContent>
+                                <div className="p-2 sticky top-0 bg-white z-10 border-b">
+                                    <Input
+                                        placeholder={t('search') || 'بحث...'}
+                                        value={categorySearch}
+                                        onChange={(e) => setCategorySearch(e.target.value)}
+                                        onKeyDown={(e) => e.stopPropagation()}
+                                        className="h-8 text-xs"
+                                    />
+                                </div>
                                 <SelectItem value="all">
                                     {t('allCategories') || 'كل الأقسام الرئيسية'}
                                 </SelectItem>
-                                {categoriesList.map((cat) => (
+                                {filteredCategories.map((cat) => (
                                     <SelectItem key={cat.id} value={String(cat.id)}>
                                         {getLocalizedName(cat, currentLang)}
                                     </SelectItem>
@@ -427,10 +459,19 @@ const Foods = () => {
                                 <SelectValue placeholder={t('subcategory') || 'القسم الفرعي'} />
                             </SelectTrigger>
                             <SelectContent>
+                                <div className="p-2 sticky top-0 bg-white z-10 border-b">
+                                    <Input
+                                        placeholder={t('search') || 'بحث...'}
+                                        value={subCategorySearch}
+                                        onChange={(e) => setSubCategorySearch(e.target.value)}
+                                        onKeyDown={(e) => e.stopPropagation()}
+                                        className="h-8 text-xs"
+                                    />
+                                </div>
                                 <SelectItem value="all">
                                     {t('allSubcategories') || 'كل الأقسام الفرعية'}
                                 </SelectItem>
-                                {availableSubCategories.map((sub) => (
+                                {filteredSubCategories.map((sub) => (
                                     <SelectItem key={sub.id} value={String(sub.id)}>
                                         {getLocalizedName(sub, currentLang)}
                                     </SelectItem>
