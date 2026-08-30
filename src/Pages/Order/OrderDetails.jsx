@@ -809,47 +809,33 @@ export default function OrderDetails() {
                               <span className="text-gray-300">—</span>
                             )}
                           </td>
-                          <td className="px-4 py-4 border-e border-gray-100">
-                            {itemAddons.length > 0 ? (
-                              <div className="space-y-1.5">
-                                {itemAddons.map((addon, idx) => (
-                                  <div
-                                    key={addon.id || idx}
-                                    className="flex flex-col text-xs bg-amber-50/60 border border-amber-200/50 rounded-lg px-2.5 py-1.5 w-fit"
-                                  >
-                                    <span className="font-semibold text-gray-800">
-                                      {document.documentElement.dir === "rtl"
-                                        ? addon.addonNameAr ||
-                                        addon.nameAr ||
-                                        addon.name
-                                        : addon.addonName || addon.name}
-                                      {parseFloat(
-                                        addon.price ||
-                                        addon.additionalPrice ||
-                                        0,
-                                      ) > 0 && (
-                                          <span className="text-primary font-bold">
-                                            {" "}
-                                            +
-                                            {parseFloat(
-                                              addon.price ||
-                                              addon.additionalPrice,
-                                            ).toFixed(2)}
-                                          </span>
-                                        )}
-                                    </span>
-                                    {addon.quantity && addon.quantity > 1 && (
-                                      <span className="text-gray-400 text-[10px]">
-                                        الكمية: {addon.quantity}
-                                      </span>
-                                    )}
-                                  </div>
-                                ))}
-                              </div>
-                            ) : (
-                              <span className="text-gray-300">—</span>
-                            )}
-                          </td>
+<td className="px-4 py-4 border-e border-gray-100">
+  {itemAddons.length > 0 ? (
+    <div className="space-y-1.5">
+      {itemAddons.map((addon, idx) => (
+        <div
+          key={addon.id || idx}
+          className="flex flex-col text-xs bg-amber-50/60 border border-amber-200/50 rounded-lg px-2.5 py-1.5 w-fit"
+        >
+          <span className="font-semibold text-gray-800 flex items-center justify-between gap-3">
+            <span>
+              {document.documentElement.dir === "rtl"
+                ? addon.addonNameAr || addon.nameAr || addon.name
+                : addon.addonName || addon.name}
+            </span>
+           
+              <span className="text-gray-500 font-normal text-[11px]">
+              Qty: {item.quantity || item.qty || 1}
+              </span>
+           
+          </span>
+        </div>
+      ))}
+    </div>
+  ) : (
+    <span className="text-gray-300">—</span>
+  )}
+</td>
                           <td className="px-6 py-4 text-gray-500 text-xs max-w-[140px]">
                             {item.note || (
                               <span className="text-gray-300">
