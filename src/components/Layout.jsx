@@ -5,7 +5,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AppSidebar } from "./AppSidebar";
 import useSidebarStore from "@/store/useSidebarStore";
 import useAuthStore from "@/store/useAuthStore";
-import { LogOut, ChevronLeft, ChevronRight, UserCircle2, Bell, ShoppingBag, XCircle } from "lucide-react";
+import { LogOut, ChevronLeft, ChevronRight, UserCircle2, Bell, ShoppingBag, XCircle, Sun, Moon } from "lucide-react";
+import useThemeStore from "@/store/useThemeStore";
 
 import {
   DropdownMenu,
@@ -27,6 +28,7 @@ export default function Layout() {
   const setActiveModule = useSidebarStore((state) => state.setActiveModule);
   const { setLogout, user } = useAuthStore((state) => state);
   const { t, isRTL } = useTranslation();
+  const { theme, setTheme } = useThemeStore();
 
   // نجيب الـ module بالترجمة الحالية
   const translatedModules = getModules(t);
@@ -380,6 +382,19 @@ export default function Layout() {
 
                 {/* Language Switcher */}
                 <LanguageSwitcher />
+
+                {/* Theme Switcher */}
+                <button
+                  onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                  className="rounded-full p-2 text-slate-600 hover:text-primary hover:bg-accent dark:text-slate-300 dark:hover:text-primary transition-colors cursor-pointer"
+                  title={theme === "dark" ? "Light Mode" : "Dark Mode"}
+                >
+                  {theme === "dark" ? (
+                    <Sun size={22} />
+                  ) : (
+                    <Moon size={22} />
+                  )}
+                </button>
 
                 {/* Notification Dropdown */}
                 <DropdownMenu>

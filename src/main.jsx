@@ -9,6 +9,14 @@ const savedLang = JSON.parse(localStorage.getItem("keeto-language") || '{}')?.st
 document.documentElement.dir = savedLang === "ar" ? "rtl" : "ltr";
 document.documentElement.lang = savedLang;
 
+// تطبيق وضع الداكن المحفوظ عند أول تحميل
+const savedTheme = JSON.parse(localStorage.getItem("keeto-theme") || '{}')?.state?.theme || "light";
+if (savedTheme === "dark") {
+  document.documentElement.classList.add("dark");
+} else {
+  document.documentElement.classList.remove("dark");
+}
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {

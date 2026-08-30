@@ -1,0 +1,21 @@
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
+
+const useThemeStore = create(
+  persist(
+    (set) => ({
+      theme: "light", // "light" | "dark"
+      setTheme: (theme) => {
+        set({ theme });
+        if (theme === "dark") {
+          document.documentElement.classList.add("dark");
+        } else {
+          document.documentElement.classList.remove("dark");
+        }
+      },
+    }),
+    { name: "keeto-theme" }
+  )
+);
+
+export default useThemeStore;

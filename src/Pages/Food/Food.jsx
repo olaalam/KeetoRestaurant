@@ -195,8 +195,16 @@ const Foods = () => {
     };
 
     useEffect(() => {
-        if (location.state?.highlightedId && foods) {
-            const index = foods.findIndex(item => String(item.id) === String(location.state.highlightedId));
+        if (location.state?.highlightedId && foods.length) {
+            // فرز البيانات بنفس منطق GenericDataTable تماماً
+            const sortedFoods = [...foods].sort((a, b) => {
+                const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+                const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+                return bTime - aTime;
+            });
+
+            // البحث في المصفوفة المُرتبة وليست الخام
+            const index = sortedFoods.findIndex(item => String(item.id) === String(location.state.highlightedId));
 
             if (index !== -1) {
                 const pageIndex = Math.floor(index / pagination.pageSize);
@@ -424,33 +432,6 @@ const Foods = () => {
                         </span>
                     </div>
 
-                    {/* فلتر الكاتيجوري الرئيسي */}
-                    <div className="w-full sm:w-56">
-                        <Select value={selectedCategory} onValueChange={handleCategoryChange}>
-                            <SelectTrigger className="w-full">
-                                <SelectValue placeholder={t('category') || 'القسم الرئيسي'} />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <div className="p-2 sticky top-0 bg-white z-10 border-b">
-                                    <Input
-                                        placeholder={t('search') || 'بحث...'}
-                                        value={categorySearch}
-                                        onChange={(e) => setCategorySearch(e.target.value)}
-                                        onKeyDown={(e) => e.stopPropagation()}
-                                        className="h-8 text-xs"
-                                    />
-                                </div>
-                                <SelectItem value="all">
-                                    {t('allCategories') || 'كل الأقسام الرئيسية'}
-                                </SelectItem>
-                                {filteredCategories.map((cat) => (
-                                    <SelectItem key={cat.id} value={String(cat.id)}>
-                                        {getLocalizedName(cat, currentLang)}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
 
                     {/* فلتر الساب كاتيجوري الفرعي */}
                     <div className="w-full sm:w-56">
@@ -481,7 +462,7 @@ const Foods = () => {
                     </div>
                 </div>
 
-                {(selectedCategory !== 'all' || selectedSubCategory !== 'all') && (
+                {( selectedSubCategory !== 'all') && (
                     <Button
                         variant="ghost"
                         size="sm"
