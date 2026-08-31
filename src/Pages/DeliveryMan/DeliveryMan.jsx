@@ -1,14 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import GenericDataTable from "@/components/GenericDataTable";
-import AddPage from "@/components/AddPage";
 import { useGet } from "@/hooks/useGet";
 import { useTranslation } from "@/hooks/useTranslation";
 
 export default function DeliveryMan() {
-  // للتبديل بين صفحة الجدول وصفحة الإضافة/التعديل
-  const [view, setView] = useState("list"); 
-  const [selectedItem, setSelectedItem] = useState(null);
   const location = useLocation();
   const navigate = useNavigate();
   const [highlightedId, setHighlightedId] = useState(null);
@@ -80,7 +76,6 @@ export default function DeliveryMan() {
     {
       accessorKey: "isActive",
       header: t("status") || "الحالة",
-      // تحسين عرض الحالة بنص شارة (Badge) ملونة
       cell: ({ row }) => {
         const active = row.original.isActive;
         return (
@@ -94,68 +89,7 @@ export default function DeliveryMan() {
     }
   ];
 
-  // 3. إعداد حقول الفورم لـ AddPage
-  const formFields = [
-    { 
-      name: "name", 
-      label: t("name") || "الاسم", 
-      type: "text", 
-      required: true 
-    },
-    { 
-      name: "phone", 
-      label: t("phone") || "رقم الهاتف", 
-      type: "text", 
-      required: true 
-    },
-    { 
-      name: "email", 
-      label: t("email") || "البريد الإلكتروني", 
-      type: "email", 
-      required: true 
-    },
-    { 
-      name: "password", 
-      label: t("password") || "كلمة المرور", 
-      type: "password", 
-      required: !selectedItem 
-    },
-    { 
-      name: "image", 
-      label: t("image") || "الصورة الشخصية", 
-      type: "file", 
-      required: !selectedItem 
-    },
-    // 💡 تم إضافة مفتاح isActive هنا كقائمة اختيار (Select)
-    { 
-      name: "isActive", 
-      label: t("status") || "الحالة",
-      type: "select",
-      options: [
-        { value: true, label: t("active") || "نشط" },
-        { value: false, label: t("inactive") || "غير نشط" },
-      ],
-      required: true,
-    }
-  ];
-
-  // 4. عرض فورم الإضافة / التعديل
-  if (view === "form") {
-    return (
-      <div className="space-y-4 w-full">
-        <AddPage
-          title={t("deliveryMan") || "عامل التوصيل"}
-          apiUrl={apiUrl}
-          queryKey={queryKey}
-          method={selectedItem ? "PUT" : "POST"}
-          fields={formFields}
-          initialData={selectedItem}
-        />
-      </div>
-    );
-  }
-
-  // 5. عرض الجدول الأساسي
+  // 3. عرض الجدول الأساسي مع التوجيه لصفحات الإضافة والتعديل عبر المسارات
   return (
     <GenericDataTable
       title={t("deliveryMen") || "عمال التوصيل"}
@@ -168,12 +102,10 @@ export default function DeliveryMan() {
       pagination={pagination}
       setPagination={setPagination}
       onAdd={() => {
-        setSelectedItem(null);
-        setView("form");
+        navigate("add"); // الانتقال إلى مسار الإضافة: delivery-man/add
       }}
       onEdit={(row) => {
-        setSelectedItem(row);
-        setView("form");
+        navigate(`edit/${row.id}`); // الانتقال إلى مسار التعديل: delivery-man/edit/:id
       }}
       deleteApiUrl={apiUrl}
     />

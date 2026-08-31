@@ -43,6 +43,7 @@ const SettingPageAdd = () => {
         minOrderAmount: 50,
         minDeliveryTime: 15,
         maxDeliveryTime: 45,
+        resetDailyOrderNumberTime: "00:00", // 👈 إضافة القيمة الافتراضية
         isAlwaysOpen: false,
         isSameTimeEveryDay: false,
         firstColor: "",
@@ -73,7 +74,6 @@ const SettingPageAdd = () => {
             closingTime: s.closingTime ? s.closingTime.substring(0, 5) : ""
         }));
 
-        // معالجة الخطأ في صفحة الإضافة والتعديل للتأكد من أنها مصفوفة صالحة
         let parsedStatuses = ["pending", "accepted", "preparing", "out_for_delivery"];
         if (rawData.settings?.repeatNotificationStatuses) {
             if (typeof rawData.settings.repeatNotificationStatuses === 'string') {
@@ -105,6 +105,7 @@ const SettingPageAdd = () => {
             minOrderAmount: rawData.settings?.minOrderAmount ?? 50,
             minDeliveryTime: rawData.settings?.minDeliveryTime ?? 15,
             maxDeliveryTime: rawData.settings?.maxDeliveryTime ?? 45,
+            resetDailyOrderNumberTime: rawData.settings?.resetDailyOrderNumberTime ? rawData.settings.resetDailyOrderNumberTime.substring(0, 5) : "00:00", // 👈 قراءة الوقت القادم من API
             isAlwaysOpen: rawData.settings?.isAlwaysOpen ?? false,
             isSameTimeEveryDay: rawData.settings?.isSameTimeEveryDay ?? false,
             firstColor: rawData.settings?.firstColor || "",
@@ -147,6 +148,7 @@ const SettingPageAdd = () => {
                 minOrderAmount: Number(data.minOrderAmount) || 50,
                 minDeliveryTime: Number(data.minDeliveryTime) || 15,
                 maxDeliveryTime: Number(data.maxDeliveryTime) || 45,
+                resetDailyOrderNumberTime: data.resetDailyOrderNumberTime || "00:00", // 👈 إرسال وقت رست أرقام الطلبات
                 isAlwaysOpen: data.isAlwaysOpen ?? false,
                 isSameTimeEveryDay: data.isSameTimeEveryDay ?? false,
                 firstColor: data.firstColor || "",
@@ -155,7 +157,6 @@ const SettingPageAdd = () => {
                 secondTextColor: data.secondTextColor || "",
                 repeatNotification: data.repeatNotification ?? false,
                 repeatNotificationDuration: data.repeatNotification ? Number(data.repeatNotificationDuration) : 0,
-                // نرسلها كنص JSON String لأن استجابة السيرفر كانت بهذا الشكل (يجب التأكد إذا كان السيرفر يحتاج مصفوفة يمكنك إزالة JSON.stringify)
                 repeatNotificationStatuses: data.repeatNotification ? JSON.stringify(data.repeatNotificationStatuses || []) : JSON.stringify([]),
             },
             schedules: (data.schedules || []).map(schedule => ({
@@ -256,6 +257,12 @@ const SettingPageAdd = () => {
                                         </div>
                                     </>
                                 )}
+
+                                {/* 👈 إدخال وقت إعادة تصفير رقم الطلب اليومي */}
+                                <div className="space-y-2">
+                                    <Label className="text-gray-700 font-medium">Reset Daily Order Time</Label>
+                                    <Input type="time" {...register("resetDailyOrderNumberTime")} />
+                                </div>
 
                                 <div className="space-y-2">
                                     <Label className="text-gray-700 font-medium">First Color</Label>

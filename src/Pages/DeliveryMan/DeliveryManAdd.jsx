@@ -7,25 +7,28 @@ import LoadingSpinner from "@/components/LoadingSpinner";
 import { useTranslation } from "@/hooks/useTranslation";
 
 const DeliveryManAdd = () => {
-  const { id } = useParams();
+  const { id } = useParams(); // لو الـ id موجود يبقى إحنا ف صفحة التعديل
   const { state } = useLocation();
-  const navigate = useNavigate(); // 💡 للانتقال للجدول مع تمرير المعرف المضيء
+  const navigate = useNavigate();
   const { t } = useTranslation();
 
-  // 💡 جلب بيانات عامل التوصيل عند التعديل باستخدام الـ ID
+  const apiUrl = "/api/restaurant/delivery-men";
+  const queryKey = "delivery-men";
+
+  // جلب البيانات عند التعديل فقط في حال لم يتم تمريرها عبر الـ state
   const { data: deliveryManData, isLoading: isFetching } = useQuery({
     queryKey: ["delivery-man", id],
     queryFn: async () => {
-      const { data } = await api.get(`/api/restaurant/delivery-men/${id}`);
+      const { data } = await api.get(`${apiUrl}/${id}`);
       return data?.data?.data || data?.data || data;
     },
-    enabled: !!id && !state?.deliveryManData, // جلب البيانات فقط لو لدينا ID ولم تُمرر البيانات عبر الـ state
+    enabled: !!id && !state?.deliveryManData,
   });
 
   const rawData = state?.deliveryManData || deliveryManData;
   const initialData = rawData ? { ...rawData } : {};
 
-  // 💡 إعداد الحقول المطلوبة لـ AddPage
+  // إعداد حقول الفورم
   const deliveryManFields = [
     { 
       name: "name", 
@@ -43,7 +46,6 @@ const DeliveryManAdd = () => {
       type: "email", 
       required: true 
     },
-    // 💡 كلمة المرور مطلوبة في حالة الإضافة فقط، وتُخفى أو تُترك اختيارية عند التعديل
     ...(!id
       ? [
           {
@@ -58,7 +60,7 @@ const DeliveryManAdd = () => {
       name: "image", 
       label: t("image") || "الصورة الشخصية", 
       type: "file", 
-      required: !id // مطلوبة في الإضافة فقط
+      required: !id 
     },
     { 
       name: "isActive", 
@@ -75,20 +77,21 @@ const DeliveryManAdd = () => {
   if (id && isFetching) return <LoadingSpinner />;
 
   return (
-    <AddPage
-      title={t("deliveryMan") || "عامل التوصيل"}
-      apiUrl="/api/restaurant/delivery-men"
-      queryKey="delivery-men"
-      fields={deliveryManFields}
-      initialData={initialData}
-      onSuccessAction={(res) => {
-        // 💡 التقاط الـ ID الراجع من السيرفر عند الإضافة، أو الـ ID الموجود مسبقاً عند التعديل
-        const targetId = res?.data?.data?.id || res?.data?.id || res?.id || initialData?.id;
-
-        // 💡 التوجيه لصفحة عمال التوصيل وتمرير الـ ID المضيء داخل الـ state
-        navigate("/delivery-man", { state: { highlightedId: targetId } });
-      }}
-    />
+    <div className="space-y-4 w-full">
+      <AddPage
+        title={t("deliveryMan") || "عامل التوصيل"}
+        apiUrl={apiUrl}
+        queryKey={queryKey}
+        method={id ? "PUT" : "POST"} // تحديد نوع الطلب بناءً على وجود الـ id
+        fields={deliveryManFields}
+        initialData={initialData}
+        onSuccessAction={(res) => {
+          const targetId = res?.data?.data?.id || res?.data?.id || res?.id || initialData?.id || id;
+          // العودة للجدول الأساسي مع تمرير الـ ID لتحديد العنصر المضاف/المعدل
+          navigate("/delivery-man", { state: { highlightedId: targetId } });
+        }}
+      />
+    </div>
   );
 };
 

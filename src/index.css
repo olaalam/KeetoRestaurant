@@ -117,6 +117,31 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+
+  /* Automatically map hardcoded tailwind classes to theme variables under dark mode */
+  .bg-white, .bg-card {
+    background-color: var(--card) !important;
+  }
+  .bg-gray-50, .bg-slate-50 {
+    background-color: var(--background) !important;
+  }
+  .bg-gray-100, .bg-slate-100 {
+    background-color: oklch(0.25 0 0) !important;
+  }
+  .text-gray-800, .text-gray-900, .text-slate-800, .text-slate-900, .text-card-foreground,
+  .text-gray-700, .text-slate-700, .text-gray-600, .text-slate-600 {
+    color: var(--foreground) !important;
+  }
+  .text-gray-500, .text-slate-500, .text-gray-400, .text-slate-400,
+  .dark\:text-slate-400, .dark\:text-gray-400 {
+    color: var(--muted-foreground) !important;
+  }
+  .border-gray-100, .border-gray-200, .border-slate-100, .border-slate-200, .border-slate-200\/80 {
+    border-color: var(--border) !important;
+  }
+  .bg-gray-50\/50, .bg-gray-50\/80, .bg-slate-50\/50, .bg-slate-50\/30 {
+    background-color: oklch(0.25 0 0 / 30%) !important;
+  }
 }
 
 @layer base {

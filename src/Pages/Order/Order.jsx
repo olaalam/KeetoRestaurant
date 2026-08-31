@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/api/axios";
 import GenericDataTable from "@/components/GenericDataTable";
@@ -17,11 +17,12 @@ import { Button } from "@/components/ui/button";
 import ReasonDialog from "./ReasonDialog";
 import { Input } from "@/components/ui/input";
 import useDateRangeStore from "../../store/Usedaterangestore";
+import useAuthStore from "../../store/useAuthStore"; // استدعاء متجر بيانات الدخول
 
 export default function Order() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { t, language } = useTranslation(); // افتراض وجود language أو i18n.language
+  const { t, language } = useTranslation();
 
   const [dialogConfig, setDialogConfig] = useState({
     open: false,
@@ -36,6 +37,41 @@ export default function Order() {
 
   const { startDate, endDate, setStartDate, setEndDate, clearDateRange } =
     useDateRangeStore();
+
+  // جلب جداول المواعيد من الـ Auth Store
+  const schedules = useAuthStore((state) => state.schedules);
+
+  // 💡 إضافة المنطق الخاص بضبط التاريخ بناءً على وقت إغلاق المطعم
+  useEffect(() => {
+    // تشغيل الفلتر التلقائي فقط إذا لم تكن التواريخ محددة بالفعل (عند فتح الصفحة لأول مرة)
+    if (!startDate && !endDate && schedules && schedules.length > 0) {
+      const todayIndex = new Date().getDay(); // جلب اليوم الحالي (0 = الأحد)
+      const todaySchedule = schedules.find((s) => s.dayOfWeek === todayIndex);
+
+      if (todaySchedule && !todaySchedule.isOffDay) {
+        const closingTime = todaySchedule.closingTime; // مثال: "03:30"
+        const [closingHour] = closingTime.split(":").map(Number);
+
+        const now = new Date();
+        const formattedToday = now.toISOString().split("T")[0];
+
+        // إذا كان المطعم يغلق بعد منتصف الليل (أقل من الساعة 6 صباحاً كمثال)
+        if (closingHour < 6) {
+          const tomorrow = new Date(now);
+          tomorrow.setDate(now.getDate() + 1);
+          const formattedTomorrow = tomorrow.toISOString().split("T")[0];
+
+          // تعيين النطاق ليشمل اليوم واليوم التالي لتغطية وردية الليل
+          setStartDate(formattedToday);
+          setEndDate(formattedTomorrow);
+        } else {
+          // الأيام العادية ضمن نفس اليوم
+          setStartDate(formattedToday);
+          setEndDate(formattedToday);
+        }
+      }
+    }
+  }, [schedules, startDate, endDate, setStartDate, setEndDate]);
 
   const orderStatuses = [
     "pending",
@@ -88,8 +124,6 @@ export default function Order() {
       queryClient.invalidateQueries(["orders"]);
       toast.success(t("orderStatusUpdatedSuccessfully"));
       setDialogConfig({ open: false, type: null, orderId: null });
-
-
     },
     onError: (error) => {
       const serverErrorMessage =
@@ -128,15 +162,21 @@ export default function Order() {
     {
       accessorKey: "dailyOrderNumber",
       header: t("orderNumber"),
-      cell: ({ row }) => (
-        <button
-          type="button"
-          onClick={() => navigate(`/orders/details/${row.original.id}`)}
-          className="font-medium text-blue-600 hover:text-blue-800 hover:underline transition-colors cursor-pointer"
-        >
-          {row.getValue("dailyOrderNumber")}
-        </button>
-      ),
+      cell: ({ row }) => {
+        const orderUrl = `/orders/details/${row.original.id}`;
+        return (
+          <a
+            href={orderUrl}
+            onClick={(e) => {
+              e.preventDefault();
+              navigate(orderUrl);
+            }}
+            className="font-medium text-blue-600 hover:text-blue-800 hover:underline transition-colors cursor-pointer inline-block"
+          >
+            {row.getValue("dailyOrderNumber")}
+          </a>
+        );
+      },
     },
     {
       accessorKey: "customerName",

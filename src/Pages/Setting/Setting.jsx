@@ -83,6 +83,11 @@ export default function Setting() {
             cell: ({ row }) => `${row.original.minDeliveryTime} - ${row.original.maxDeliveryTime} min`
         },
         {
+            accessorKey: "resetDailyOrderNumberTime", // 👈 إضافة عمود وقت إعادة التصفير
+            header: t("resetDailyOrderNumberTime", { defaultValue: "Reset Order Time" }),
+            cell: ({ getValue }) => getValue() ? getValue().substring(0, 5) : '-'
+        },
+        {
             accessorKey: "dineIn",
             header: t("dineIn", { defaultValue: "Dine In" }),
             cell: ({ getValue }) => getValue() ? t("yes", { defaultValue: "Yes" }) : t("no", { defaultValue: "No" })
@@ -107,7 +112,6 @@ export default function Setting() {
             cell: ({ row }) => {
                 if (!row.original.repeatNotification) return '-';
 
-                // معالجة الخطأ: التأكد من تحويل النص إلى مصفوفة إذا كان قادماً كنص من الـ API
                 let statuses = [];
                 const rawStatuses = row.original.repeatNotificationStatuses;
                 if (typeof rawStatuses === 'string') {

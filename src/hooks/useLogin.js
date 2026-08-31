@@ -3,6 +3,7 @@ import api from '../api/axios';
 import useAuthStore from '../store/useAuthStore';
 import { toast } from 'sonner';
 
+// في ملف useLogin.js
 export const useLogin = () => {
     const setLogin = useAuthStore((state) => state.setLogin);
 
@@ -14,24 +15,22 @@ export const useLogin = () => {
         onSuccess: (res) => {
             const userData = res.data?.admin;
             const token = res.data?.token;
+            const schedules = res.data?.schedules; // 👈 استخراج الجداول من الاستجابة
 
             if (userData && token) {
-                setLogin(userData, token);
+                setLogin(userData, token, schedules); // 👈 تمريرها لدالة الحفظ
                 toast.success(`Welcome ${userData.name}`);
             } else {
                 toast.error('Unexpected response format');
             }
         },
         onError: (error) => {
-
-            // 💡 استخراج رسالة الخطأ بناءً على الهيكل الراجع من الـ API الخاص بكِ
             const serverErrorMessage = 
-                error?.response?.data?.error?.message ||  // للتعامل مع { error: { message: "..." } }
-                error?.response?.data?.message ||         // للتعامل مع { message: "..." }
-                error?.message ||                          // رسالة Axios الافتراضية (مثل Network Error)
-                'Invalid Credentials';                     // رسالة احتياطية عامة
+                error?.response?.data?.error?.message ||  
+                error?.response?.data?.message ||         
+                error?.message ||                          
+                'Invalid Credentials';                     
 
-            // عرض رسالة الخطأ للمستخدم عبر الـ Toast
             toast.error(serverErrorMessage);
         },
     });

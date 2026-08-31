@@ -815,25 +815,26 @@ const assignDeliveryMutation = useMutation({
             </CardContent>
           </Card>
 
-          <Card className="rounded-2xl border shadow-sm bg-white">
+<Card className="rounded-2xl border shadow-sm bg-white">
             <CardHeader className="border-b bg-gray-50/50 px-6 py-4">
               <CardTitle className="text-md font-bold text-gray-800 flex items-center gap-2">
                 <Receipt className="w-5 h-5 text-primary" />
-                {t("payment Summary") || "ملخص الحساب للفاتورة"}
+                {t("paymentSummary") || "ملخص الحساب للفاتورة"}
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6 space-y-3.5">
               <div className="flex justify-between text-sm text-gray-600">
                 <span>{t("subtotal") || "المجموع الفرعي"}</span>
                 <span className="font-medium text-gray-900">
-                  {parseFloat(order.subtotal).toFixed(2)}{" "}
+                  {parseFloat(order.subtotal || 0).toFixed(2)}{" "}
                   {t("currency") || "EGP"}
                 </span>
               </div>
+              
               <div className="flex justify-between text-sm text-gray-600">
                 <span>{t("serviceFee") || "رسوم الخدمة"}</span>
                 <span className="font-medium text-gray-900">
-                  {parseFloat(order.serviceFee).toFixed(2)}{" "}
+                  {parseFloat(order.serviceFee || 0).toFixed(2)}{" "}
                   {t("currency") || "EGP"}
                 </span>
               </div>
@@ -849,17 +850,32 @@ const assignDeliveryMutation = useMutation({
                 <div className="flex justify-between text-sm text-gray-600">
                   <span>{t("deliveryFee") || "رسوم التوصيل"}</span>
                   <span className="font-medium text-gray-900">
-                    {parseFloat(order.deliveryFee).toFixed(2)}{" "}
+                    {parseFloat(order.deliveryFee || 0).toFixed(2)}{" "}
                     {t("currency") || "EGP"}
                   </span>
                 </div>
               )}
 
-              {order.couponCode && order.couponCode.trim() !== "" && (
+              {/* --- جزء عرض قيمة الخصم (Discount Amount) --- */}
+              {order.discount && parseFloat(order.discount.discountAmount) > 0 && (
+                <div className="flex justify-between text-sm text-red-500 font-medium">
+                  <span>
+                    {t("discountAmount") || "قيمة الخصم"}
+                    {order.discount.discountName && ` (${order.discount.discountName})`}
+                  </span>
+                  <span>
+                    - {parseFloat(order.discount.discountAmount).toFixed(2)}{" "}
+                    {t("currency") || "EGP"}
+                  </span>
+                </div>
+              )}
+
+              {/* --- جزء عرض كود الخصم (Coupon Code) مدعوم بالمسار الجديد --- */}
+              {(order.couponCode || order.discount?.couponCode) && (
                 <div className="flex justify-between text-sm text-emerald-600 font-medium">
-                  <span>{t("couponCode") || "كود الخصم"}</span>
+                  <span>{t("couponCode") || "كود الخصم المستخم"}</span>
                   <span className="bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded text-xs font-bold uppercase">
-                    {order.couponCode}
+                    {order.couponCode || order.discount?.couponCode}
                   </span>
                 </div>
               )}
@@ -873,13 +889,15 @@ const assignDeliveryMutation = useMutation({
                   </span>
                 </div>
               )}
+              
               <Separator className="my-2" />
+              
               <div className="flex justify-between items-center pt-1">
                 <span className="text-base font-bold text-gray-900">
                   {t("totalAmount") || "الإجمالي الكلي"}
                 </span>
                 <span className="text-xl font-black text-primary">
-                  {parseFloat(order.totalAmount).toFixed(2)}{" "}
+                  {parseFloat(order.totalAmount || 0).toFixed(2)}{" "}
                   {t("currency") || "EGP"}
                 </span>
               </div>
@@ -1322,17 +1340,16 @@ const assignDeliveryMutation = useMutation({
         </DialogContent>
       </Dialog>
 
-      <Dialog
+<Dialog
         open={isAssignDialogOpen}
         onOpenChange={(open) => {
           setIsAssignDialogOpen(open);
           if (!open) {
-            setIsDeliveryDropdownOpen(false);
             setDeliverySearchQuery("");
           }
         }}
       >
-        <DialogContent className="sm:max-w-md rounded-2xl bg-white p-6 shadow-xl">
+        <DialogContent className="sm:max-w-lg rounded-2xl bg-white p-6 shadow-xl">
           <DialogHeader>
             <DialogTitle className="text-lg font-bold text-gray-900 flex items-center gap-2">
               <Truck className="w-5 h-5 text-primary" />
@@ -1340,98 +1357,83 @@ const assignDeliveryMutation = useMutation({
             </DialogTitle>
           </DialogHeader>
 
-          <div className="py-4 space-y-3">
-            <label className="text-sm font-semibold text-gray-700 block">
-              {t("selectDeliveryMan") || "اختر مندوب التوصيل"}
-            </label>
+          <div className="py-4 space-y-4">
+            {/* شريط البحث في الأعلى */}
+            <div className="relative w-full">
+              <Search className="absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder={t("searchDeliveryMan") || "بحث بالاسم أو رقم الهاتف..."}
+                value={deliverySearchQuery}
+                onChange={(e) => setDeliverySearchQuery(e.target.value)}
+                className="w-full h-11 pr-10 pl-3 bg-gray-50/50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all font-medium"
+              />
+            </div>
 
+            {/* قائمة عمال التوصيل */}
             {isDeliveryLoading ? (
-              <div className="flex justify-center py-6">
+              <div className="flex justify-center py-8">
                 <Loader2 className="w-6 h-6 animate-spin text-primary" />
               </div>
             ) : (
-              <div className="relative w-full">
-                <div
-                  className="w-full h-11 px-3 py-2 bg-white border border-gray-300 rounded-xl text-sm flex items-center justify-between cursor-pointer focus-within:border-primary focus-within:ring-1 focus-within:ring-primary"
-                  onClick={() => setIsDeliveryDropdownOpen(!isDeliveryDropdownOpen)}
-                >
-                  <span className={`truncate ${!selectedDeliveryMan ? "text-gray-500" : "text-gray-900 font-medium"}`}>
-                    {selectedDeliveryMan
-                      ? (() => {
-                        const man = deliveryMen.find((m) => (m.id || m._id || m.value) === selectedDeliveryMan);
-                        return man ? `${man.name || man.fullName || man.label} ${man.phone ? `(${man.phone})` : ""}` : "";
-                      })()
-                      : (t("chooseDeliveryMan") || "-- اختر من القائمة --")}
-                  </span>
-                  <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${isDeliveryDropdownOpen ? "rotate-180" : ""}`} />
-                </div>
+              <div className="max-h-[320px] overflow-y-auto space-y-2.5 pr-1">
+                {filteredDeliveryMen.length > 0 ? (
+                  filteredDeliveryMen.map((man) => {
+                    const id = man.id || man._id || man.value;
+                    const name = man.name || man.fullName || man.label;
+                    const phone = man.phone;
+                    const isSelected = selectedDeliveryMan === id;
 
-                {isDeliveryDropdownOpen && (
-                  <div className="absolute z-50 w-full mt-2 bg-white border border-gray-200 rounded-xl shadow-lg max-h-64 flex flex-col overflow-hidden">
-                    <div className="p-2 border-b border-gray-100 bg-gray-50/80">
-                      <div className="flex items-center bg-white border border-gray-200 rounded-lg px-2 focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all">
-                        <Search className="h-4 w-4 text-gray-400 shrink-0" />
-                        <input
-                          type="text"
-                          placeholder={t("search") || "بحث بالاسم أو الرقم..."}
-                          value={deliverySearchQuery}
-                          onChange={(e) => setDeliverySearchQuery(e.target.value)}
-                          className="w-full h-9 px-2 bg-transparent text-sm focus:outline-none"
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="overflow-y-auto p-1">
-                      {filteredDeliveryMen.length > 0 ? (
-                        filteredDeliveryMen.map((man) => {
-                          const id = man.id || man._id || man.value;
-                          const name = man.name || man.fullName || man.label;
-                          const isSelected = selectedDeliveryMan === id;
-
-                          return (
-                            <div
-                              key={id}
-                              className={`px-3 py-2.5 text-sm rounded-lg cursor-pointer transition-colors flex items-center justify-between mb-0.5
-                                ${isSelected ? "bg-primary/10 text-primary font-bold" : "text-gray-700 hover:bg-gray-50"}
-                              `}
-                              onClick={() => {
-                                setSelectedDeliveryMan(id);
-                                setIsDeliveryDropdownOpen(false);
-                                setDeliverySearchQuery("");
-                              }}
-                            >
-                              <span className="truncate">{name} {man.phone ? `(${man.phone})` : ""}</span>
-                              {isSelected && <CheckCircle className="w-4 h-4 text-primary shrink-0" />}
-                            </div>
-                          );
-                        })
-                      ) : (
-                        <div className="px-3 py-6 text-sm text-center text-gray-500 font-medium">
-                          {t("noResultsFound") || "لا توجد نتائج مطابقة"}
+                    return (
+                      <div
+                        key={id}
+                        onClick={() => setSelectedDeliveryMan(id)}
+                        className={`p-4 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${
+                          isSelected
+                            ? "border-2 border-primary bg-primary/5 shadow-2xs"
+                            : "border-gray-200 hover:border-gray-300 bg-white"
+                        }`}
+                      >
+                        <div className="flex flex-col gap-0.5">
+                          <span
+                            className={`text-sm font-bold ${
+                              isSelected ? "text-primary" : "text-gray-900"
+                            }`}
+                          >
+                            {name}
+                          </span>
+                          {phone && (
+                            <span className="text-xs text-gray-500 font-medium dir-ltr text-right">
+                              {phone}
+                            </span>
+                          )}
                         </div>
-                      )}
-                    </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="py-8 text-sm text-center text-gray-500 font-medium">
+                    {t("noResultsFound") || "لا توجد نتائج مطابقة"}
                   </div>
                 )}
               </div>
             )}
           </div>
 
-          <div className="flex justify-end gap-3 pt-4 border-t mt-4">
+          <div className="flex justify-end gap-3 pt-4 border-t mt-2">
             <Button
               variant="outline"
-              className="rounded-xl px-4"
+              className="rounded-xl px-4 h-10 font-semibold"
               onClick={() => {
                 setIsAssignDialogOpen(false);
                 setSelectedDeliveryMan("");
-                setIsDeliveryDropdownOpen(false);
+                setDeliverySearchQuery("");
               }}
             >
               {t("cancel") || "إلغاء"}
             </Button>
             <Button
-              className="rounded-xl bg-primary hover:bg-primary/90 text-white px-5 font-semibold"
+              className="rounded-xl bg-primary hover:bg-primary/90 text-white px-5 h-10 font-semibold"
               disabled={
                 assignDeliveryMutation.isPending || !selectedDeliveryMan
               }

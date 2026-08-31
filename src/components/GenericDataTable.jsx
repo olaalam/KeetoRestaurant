@@ -19,6 +19,13 @@ import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Pencil,
   Trash2,
   Plus,
@@ -106,8 +113,6 @@ export default function GenericDataTable({
   };
 
   const submitInactiveReason = () => {
-
-    
     updateStatusMutation.mutate({
       id: inactiveDialog.rowId,
       newStatus: inactiveDialog.newStatus,
@@ -230,7 +235,7 @@ export default function GenericDataTable({
                 <Pencil className="h-4 w-4" />
               </Button>
             )}
-{deleteApiUrl && (
+            {deleteApiUrl && (
               <Button
                 variant="ghost"
                 size="icon"
@@ -285,7 +290,31 @@ export default function GenericDataTable({
           </div>
         </div>
 
-        <div className="flex items-center gap-3 self-end sm:self-center w-full sm:w-auto">
+        <div className="flex flex-wrap items-center gap-3 self-end sm:self-center w-full sm:w-auto">
+          {/* اختيار عدد الصفوف في الصفحة (أعلى) */}
+          <div className="flex items-center gap-2">
+            <Select
+              value={String(pagination.pageSize)}
+              onValueChange={(value) => {
+                setPagination((prev) => ({
+                  ...prev,
+                  pageSize: Number(value),
+                  pageIndex: 0,
+                }));
+              }}
+            >
+              <SelectTrigger className="w-[75px] h-10 text-xs rounded-xl bg-white shadow-sm border-slate-200">
+                <SelectValue placeholder={pagination.pageSize} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="15">15</SelectItem>
+                <SelectItem value="20">20</SelectItem>
+                <SelectItem value="50">50</SelectItem>
+                <SelectItem value="100">100</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
           <div className="relative w-full sm:w-64">
             <Search className={cn(
               "absolute top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400",
@@ -380,9 +409,9 @@ export default function GenericDataTable({
         </div>
       </div>
 
-      {/* PAGINATION */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
-        <div className="flex items-center m-auto gap-1.5 order-1 sm:order-2">
+      {/* PAGINATION (أزرار التنقل فقط في الأسفل) */}
+      <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
+        <div className="flex items-center gap-1.5">
           <Button
             variant="outline"
             size="sm"
@@ -460,7 +489,6 @@ export default function GenericDataTable({
               </Button>
               <Button 
                 onClick={submitInactiveReason} 
-               
                 className="bg-orange-600 hover:bg-orange-700 text-white"
               >
                 {updateStatusMutation.isPending ? <LoadingSpinner className="h-4 w-4 mr-2" /> : null}
@@ -471,13 +499,13 @@ export default function GenericDataTable({
         </div>
       )}
 
-{/* DELETE DIALOG */}
+      {/* DELETE DIALOG */}
       <DeleteDialog
         isOpen={!!deleteId}
         onClose={() => setDeleteId(null)}
         apiUrl={deleteApiUrl}
         onSuccessKey={queryKey}
-        id={deleteWithoutId ? null : deleteId} // <-- لو مفعل، ابعت الـ id بـ null
+        id={deleteWithoutId ? null : deleteId}
       />
     </div>
   );

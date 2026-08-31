@@ -7,19 +7,22 @@ const useAuthStore = create(
             user: null,
             token: null,
             isAuth: false,
+            schedules: [], // 1. إضافة حقل الجداول في الـ State الابتدائية
 
-            // دالة حفظ بيانات الدخول
-            setLogin: (userData, token) => set({
+            // 2. تحديث دالة الحفظ لتستقبل وتخزن الـ schedules
+            setLogin: (userData, token, schedules) => set({
                 user: userData,
                 token: token,
-                isAuth: true
+                isAuth: true,
+                schedules: schedules || []
             }),
 
-            // دالة تسجيل الخروج
+            // 3. تصفير الجداول عند تسجيل الخروج
             setLogout: () => set({
                 user: null,
                 token: null,
-                isAuth: false
+                isAuth: false,
+                schedules: []
             }),
         }),
         {
