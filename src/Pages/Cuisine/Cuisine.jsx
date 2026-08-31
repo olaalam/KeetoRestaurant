@@ -3,25 +3,27 @@ import { useQuery } from '@tanstack/react-query';
 import api from '@/api/axios';
 import GenericDataTable from '@/components/GenericDataTable';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from '@/hooks/useTranslation';
 
 export default function Cuisine() {
     const navigate = useNavigate();
+    const { t } = useTranslation();
 
     const { data: cuisines = [], isLoading } = useQuery({
         queryKey: ['cuisines'],
         queryFn: async () => {
             const res = await api.get('/api/restaurant/cuisines');
-            return res.data.data.data; // بناءً على هيكل الـ Response الخاص بكِ
+            return res.data.data.data;
         }
     });
 
     const columns = [
-        { accessorKey: 'name', header: 'name' },
-        { accessorKey: 'nameAr', header: 'nameAr' },
-        { accessorKey: 'nameFr', header: 'nameFr' },
+        { accessorKey: 'name', header: t('categoryNameHeader') },
+        { accessorKey: 'nameAr', header: t('categoryNameArHeader') },
+        { accessorKey: 'nameFr', header: t('categoryNameFrHeader') },
         {
-            accessorKey: "Image", // التأكد من مطابقة الاسم الراجع من الـ API (حرف I كبير)
-            header: "Image",
+            accessorKey: "Image",
+            header: t('imageHeader'),
             cell: ({ row }) => {
                 const imageStr = row.getValue("Image");
                 return (
@@ -34,19 +36,20 @@ export default function Cuisine() {
                             />
                         ) : (
                             <div className="flex items-center justify-center h-full text-[10px] text-gray-400">
-                                No Image
+                                {t('noImageText')}
                             </div>
                         )}
                     </div>
                 );
             },
-        }, { accessorKey: 'description', header: 'description' },
-        { accessorKey: 'descriptionAr', header: 'descriptionAr' },
-        { accessorKey: 'descriptionFr', header: 'descriptionFr' },
-        { accessorKey: 'meta_description', header: 'meta_description' },
+        },
+        { accessorKey: 'description', header: t('descriptionHeader') },
+        { accessorKey: 'descriptionAr', header: t('descriptionArHeader') },
+        { accessorKey: 'descriptionFr', header: t('descriptionFrHeader') },
+        { accessorKey: 'meta_description', header: t('metaDescriptionHeader') },
         {
             accessorKey: "meta_image",
-            header: "Meta Image",
+            header: t('metaImageHeader'),
             cell: ({ row }) => {
                 const metaImg = row.getValue("meta_image");
                 return (
@@ -55,13 +58,14 @@ export default function Cuisine() {
                     </div>
                 );
             }
-        }, { accessorKey: 'status', header: 'status' },
+        },
+        { accessorKey: 'status', header: t('statusHeader') },
     ];
 
     return (
         <div className="container mx-auto py-10">
             <GenericDataTable
-                title="cuisines"
+                title={t('cuisinesTitle')}
                 columns={columns}
                 data={cuisines}
                 isLoading={isLoading}

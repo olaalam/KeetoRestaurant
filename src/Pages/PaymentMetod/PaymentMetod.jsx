@@ -3,25 +3,27 @@ import { useQuery } from '@tanstack/react-query';
 import api from '@/api/axios';
 import GenericDataTable from '@/components/GenericDataTable';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from '@/hooks/useTranslation';
 
 export default function PaymentMethod() {
     const navigate = useNavigate();
+    const { t } = useTranslation();
 
     const { data: paymentMethods = [], isLoading } = useQuery({
         queryKey: ['payment-methods'],
         queryFn: async () => {
             const res = await api.get('/api/restaurant/payment-methods');
-            return res.data.data.data; // بناءً على هيكل الـ Response الخاص بكِ
+            return res.data.data.data;
         }
     });
 
     const columns = [
-        { accessorKey: 'name', header: 'name' },
-        { accessorKey: 'nameAr', header: 'nameAr' },
-        { accessorKey: 'nameFr', header: 'nameFr' },
+        { accessorKey: 'name', header: t('categoryNameHeader') },
+        { accessorKey: 'nameAr', header: t('categoryNameArHeader') },
+        { accessorKey: 'nameFr', header: t('categoryNameFrHeader') },
         {
-            accessorKey: "Image", // التأكد من مطابقة الاسم الراجع من الـ API (حرف I كبير)
-            header: "Image",
+            accessorKey: "Image",
+            header: t('imageHeader'),
             cell: ({ row }) => {
                 const imageStr = row.getValue("Image");
                 return (
@@ -34,23 +36,23 @@ export default function PaymentMethod() {
                             />
                         ) : (
                             <div className="flex items-center justify-center h-full text-[10px] text-gray-400">
-                                No Image
+                                {t('noImageText')}
                             </div>
                         )}
                     </div>
                 );
             },
-        }, { accessorKey: 'description', header: 'description' },
-        { accessorKey: 'descriptionAr', header: 'descriptionAr' },
-        { accessorKey: 'descriptionFr', header: 'descriptionFr' },
-        { accessorKey: 'type', header: 'type' },
-
+        },
+        { accessorKey: 'description', header: t('descriptionHeader') },
+        { accessorKey: 'descriptionAr', header: t('descriptionArHeader') },
+        { accessorKey: 'descriptionFr', header: t('descriptionFrHeader') },
+        { accessorKey: 'type', header: t('typeHeader') },
     ];
 
     return (
         <div className="container mx-auto py-10">
             <GenericDataTable
-                title="paymentMethods"
+                title={t('paymentMethodsTitle')}
                 columns={columns}
                 data={paymentMethods}
                 isLoading={isLoading}

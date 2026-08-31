@@ -1,60 +1,57 @@
 import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import AddPage from '@/components/AddPage'; // تأكدي من مسار الاستيراد
-import { useGet } from '@/hooks/useGet'; // تأكدي من مسار الاستيراد
+import AddPage from '@/components/AddPage';
+import { useGet } from '@/hooks/useGet';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const UpsellingAdd = () => {
     const navigate = useNavigate();
+    const { t } = useTranslation();
 
-    // جلب المنتجات لملء القوائم المنسدلة
     const { data: foodsResponse, isLoading } = useGet(
-        'foods-select', 
+        'foods-select',
         '/api/restaurant/recommended-foods/foods-select'
     );
 
-    // تحويل البيانات لشكل { label, value } المتوافق مع الـ Components
     const foodOptions = useMemo(() => {
-        // استخراج المصفوفة بناءً على هيكل الـ JSON الخاص بك
-        const foodsArray = foodsResponse?.data?.data; 
-        
+        const foodsArray = foodsResponse?.data?.data;
+
         if (!Array.isArray(foodsArray)) return [];
 
         return foodsArray.map(food => ({
-            // استخدام الاسم الإنجليزي، وإن كان فارغاً نستخدم العربي كبديل
-            label: food.name || food.nameAr || "بدون اسم", 
-            value: food.id 
+            label: food.name || food.nameAr || t('noResultsFound'),
+            value: food.id
         }));
     }, [foodsResponse]);
 
-    // تجهيز الحقول المطلوبة لـ AddPage
     const fields = [
         {
             name: 'foodId',
-            label: 'Main Food Item (المنتج الأساسي)',
+            label: t('mainFoodItem'),
             type: 'combobox',
             required: true,
             options: foodOptions,
         },
         {
             name: 'recommendedFoodIds',
-            label: 'Upselling Products (المنتجات المقترحة)',
+            label: t('recommendedProducts'),
             type: 'multi-select',
             required: true,
             options: foodOptions,
         }
     ];
 
-    if (isLoading) return <div className="p-4 text-center">جاري تحميل المنتجات...</div>;
+    if (isLoading) return <div className="p-4 text-center">{t('loadingProducts')}</div>;
 
     return (
         <div className="p-6">
             <AddPage
-                title="Upselling Products"
+                title={t('upsellingProducts')}
                 apiUrl="/api/restaurant/recommended-foods/assign"
                 queryKey="recommended-foods"
                 method="POST"
                 fields={fields}
-                onSuccessAction={() => navigate('/upselling')} // العودة لصفحة العرض بعد النجاح
+                onSuccessAction={() => navigate('/upselling')}
             />
         </div>
     );

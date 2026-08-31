@@ -530,7 +530,7 @@ export default function DetailedFinancialReport() {
       <div className="flex justify-end">
         <button
           onClick={exportPDF}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2 font-bold shadow"
+          className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2 font-bold shadow"
         >
           <Download className="w-4 h-4" /> Export Complete PDF
         </button>

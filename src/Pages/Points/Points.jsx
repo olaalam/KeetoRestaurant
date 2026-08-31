@@ -7,7 +7,7 @@ import { useTranslation } from "@/hooks/useTranslation";
 
 export default function Points() {
   const navigate = useNavigate();
-  const { t, i18n } = useTranslation();
+  const { t, language } = useTranslation();
   const queryClient = useQueryClient();
 
   // جلب بيانات نقاط المنتجات
@@ -34,21 +34,21 @@ export default function Points() {
   const columns = [
     {
       accessorFn: (row) => {
-        const currentLang = i18n?.language || "ar";
+        const currentLang = language || "en";
         return currentLang === "ar"
           ? row.food?.nameAr || row.food?.name
           : row.food?.name;
       },
       id: "foodName",
-      header: t("Product Name"),
+      header: t("foodName"),
     },
     {
       accessorKey: "pointsRequiredForRedeem",
-      header: t("Points Required"),
+      header: t("points"),
     },
     {
       accessorKey: "isActive",
-      header: t("Status"),
+      header: t("status"),
       cell: ({ row }) => {
         const item = row.original;
         const isPending = toggleMutation.isPending && toggleMutation.variables === item.id;
@@ -65,7 +65,7 @@ export default function Points() {
             {/* تصميم الـ Switch */}
             <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
             <span className="ms-3 text-xs font-medium text-gray-700">
-              {item.isActive ? t("Active") : t("Inactive")}
+              {item.isActive ? t("active") : t("inactive")}
             </span>
           </label>
         );
@@ -76,7 +76,7 @@ export default function Points() {
   return (
     <div className="container mx-auto py-10">
       <GenericDataTable
-        title={t("Points Products")}
+        title={t("points")}
         columns={columns}
         data={Points}
         isLoading={isLoading}

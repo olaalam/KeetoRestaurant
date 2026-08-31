@@ -2,58 +2,51 @@ import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import GenericDataTable from '@/components/GenericDataTable';
 import { useGet } from '@/hooks/useGet';
+import { useTranslation } from '@/hooks/useTranslation';
 
 export default function FreeDelivery() {
     const navigate = useNavigate();
+    const { t } = useTranslation();
     const apiUrl = "/api/restaurant/free-delivery";
     const queryKey = "free-delivery-list";
 
-    // جلب البيانات باستخدام الكاستم هوك
     const { data, isLoading } = useGet(queryKey, apiUrl);
 
-    // تعريف الأعمدة بناءً على البيانات
     const columns = [
         {
             accessorKey: "minOrderAmount",
-            header: "Min Order Amount",
+            header: t('minOrderAmountHeader'),
             cell: ({ row }) => <span className="font-semibold">{row.original.minOrderAmount}</span>
         },
         {
             accessorKey: "startDate",
-            header: "Start Date",
-            // التحقق من وجود التاريخ لتجنب الأخطاء
-            cell: ({ row }) => row.original.startDate 
-                ? new Date(row.original.startDate).toLocaleDateString() 
-                : "N/A"
+            header: t('startDateHeader'),
+            cell: ({ row }) => row.original.startDate
+                ? new Date(row.original.startDate).toLocaleDateString()
+                : t('naText')
         },
         {
             accessorKey: "endDate",
-            header: "End Date",
-             // التحقق من وجود التاريخ لتجنب الأخطاء
-            cell: ({ row }) => row.original.endDate 
-                ? new Date(row.original.endDate).toLocaleDateString() 
-                : "N/A"
+            header: t('endDateHeader'),
+            cell: ({ row }) => row.original.endDate
+                ? new Date(row.original.endDate).toLocaleDateString()
+                : t('naText')
         },
         {
-            // سيتم تحويله تلقائياً إلى Switch لأن اسمه status
-            accessorKey: "status", 
-            header: "Status",
+            accessorKey: "status",
+            header: t('statusHeader'),
         }
     ];
 
-    // معالجة البيانات بذكاء باستخدام useMemo لتجنب إعادة الحسابات غير الضرورية
     const tableData = useMemo(() => {
         if (!data) return [];
 
-        // استخراج البيانات بناءً على الهيكل: { success: true, data: { data: { id: "..." } } }
         const actualData = data?.data?.data || data?.data || data;
 
-        // إذا كان actualData كائناً يحتوي على id (مثل الرد الذي أرسلته)، ضعه في مصفوفة
         if (actualData && !Array.isArray(actualData) && actualData.id) {
             return [actualData];
         }
-        
-        // إذا كان بالفعل مصفوفة (في حالة تغير الـ API مستقبلاً ليدعم عروض متعددة)
+
         if (Array.isArray(actualData)) {
             return actualData;
         }
@@ -61,24 +54,20 @@ export default function FreeDelivery() {
         return [];
     }, [data]);
 
-    // تحديد ما إذا كان يجب عرض زر "إضافة".
-    // إذا كان هناك بيانات بالفعل (مثل عرض واحد نشط)، فقد لا نحتاج لزر الإضافة.
-    // يمكنك إزالة هذا الشرط وتمرير الدالة مباشرة إذا كان النظام يسمح بعروض متعددة.
     const handleAdd = tableData.length === 0 ? () => navigate('/free-delivery/add') : undefined;
-
 
     return (
         <div className="p-6">
-<GenericDataTable
-        title="Free Delivery"
-        columns={columns}
-        data={tableData}
-        isLoading={isLoading}
-        queryKey={queryKey}
-        deleteApiUrl={apiUrl}
-        deleteWithoutId={true} // <-- تفعيلها هنا فقط لهذه الصفحة!
-        onAdd={handleAdd}
-    />
+            <GenericDataTable
+                title={t('freeDeliveryTitle')}
+                columns={columns}
+                data={tableData}
+                isLoading={isLoading}
+                queryKey={queryKey}
+                deleteApiUrl={apiUrl}
+                deleteWithoutId={true}
+                onAdd={handleAdd}
+            />
         </div>
     );
 }

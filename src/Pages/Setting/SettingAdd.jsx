@@ -9,11 +9,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Controller, useFieldArray } from 'react-hook-form';
 import { Plus, Trash2 } from 'lucide-react';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const SettingPageAdd = () => {
     const { id } = useParams();
     const { state } = useLocation();
     const navigate = useNavigate();
+    const { t } = useTranslation();
 
     const { data: fullData, isLoading: isFetching } = useQuery({
         queryKey: ['setting', id],
@@ -43,7 +45,7 @@ const SettingPageAdd = () => {
         minOrderAmount: 50,
         minDeliveryTime: 15,
         maxDeliveryTime: 45,
-        resetDailyOrderNumberTime: "00:00", // 👈 إضافة القيمة الافتراضية
+        resetDailyOrderNumberTime: "00:00",
         isAlwaysOpen: false,
         isSameTimeEveryDay: false,
         firstColor: "",
@@ -105,7 +107,7 @@ const SettingPageAdd = () => {
             minOrderAmount: rawData.settings?.minOrderAmount ?? 50,
             minDeliveryTime: rawData.settings?.minDeliveryTime ?? 15,
             maxDeliveryTime: rawData.settings?.maxDeliveryTime ?? 45,
-            resetDailyOrderNumberTime: rawData.settings?.resetDailyOrderNumberTime ? rawData.settings.resetDailyOrderNumberTime.substring(0, 5) : "00:00", // 👈 قراءة الوقت القادم من API
+            resetDailyOrderNumberTime: rawData.settings?.resetDailyOrderNumberTime ? rawData.settings.resetDailyOrderNumberTime.substring(0, 5) : "00:00",
             isAlwaysOpen: rawData.settings?.isAlwaysOpen ?? false,
             isSameTimeEveryDay: rawData.settings?.isSameTimeEveryDay ?? false,
             firstColor: rawData.settings?.firstColor || "",
@@ -120,13 +122,13 @@ const SettingPageAdd = () => {
     }, [JSON.stringify(rawData)]);
 
     const daysOfWeekOptions = [
-        { value: 0, label: "Sunday" },
-        { value: 1, label: "Monday" },
-        { value: 2, label: "Tuesday" },
-        { value: 3, label: "Wednesday" },
-        { value: 4, label: "Thursday" },
-        { value: 5, label: "Friday" },
-        { value: 6, label: "Saturday" }
+        { value: 0, label: t('sunday') },
+        { value: 1, label: t('monday') },
+        { value: 2, label: t('tuesday') },
+        { value: 3, label: t('wednesday') },
+        { value: 4, label: t('thursday') },
+        { value: 5, label: t('friday') },
+        { value: 6, label: t('saturday') }
     ];
 
     const handleTransformPayload = (data) => {
@@ -148,7 +150,7 @@ const SettingPageAdd = () => {
                 minOrderAmount: Number(data.minOrderAmount) || 50,
                 minDeliveryTime: Number(data.minDeliveryTime) || 15,
                 maxDeliveryTime: Number(data.maxDeliveryTime) || 45,
-                resetDailyOrderNumberTime: data.resetDailyOrderNumberTime || "00:00", // 👈 إرسال وقت رست أرقام الطلبات
+                resetDailyOrderNumberTime: data.resetDailyOrderNumberTime || "00:00",
                 isAlwaysOpen: data.isAlwaysOpen ?? false,
                 isSameTimeEveryDay: data.isSameTimeEveryDay ?? false,
                 firstColor: data.firstColor || "",
@@ -170,9 +172,27 @@ const SettingPageAdd = () => {
 
     if (id && isFetching) return <LoadingSpinner />;
 
+    const switchItems = [
+        { name: "foodManagement", label: t('foodManagementLabel') },
+        { name: "scheduledDelivery", label: t('scheduledDeliveryLabel') },
+        { name: "reviewsSection", label: t('reviewsSectionLabel') },
+        { name: "posSection", label: t('posSectionLabel') },
+        { name: "selfDelivery", label: t('selfDeliveryLabel') },
+        { name: "homeDelivery", label: t('homeDeliveryLabel') },
+        { name: "takeaway", label: t('takeawayLabel') },
+        { name: "orderSubscription", label: t('orderSubscriptionLabel') },
+        { name: "instantOrder", label: t('instantOrderLabel') },
+        { name: "halalTagStatus", label: t('halalTagStatusLabel') },
+        { name: "dineIn", label: t('dineInLabel') },
+        { name: "canEditOrder", label: t('canEditOrderLabel') },
+        { name: "isAlwaysOpen", label: t('isAlwaysOpenLabel') },
+        { name: "isSameTimeEveryDay", label: t('sameTimeEveryDayLabel') },
+        { name: "repeatNotification", label: t('repeatNotificationLabel') },
+    ];
+
     return (
         <AddPage
-            title="Store Settings"
+            title={t('storeSettings')}
             apiUrl="/api/restaurant/restaurantsetting"
             queryKey={['setting']}
             method="PUT"
@@ -198,26 +218,10 @@ const SettingPageAdd = () => {
                     <div className="space-y-8 mt-6 border-t pt-6 col-span-full">
 
                         <div>
-                            <h3 className="text-lg font-bold mb-4 text-primary">General Settings</h3>
+                            <h3 className="text-lg font-bold mb-4 text-primary">{t('generalSettings')}</h3>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-muted/20 p-4 rounded-lg">
 
-                                {[
-                                    { name: "foodManagement", label: "Food Management" },
-                                    { name: "scheduledDelivery", label: "Scheduled Delivery" },
-                                    { name: "reviewsSection", label: "Reviews Section" },
-                                    { name: "posSection", label: "POS Section" },
-                                    { name: "selfDelivery", label: "Self Delivery" },
-                                    { name: "homeDelivery", label: "Home Delivery" },
-                                    { name: "takeaway", label: "Takeaway" },
-                                    { name: "orderSubscription", label: "Order Subscription" },
-                                    { name: "instantOrder", label: "Instant Order" },
-                                    { name: "halalTagStatus", label: "Halal Tag Status" },
-                                    { name: "dineIn", label: "Dine In" },
-                                    { name: "canEditOrder", label: "Can Edit Order" },
-                                    { name: "isAlwaysOpen", label: "Is Always Open" },
-                                    { name: "isSameTimeEveryDay", label: "Same Time Every Day" },
-                                    { name: "repeatNotification", label: "Repeat Notification" },
-                                ].map((sw) => (
+                                {switchItems.map((sw) => (
                                     <div key={sw.name} className="flex items-center justify-between p-3 border rounded bg-white shadow-sm">
                                         <Label htmlFor={sw.name} className="cursor-pointer font-medium text-sm text-gray-700">{sw.label}</Label>
                                         <Controller
@@ -233,12 +237,12 @@ const SettingPageAdd = () => {
                                 {isRepeatNotificationEnabled && (
                                     <>
                                         <div className="space-y-2">
-                                            <Label className="text-gray-700 font-medium">Repeat Notification Duration</Label>
+                                            <Label className="text-gray-700 font-medium">{t('repeatNotificationDuration')}</Label>
                                             <Input type="number" {...register("repeatNotificationDuration", { valueAsNumber: true })} />
                                         </div>
 
                                         <div className="space-y-2 md:col-span-2">
-                                            <Label className="text-gray-700 font-medium">Target Statuses for Repeat Notification</Label>
+                                            <Label className="text-gray-700 font-medium">{t('targetStatusesLabel')}</Label>
                                             <div className="flex flex-wrap gap-2 mt-2">
                                                 {["pending", "accepted", "preparing", "out_for_delivery"].map(status => (
                                                     <label key={status} className="relative cursor-pointer group">
@@ -258,39 +262,38 @@ const SettingPageAdd = () => {
                                     </>
                                 )}
 
-                                {/* 👈 إدخال وقت إعادة تصفير رقم الطلب اليومي */}
                                 <div className="space-y-2">
-                                    <Label className="text-gray-700 font-medium">Reset Daily Order Time</Label>
+                                    <Label className="text-gray-700 font-medium">{t('resetDailyOrderTime')}</Label>
                                     <Input type="time" {...register("resetDailyOrderNumberTime")} />
                                 </div>
 
                                 <div className="space-y-2">
-                                    <Label className="text-gray-700 font-medium">First Color</Label>
+                                    <Label className="text-gray-700 font-medium">{t('firstColorLabel')}</Label>
                                     <Input type="input" {...register("firstColor")} />
                                 </div>
 
                                 <div className="space-y-2">
-                                    <Label className="text-gray-700 font-medium">Second Color</Label>
+                                    <Label className="text-gray-700 font-medium">{t('secondColorLabel')}</Label>
                                     <Input type="input" {...register("secondColor")} />
                                 </div>
 
                                 <div className="space-y-2">
-                                    <Label className="text-gray-700 font-medium">First Text Color</Label>
+                                    <Label className="text-gray-700 font-medium">{t('firstTextColorLabel')}</Label>
                                     <Input type="input" {...register("firstTextColor")} />
                                 </div>
 
                                 <div className="space-y-2">
-                                    <Label className="text-gray-700 font-medium">Second Text Color</Label>
+                                    <Label className="text-gray-700 font-medium">{t('secondTextColorLabel')}</Label>
                                     <Input type="input" {...register("secondTextColor")} />
                                 </div>
 
                                 <div className="space-y-2">
-                                    <Label className="text-gray-700 font-medium">Min Order Amount (EGP)</Label>
+                                    <Label className="text-gray-700 font-medium">{t('minOrderAmountLabel')}</Label>
                                     <Input type="number" {...register("minOrderAmount", { valueAsNumber: true })} />
                                 </div>
 
                                 <div className="space-y-2">
-                                    <Label className="text-gray-700 font-medium">Max Delivery Time (Minutes)</Label>
+                                    <Label className="text-gray-700 font-medium">{t('maxDeliveryTimeLabel')}</Label>
                                     <Input type="number" {...register("maxDeliveryTime", { valueAsNumber: true })} />
                                 </div>
                             </div>
@@ -300,14 +303,14 @@ const SettingPageAdd = () => {
 
                         <div>
                             <div className="flex items-center justify-between mb-4">
-                                <h3 className="text-lg font-bold text-primary">Working Hours (Schedules)</h3>
+                                <h3 className="text-lg font-bold text-primary">{t('workingHours')}</h3>
                                 <button
                                     type="button"
                                     onClick={() => append({ dayOfWeek: 0, isOffDay: false, openingTime: "09:00", closingTime: "23:00" })}
                                     className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-primary hover:bg-primary/90 rounded-lg transition-colors shadow-sm"
                                 >
                                     <Plus className="w-4 h-4" />
-                                    Add New Shift
+                                    {t('addNewShift')}
                                 </button>
                             </div>
 
@@ -318,7 +321,7 @@ const SettingPageAdd = () => {
                                         <div key={field.id} className="grid grid-cols-1 md:grid-cols-5 gap-4 items-center p-3 border rounded bg-white shadow-sm relative group">
 
                                             <div className="flex flex-col gap-1">
-                                                <Label className="text-xs text-gray-500 md:hidden">Day</Label>
+                                                <Label className="text-xs text-gray-500 md:hidden">{t('dayLabel')}</Label>
                                                 <select
                                                     {...register(`schedules.${index}.dayOfWeek`, { valueAsNumber: true })}
                                                     className="w-full p-2 border rounded-md text-sm h-9 bg-white"
@@ -349,11 +352,11 @@ const SettingPageAdd = () => {
                                                         />
                                                     )}
                                                 />
-                                                <Label className="text-xs font-medium text-gray-600">Off Day (Closed)</Label>
+                                                <Label className="text-xs font-medium text-gray-600">{t('offDayClosed')}</Label>
                                             </div>
 
                                             <div className="flex items-center gap-2">
-                                                <Label className="text-xs text-gray-500 shrink-0">From:</Label>
+                                                <Label className="text-xs text-gray-500 shrink-0">{t('fromLabel')}</Label>
                                                 <Input
                                                     type="time"
                                                     disabled={isOff}
@@ -363,7 +366,7 @@ const SettingPageAdd = () => {
                                             </div>
 
                                             <div className="flex items-center gap-2">
-                                                <Label className="text-xs text-gray-500 shrink-0">To:</Label>
+                                                <Label className="text-xs text-gray-500 shrink-0">{t('toLabel')}</Label>
                                                 <Input
                                                     type="time"
                                                     disabled={isOff}
@@ -377,7 +380,7 @@ const SettingPageAdd = () => {
                                                     type="button"
                                                     onClick={() => remove(index)}
                                                     className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
-                                                    title="Remove Shift"
+                                                    title={t('removeShiftTitle')}
                                                 >
                                                     <Trash2 className="w-4 h-4" />
                                                 </button>
@@ -387,7 +390,7 @@ const SettingPageAdd = () => {
                                 })}
 
                                 {fields.length === 0 && (
-                                    <p className="text-center text-sm text-gray-500 py-4">No schedules added. Click "Add New Shift" to configure working hours.</p>
+                                    <p className="text-center text-sm text-gray-500 py-4">{t('noSchedulesMsg')}</p>
                                 )}
                             </div>
                         </div>

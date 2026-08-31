@@ -3,9 +3,11 @@ import { useQuery } from '@tanstack/react-query';
 import api from '@/api/axios';
 import GenericDataTable from '@/components/GenericDataTable';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from '@/hooks/useTranslation';
 
 export default function AddonsCat() {
     const navigate = useNavigate();
+    const { t } = useTranslation();
 
     const { data: categories = [], isLoading } = useQuery({
         queryKey: ['addonsCategories'],
@@ -16,15 +18,15 @@ export default function AddonsCat() {
     });
 
     const columns = [
-        { accessorKey: 'name', header: 'Category Name' },
-        { accessorKey: 'nameAr', header: 'Category Name (Arabic)' },
-        { accessorKey: 'nameFr', header: 'Category Name (Franko)' },
+        { accessorKey: 'name', header: t('addonCategoryNameHeader') },
+        { accessorKey: 'nameAr', header: t('addonCategoryNameArHeader') },
+        { accessorKey: 'nameFr', header: t('addonCategoryNameFrHeader') },
     ];
 
     return (
         <div className="container mx-auto py-10">
             <GenericDataTable
-                title="Addon Categories"
+                title={t('addonCategoriesTitle')}
                 columns={columns}
                 data={categories}
                 isLoading={isLoading}

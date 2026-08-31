@@ -5,8 +5,11 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
+import { useTranslation } from '@/hooks/useTranslation';
 
 export default function ViewPermissionsModal({ isOpen, onClose, role }) {
+    const { t } = useTranslation();
+
     if (!role) return null;
 
     return (
@@ -14,7 +17,7 @@ export default function ViewPermissionsModal({ isOpen, onClose, role }) {
             <DialogContent className="max-w-md">
                 <DialogHeader>
                     <DialogTitle className="flex gap-2 text-xl font-bold">
-                        Permissions: <span className="text-primary">{role.name}</span>
+                        {t('permissionsLabel')} <span className="text-primary">{role.name}</span>
                     </DialogTitle>
                 </DialogHeader>
 
@@ -33,8 +36,7 @@ export default function ViewPermissionsModal({ isOpen, onClose, role }) {
                                         key={i}
                                         className="px-4 py-1 text-sm bg-gray-50 border border-gray-200 rounded-full text-gray-600 capitalize"
                                     >
-                                        {/* تحويل 'read' إلى 'View' كعرض للمستخدم */}
-                                        {act.action === 'read' ? 'View' : act.action}
+                                        {act.action === 'read' ? t('viewBtn') : act.action}
                                     </span>
                                 ))}
                             </div>

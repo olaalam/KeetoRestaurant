@@ -3,25 +3,27 @@ import { useQuery } from '@tanstack/react-query';
 import api from '@/api/axios';
 import GenericDataTable from '@/components/GenericDataTable';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from '@/hooks/useTranslation';
 
 export default function Category() {
     const navigate = useNavigate();
+    const { t } = useTranslation();
 
     const { data: categories = [], isLoading } = useQuery({
         queryKey: ['categories'],
         queryFn: async () => {
             const res = await api.get('/api/restaurant/categories');
-            return res.data.data.data; // بناءً على هيكل الـ Response الخاص بكِ
+            return res.data.data.data;
         }
     });
 
     const columns = [
-        { accessorKey: 'name', header: 'name' },
-        { accessorKey: 'nameAr', header: 'nameAr' },
-        { accessorKey: 'nameFr', header: 'nameFr' },
+        { accessorKey: 'name', header: t('categoryNameHeader') },
+        { accessorKey: 'nameAr', header: t('categoryNameArHeader') },
+        { accessorKey: 'nameFr', header: t('categoryNameFrHeader') },
         {
-            accessorKey: "Image", // التأكد من مطابقة الاسم الراجع من الـ API (حرف I كبير)
-            header: "Image",
+            accessorKey: "Image",
+            header: t('imageHeader'),
             cell: ({ row }) => {
                 const imageStr = row.getValue("Image");
                 return (
@@ -34,18 +36,19 @@ export default function Category() {
                             />
                         ) : (
                             <div className="flex items-center justify-center h-full text-[10px] text-gray-400">
-                                No Image
+                                {t('noImageText')}
                             </div>
                         )}
                     </div>
                 );
             },
-        }, { accessorKey: 'title', header: 'title' },
-        { accessorKey: 'priority', header: 'priority' },
-        { accessorKey: 'meta_title', header: 'meta_title' },
+        },
+        { accessorKey: 'title', header: t('titleHeader') },
+        { accessorKey: 'priority', header: t('priorityHeader') },
+        { accessorKey: 'meta_title', header: t('metaTitleHeader') },
         {
             accessorKey: "meta_image",
-            header: "Meta Image",
+            header: t('metaImageHeader'),
             cell: ({ row }) => {
                 const metaImg = row.getValue("meta_image");
                 return (
@@ -54,13 +57,14 @@ export default function Category() {
                     </div>
                 );
             }
-        }, { accessorKey: 'status', header: 'status' },
+        },
+        { accessorKey: 'status', header: t('statusHeader') },
     ];
 
     return (
         <div className="container mx-auto py-10">
             <GenericDataTable
-                title="categories"
+                title={t('categoriesTitle')}
                 columns={columns}
                 data={categories}
                 isLoading={isLoading}

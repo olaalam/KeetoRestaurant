@@ -16,7 +16,7 @@ export default function BrancheMenu() {
     const navigate = useNavigate();
     const queryClient = useQueryClient();
     const { restaurantId } = useParams();
-    const { t, i18n } = useTranslation();
+    const { t, language } = useTranslation();
 
     const [priceDialogOpen, setPriceDialogOpen] = useState(false);
     const [foodToUpdatePrice, setFoodToUpdatePrice] = useState(null); 
@@ -69,7 +69,7 @@ const updateStatusMutation = useMutation({
         { 
             accessorKey: 'name', 
             header: t('food'),
-            cell: ({ row }) => (i18n?.language === 'ar' ? row.original.nameAr : row.original.name) || row.original.name
+            cell: ({ row }) => (language === 'ar' ? row.original.nameAr : row.original.name) || row.original.name
         },
         {
             accessorKey: 'price',
@@ -153,7 +153,7 @@ const updateStatusMutation = useMutation({
                         <DialogDescription>
                             {t('updatePriceFor') || 'تعديل سعر المنتج:'} {' '}
                             <span className="font-bold text-slate-900">
-                                {(i18n?.language === 'ar' ? foodToUpdatePrice?.nameAr : foodToUpdatePrice?.name) || foodToUpdatePrice?.name}
+                                {(language === 'ar' ? foodToUpdatePrice?.nameAr : foodToUpdatePrice?.name) || foodToUpdatePrice?.name}
                             </span>
                         </DialogDescription>
                     </DialogHeader>

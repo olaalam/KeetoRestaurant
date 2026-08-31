@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   useReactTable,
   getCoreRowModel,
@@ -78,6 +78,9 @@ export default function GenericDataTable({
   });
   const pagination = controlledPagination ?? internalPagination;
   const setPagination = setControlledPagination ?? setInternalPagination;
+  useEffect(() => {
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+  }, [globalFilter, setPagination]);
 
   const updateStatusMutation = useMutation({
     mutationFn: async ({ id, newStatus, keyName, reason }) => {

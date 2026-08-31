@@ -239,14 +239,14 @@ export default function Layout() {
         {activeModule && <AppSidebar side={isRTL ? "right" : "left"} />}
 {newOrderPopup.open && (
   <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/20 backdrop-blur-[2px] px-4 z-[999999999]">
-    <div className={`w-full max-w-2xl rounded-2xl border ${isCancelled ? 'border-red-300' : 'border-yellow-200'} bg-white/95 shadow-[0_20px_60px_rgba(15,23,42,0.18)] p-6 sm:p-7`}>
+    <div className={`w-full max-w-2xl rounded-2xl border ${isCancelled ? 'border-red-300 dark:border-red-500/50' : 'border-yellow-200 dark:border-yellow-500/30'} bg-white/95 dark:bg-slate-900/95 shadow-[0_20px_60px_rgba(15,23,42,0.18)] dark:shadow-none p-6 sm:p-7`}>
       
       {/* Header Icon & Title */}
-      <div className="flex items-center justify-center gap-3 mb-5 text-slate-800">
+      <div className="flex items-center justify-center gap-3 mb-5 text-slate-800 dark:text-slate-200">
         <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${isCancelled ? 'bg-red-500 text-white' : 'bg-primary text-primary-foreground'} shadow-sm`}>
           {isCancelled ? <XCircle size={24} /> : <Bell size={22} />}
         </div>
-        <span className={`text-2xl font-black tracking-tight ${isCancelled ? 'text-red-600' : 'text-slate-900'}`}>
+        <span className={`text-2xl font-black tracking-tight ${isCancelled ? 'text-red-600 dark:text-red-400' : 'text-slate-900 dark:text-slate-100'}`}>
           {isCancelled 
             ? "Order Cancelled ❌"
             : (t("notifications") || "Notifications")}
@@ -254,12 +254,12 @@ export default function Layout() {
       </div>
 
       {/* Body Text */}
-      <div className="flex items-center justify-center text-center text-xl sm:text-2xl font-bold text-slate-800 leading-relaxed">
+      <div className="flex items-center justify-center text-center text-xl sm:text-2xl font-bold text-slate-800 dark:text-slate-200 leading-relaxed">
         {isCancelled ? (
           <span>
             {`Order #${newOrderPopup.latestNotification?.data?.dailyOrderNumber || ''} was cancelled by the customer.`}
             {newOrderPopup.latestNotification?.data?.reason && (
-              <span className="block text-lg font-normal text-slate-600 mt-1">
+              <span className="block text-lg font-normal text-slate-600 dark:text-slate-400 mt-1">
                 {`Reason: ${newOrderPopup.latestNotification.data.reason}`}
               </span>
             )}
@@ -280,7 +280,7 @@ export default function Layout() {
       <div className="mt-6 flex flex-col sm:flex-row justify-center gap-3">
         <button
           onClick={handlePopupClose}
-          className="flex-1 rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-base font-bold text-slate-700 shadow-sm transition hover:bg-slate-200"
+          className="flex-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 px-4 py-3 text-base font-bold text-slate-700 dark:text-slate-300 shadow-sm transition hover:bg-slate-200 dark:hover:bg-slate-700"
         >
           Close
         </button>

@@ -822,10 +822,130 @@ const translations = {
     "comment": "Comment",
     "date": "Date",
     "phone": "Phone Number",
-    "totalOrders": "Total Orders"
+    "totalOrders": "Total Orders",
 
+    // AddonsCat
+    "addonCategoriesTitle": "Addon Categories",
+    "addonCategoryNameHeader": "Category Name",
+    "addonCategoryNameArHeader": "Category Name (Arabic)",
+    "addonCategoryNameFrHeader": "Category Name (Franko)",
 
+    // Category
+    "categoriesTitle": "Categories",
+    "categoryNameHeader": "Name",
+    "categoryNameArHeader": "Name (AR)",
+    "categoryNameFrHeader": "Name (FR)",
+    "imageHeader": "Image",
+    "titleHeader": "Title",
+    "priorityHeader": "Priority",
+    "metaTitleHeader": "Meta Title",
+    "metaImageHeader": "Meta Image",
+    "statusHeader": "Status",
+    "noImageText": "No Image",
 
+    // City
+    "citiesTitle": "Cities",
+    "countryHeader": "Country",
+
+    // Country
+    "countriesTitle": "Countries",
+
+    // Coupon
+    "couponsTitle": "Coupons",
+    "codeHeader": "Code",
+    "discountTypeHeader": "Discount Type",
+    "discountValueHeader": "Discount Value",
+    "maxDiscountHeader": "Max Discount",
+    "minOrderAmountHeader": "Min Order Amount",
+    "usageLimitHeader": "Usage Limit",
+    "startDateHeader": "Start Date",
+    "endDateHeader": "End Date",
+
+    // Cuisine
+    "cuisinesTitle": "Cuisines",
+    "descriptionHeader": "Description",
+    "descriptionArHeader": "Description (AR)",
+    "descriptionFrHeader": "Description (FR)",
+    "metaDescriptionHeader": "Meta Description",
+
+    // FreeDelivery
+    "freeDeliveryTitle": "Free Delivery",
+    "freeDeliverySettings": "Free Delivery Settings",
+    "minOrderAmountHeader": "Min Order Amount",
+    "startDateHeader": "Start Date",
+    "endDateHeader": "End Date",
+    "naText": "N/A",
+
+    // PaymentMethod
+    "paymentMethodsTitle": "Payment Methods",
+    "typeHeader": "Type",
+
+    // Users
+    "restaurantUsersTitle": "Restaurant Users",
+    "photoHeader": "Photo",
+    "nameHeader": "Name",
+    "emailHeader": "Email",
+    "phoneHeader": "Phone",
+    "blockedStatus": "Blocked",
+    "activeStatus": "Active",
+
+    // Wallet
+    "walletsTitle": "Wallets",
+    "restaurantNameHeader": "Restaurant Name",
+    "balanceHeader": "Balance",
+    "pendingWithdrawHeader": "Pending Withdraw",
+    "totalWithdrawnHeader": "Total Withdrawn",
+    "totalEarningHeader": "Total Earning",
+    "viewWalletBtn": "View Wallet",
+
+    // Zone
+    "zonesTitle": "Zones",
+    "cityHeader": "City",
+
+    // SettingAdd
+    "storeSettings": "Store Settings",
+    "generalSettings": "General Settings",
+    "foodManagementLabel": "Food Management",
+    "scheduledDeliveryLabel": "Scheduled Delivery",
+    "reviewsSectionLabel": "Reviews Section",
+    "posSectionLabel": "POS Section",
+    "selfDeliveryLabel": "Self Delivery",
+    "homeDeliveryLabel": "Home Delivery",
+    "takeawayLabel": "Takeaway",
+    "orderSubscriptionLabel": "Order Subscription",
+    "instantOrderLabel": "Instant Order",
+    "halalTagStatusLabel": "Halal Tag Status",
+    "dineInLabel": "Dine In",
+    "canEditOrderLabel": "Can Edit Order",
+    "isAlwaysOpenLabel": "Is Always Open",
+    "sameTimeEveryDayLabel": "Same Time Every Day",
+    "repeatNotificationLabel": "Repeat Notification",
+    "repeatNotificationDuration": "Repeat Notification Duration",
+    "targetStatusesLabel": "Target Statuses for Repeat Notification",
+    "resetDailyOrderTime": "Reset Daily Order Time",
+    "firstColorLabel": "First Color",
+    "secondColorLabel": "Second Color",
+    "firstTextColorLabel": "First Text Color",
+    "secondTextColorLabel": "Second Text Color",
+    "minOrderAmountLabel": "Min Order Amount (EGP)",
+    "maxDeliveryTimeLabel": "Max Delivery Time (Minutes)",
+    "workingHours": "Working Hours (Schedules)",
+    "addNewShift": "Add New Shift",
+    "dayLabel": "Day",
+    "offDayClosed": "Off Day (Closed)",
+    "fromLabel": "From:",
+    "toLabel": "To:",
+    "removeShiftTitle": "Remove Shift",
+    "noSchedulesMsg": "No schedules added. Click \"Add New Shift\" to configure working hours.",
+
+    // UpsellingAdd
+    "upsellingProducts": "Upselling Products",
+    "mainFoodItem": "Main Food Item",
+    "recommendedProducts": "Upselling Products (Recommended)",
+    "loadingProducts": "Loading products...",
+
+    // ViewPermissionsModal
+    "permissionsLabel": "Permissions:"
 
 
 
@@ -1647,13 +1767,127 @@ const translations = {
     "comment": "التعليق",
     "date": "التاريخ",
     "phone": "رقم الهاتف",
-    "totalOrders": "إجمالي الطلبات"
+    "totalOrders": "إجمالي الطلبات",
 
+    // AddonsCat
+    "addonCategoriesTitle": "فئات الإضافات",
+    "addonCategoryNameHeader": "اسم الفئة",
+    "addonCategoryNameArHeader": "اسم الفئة (عربي)",
+    "addonCategoryNameFrHeader": "اسم الفئة (فرانكو)",
 
+    // Category
+    "categoriesTitle": "الفئات",
+    "categoryNameHeader": "الاسم",
+    "categoryNameArHeader": "الاسم (عربي)",
+    "categoryNameFrHeader": "الاسم (فرانكو)",
+    "imageHeader": "الصورة",
+    "titleHeader": "العنوان",
+    "priorityHeader": "الأولوية",
+    "metaTitleHeader": "العنوان التعريفي",
+    "metaImageHeader": "الصورة التعريفية",
+    "statusHeader": "الحالة",
+    "noImageText": "لا توجد صورة",
 
+    // City
+    "citiesTitle": "المدن",
+    "countryHeader": "الدولة",
 
+    // Country
+    "countriesTitle": "الدول",
 
+    // Coupon
+    "couponsTitle": "الكوبونات",
+    "codeHeader": "الكود",
+    "discountTypeHeader": "نوع الخصم",
+    "discountValueHeader": "قيمة الخصم",
+    "maxDiscountHeader": "أقصى خصم",
+    "minOrderAmountHeader": "الحد الأدنى للطلب",
+    "usageLimitHeader": "حد الاستخدام",
+    "startDateHeader": "تاريخ البدء",
+    "endDateHeader": "تاريخ الانتهاء",
 
+    // Cuisine
+    "cuisinesTitle": "المطابخ",
+    "descriptionHeader": "الوصف",
+    "descriptionArHeader": "الوصف (عربي)",
+    "descriptionFrHeader": "الوصف (فرانكو)",
+    "metaDescriptionHeader": "الوصف التعريفي",
+
+    // FreeDelivery
+    "freeDeliveryTitle": "التوصيل المجاني",
+    "freeDeliverySettings": "إعدادات التوصيل المجاني",
+    "naText": "غير متاح",
+
+    // PaymentMethod
+    "paymentMethodsTitle": "طرق الدفع",
+    "typeHeader": "النوع",
+
+    // Users
+    "restaurantUsersTitle": "مستخدمي المطعم",
+    "photoHeader": "الصورة",
+    "nameHeader": "الاسم",
+    "emailHeader": "البريد الإلكتروني",
+    "phoneHeader": "رقم الهاتف",
+    "blockedStatus": "محظور",
+    "activeStatus": "نشط",
+
+    // Wallet
+    "walletsTitle": "المحافظ",
+    "restaurantNameHeader": "اسم المطعم",
+    "balanceHeader": "الرصيد",
+    "pendingWithdrawHeader": "السحب المعلق",
+    "totalWithdrawnHeader": "إجمالي المسحوب",
+    "totalEarningHeader": "إجمالي الأرباح",
+    "viewWalletBtn": "عرض المحفظة",
+
+    // Zone
+    "zonesTitle": "المناطق",
+    "cityHeader": "المدينة",
+
+    // SettingAdd
+    "storeSettings": "إعدادات المتجر",
+    "generalSettings": "الإعدادات العامة",
+    "foodManagementLabel": "إدارة الطعام",
+    "scheduledDeliveryLabel": "التوصيل المجدول",
+    "reviewsSectionLabel": "قسم التقييمات",
+    "posSectionLabel": "نظام نقاط البيع (POS)",
+    "selfDeliveryLabel": "التوصيل الذاتي",
+    "homeDeliveryLabel": "التوصيل للمنزل",
+    "takeawayLabel": "الطلبات الخارجية (Takeaway)",
+    "orderSubscriptionLabel": "الاشتراك في الطلبات",
+    "instantOrderLabel": "الطلب الفوري",
+    "halalTagStatusLabel": "علامة الحلال",
+    "dineInLabel": "تناول الطعام بالمطعم",
+    "canEditOrderLabel": "تعديل الطلب مسموح",
+    "isAlwaysOpenLabel": "مفتوح دائماً",
+    "sameTimeEveryDayLabel": "نفس الوقت يومياً",
+    "repeatNotificationLabel": "تكرار الإشعارات",
+    "repeatNotificationDuration": "مدة تكرار الإشعار",
+    "targetStatusesLabel": "حالات الطلبات المستهدفة للإشعار",
+    "resetDailyOrderTime": "وقت إعادة ترقيم الطلبات اليومي",
+    "firstColorLabel": "اللون الأول",
+    "secondColorLabel": "اللون الثاني",
+    "firstTextColorLabel": "لون النص الأول",
+    "secondTextColorLabel": "لون النص الثاني",
+    "minOrderAmountLabel": "الحد الأدنى للطلب (ج.م)",
+    "maxDeliveryTimeLabel": "أقصى وقت توصيل (بالدقائق)",
+    "workingHours": "ساعات العمل (الجداول)",
+    "addNewShift": "إضافة وردية جديدة",
+    "dayLabel": "اليوم",
+    "offDayClosed": "يوم إجازة (مغلق)",
+    "fromLabel": "من:",
+    "toLabel": "إلى:",
+    "removeShiftTitle": "حذف الوردية",
+    "noSchedulesMsg": "لا توجد جداول. اضغط \"إضافة وردية جديدة\" لضبط ساعات العمل.",
+
+    // UpsellingAdd
+    "upsellingProducts": "منتجات البيع التصاعدي",
+    "mainFoodItem": "المنتج الأساسي",
+    "recommendedProducts": "المنتجات المقترحة",
+    "loadingProducts": "جاري تحميل المنتجات...",
+
+    // ViewPermissionsModal
+    "permissionsLabel": "الصلاحيات:"
 
 
   },

@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/api/axios";
 import GenericDataTable from "@/components/GenericDataTable";
 import { useNavigate } from "react-router-dom";
-import { User, Phone, Eye, Copy } from "lucide-react";
+import { User, Phone, Eye, Copy, Calendar } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -17,7 +17,7 @@ import { Button } from "@/components/ui/button";
 import ReasonDialog from "./ReasonDialog";
 import { Input } from "@/components/ui/input";
 import useDateRangeStore from "../../store/Usedaterangestore";
-import useAuthStore from "../../store/useAuthStore"; // استدعاء متجر بيانات الدخول
+import useAuthStore from "../../store/useAuthStore";
 
 export default function Order() {
   const navigate = useNavigate();
@@ -41,31 +41,27 @@ export default function Order() {
   // جلب جداول المواعيد من الـ Auth Store
   const schedules = useAuthStore((state) => state.schedules);
 
-  // 💡 إضافة المنطق الخاص بضبط التاريخ بناءً على وقت إغلاق المطعم
+  // ضبط التاريخ بناءً على وقت إغلاق المطعم
   useEffect(() => {
-    // تشغيل الفلتر التلقائي فقط إذا لم تكن التواريخ محددة بالفعل (عند فتح الصفحة لأول مرة)
     if (!startDate && !endDate && schedules && schedules.length > 0) {
-      const todayIndex = new Date().getDay(); // جلب اليوم الحالي (0 = الأحد)
+      const todayIndex = new Date().getDay();
       const todaySchedule = schedules.find((s) => s.dayOfWeek === todayIndex);
 
       if (todaySchedule && !todaySchedule.isOffDay) {
-        const closingTime = todaySchedule.closingTime; // مثال: "03:30"
+        const closingTime = todaySchedule.closingTime;
         const [closingHour] = closingTime.split(":").map(Number);
 
         const now = new Date();
         const formattedToday = now.toISOString().split("T")[0];
 
-        // إذا كان المطعم يغلق بعد منتصف الليل (أقل من الساعة 6 صباحاً كمثال)
         if (closingHour < 6) {
           const tomorrow = new Date(now);
           tomorrow.setDate(now.getDate() + 1);
           const formattedTomorrow = tomorrow.toISOString().split("T")[0];
 
-          // تعيين النطاق ليشمل اليوم واليوم التالي لتغطية وردية الليل
           setStartDate(formattedToday);
           setEndDate(formattedTomorrow);
         } else {
-          // الأيام العادية ضمن نفس اليوم
           setStartDate(formattedToday);
           setEndDate(formattedToday);
         }
@@ -83,7 +79,7 @@ export default function Order() {
     "refund",
   ];
 
-  // جلب خيارات الفلاتر بالمسار الصحيح للريسبونس
+  // جلب خيارات الفلاتر
   const { data: selectOptions } = useQuery({
     queryKey: ["order-select-data"],
     queryFn: async () => {
@@ -92,7 +88,7 @@ export default function Order() {
     },
   });
 
-  // جلب الطلبات بالمعلمات المحددة
+  // جلب الطلبات
   const { data: orders = [], isLoading } = useQuery({
     queryKey: ["orders", startDate, endDate, orderSource, cityId, branchId],
     queryFn: async () => {
@@ -120,7 +116,7 @@ export default function Order() {
       );
       return data;
     },
-    onSuccess: (data, variables) => {
+    onSuccess: () => {
       queryClient.invalidateQueries(["orders"]);
       toast.success(t("orderStatusUpdatedSuccessfully"));
       setDialogConfig({ open: false, type: null, orderId: null });
@@ -148,7 +144,6 @@ export default function Order() {
     setBranchId("all");
   };
 
-  // دالة مساعدة لاختيار الاسم بناءً على اللغة المفعلة
   const getItemName = (item) => {
     if (!item) return "";
     const isAr = language === "ar";
@@ -182,7 +177,6 @@ export default function Order() {
       accessorKey: "customerName",
       header: t("customerInfo"),
       cell: ({ row }) => {
-        // دالة نسخ رقم الهاتف
         const handleCopyPhone = (e) => {
           e.stopPropagation();
           if (row.original.customerPhone) {
@@ -193,7 +187,7 @@ export default function Order() {
 
         return (
           <div className="flex flex-col gap-1">
-            <div className="flex items-center gap-1 font-medium text-gray-800">
+            <div className="flex items-center gap-1 font-medium text-gray-800 dark:text-gray-200">
               <User size={14} className="text-gray-500" />
               {row.original.customerName}
             </div>
@@ -206,7 +200,7 @@ export default function Order() {
                 <button
                   type="button"
                   onClick={handleCopyPhone}
-                  className="text-gray-400 hover:text-primary transition-colors p-1 rounded hover:bg-slate-100"
+                  className="text-gray-400 hover:text-primary transition-colors p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800"
                   title={t("copyPhone") || "نسخ الرقم"}
                 >
                   <Copy size={12} />
@@ -221,9 +215,7 @@ export default function Order() {
       accessorKey: "orderType",
       header: t("orderType"),
       cell: ({ row }) => (
-        <span
-          className={`px-2 py-1 rounded-full text-xs capitalize `}
-        >
+        <span className="px-2 py-1 rounded-full text-xs capitalize">
           {t(row.original.orderType)}
         </span>
       ),
@@ -235,10 +227,11 @@ export default function Order() {
         const isDelivery = row.original.rating === "delivery";
         return (
           <span
-            className={`px-2.5 py-1 rounded-full text-xs font-medium capitalize ${isDelivery
-                ? "bg-purple-100 text-purple-700"
-                : "bg-blue-100 text-blue-700"
-              }`}
+            className={`px-2.5 py-1 rounded-full text-xs font-medium capitalize ${
+              isDelivery
+                ? "bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300"
+                : "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300"
+            }`}
           >
             {t(row.original.rating)}
           </span>
@@ -252,7 +245,7 @@ export default function Order() {
         const comment = row.original.ratingComment;
         return (
           <span
-            className="text-sm text-gray-600 max-w-[200px] truncate block"
+            className="text-sm text-gray-600 dark:text-gray-400 max-w-[200px] truncate block"
             title={comment}
           >
             {comment || "-"}
@@ -264,7 +257,7 @@ export default function Order() {
       accessorKey: "totalAmount",
       header: t("totalAmount"),
       cell: ({ row }) => (
-        <span className="font-semibold text-green-600">
+        <span className="font-semibold text-green-600 dark:text-green-400">
           {row.original.totalAmount} {t("currency")}
         </span>
       ),
@@ -273,7 +266,7 @@ export default function Order() {
       accessorKey: "orderSource",
       header: t("orderSource"),
       cell: ({ row }) => (
-        <span className="font-semibold text-green-600">
+        <span className="font-semibold text-green-600 dark:text-green-400">
           {row.original.orderSource}
         </span>
       ),
@@ -283,10 +276,9 @@ export default function Order() {
       accessorFn: (row) => `${row.branchName} - ${row.zoneName}`,
       header: t("branchNamezoneName"),
       cell: ({ getValue }) => (
-        <span className="font-semibold text-green-600">{getValue()}</span>
+        <span className="font-semibold text-green-600 dark:text-green-400">{getValue()}</span>
       ),
     },
-
     {
       accessorKey: "status",
       header: t("status"),
@@ -304,8 +296,8 @@ export default function Order() {
           </SelectTrigger>
           <SelectContent>
             {orderStatuses.map((status) => {
-              // التحقق: إذا كان الطلب استلام والحالة "جاري التوصيل"، يتم عرض كلمة "جاهز" بدلاً منها
-              const isTakeawayReady = row.original.orderType === "takeaway" && status === "out_for_delivery";
+              const isTakeawayReady =
+                row.original.orderType === "takeaway" && status === "out_for_delivery";
               const displayLabel = isTakeawayReady ? "ready" : status;
 
               return (
@@ -326,7 +318,7 @@ export default function Order() {
         return (
           <div className="flex flex-col text-sm">
             <span>{date.toLocaleDateString()}</span>
-            <span className="text-xs text-gray-500">
+            <span className="text-xs text-gray-500 dark:text-gray-400">
               {date.toLocaleTimeString()}
             </span>
           </div>
@@ -354,36 +346,37 @@ export default function Order() {
   return (
     <div className="container mx-auto py-10">
       {/* شريط الفلاتر */}
-      <div className="flex flex-wrap items-center gap-4 mb-6 bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
+      <div className="flex flex-wrap items-center gap-4 mb-6 bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm">
+        
         {/* Start Date */}
         <div className="flex items-center gap-2">
-          <label className="text-sm font-bold text-slate-700">
+          <label className="text-sm font-bold text-slate-700 dark:text-slate-300">
             {t("startDate") || "Start Date"}:
           </label>
           <Input
             type="date"
             value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
-            className="w-40 h-10"
+            className="w-40 h-10 cursor-pointer dark:[color-scheme:dark] [&::-webkit-calendar-picker-indicator]:dark:invert"
           />
         </div>
 
         {/* End Date */}
         <div className="flex items-center gap-2">
-          <label className="text-sm font-bold text-slate-700">
+          <label className="text-sm font-bold text-slate-700 dark:text-slate-300">
             {t("endDate") || "End Date"}:
           </label>
           <Input
             type="date"
             value={endDate}
             onChange={(e) => setEndDate(e.target.value)}
-            className="w-40 h-10"
+            className="w-40 h-10 cursor-pointer dark:[color-scheme:dark] [&::-webkit-calendar-picker-indicator]:dark:invert"
           />
         </div>
 
         {/* Order Source Filter */}
         <div className="flex items-center gap-2">
-          <label className="text-sm font-bold text-slate-700">
+          <label className="text-sm font-bold text-slate-700 dark:text-slate-300">
             {t("orderSource") || "Source"}:
           </label>
           <Select value={orderSource} onValueChange={setOrderSource}>
@@ -403,7 +396,7 @@ export default function Order() {
 
         {/* City Filter */}
         <div className="flex items-center gap-2">
-          <label className="text-sm font-bold text-slate-700">
+          <label className="text-sm font-bold text-slate-700 dark:text-slate-300">
             {t("city") || "City"}:
           </label>
           <Select value={cityId} onValueChange={setCityId}>
@@ -423,7 +416,7 @@ export default function Order() {
 
         {/* Branch Filter */}
         <div className="flex items-center gap-2">
-          <label className="text-sm font-bold text-slate-700">
+          <label className="text-sm font-bold text-slate-700 dark:text-slate-300">
             {t("branch") || "Branch"}:
           </label>
           <Select value={branchId} onValueChange={setBranchId}>

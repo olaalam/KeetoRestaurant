@@ -6,10 +6,12 @@ import { Switch } from "@/components/ui/switch";
 import { useQueryClient } from '@tanstack/react-query';
 import api from '@/api/axios';
 import UsersAdd from './UsersAdd';
+import { useTranslation } from '@/hooks/useTranslation';
 
 export default function Users() {
     const [editingUser, setEditingUser] = useState(null);
     const queryClient = useQueryClient();
+    const { t } = useTranslation();
     const { data, isLoading } = useGet('restaurant-users', '/api/restaurant/restaurant-users');
 
     const rawList = data?.data?.data || [];
@@ -24,7 +26,6 @@ export default function Users() {
         restaurantName: item.restaurant?.name,
     }));
 
-    // دالة تغيير الحالة بين active و blocked
     const handleStatusToggle = async (id, currentStatus) => {
         const nextStatus = currentStatus === 'active' ? 'blocked' : 'active';
         try {
@@ -38,7 +39,7 @@ export default function Users() {
     const columns = [
         {
             accessorKey: 'photo',
-            header: 'Photo',
+            header: t('photoHeader'),
             cell: ({ row }) => {
                 const photo = row.getValue('photo');
                 return (
@@ -54,19 +55,19 @@ export default function Users() {
         },
         {
             accessorKey: 'name',
-            header: 'Name',
+            header: t('nameHeader'),
         },
         {
             accessorKey: 'email',
-            header: 'Email',
+            header: t('emailHeader'),
         },
         {
             accessorKey: 'phone',
-            header: 'Phone',
+            header: t('phoneHeader'),
         },
         {
             accessorKey: 'status',
-            header: 'Status',
+            header: t('statusHeader'),
             cell: ({ row }) => {
                 const status = row.getValue('status');
                 const isActive = status === 'active';
@@ -78,7 +79,7 @@ export default function Users() {
                             onCheckedChange={() => handleStatusToggle(row.original.id, status)}
                         />
                         <span className={`text-xs font-semibold px-2 py-0.5 rounded ${isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
-                            {status}
+                            {isActive ? t('activeStatus') : t('blockedStatus')}
                         </span>
                     </div>
                 );
@@ -89,7 +90,7 @@ export default function Users() {
     return (
         <div className="p-6 w-full">
             <GenericDataTable
-                title="Restaurant Users"
+                title={t('restaurantUsersTitle')}
                 columns={columns}
                 data={formattedData}
                 isLoading={isLoading}
@@ -102,9 +103,9 @@ export default function Users() {
             <Dialog open={!!editingUser} onOpenChange={() => setEditingUser(null)}>
                 <DialogContent className="max-w-4xl">
                     {editingUser && (
-                        <UsersAdd 
-                            initialData={editingUser} 
-                            onSuccessAction={() => setEditingUser(null)} 
+                        <UsersAdd
+                            initialData={editingUser}
+                            onSuccessAction={() => setEditingUser(null)}
                         />
                     )}
                 </DialogContent>

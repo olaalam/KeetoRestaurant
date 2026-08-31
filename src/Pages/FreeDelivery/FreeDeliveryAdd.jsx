@@ -1,41 +1,41 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import AddPage from '@/components/AddPage'; // تأكدي من مسار الاستيراد
+import AddPage from '@/components/AddPage';
+import { useTranslation } from '@/hooks/useTranslation';
 
 export default function FreeDeliveryAdd() {
     const navigate = useNavigate();
     const location = useLocation();
-    
-    // جلب البيانات في حالة التعديل من الـ route state
+    const { t } = useTranslation();
+
     const initialData = location.state?.initialData || null;
 
-    // تجهيز الحقول التي يحتاجها مكون AddPage
     const fields = [
         {
             name: 'minOrderAmount',
-            label: 'Min Order Amount',
+            label: t('minOrderAmountHeader'),
             type: 'number',
             required: true
         },
         {
             name: 'startDate',
-            label: 'Start Date',
+            label: t('startDateHeader'),
             type: 'date',
             required: true
         },
         {
             name: 'endDate',
-            label: 'End Date',
+            label: t('endDateHeader'),
             type: 'date',
             required: true
         },
         {
             name: 'status',
-            label: 'Status',
+            label: t('statusHeader'),
             type: 'select',
             options: [
-                { label: 'Active', value: 'active' },
-                { label: 'Inactive', value: 'inactive' }
+                { label: t('active'), value: 'active' },
+                { label: t('inactive'), value: 'inactive' }
             ],
             required: true
         }
@@ -44,13 +44,12 @@ export default function FreeDeliveryAdd() {
     return (
         <div className="p-6 max-w-4xl mx-auto">
             <AddPage
-                title="Free Delivery Settings"
+                title={t('freeDeliverySettings')}
                 apiUrl="/api/restaurant/free-delivery"
                 queryKey="free-delivery-list"
                 method={initialData ? 'PUT' : 'POST'}
                 fields={fields}
                 initialData={initialData}
-                // العودة لصفحة العرض بمجرد نجاح العملية
                 onSuccessAction={() => navigate('/free-delivery')}
             />
         </div>

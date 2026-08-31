@@ -133,7 +133,6 @@ export default function PricingProduct({ branchId: branchIdProp }) {
     if (selectedModules.length === 0) return;
 
     try {
-      // one call per checked service module, run in parallel
       await Promise.all(
         selectedModules.map((serviceModule) =>
           updateMutation.mutateAsync({
@@ -146,14 +145,14 @@ export default function PricingProduct({ branchId: branchIdProp }) {
       );
       cancelEdit();
     } catch (err) {
-      // toast.error already handled inside useUpdate's onError
+      // toast error handling
     }
   };
 
   return (
     <div className="space-y-6 w-full">
       {/* HEADER */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2 border-b border-slate-100">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2 border-b border-slate-100 dark:border-slate-800">
         <h2 className="text-2xl font-bold text-slate-800 tracking-tight dark:text-slate-100">
           {t("productPosPricing") || "Product POS Pricing"}
         </h2>
@@ -177,7 +176,7 @@ export default function PricingProduct({ branchId: branchIdProp }) {
                   "h-10 rounded-xl font-medium gap-2 transition-all",
                   isActive
                     ? "bg-primary text-primary-foreground shadow-sm"
-                    : "border-slate-200 text-slate-600 hover:bg-slate-50"
+                    : "border-slate-200 text-slate-600 dark:border-slate-800 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50"
                 )}
               >
                 <Icon className="h-4 w-4" />
@@ -199,27 +198,27 @@ export default function PricingProduct({ branchId: branchIdProp }) {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className={cn(
-              "h-10 rounded-xl border-slate-200 bg-white shadow-sm focus-visible:ring-primary transition-all text-sm",
+              "h-10 rounded-xl border-slate-200 bg-white dark:bg-slate-900 dark:border-slate-800 dark:text-slate-100 shadow-sm focus-visible:ring-primary transition-all text-sm",
               isRTL ? "pr-9 pl-4" : "pl-9 pr-4"
             )}
           />
         </div>
       </div>
 
-      {/* BRANCH SELECTOR - only meaningful for "Branch Pricing" tab */}
+      {/* BRANCH SELECTOR */}
       {isBranchPricing && (
         <div className="flex items-center gap-3">
-          <span className="text-sm font-medium text-slate-500">
+          <span className="text-sm font-medium text-slate-500 dark:text-slate-400">
             {t("branch") || "Branch"}:
           </span>
           <Select
             value={branchId || undefined}
             onValueChange={(value) => setBranchId(value)}
           >
-            <SelectTrigger className="h-10 w-56 rounded-xl border-slate-200 bg-white shadow-sm">
+            <SelectTrigger className="h-10 w-56 rounded-xl border-slate-200 bg-white dark:bg-slate-900 dark:border-slate-800 dark:text-slate-100 shadow-sm">
               <SelectValue placeholder={t("selectBranch") || "Select branch"} />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="dark:bg-slate-900 dark:border-slate-800">
               {branches.map((b) => (
                 <SelectItem key={b.id} value={b.id}>
                   {b.name}
@@ -231,21 +230,21 @@ export default function PricingProduct({ branchId: branchIdProp }) {
       )}
 
       {/* TABLE */}
-      <div className="rounded-2xl border border-slate-100 bg-white dark:bg-slate-950 shadow-sm overflow-hidden">
+      <div className="rounded-2xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <Table>
-            <TableHeader className="bg-slate-50/70 dark:bg-slate-900/50 border-b border-slate-100">
+            <TableHeader className="bg-slate-50/70 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800">
               <TableRow className="hover:bg-transparent border-none">
-                <TableHead className="h-14 text-xs font-bold uppercase tracking-wider text-slate-500 py-4 px-6 text-center">
+                <TableHead className="h-14 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 py-4 px-6 text-center">
                   {t("sl") || "SL"}
                 </TableHead>
-                <TableHead className="h-14 text-xs font-bold uppercase tracking-wider text-slate-500 py-4 px-6 text-center">
+                <TableHead className="h-14 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 py-4 px-6 text-center">
                   {t("productName") || "Product Name"}
                 </TableHead>
-                <TableHead className="h-14 text-xs font-bold uppercase tracking-wider text-slate-500 py-4 px-6 text-center">
+                <TableHead className="h-14 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 py-4 px-6 text-center">
                   {t("price") || "Price"}
                 </TableHead>
-                <TableHead className="h-14 text-xs font-bold uppercase tracking-wider text-slate-500 py-4 px-6 text-center">
+                <TableHead className="h-14 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 py-4 px-6 text-center">
                   {t("actionsCol") || "Action"}
                 </TableHead>
               </TableRow>
@@ -269,12 +268,12 @@ export default function PricingProduct({ branchId: branchIdProp }) {
                   return (
                     <TableRow
                       key={rowId}
-                      className="border-b border-slate-50 hover:bg-slate-50/40 transition-all"
+                      className="border-b border-slate-100 dark:border-slate-800/50 hover:bg-slate-50/40 dark:hover:bg-slate-900/40 transition-all"
                     >
-                      <TableCell className="py-4 px-6 text-center text-sm text-slate-500 font-mono">
+                      <TableCell className="py-4 px-6 text-center text-sm text-slate-500 dark:text-slate-400 font-mono">
                         {index + 1}
                       </TableCell>
-                      <TableCell className="py-4 px-6 text-center text-sm font-medium text-slate-700">
+                      <TableCell className="py-4 px-6 text-center text-sm font-medium text-slate-700 dark:text-slate-200">
                         {name}
                       </TableCell>
                       <TableCell className="py-4 px-6 text-center">
@@ -284,10 +283,10 @@ export default function PricingProduct({ branchId: branchIdProp }) {
                               type="number"
                               value={editPrice}
                               onChange={(e) => setEditPrice(e.target.value)}
-                              className="h-10 w-28 text-center rounded-lg border-primary focus-visible:ring-primary"
+                              className="h-10 w-28 text-center rounded-lg border-primary focus-visible:ring-primary dark:bg-slate-900 dark:text-slate-100"
                               autoFocus
                             />
-                            <div className="flex items-center gap-3 text-xs font-medium text-slate-600">
+                            <div className="flex items-center gap-3 text-xs font-medium text-slate-600 dark:text-slate-400">
                               <label className="flex items-center gap-1.5 cursor-pointer">
                                 <Checkbox
                                   checked={editChannels.takeaway}
@@ -339,7 +338,7 @@ export default function PricingProduct({ branchId: branchIdProp }) {
                               size="icon"
                               variant="ghost"
                               onClick={cancelEdit}
-                              className="h-9 w-9 text-slate-400 hover:text-red-600"
+                              className="h-9 w-9 text-slate-400 hover:text-red-600 dark:hover:text-red-400"
                             >
                               <X className="h-4 w-4" />
                             </Button>
@@ -349,7 +348,7 @@ export default function PricingProduct({ branchId: branchIdProp }) {
                             variant="outline"
                             size="sm"
                             onClick={() => startEdit(item)}
-                            className="h-9 rounded-lg gap-1.5 border-primary/30 text-primary hover:bg-primary/5"
+                            className="h-9 rounded-lg gap-1.5 border-primary/30 text-primary hover:bg-primary/5 dark:border-primary/40"
                           >
                             <Pencil className="h-3.5 w-3.5" />
                             {t("update") || "Update"}
