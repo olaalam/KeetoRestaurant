@@ -42,6 +42,25 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/api/axios";
 import { toast } from "sonner";
 
+// دالة مخصصة لإنشاء مدى الترقيم بشكل منظم ومختصر
+const getPaginationRange = (currentPage, totalPages) => {
+  const current = currentPage + 1;
+
+  if (totalPages <= 7) {
+    return Array.from({ length: totalPages }, (_, i) => i + 1);
+  }
+
+  if (current <= 3) {
+    return [1, 2, 3, 4, "...", totalPages];
+  }
+
+  if (current >= totalPages - 2) {
+    return [1, "...", totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+  }
+
+  return [1, "...", current - 1, current, current + 1, "...", totalPages];
+};
+
 export default function GenericDataTable({
   columns,
   data = [],
@@ -78,6 +97,7 @@ export default function GenericDataTable({
   });
   const pagination = controlledPagination ?? internalPagination;
   const setPagination = setControlledPagination ?? setInternalPagination;
+
   useEffect(() => {
     setPagination((prev) => ({ ...prev, pageIndex: 0 }));
   }, [globalFilter, setPagination]);
@@ -273,6 +293,10 @@ export default function GenericDataTable({
     },
   });
 
+  const currentPage = table.getState().pagination.pageIndex;
+  const totalPages = table.getPageCount();
+  const paginationRange = useMemo(() => getPaginationRange(currentPage, totalPages), [currentPage, totalPages]);
+
   return (
     <div className="space-y-6 w-full relative">
       {/* HEADER */}
@@ -294,7 +318,7 @@ export default function GenericDataTable({
         </div>
 
         <div className="flex flex-wrap items-center gap-3 self-end sm:self-center w-full sm:w-auto">
-          {/* اختيار عدد الصفوف في الصفحة (أعلى) */}
+          {/* اختيار عدد الصفوف في الصفحة */}
           <div className="flex items-center gap-2">
             <Select
               value={String(pagination.pageSize)}
@@ -412,47 +436,65 @@ export default function GenericDataTable({
         </div>
       </div>
 
-      {/* PAGINATION (أزرار التنقل فقط في الأسفل) */}
-      <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
-        <div className="flex items-center gap-1.5">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
-            className="h-9 w-9 p-0 rounded-lg border-slate-200"
-          >
-            {isRTL ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-          </Button>
-
-          {Array.from({ length: table.getPageCount() }, (_, i) => (
+      {/* PAGINATION (منطقة أزرار التنقل الذكية) */}
+      {totalPages > 1 && (
+        <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
+          <div className="flex items-center gap-1.5 flex-wrap justify-center">
             <Button
-              key={i}
-              variant={table.getState().pagination.pageIndex === i ? "default" : "outline"}
+              variant="outline"
               size="sm"
-              onClick={() => table.setPageIndex(i)}
-              className={cn(
-                "h-9 w-9 p-0 rounded-lg border-slate-200 font-semibold text-xs transition-all",
-                table.getState().pagination.pageIndex === i
-                  ? "bg-primary text-white shadow-sm"
-                  : "hover:bg-slate-50"
-              )}
+              onClick={() => table.previousPage()}
+              disabled={!table.getCanPreviousPage()}
+              className="h-9 w-9 p-0 rounded-lg border-slate-200"
             >
-              {i + 1}
+              {isRTL ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
             </Button>
-          ))}
 
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
-            className="h-9 w-9 p-0 rounded-lg border-slate-200"
-          >
-            {isRTL ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-          </Button>
+            {paginationRange.map((page, index) => {
+              if (page === "...") {
+                return (
+                  <span
+                    key={`dots-${index}`}
+                    className="h-9 w-7 flex items-center justify-center text-slate-400 text-xs font-bold select-none"
+                  >
+                    ...
+                  </span>
+                );
+              }
+
+              const pageIndex = page - 1;
+              const isSelected = currentPage === pageIndex;
+
+              return (
+                <Button
+                  key={page}
+                  variant={isSelected ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => table.setPageIndex(pageIndex)}
+                  className={cn(
+                    "h-9 w-9 p-0 rounded-lg border-slate-200 font-semibold text-xs transition-all",
+                    isSelected
+                      ? "bg-primary text-white shadow-sm"
+                      : "hover:bg-slate-50 text-slate-600 dark:text-slate-300"
+                  )}
+                >
+                  {page}
+                </Button>
+              );
+            })}
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => table.nextPage()}
+              disabled={!table.getCanNextPage()}
+              className="h-9 w-9 p-0 rounded-lg border-slate-200"
+            >
+              {isRTL ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* INACTIVE REASON DIALOG */}
       {inactiveDialog.isOpen && (

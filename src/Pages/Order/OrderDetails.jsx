@@ -674,7 +674,7 @@ const assignDeliveryMutation = useMutation({
                   <span className="text-gray-500 font-medium shrink-0">
                     {t("orderNote") || "ملاحظات الطلب"}:
                   </span>
-                  <span className="font-semibold text-gray-900">
+                  <span className="font-semibold text-red-900 font-bold">
                     {order.note && order.note.trim() !== ""
                       ? order.note
                       : t("noNotes") || "لا توجد ملاحظات"}
@@ -799,9 +799,9 @@ const assignDeliveryMutation = useMutation({
                               <span className="text-gray-300">—</span>
                             )}
                           </td>
-                          <td className="px-6 py-4 text-gray-500 text-xs max-w-[140px]">
+                          <td className="px-6 py-4 text-red-900 font-bold text-xs max-w-[140px]">
                             {item.note || (
-                              <span className="text-gray-300">
+                              <span className="text-red-900 font-bold">
                                 {t("noNotes") || "لا توجد ملاحظات"}
                               </span>
                             )}
