@@ -106,8 +106,6 @@ const Foods = () => {
         }
     });
 
-    // استخراج القوائم المتاحة
-    const categoriesList = selectData.categories || [];
     const subcategoriesList = selectData.subcategories || [];
     const ingredientsOptions = selectData.ingredients || [];
 
@@ -117,14 +115,6 @@ const Foods = () => {
         return subcategoriesList.filter(sub => String(sub.categoryId) === String(selectedCategory));
     }, [subcategoriesList, selectedCategory]);
 
-    // 💡 الأقسام الرئيسية المفلترة حسب نص البحث
-    const filteredCategories = useMemo(() => {
-        if (!categorySearch.trim()) return categoriesList;
-        return categoriesList.filter(cat => {
-            const name = getLocalizedName(cat, currentLang).toLowerCase();
-            return name.includes(categorySearch.toLowerCase());
-        });
-    }, [categoriesList, categorySearch, currentLang]);
 
     // 💡 الأقسام الفرعية المفلترة حسب نص البحث
     const filteredSubCategories = useMemo(() => {
@@ -135,12 +125,6 @@ const Foods = () => {
         });
     }, [availableSubCategories, subCategorySearch, currentLang]);
 
-    // عند تغيير القسم الرئيسي، نعيد تعيين القسم الفرعي ونفرغ نص بحث الساب كاتيجوري
-    const handleCategoryChange = (val) => {
-        setSelectedCategory(val);
-        setSelectedSubCategory('all');
-        setSubCategorySearch('');
-    };
 
     const handleClearFilter = () => {
         setSelectedCategory('all');

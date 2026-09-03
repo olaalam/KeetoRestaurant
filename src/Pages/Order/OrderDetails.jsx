@@ -254,44 +254,44 @@ export default function OrderDetails() {
     },
   });
 
-const assignDeliveryMutation = useMutation({
-  mutationFn: async (deliveryManId) => {
-    // 1. تحديث المندوب دائماً
-    const res = await api.put(
-      `/api/restaurant/order/${orderId}/assign-delivery`,
-      {
-        deliveryManId,
-      },
-    );
+  const assignDeliveryMutation = useMutation({
+    mutationFn: async (deliveryManId) => {
+      // 1. تحديث المندوب دائماً
+      const res = await api.put(
+        `/api/restaurant/order/${orderId}/assign-delivery`,
+        {
+          deliveryManId,
+        },
+      );
 
-    // 2. لو مفيش مندوب قديم (أول مرة يتعين) وكان الطلب في حالة preparing، نغير الحالة لـ out_for_delivery
-    const hasDeliveryMan = order?.deliveryMan?.id || order?.deliveryManId;
-    if (!hasDeliveryMan && order?.status === "preparing") {
-      await api.put(`/api/restaurant/order/${orderId}`, {
-        status: "out_for_delivery",
-      });
-    }
+      // 2. لو مفيش مندوب قديم (أول مرة يتعين) وكان الطلب في حالة preparing، نغير الحالة لـ out_for_delivery
+      const hasDeliveryMan = order?.deliveryMan?.id || order?.deliveryManId;
+      if (!hasDeliveryMan && order?.status === "preparing") {
+        await api.put(`/api/restaurant/order/${orderId}`, {
+          status: "out_for_delivery",
+        });
+      }
 
-    return res.data;
-  },
-  onSuccess: () => {
-    queryClient.invalidateQueries(["order", orderId]);
-    queryClient.invalidateQueries(["orders"]);
-    toast.success(
-      t("deliveryManAssignedSuccess") ||
-      "تم حفظ بيانات المندوب بنجاح",
-    );
-    setIsAssignDialogOpen(false);
-    setSelectedDeliveryMan("");
-  },
-  onError: (error) => {
-    toast.error(
-      error?.response?.data?.message ||
-      t("assignDeliveryError") ||
-      "فشل في تعيين مندوب التوصيل",
-    );
-  },
-});
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(["order", orderId]);
+      queryClient.invalidateQueries(["orders"]);
+      toast.success(
+        t("deliveryManAssignedSuccess") ||
+        "تم حفظ بيانات المندوب بنجاح",
+      );
+      setIsAssignDialogOpen(false);
+      setSelectedDeliveryMan("");
+    },
+    onError: (error) => {
+      toast.error(
+        error?.response?.data?.message ||
+        t("assignDeliveryError") ||
+        "فشل في تعيين مندوب التوصيل",
+      );
+    },
+  });
   const handleStatusChange = (newStatus) => {
     if (newStatus === "cancelled" || newStatus === "refund") {
       setDialogConfig({ open: true, type: newStatus });
@@ -376,6 +376,8 @@ const assignDeliveryMutation = useMutation({
     : currentStatusStyle.labelKey;
 
   const deliveryPerson = order.deliveryMan || order.driver;
+
+  const displayAddress = order.shippingAddress || order.address;
 
   return (
     <div className="w-full mx-auto py-8 px-4 sm:px-6 space-y-6">
@@ -628,7 +630,7 @@ const assignDeliveryMutation = useMutation({
                     {t("branch") || "الفرع"}:
                   </span>
                   <span className="font-semibold text-gray-900">
-                    {order.branch?.name || t("Delivery")}
+                    {order.branchSnapshot?.name || order.branch?.name || t("Delivery")}
                   </span>
                 </div>
 
@@ -638,7 +640,7 @@ const assignDeliveryMutation = useMutation({
                     {t("zone") || "المنطقة"}:
                   </span>
                   <span className="font-semibold text-gray-900">
-                    {order.zone?.name || t("notAvailable")}
+                    {order.shippingAddress?.addressZoneName || order.zone?.name || t("notAvailable")}
                   </span>
                 </div>
 
@@ -669,17 +671,15 @@ const assignDeliveryMutation = useMutation({
                   </span>
                 </div>
 
-                <div className={`flex items-start gap-2.5 text-sm ${(order.status === "cancelled" || order.status === "refund" || order.cancelReason || order.cancel_reason) ? "" : "sm:col-span-2"}`}>
-                  <Receipt className="w-4 h-4 text-gray-400 shrink-0 mt-0.5" />
-                  <span className="text-gray-500 font-medium shrink-0">
-                    {t("orderNote") || "ملاحظات الطلب"}:
-                  </span>
-                  <span className="font-semibold text-red-900 font-bold">
-                    {order.note && order.note.trim() !== ""
-                      ? order.note
-                      : t("noNotes") || "لا توجد ملاحظات"}
-                  </span>
-                </div>
+<div className={`flex items-center gap-2.5 text-sm ${(order.status === "cancelled" || order.status === "refund" || order.cancelReason || order.cancel_reason) ? "" : "sm:col-span-2"}`}>
+  <Receipt className="w-4 h-4 text-gray-400 shrink-0" />
+  <span className="text-gray-500 font-medium shrink-0">
+    {t("orderNote") || "ملاحظات الطلب"}:
+  </span>
+  <div className="px-3.5 py-1.5 rounded-xl border-2 border-primary bg-primary/5 font-bold text-gray-900 text-base sm:text-lg">
+    {order.note && order.note.trim() !== "" ? order.note : "-"}
+  </div>
+</div>
               </div>
             </CardContent>
           </Card>
@@ -799,13 +799,13 @@ const assignDeliveryMutation = useMutation({
                               <span className="text-gray-300">—</span>
                             )}
                           </td>
-                          <td className="px-6 py-4 text-red-900 font-bold text-xs max-w-[140px]">
-                            {item.note || (
-                              <span className="text-red-900 font-bold">
-                                {t("noNotes") || "لا توجد ملاحظات"}
-                              </span>
-                            )}
-                          </td>
+<td className="px-6 py-4 text-xs max-w-[140px]">
+  {item.note && item.note.trim() !== "" ? (
+    <span className="font-bold text-gray-900 text-sm">{item.note}</span>
+  ) : (
+    <span className="text-gray-400 font-semibold text-sm">-</span>
+  )}
+</td>
                         </tr>
                       );
                     })}
@@ -815,7 +815,7 @@ const assignDeliveryMutation = useMutation({
             </CardContent>
           </Card>
 
-<Card className="rounded-2xl border shadow-sm bg-white">
+          <Card className="rounded-2xl border shadow-sm bg-white">
             <CardHeader className="border-b bg-gray-50/50 px-6 py-4">
               <CardTitle className="text-md font-bold text-gray-800 flex items-center gap-2">
                 <Receipt className="w-5 h-5 text-primary" />
@@ -830,7 +830,7 @@ const assignDeliveryMutation = useMutation({
                   {t("currency") || "EGP"}
                 </span>
               </div>
-              
+
               <div className="flex justify-between text-sm text-gray-600">
                 <span>{t("serviceFee") || "رسوم الخدمة"}</span>
                 <span className="font-medium text-gray-900">
@@ -889,9 +889,9 @@ const assignDeliveryMutation = useMutation({
                   </span>
                 </div>
               )}
-              
+
               <Separator className="my-2" />
-              
+
               <div className="flex justify-between items-center pt-1">
                 <span className="text-base font-bold text-gray-900">
                   {t("totalAmount") || "الإجمالي الكلي"}
@@ -1012,59 +1012,60 @@ const assignDeliveryMutation = useMutation({
                 </div>
               )}
 
-              {order?.address && typeof order.address === "object" ? (
+{displayAddress && typeof displayAddress === "object" ? (
                 <>
-                  {order.address.title && (
+                  {displayAddress.title && (
                     <div className="flex items-center gap-1.5">
                       <span className="font-semibold text-gray-900">
                         {t("Address") || "Address"}:
                       </span>
-                      <span>{order.address.title || t("unknown")}</span>
+                      <span>{displayAddress.title || t("unknown")}</span>
                     </div>
                   )}
                   <div className="flex items-center gap-1.5">
                     <span className="font-semibold text-gray-900">
                       {t("street") || "Road"}:
                     </span>
-                    <span>{order.address.street || "-"}</span>
+                    <span>{displayAddress.street || "-"}</span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <span className="font-semibold text-gray-900">
                       {t("buildingNumber") || "Build Num"}:
                     </span>
-                    <span>{order.address.number || "-"}</span>
+                    {/* هنا نراعي اختلاف اسم الخاصية بين shippingAddress و address */}
+                    <span>{displayAddress.building || displayAddress.number || "-"}</span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <span className="font-semibold text-gray-900">
                       {t("floor") || "Floor"}:
                     </span>
-                    <span>{order.address.floor || "-"}</span>
+                    <span>{displayAddress.floor || "-"}</span>
                   </div>
-                  {order.address.apartment && (
+                  {displayAddress.apartment && (
                     <div className="flex items-center gap-1.5">
                       <span className="font-semibold text-gray-900">
                         {t("apartment") || "Apartment"}:
                       </span>
-                      <span>{order.address.apartment || "-"}</span>
+                      <span>{displayAddress.apartment || "-"}</span>
                     </div>
                   )}
-                  {order.address.landmark && (
+                  {displayAddress.landmark && (
                     <div className="flex items-center gap-1.5">
                       <span className="font-semibold text-gray-900">
                         {t("landmark") || "Landmark"}:
                       </span>
                       <span className="text-gray-700">
-                        {order.address.landmark}
+                        {displayAddress.landmark}
                       </span>
                     </div>
                   )}
-                  {order.address.lat && order.address.lng && (
+                  {displayAddress.lat && displayAddress.lng && (
                     <div className="flex items-center gap-1.5">
                       <span className="font-semibold text-gray-900">
                         {t("locationMap") || "Location Map"}:
                       </span>
                       <a
-                        href={`https://www.google.com/maps?q=${order.address.lat},${order.address.lng}`}
+                        href={`https://www.google.com/maps?q=${displayAddress.lat},${displayAddress.lng}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-1 text-sm font-semibold text-primary hover:underline"
@@ -1080,7 +1081,7 @@ const assignDeliveryMutation = useMutation({
                   <span className="font-semibold text-gray-900">
                     {t("address") || "Address"}:
                   </span>
-                  <span>{order?.address || t("notSpecified")}</span>
+                  <span>{displayAddress || t("notSpecified")}</span>
                 </div>
               )}
             </div>
@@ -1254,32 +1255,32 @@ const assignDeliveryMutation = useMutation({
                 </div>
               )}
 
-{["preparing", "out_for_delivery", "delivered"].includes(order.status) && (
-  <div className="pt-2">
-    <Button
-      onClick={() => {
-        if (order?.deliveryMan?.id || order?.deliveryManId) {
-          setSelectedDeliveryMan(order?.deliveryMan?.id || order?.deliveryManId);
-        }
-        setIsAssignDialogOpen(true);
-      }}
-      className="w-full rounded-xl gap-2 h-11 px-5 font-semibold text-sm bg-primary hover:bg-primary/90 text-white shadow-sm transition-all flex items-center justify-between"
-    >
-      <div className="flex items-center gap-2 truncate">
-        <Truck className="w-4 h-4 shrink-0" />
-        <span className="truncate">
-          {order?.deliveryMan?.name
-            ? `${t("deliveryMan") || "المندوب"}: ${order.deliveryMan.name}`
-            : t("assignDeliveryMan") || "تعيين مندوب توصيل"}
-        </span>
-      </div>
+              {["preparing", "out_for_delivery", "delivered"].includes(order.status) && (
+                <div className="pt-2">
+                  <Button
+                    onClick={() => {
+                      if (order?.deliveryMan?.id || order?.deliveryManId) {
+                        setSelectedDeliveryMan(order?.deliveryMan?.id || order?.deliveryManId);
+                      }
+                      setIsAssignDialogOpen(true);
+                    }}
+                    className="w-full rounded-xl gap-2 h-11 px-5 font-semibold text-sm bg-primary hover:bg-primary/90 text-white shadow-sm transition-all flex items-center justify-between"
+                  >
+                    <div className="flex items-center gap-2 truncate">
+                      <Truck className="w-4 h-4 shrink-0" />
+                      <span className="truncate">
+                        {order?.deliveryMan?.name
+                          ? `${t("deliveryMan") || "المندوب"}: ${order.deliveryMan.name}`
+                          : t("assignDeliveryMan") || "تعيين مندوب توصيل"}
+                      </span>
+                    </div>
 
-      <span className="bg-white/20 text-xs px-2.5 py-1 rounded-lg shrink-0">
-        {order?.deliveryMan?.name ? (t("edit") || "Edit") : ""}
-      </span>
-    </Button>
-  </div>
-)}
+                    <span className="bg-white/20 text-xs px-2.5 py-1 rounded-lg shrink-0">
+                      {order?.deliveryMan?.name ? (t("edit") || "Edit") : ""}
+                    </span>
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -1340,7 +1341,7 @@ const assignDeliveryMutation = useMutation({
         </DialogContent>
       </Dialog>
 
-<Dialog
+      <Dialog
         open={isAssignDialogOpen}
         onOpenChange={(open) => {
           setIsAssignDialogOpen(open);
@@ -1388,17 +1389,15 @@ const assignDeliveryMutation = useMutation({
                       <div
                         key={id}
                         onClick={() => setSelectedDeliveryMan(id)}
-                        className={`p-4 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${
-                          isSelected
+                        className={`p-4 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${isSelected
                             ? "border-2 border-primary bg-primary/5 shadow-2xs"
                             : "border-gray-200 hover:border-gray-300 bg-white"
-                        }`}
+                          }`}
                       >
                         <div className="flex flex-col gap-0.5">
                           <span
-                            className={`text-sm font-bold ${
-                              isSelected ? "text-primary" : "text-gray-900"
-                            }`}
+                            className={`text-sm font-bold ${isSelected ? "text-primary" : "text-gray-900"
+                              }`}
                           >
                             {name}
                           </span>

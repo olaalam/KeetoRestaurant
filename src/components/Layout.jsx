@@ -127,10 +127,14 @@ export default function Layout() {
   }, []);
 
 
-  const notifications = notificationsResponse?.data?.data || [];
-  const unreadCount = notifications.filter((n) => !n.isRead).length;
+const notifications = notificationsResponse?.data?.data || [];
+  
+  // 1. جلب بيانات الـ pagination من الـ API مباشرة
+  const pagination = notificationsResponse?.data?.pagination;
+  const totalItems = pagination?.totalItems ?? notifications.length;
+  const unreadCount = pagination?.unreadCount ?? totalItems;
 
-// ---- Notification Sound & Logic ----
+  // ---- Notification Sound & Logic ----
   const audioRef = useRef(null);
   
   const [newOrderPopup, setNewOrderPopup] = useState({ 
@@ -139,7 +143,7 @@ export default function Layout() {
     latestNotification: null 
   });
 
-  // 1. مراقبة الإشعارات وإظهار الـ Pop-up للطلبات الجديدة
+  // 2. مراقبة الإشعارات وإظهار الـ Pop-up باستخدام totalItems
   useEffect(() => {
     if (isLoadingNotifications || !notifications || notifications.length === 0) return;
 
@@ -155,7 +159,7 @@ export default function Layout() {
     if (newestId !== lastSeenId && !newestNotification.isRead) {      
       setNewOrderPopup({ 
         open: true, 
-        count: unreadCount, 
+        count: totalItems, // تم الاعتماد على totalItems القادم من الباك إند هنا
         latestNotification: newestNotification 
       });
       playNotificationSound();
@@ -163,7 +167,7 @@ export default function Layout() {
       // حفظ معرّف الإشعار في المتصفح لمنع تكراره عند الـ Refresh
       localStorage.setItem("lastSeenNotifId", newestId);
     }
-  }, [notifications, isLoadingNotifications, unreadCount]);
+  }, [notifications, isLoadingNotifications, totalItems]);
 
   // 2. تحديث الكل كمقروء
   const { mutate: markAllAsRead, isPending: isMarkingAll } = useUpdate(
@@ -402,12 +406,12 @@ export default function Layout() {
                     <button className="relative rounded-full p-2 hover:bg-accent transition-colors">
                       <Bell size={24} className="text-slate-600 hover:text-primary transition-colors" />
 
-                      {/* Badge */}
-                      {unreadCount > 0 && (
-                        <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow-sm border border-white dark:border-slate-900">
-                          {unreadCount > 99 ? '99+' : unreadCount}
-                        </span>
-                      )}
+{/* Badge */}
+{totalItems > 0 && (
+  <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow-sm border border-white dark:border-slate-900">
+    {totalItems > 99 ? '99+' : totalItems}
+  </span>
+)}
                     </button>
                   </DropdownMenuTrigger>
 

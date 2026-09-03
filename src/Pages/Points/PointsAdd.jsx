@@ -119,19 +119,19 @@ const PointsAdd = () => {
             {/* اختيار المنتج */}
             <div className="flex-1">
               <label className="block text-sm font-medium mb-1">{t("Product")}</label>
-              <select
-                value={item.foodId}
-                onChange={(e) => handleItemChange(index, "foodId", e.target.value)}
-                required
-                className="w-full border rounded p-2 focus:ring focus:ring-primary"
-              >
-                <option value="">{t("Select Product")}</option>
-                {foodOptions.map((food) => (
-                  <option key={food.id} value={food.id}>
-                    {food.name}
-                  </option>
-                ))}
-              </select>
+<select
+  value={item.foodId}
+  onChange={(e) => handleItemChange(index, "foodId", e.target.value)}
+  required
+  className="w-full border rounded p-2 focus:ring focus:ring-primary"
+>
+  <option value="">{t("Select Product")}</option>
+  {foodOptions.map((food) => (
+    <option key={food.id} value={food.id}>
+      {food.name} - ({food.price} {t("EGP") || "ج.م"})
+    </option>
+  ))}
+</select>
             </div>
 
             {/* عدد النقاط المطلوبة للاستبدال */}

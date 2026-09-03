@@ -29,15 +29,15 @@ export default function OutOfStockFoods() {
     const columns = [
         { 
             accessorKey: 'name', 
-            header: t('nameEn') 
+            header: t('nameEn') || 'English Name'
         },
         { 
             accessorKey: 'nameAr', 
-            header: t('nameAr') 
+            header: t('nameAr') || 'Arabic Name'
         },
         {
             id: 'category',
-            header: t('category'),
+            header: t('category') || 'Category',
             cell: ({ row }) => {
                 const category = row.original.category;
                 return isRTL ? (category?.nameAr || category?.name) : (category?.name || category?.nameAr);
@@ -45,7 +45,7 @@ export default function OutOfStockFoods() {
         },
         { 
             accessorKey: 'price', 
-            header: t('price') 
+            header: t('price') || 'Price'
         },
         {
             id: 'unavailableBranches',
@@ -53,21 +53,26 @@ export default function OutOfStockFoods() {
             cell: ({ row }) => {
                 const branches = row.original.unavailableBranches || [];
 
+                // إذا لم تكن هناك فروع غير متاحة، نعرض نص بدلاً من الشرطة (-)
                 if (branches.length === 0) {
-                    return <span className="text-gray-400">-</span>;
+                    return (
+                        <span className="text-gray-500 font-medium text-xs sm:text-sm">
+                            {t('noUnavailableBranches') || (isRTL ? 'لا توجد فروع غير متاحة' : 'No unavailable branches')}
+                        </span>
+                    );
                 }
 
                 return (
                     <Dialog>
                         <DialogTrigger asChild>
                             <Button variant="outline" size="sm">
-                                {isRTL ? `عرض الفروع (${branches.length})` : `View Branches (${branches.length})`}
+                                {t('viewBranches') || (isRTL ? 'عرض الفروع' : 'View Branches')} ({branches.length})
                             </Button>
                         </DialogTrigger>
                         <DialogContent className="max-w-md">
                             <DialogHeader>
                                 <DialogTitle>
-                                    {isRTL ? "الفروع غير المتاحة" : "Unavailable Branches"}
+                                    {t('unavailableBranches') || (isRTL ? "الفروع غير المتاحة" : "Unavailable Branches")}
                                 </DialogTitle>
                             </DialogHeader>
                             <div className="mt-4 max-h-60 overflow-y-auto">
@@ -92,7 +97,7 @@ export default function OutOfStockFoods() {
     return (
         <div className="container mx-auto py-10">
             <GenericDataTable
-                title={t("outOfStockFoods") || "Out of Stock Foods"}
+                title={t("outOfStockFoods") || (isRTL ? "الأطعمة غير المتاحة" : "Out of Stock Foods")}
                 columns={columns}
                 data={foods}
                 isLoading={isLoading}

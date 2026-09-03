@@ -1,6 +1,8 @@
 import React, { useState, useMemo } from "react";
 import { useGet } from "@/hooks/useGet";
 import { usePost } from "@/hooks/usePost";
+import { toast } from 'sonner';
+import api from '@/api/axios';
 import { useTranslation } from "@/hooks/useTranslation";
 import {
   Table,
@@ -12,7 +14,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -20,6 +22,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import {
   LayoutGrid,
@@ -29,8 +38,7 @@ import {
   Building2,
   Search,
   Pencil,
-  Save,
-  X,
+  ChevronRight,
 } from "lucide-react";
 import LoadingSpinner from "@/components/LoadingSpinner";
 
@@ -46,14 +54,11 @@ export default function PricingProduct({ branchId: branchIdProp }) {
   const [activeTab, setActiveTab] = useState("all");
   const [search, setSearch] = useState("");
   const [branchId, setBranchId] = useState(branchIdProp || "");
+  const [selectedSubCategoryId, setSelectedSubCategoryId] = useState(null);
 
-  const [editingId, setEditingId] = useState(null);
-  const [editPrice, setEditPrice] = useState("");
-  const [editChannels, setEditChannels] = useState({
-    takeaway: true,
-    delivery: true,
-    dine_in: true,
-  });
+  // ---- price edit modal state ----
+  const [priceModalItem, setPriceModalItem] = useState(null);
+  const [priceModalValue, setPriceModalValue] = useState("");
 
   // ---- fetch branches + service modules for tabs/select ----
   const { data: selectRes } = useGet("pricing-select", "/api/restaurant/pricing/select");
@@ -79,73 +84,109 @@ export default function PricingProduct({ branchId: branchIdProp }) {
   const activeTabDef = TABS.find((tab) => tab.key === activeTab);
   const isBranchPricing = activeTab === "branch_pricing";
 
-  // ---- fetch list ----
-  const queryParams = useMemo(() => {
-    const params = {};
-    if (branchId) params.branchId = branchId;
-    if (activeTabDef?.serviceModule) params.serviceModule = activeTabDef.serviceModule;
-    return params;
-  }, [branchId, activeTabDef]);
+  // ---- fetch subcategories for the left sidebar filter ----
+  const { data: subCategoriesRes } = useGet(
+    "pricing-subcategories",
+    "/api/restaurant/subcategories"
+  );
+  const subCategories = subCategoriesRes?.data?.data?.subcategories || subCategoriesRes?.data?.data || [];
 
-  const { data, isLoading } = useGet(
-    "dynamic-menu",
-    "/api/restaurant/pricing/dynamic-menu",
-    queryParams
+  // 💡 تكوين الرابط الديناميكي بناءً على اختيار القسم الفرعي أو التاب
+  const queryParams = new URLSearchParams();
+  if (branchId) {
+    queryParams.append("branchId", branchId);
+  }
+  if (activeTab && activeTab !== "all" && activeTab !== "branch_pricing") {
+    queryParams.append("serviceModule", activeTab);
+  }
+
+  let endpoint = "";
+  if (selectedSubCategoryId) {
+    queryParams.append("subCategoryId", selectedSubCategoryId);
+    endpoint = `/api/restaurant/pricing/dynamic-menu?${queryParams.toString()}`;
+  } else {
+    const queryString = queryParams.toString();
+    endpoint = queryString ? `/api/restaurant/pricing/dynamic-menu?${queryString}` : `/api/restaurant/pricing/dynamic-menu`;
+  }
+
+  const productsQueryKey = ["products", activeTab, selectedSubCategoryId || "all", branchId || "all"];
+  
+  // 💡 استخراج دالة refetch لإعادة إرسال طلب جلب البيانات
+  const { data: productsRes, isLoading, refetch } = useGet(
+    productsQueryKey,
+    endpoint
   );
 
-  const items = data?.data?.data?.menu || [];
+  // 💡 استخراج المنتجات سواء كانت قادمة من هيكل الـ dynamic-menu (menu) أو الـ food api (items)
+  const items = useMemo(() => {
+    const resData = productsRes?.data?.data;
+    if (!resData) return [];
+    if (Array.isArray(resData.menu)) return resData.menu;
+    if (Array.isArray(resData.items)) return resData.items;
+    if (Array.isArray(resData)) return resData;
+    return [];
+  }, [productsRes]);
 
+  // 💡 فلترة المنتجات بناءً على نص البحث (Search Input)
   const filteredItems = useMemo(() => {
     if (!search) return items;
     const lower = search.toLowerCase();
-    return items.filter((item) => (item.name || "").toLowerCase().includes(lower));
+    return items.filter((item) => (item.name || item.nameAr || "").toLowerCase().includes(lower));
   }, [items, search]);
 
-  // ---- update mutation (POST) ----
+  // ---- price update mutation ----
   const updateMutation = usePost("/api/restaurant/pricing/product-channel", "post", "dynamic-menu");
 
-  const getDisplayPrice = (item) => item.finalCalculatedPrice ?? item.mainBasePrice;
-
-  const startEdit = (item) => {
-    setEditingId(item.id);
-    setEditPrice(String(getDisplayPrice(item) ?? ""));
-    setEditChannels({
-      takeaway: true,
-      delivery: true,
-      dine_in: true,
-    });
+  // 💡 دالة عرض السعر الصحيح بناءً على الـ Response الجديد
+  const getDisplayPrice = (item) => {
+    return item.finalCalculatedPrice ?? item.mainBasePrice ?? item.price ?? "0.00";
   };
 
-  const cancelEdit = () => {
-    setEditingId(null);
-    setEditPrice("");
+  const openPriceModal = (item) => {
+    setPriceModalItem(item);
+    setPriceModalValue(String(getDisplayPrice(item) ?? ""));
   };
 
-  const saveToAll = async (item) => {
-    const foodId = item.id;
-    const price = Number(editPrice);
-    if (!foodId || !price || price <= 0) return;
+  const closePriceModal = () => {
+    setPriceModalItem(null);
+    setPriceModalValue("");
+  };
 
-    const selectedModules = Object.entries(editChannels)
-      .filter(([, checked]) => checked)
-      .map(([mod]) => mod);
+  const savePriceModal = async () => {
+    if (!priceModalItem) return;
+    const price = Number(priceModalValue);
+    if (!price || price <= 0) return;
 
-    if (selectedModules.length === 0) return;
+    // 💡 إذ كان التاب "all" أوالـ serviceModule غير محدد نرسل "all"، وإلا نرسل الـ serviceModule الخاص بالتاب الحالي
+    const serviceModuleToSend = (!activeTabDef?.serviceModule || activeTab === "all")
+      ? "all"
+      : activeTabDef.serviceModule;
 
     try {
-      await Promise.all(
-        selectedModules.map((serviceModule) =>
-          updateMutation.mutateAsync({
-            foodId,
-            ...(branchId ? { branchId } : {}),
-            serviceModule,
-            price,
-          })
-        )
-      );
-      cancelEdit();
+      await updateMutation.mutateAsync({
+        foodId: priceModalItem.id,
+        ...(branchId ? { branchId } : {}),
+        serviceModule: serviceModuleToSend,
+        price,
+      });
+      closePriceModal();
+      refetch(); // 👈 إعادة جلب البيانات بعد تحديث السعر
     } catch (err) {
       // toast error handling
+    }
+  };
+
+  const toggleOutOfStock = async (foodId, currentStockStatus) => {
+    try {
+      await api.put(`/api/restaurant/food/${foodId}`, {
+        isOutOfStock: currentStockStatus
+      });
+      
+      toast.success(t('statusUpdatedSuccessfully') || 'تم تحديث الحالة بنجاح');
+      refetch(); // إعادة جلب البيانات لتحديث الـ Table بالبيانات الجديدة من السيرفر
+    } catch (error) {
+      console.error("Error updating stock status:", error);
+      toast.error(t('failedToUpdateStatus') || 'فشل تحديث الحالة');
     }
   };
 
@@ -170,7 +211,6 @@ export default function PricingProduct({ branchId: branchIdProp }) {
                 variant={isActive ? "default" : "outline"}
                 onClick={() => {
                   setActiveTab(tab.key);
-                  cancelEdit();
                 }}
                 className={cn(
                   "h-10 rounded-xl font-medium gap-2 transition-all",
@@ -229,149 +269,179 @@ export default function PricingProduct({ branchId: branchIdProp }) {
         </div>
       )}
 
-      {/* TABLE */}
-      <div className="rounded-2xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader className="bg-slate-50/70 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800">
-              <TableRow className="hover:bg-transparent border-none">
-                <TableHead className="h-14 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 py-4 px-6 text-center">
-                  {t("sl") || "SL"}
-                </TableHead>
-                <TableHead className="h-14 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 py-4 px-6 text-center">
-                  {t("productName") || "Product Name"}
-                </TableHead>
-                <TableHead className="h-14 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 py-4 px-6 text-center">
-                  {t("price") || "Price"}
-                </TableHead>
-                <TableHead className="h-14 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 py-4 px-6 text-center">
-                  {t("actionsCol") || "Action"}
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-
-            <TableBody>
-              {isLoading ? (
-                <TableRow>
-                  <TableCell colSpan={4} className="text-center h-48">
-                    <div className="flex items-center justify-center">
-                      <LoadingSpinner className="h-6 w-6 text-primary" />
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ) : filteredItems.length ? (
-                filteredItems.map((item, index) => {
-                  const rowId = item.id;
-                  const isEditing = editingId === rowId;
-                  const name = item.name || item.nameAr || "-";
-
-                  return (
-                    <TableRow
-                      key={rowId}
-                      className="border-b border-slate-100 dark:border-slate-800/50 hover:bg-slate-50/40 dark:hover:bg-slate-900/40 transition-all"
-                    >
-                      <TableCell className="py-4 px-6 text-center text-sm text-slate-500 dark:text-slate-400 font-mono">
-                        {index + 1}
-                      </TableCell>
-                      <TableCell className="py-4 px-6 text-center text-sm font-medium text-slate-700 dark:text-slate-200">
-                        {name}
-                      </TableCell>
-                      <TableCell className="py-4 px-6 text-center">
-                        {isEditing ? (
-                          <div className="flex flex-col items-center gap-2">
-                            <Input
-                              type="number"
-                              value={editPrice}
-                              onChange={(e) => setEditPrice(e.target.value)}
-                              className="h-10 w-28 text-center rounded-lg border-primary focus-visible:ring-primary dark:bg-slate-900 dark:text-slate-100"
-                              autoFocus
-                            />
-                            <div className="flex items-center gap-3 text-xs font-medium text-slate-600 dark:text-slate-400">
-                              <label className="flex items-center gap-1.5 cursor-pointer">
-                                <Checkbox
-                                  checked={editChannels.takeaway}
-                                  onCheckedChange={(checked) =>
-                                    setEditChannels((prev) => ({ ...prev, takeaway: !!checked }))
-                                  }
-                                />
-                                {t("takeAway") || "TAKE AWAY"}
-                              </label>
-                              <label className="flex items-center gap-1.5 cursor-pointer">
-                                <Checkbox
-                                  checked={editChannels.delivery}
-                                  onCheckedChange={(checked) =>
-                                    setEditChannels((prev) => ({ ...prev, delivery: !!checked }))
-                                  }
-                                />
-                                {t("delivery") || "DELIVERY"}
-                              </label>
-                              <label className="flex items-center gap-1.5 cursor-pointer">
-                                <Checkbox
-                                  checked={editChannels.dine_in}
-                                  onCheckedChange={(checked) =>
-                                    setEditChannels((prev) => ({ ...prev, dine_in: !!checked }))
-                                  }
-                                />
-                                {t("dineIn") || "DINE IN"}
-                              </label>
-                            </div>
-                          </div>
-                        ) : (
-                          <span className="text-sm font-bold text-primary">
-                            {getDisplayPrice(item)}
-                          </span>
-                        )}
-                      </TableCell>
-                      <TableCell className="py-4 px-6 text-center">
-                        {isEditing ? (
-                          <div className="flex items-center justify-center gap-2">
-                            <Button
-                              size="sm"
-                              onClick={() => saveToAll(item)}
-                              disabled={updateMutation.isPending}
-                              className="h-9 rounded-lg gap-1.5 bg-primary text-primary-foreground"
-                            >
-                              <Save className="h-4 w-4" />
-                              {t("saveToAll") || "Save to All"}
-                            </Button>
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              onClick={cancelEdit}
-                              className="h-9 w-9 text-slate-400 hover:text-red-600 dark:hover:text-red-400"
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        ) : (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => startEdit(item)}
-                            className="h-9 rounded-lg gap-1.5 border-primary/30 text-primary hover:bg-primary/5 dark:border-primary/40"
-                          >
-                            <Pencil className="h-3.5 w-3.5" />
-                            {t("update") || "Update"}
-                          </Button>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })
-              ) : (
-                <TableRow>
-                  <TableCell
-                    colSpan={4}
-                    className="text-center h-48 text-sm text-slate-400 font-medium"
-                  >
-                    {t("noDataFound") || "No data found"}
-                  </TableCell>
-                </TableRow>
+      {/* SIDEBAR (subcategories) + TABLE */}
+      <div className="flex flex-col md:flex-row gap-4 items-start">
+        {/* SUBCATEGORY SIDEBAR */}
+        <div className="w-full md:w-64 shrink-0 rounded-2xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-sm overflow-hidden">
+          <div className="p-2 space-y-1 max-h-[560px] overflow-y-auto">
+            <button
+              onClick={() => setSelectedSubCategoryId(null)}
+              className={cn(
+                "w-full flex items-center justify-between gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold transition-all",
+                selectedSubCategoryId === null
+                  ? "bg-primary/10 text-primary border border-primary/30"
+                  : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 border border-transparent"
               )}
-            </TableBody>
-          </Table>
+            >
+              <span>{t("all") || "All"}</span>
+              <ChevronRight className={cn("h-4 w-4", isRTL && "rotate-180")} />
+            </button>
+
+            {subCategories.map((sc) => {
+              const isActive = selectedSubCategoryId === sc.id;
+              return (
+                <button
+                  key={sc.id}
+                  onClick={() => setSelectedSubCategoryId(sc.id)}
+                  className={cn(
+                    "w-full flex items-center justify-between gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold transition-all",
+                    isActive
+                      ? "bg-primary/10 text-primary border border-primary/30"
+                      : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 border border-transparent"
+                  )}
+                >
+                  <span className="truncate">{sc.name}</span>
+                  <ChevronRight className={cn("h-4 w-4 shrink-0", isRTL && "rotate-180")} />
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* TABLE */}
+        <div className="flex-1 w-full rounded-2xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader className="bg-slate-50/70 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800">
+                <TableRow className="hover:bg-transparent border-none">
+                  <TableHead className="h-14 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 py-4 px-6 text-center">
+                    {t("sl") || "SL"}
+                  </TableHead>
+                  <TableHead className="h-14 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 py-4 px-6 text-center">
+                    {t("productName") || "Product Name"}
+                  </TableHead>
+                  <TableHead className="h-14 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 py-4 px-6 text-center">
+                    {t("price") || "Price"}
+                  </TableHead>
+                  <TableHead className="h-14 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 py-4 px-6 text-center">
+                    {t("outOfStock") || "Out of Stock"}
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+
+              <TableBody>
+                {isLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-center h-48">
+                      <div className="flex items-center justify-center">
+                        <LoadingSpinner className="h-6 w-6 text-primary" />
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : filteredItems.length ? (
+                  filteredItems.map((item, index) => {
+                    const rowId = item.id;
+                    const name = item.name || item.nameAr || "-";
+
+                    return (
+                      <TableRow
+                        key={rowId}
+                        className="border-b border-slate-100 dark:border-slate-800/50 hover:bg-slate-50/40 dark:hover:bg-slate-900/40 transition-all"
+                      >
+                        <TableCell className="py-4 px-6 text-center text-sm text-slate-500 dark:text-slate-400 font-mono">
+                          {index + 1}
+                        </TableCell>
+                        <TableCell className="py-4 px-6 text-center text-sm font-medium text-slate-700 dark:text-slate-200">
+                          {name}
+                        </TableCell>
+                        <TableCell className="py-4 px-6">
+                          <div className="flex items-center justify-center gap-2">
+                            <span className="text-sm font-bold text-primary">
+                              {getDisplayPrice(item)}
+                            </span>
+                            <button
+                              onClick={() => openPriceModal(item)}
+                              className="h-7 w-7 inline-flex items-center justify-center rounded-lg text-slate-400 hover:text-primary hover:bg-primary/5 transition-all"
+                              title={t("update") || "Update"}
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        </TableCell>
+                        <TableCell className="py-4 px-6 text-center">
+                          <div className="flex items-center justify-center">
+                            <Switch
+                              checked={
+                                Boolean(
+                                  item.isOutOfStock ?? 
+                                  item.outOfStock ?? 
+                                  (item.isAvailable !== undefined ? !item.isAvailable : false)
+                                )
+                              }
+                              onCheckedChange={(checked) => {
+                                toggleOutOfStock(item.id, checked);
+                              }}
+                            />
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                ) : (
+                  <TableRow>
+                    <TableCell
+                      colSpan={4}
+                      className="text-center h-48 text-sm text-slate-400 font-medium"
+                    >
+                      {t("noDataFound") || "No data found"}
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </div>
       </div>
+
+      {/* PRICE EDIT MODAL */}
+      <Dialog open={!!priceModalItem} onOpenChange={(open) => !open && closePriceModal()}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{t("editPrice") || "Edit Price"}</DialogTitle>
+          </DialogHeader>
+
+          {priceModalItem && (
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              {(t("updatePriceFor") || "Update price for")}{" "}
+              <span className="font-semibold text-slate-700 dark:text-slate-200">
+                {priceModalItem.name || priceModalItem.nameAr}
+              </span>
+            </p>
+          )}
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-slate-500 dark:text-slate-400">
+              {t("priceEgp") || "Price (EGP)"}
+            </label>
+            <Input
+              type="number"
+              value={priceModalValue}
+              onChange={(e) => setPriceModalValue(e.target.value)}
+              autoFocus
+              className="h-10 rounded-lg border-primary focus-visible:ring-primary dark:bg-slate-900 dark:text-slate-100"
+            />
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={closePriceModal}>
+              {t("cancel") || "Cancel"}
+            </Button>
+            <Button onClick={savePriceModal} disabled={updateMutation.isPending}>
+              {t("save") || "Save"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

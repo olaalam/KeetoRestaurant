@@ -1,5 +1,5 @@
 import React from "react";
-import { useParams, useLocation, useNavigate } from "react-router-dom"; // 💡 أضفنا useNavigate بدلاً من استخدام window.history
+import { useParams, useLocation, useNavigate } from "react-router-dom";
 import AddPage from "@/components/AddPage";
 import { useQuery } from "@tanstack/react-query";
 import api from "@/api/axios";
@@ -9,9 +9,10 @@ import { useTranslation } from "@/hooks/useTranslation";
 const AdminAdd = () => {
   const { id } = useParams();
   const { state } = useLocation();
-  const navigate = useNavigate(); // 💡 تفعيل الـ useNavigate للانتقال السلس والموجه للجدول
+  const navigate = useNavigate();
   const { t } = useTranslation();
 
+  // 1️⃣ Fetch Admin Data if Editing
   const { data: adminData, isLoading: isFetching } = useQuery({
     queryKey: ["admin", id],
     queryFn: async () => {
@@ -21,6 +22,7 @@ const AdminAdd = () => {
     enabled: !!id && !state?.adminData,
   });
 
+  // 2️⃣ Fetch Branches
   const { data: branches = [], isLoading: isBranchesLoading } = useQuery({
     queryKey: ["branches"],
     queryFn: async () => {
@@ -29,12 +31,22 @@ const AdminAdd = () => {
     },
   });
 
+  // 3️⃣ Fetch Roles dynamically from API
+  const { data: roles = [], isLoading: isRolesLoading } = useQuery({
+    queryKey: ["adminRoles"],
+    queryFn: async () => {
+      const { data } = await api.get("/api/restaurant/restaurantadmin/roles");
+      // دعم اختلاف هيكل استجابة البيانات
+      return data?.data?.data || data?.data || data || [];
+    },
+  });
+
   const rawData = state?.adminData || adminData;
 
-  // ✅ Initialize with type default if creating a new entry
-  const initialData = rawData ? { ...rawData } : { type: "subadmin" };
+  // ✅ Initialize with default if creating a new entry
+  const initialData = rawData ? { ...rawData } : {};
 
-  // ✅ Use "none" string instead of empty string for optional branches
+  // ✅ Branch Combobox Options
   const branchOptions = [
     { value: "none", label: t("none") },
     ...branches.map((branch) => ({
@@ -43,11 +55,16 @@ const AdminAdd = () => {
     })),
   ];
 
-  const roleOptions = [
-    { value: "subadmin", label: t("subAdmin") },
-    { value: "branch_manager", label: t("branchManager") },
-    { value: "staff", label: t("staff") },
-  ];
+  // ✅ Role Combobox Options Map
+  const roleOptions = roles.map((role) => {
+    if (typeof role === "string") {
+      return { value: role, label: t(role) || role };
+    }
+    return {
+      value: role.id || role.value || role.name,
+      label: role.name || role.label || role.title || role.id,
+    };
+  });
 
   const adminFields = [
     { name: "name", label: t("name"), required: true },
@@ -81,7 +98,7 @@ const AdminAdd = () => {
   ];
 
   if (id && isFetching) return <LoadingSpinner />;
-  if (isBranchesLoading) return <LoadingSpinner />;
+  if (isBranchesLoading || isRolesLoading) return <LoadingSpinner />;
 
   return (
     <AddPage
@@ -91,10 +108,7 @@ const AdminAdd = () => {
       fields={adminFields}
       initialData={initialData}
       onSuccessAction={(res) => {
-        // 💡 التقاط الـ ID الراجع من السيرفر عند الإضافة الناجحة، أو الـ ID الموجود مسبقاً عند التعديل
         const targetId = res?.data?.data?.id || res?.data?.id || res?.id || initialData?.id;
-        
-        // 💡 التوجيه لصفحة الـ admins وتمرير الـ ID المضيء بداخل الـ state
         navigate("/admins", { state: { highlightedId: targetId } });
       }}
     />

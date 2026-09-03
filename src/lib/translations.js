@@ -823,6 +823,17 @@ const translations = {
     "date": "Date",
     "phone": "Phone Number",
     "totalOrders": "Total Orders",
+    //outofstock
+    
+  "outOfStockFoods": "Out of Stock Foods",
+  "nameEn": "English Name",
+  "nameAr": "Arabic Name",
+  "category": "Category",
+  "price": "Price",
+  "unavailableBranches": "Unavailable Branches",
+  "viewBranches": "View Branches",
+  "noUnavailableBranches": "No unavailable branches",
+
 
     // AddonsCat
     "addonCategoriesTitle": "Addon Categories",
@@ -1887,7 +1898,18 @@ const translations = {
     "loadingProducts": "جاري تحميل المنتجات...",
 
     // ViewPermissionsModal
-    "permissionsLabel": "الصلاحيات:"
+    "permissionsLabel": "الصلاحيات:",
+    //outofstock 
+    
+  "outOfStockFoods": "الأطعمة غير المتاحة",
+  "nameEn": "الاسم بالإنجليزية",
+  "nameAr": "الاسم بالعربية",
+  "category": "القسم",
+  "price": "السعر",
+  "unavailableBranches": "الفروع غير المتاحة",
+  "viewBranches": "عرض الفروع",
+  "noUnavailableBranches": "لا توجد فروع غير متاحة",
+
 
 
   },
