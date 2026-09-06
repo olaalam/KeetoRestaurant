@@ -40,16 +40,31 @@ const ICONS_BY_MODULE = {
   delivery: Bike,
   dine_in: UtensilsCrossed,
 };
+const getStoredBranchId = () => {
+  try {
+    const authStorage = localStorage.getItem("auth-storage");
+    if (!authStorage) return null;
+    const parsed = JSON.parse(authStorage);
+    // التعديل هنا: الوصول إلى user ثم branchId
+    return parsed?.state?.user?.branchId || null;
+  } catch (error) {
+    console.error("Error reading auth-storage from localStorage", error);
+    return null;
+  }
+};
 
 export default function PricingProduct({ branchId: branchIdProp }) {
   const { t, isRTL } = useTranslation();
 
   const [search, setSearch] = useState("");
+// استخدام الـ branchId القادم من الـ prop أو من الـ localStorage
+  const currentBranchId = branchIdProp || getStoredBranchId();
 
-  // ---- multi-select branches state (default: all) ----
+  // ---- multi-select branches state ----
   const [selectedBranchIds, setSelectedBranchIds] = useState(
-    branchIdProp ? [branchIdProp] : ["all"]
+    currentBranchId ? [currentBranchId] : ["all"]
   );
+
 
   // ---- multi-select modules state (default: all) ----
   const [selectedModules, setSelectedModules] = useState(["all"]);
@@ -325,42 +340,44 @@ export default function PricingProduct({ branchId: branchIdProp }) {
         </h2>
       </div>
 
-      {/* BRANCHES ROW (multi-select) */}
-      <div className="flex flex-wrap items-center gap-2">
-        <Button
-          variant={isAllBranches ? "default" : "outline"}
-          onClick={() => toggleBranch("all")}
-          className={cn(
-            "h-10 rounded-xl font-medium gap-2 transition-all",
-            isAllBranches
-              ? "bg-primary text-primary-foreground shadow-sm"
-              : "border-slate-200 text-slate-600 dark:border-slate-800 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50"
-          )}
-        >
-          <Building2 className="h-4 w-4" />
-          <span>{t("all") || "All"}</span>
-        </Button>
+{/* BRANCHES ROW (multi-select) - التعديل هنا: استخدام currentBranchId */}
+      {!currentBranchId && (
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant={isAllBranches ? "default" : "outline"}
+            onClick={() => toggleBranch("all")}
+            className={cn(
+              "h-10 rounded-xl font-medium gap-2 transition-all",
+              isAllBranches
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "border-slate-200 text-slate-600 dark:border-slate-800 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50"
+            )}
+          >
+            <Building2 className="h-4 w-4" />
+            <span>{t("all") || "All"}</span>
+          </Button>
 
-        {branches.map((b) => {
-          const isActive = !isAllBranches && selectedBranchIds.includes(b.id);
-          return (
-            <Button
-              key={b.id}
-              variant={isActive ? "default" : "outline"}
-              onClick={() => toggleBranch(b.id)}
-              className={cn(
-                "h-10 rounded-xl font-medium gap-2 transition-all",
-                isActive
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "border-slate-200 text-slate-600 dark:border-slate-800 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50"
-              )}
-            >
-              <Store className="h-4 w-4" />
-              <span>{b.name}</span>
-            </Button>
-          );
-        })}
-      </div>
+          {branches.map((b) => {
+            const isActive = !isAllBranches && selectedBranchIds.includes(b.id);
+            return (
+              <Button
+                key={b.id}
+                variant={isActive ? "default" : "outline"}
+                onClick={() => toggleBranch(b.id)}
+                className={cn(
+                  "h-10 rounded-xl font-medium gap-2 transition-all",
+                  isActive
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "border-slate-200 text-slate-600 dark:border-slate-800 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                )}
+              >
+                <Store className="h-4 w-4" />
+                <span>{b.name}</span>
+              </Button>
+            );
+          })}
+        </div>
+      )}
 
       {/* TABS (Modules Multi-select) + SEARCH */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">

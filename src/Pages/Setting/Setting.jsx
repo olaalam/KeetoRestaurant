@@ -78,12 +78,17 @@ export default function Setting() {
             header: t("minOrder", { defaultValue: "Min Order" }),
             cell: ({ getValue }) => `${getValue()} EGP`
         },
+
         {
             header: t("deliveryTime", { defaultValue: "Delivery Time" }),
             cell: ({ row }) => `${row.original.minDeliveryTime} - ${row.original.maxDeliveryTime} min`
         },
         {
-            accessorKey: "resetDailyOrderNumberTime", // 👈 إضافة عمود وقت إعادة التصفير
+            header: t("takeawayTime", { defaultValue: "Takeaway Time" }),
+            cell: ({ row }) => `${row.original.minTakeAwayTime ?? 0} - ${row.original.maxTakeAwayTime ?? 0} min`
+        },
+        {
+            accessorKey: "resetDailyOrderNumberTime", 
             header: t("resetDailyOrderNumberTime", { defaultValue: "Reset Order Time" }),
             cell: ({ getValue }) => getValue() ? getValue().substring(0, 5) : '-'
         },

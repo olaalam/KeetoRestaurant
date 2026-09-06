@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 import AddPage from "@/components/AddPage";
 import { useQuery } from "@tanstack/react-query";
@@ -12,7 +12,7 @@ const AdminAdd = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
 
-  // 1️⃣ Fetch Admin Data if Editing
+  // 1️⃣ Fetch Admin Data if Editing[cite: 3]
   const { data: adminData, isLoading: isFetching } = useQuery({
     queryKey: ["admin", id],
     queryFn: async () => {
@@ -22,7 +22,7 @@ const AdminAdd = () => {
     enabled: !!id && !state?.adminData,
   });
 
-  // 2️⃣ Fetch Branches
+  // 2️⃣ Fetch Branches[cite: 3]
   const { data: branches = [], isLoading: isBranchesLoading } = useQuery({
     queryKey: ["branches"],
     queryFn: async () => {
@@ -31,22 +31,22 @@ const AdminAdd = () => {
     },
   });
 
-  // 3️⃣ Fetch Roles dynamically from API
+  // 3️⃣ Fetch Roles dynamically from API[cite: 3]
   const { data: roles = [], isLoading: isRolesLoading } = useQuery({
     queryKey: ["adminRoles"],
     queryFn: async () => {
       const { data } = await api.get("/api/restaurant/restaurantadmin/roles");
-      // دعم اختلاف هيكل استجابة البيانات
       return data?.data?.data || data?.data || data || [];
     },
   });
 
   const rawData = state?.adminData || adminData;
-
-  // ✅ Initialize with default if creating a new entry
   const initialData = rawData ? { ...rawData } : {};
 
-  // ✅ Branch Combobox Options
+  // 🔹 State لمتابعة الـ type الحالي للتحكم في إظهار/إخفاء حقل الفرع
+  const [selectedType, setSelectedType] = useState(initialData?.type || "");
+
+  // ✅ Branch Combobox Options[cite: 3]
   const branchOptions = [
     { value: "none", label: t("none") },
     ...branches.map((branch) => ({
@@ -55,7 +55,7 @@ const AdminAdd = () => {
     })),
   ];
 
-  // ✅ Role Combobox Options Map
+  // ✅ Role Combobox Options Map (تأتي من الـ API)[cite: 3]
   const roleOptions = roles.map((role) => {
     if (typeof role === "string") {
       return { value: role, label: t(role) || role };
@@ -65,6 +65,17 @@ const AdminAdd = () => {
       label: role.name || role.label || role.title || role.id,
     };
   });
+
+  // خيارات الـ type المطلوبة
+  const typeOptions = [
+    // { value: "owner", label: t("owner") || "Owner" },
+    { value: "subadmin", label: t("subadmin") || "Sub Admin" },
+    { value: "branch_manager", label: t("branchManager") || "Branch Manager" },
+    { value: "staff", label: t("staff") || "Staff" },
+  ];
+
+  // شرط إخفاء الفرع إذا كان الـ type هو owner أو subadmin
+  const shouldHideBranch = selectedType === "owner" || selectedType === "subadmin";
 
   const adminFields = [
     { name: "name", label: t("name"), required: true },
@@ -82,19 +93,34 @@ const AdminAdd = () => {
       : []),
     {
       name: "type",
-      label: t("adminRoleType"),
+      label: t("adminType") || "Admin Type",
+      type: "combobox",
+      required: true,
+      options: typeOptions,
+      onChange: (eOrVal) => {
+        const val = eOrVal?.target ? eOrVal.target.value : eOrVal;
+        setSelectedType(val);
+      },
+    },
+    {
+      name: "roleId",
+      label: t("role") || "Role",
       type: "combobox",
       required: true,
       options: roleOptions,
     },
-    {
-      name: "branchId",
-      label: t("branchPermission"),
-      type: "combobox",
-      required: false,
-      options: branchOptions,
-      transform: (value) => (value === "none" ? null : value),
-    },
+    ...(!shouldHideBranch
+      ? [
+          {
+            name: "branchId",
+            label: t("branchPermission"),
+            type: "combobox",
+            required: false,
+            options: branchOptions,
+            transform: (value) => (value === "none" ? null : value),
+          },
+        ]
+      : []),
   ];
 
   if (id && isFetching) return <LoadingSpinner />;

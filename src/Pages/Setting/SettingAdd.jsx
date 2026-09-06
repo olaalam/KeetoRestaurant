@@ -45,6 +45,8 @@ const SettingPageAdd = () => {
         minOrderAmount: 50,
         minDeliveryTime: 15,
         maxDeliveryTime: 45,
+        minTakeAwayTime: 10,
+        maxTakeAwayTime: 30,
         resetDailyOrderNumberTime: "00:00",
         isAlwaysOpen: false,
         isSameTimeEveryDay: false,
@@ -107,6 +109,8 @@ const SettingPageAdd = () => {
             minOrderAmount: rawData.settings?.minOrderAmount ?? 50,
             minDeliveryTime: rawData.settings?.minDeliveryTime ?? 15,
             maxDeliveryTime: rawData.settings?.maxDeliveryTime ?? 45,
+            minTakeAwayTime: rawData.settings?.minTakeAwayTime ?? 10,
+            maxTakeAwayTime: rawData.settings?.maxTakeAwayTime ?? 30,
             resetDailyOrderNumberTime: rawData.settings?.resetDailyOrderNumberTime ? rawData.settings.resetDailyOrderNumberTime.substring(0, 5) : "00:00",
             isAlwaysOpen: rawData.settings?.isAlwaysOpen ?? false,
             isSameTimeEveryDay: rawData.settings?.isSameTimeEveryDay ?? false,
@@ -150,6 +154,8 @@ const SettingPageAdd = () => {
                 minOrderAmount: Number(data.minOrderAmount) || 50,
                 minDeliveryTime: Number(data.minDeliveryTime) || 15,
                 maxDeliveryTime: Number(data.maxDeliveryTime) || 45,
+                minTakeAwayTime: Number(data.minTakeAwayTime) || 10,
+                maxTakeAwayTime: Number(data.maxTakeAwayTime) || 30,
                 resetDailyOrderNumberTime: data.resetDailyOrderNumberTime || "00:00",
                 isAlwaysOpen: data.isAlwaysOpen ?? false,
                 isSameTimeEveryDay: data.isSameTimeEveryDay ?? false,
@@ -293,8 +299,23 @@ const SettingPageAdd = () => {
                                 </div>
 
                                 <div className="space-y-2">
+                                    <Label className="text-gray-700 font-medium">{t('minDeliveryTimeLabel')}</Label>
+                                    <Input type="number" {...register("minDeliveryTime", { valueAsNumber: true })} />
+                                </div>
+
+                                <div className="space-y-2">
                                     <Label className="text-gray-700 font-medium">{t('maxDeliveryTimeLabel')}</Label>
                                     <Input type="number" {...register("maxDeliveryTime", { valueAsNumber: true })} />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label className="text-gray-700 font-medium">{t('minTakeAwayTimeLabel')}</Label>
+                                    <Input type="number" {...register("minTakeAwayTime", { valueAsNumber: true })} />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label className="text-gray-700 font-medium">{t('maxTakeAwayTimeLabel')}</Label>
+                                    <Input type="number" {...register("maxTakeAwayTime", { valueAsNumber: true })} />
                                 </div>
                             </div>
                         </div>

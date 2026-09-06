@@ -4,7 +4,78 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/api/axios";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { useTranslation } from "@/hooks/useTranslation";
-import { Plus, Trash2 } from "lucide-react"; // أو أي مكتبة أيقونات مستخدمة لديك
+import { Plus, Trash2, Check, ChevronsUpDown } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { cn } from "@/lib/utils";
+
+// مكون القائمة المنسدلة المزودة بالبحث للمنتج
+const ProductCombobox = ({ value, onChange, options, t }) => {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+
+  const selectedOption = options.find((f) => String(f.id) === String(value));
+
+  const filteredOptions = search.trim()
+    ? options.filter((f) =>
+        `${f.name} ${f.price}`.toLowerCase().includes(search.toLowerCase())
+      )
+    : options;
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className="w-full justify-between font-normal text-left h-10 bg-white border-input"
+        >
+          <span className="truncate">
+            {selectedOption
+              ? `${selectedOption.name} - (${selectedOption.price} ${t("EGP") || "ج.م"})`
+              : t("Select Product")}
+          </span>
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+        <Command shouldFilter={false}>
+          <CommandInput
+            placeholder={t("Search Product...") || "بحث عن منتج..."}
+            value={search}
+            onValueChange={setSearch}
+          />
+          <CommandList>
+            <CommandEmpty>{t("noResultsFound") || "لا توجد نتائج"}</CommandEmpty>
+            <CommandGroup>
+              {filteredOptions.map((food) => (
+                <CommandItem
+                  key={food.id}
+                  value={String(food.id)}
+                  onSelect={() => {
+                    onChange(String(food.id));
+                    setOpen(false);
+                    setSearch("");
+                  }}
+                >
+                  <Check
+                    className={cn(
+                      "mr-2 h-4 w-4",
+                      String(value) === String(food.id) ? "opacity-100" : "opacity-0"
+                    )}
+                  />
+                  {food.name} - ({food.price} {t("EGP") || "ج.م"})
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+};
 
 const PointsAdd = () => {
   const { pointId } = useParams();
@@ -116,22 +187,15 @@ const PointsAdd = () => {
       <form onSubmit={handleSubmit} className="space-y-4">
         {items.map((item, index) => (
           <div key={index} className="flex gap-4 items-end border p-4 rounded-md bg-gray-50">
-            {/* اختيار المنتج */}
+            {/* اختيار المنتج مع خاصية البحث */}
             <div className="flex-1">
               <label className="block text-sm font-medium mb-1">{t("Product")}</label>
-<select
-  value={item.foodId}
-  onChange={(e) => handleItemChange(index, "foodId", e.target.value)}
-  required
-  className="w-full border rounded p-2 focus:ring focus:ring-primary"
->
-  <option value="">{t("Select Product")}</option>
-  {foodOptions.map((food) => (
-    <option key={food.id} value={food.id}>
-      {food.name} - ({food.price} {t("EGP") || "ج.م"})
-    </option>
-  ))}
-</select>
+              <ProductCombobox
+                value={item.foodId}
+                onChange={(val) => handleItemChange(index, "foodId", val)}
+                options={foodOptions}
+                t={t}
+              />
             </div>
 
             {/* عدد النقاط المطلوبة للاستبدال */}
@@ -148,7 +212,7 @@ const PointsAdd = () => {
                 }
                 required
                 placeholder="150"
-                className="w-full border rounded p-2 focus:ring focus:ring-primary"
+                className="w-full border rounded p-2 focus:ring focus:ring-primary h-10"
               />
             </div>
 
@@ -157,7 +221,7 @@ const PointsAdd = () => {
               <button
                 type="button"
                 onClick={() => handleRemoveItem(index)}
-                className="p-2 text-red-600 hover:bg-red-50 rounded"
+                className="p-2 text-red-600 hover:bg-red-50 rounded h-10 flex items-center justify-center"
               >
                 <Trash2 size={20} />
               </button>
