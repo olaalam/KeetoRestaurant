@@ -82,46 +82,14 @@ export default function PricingProduct({ branchId: branchIdProp }) {
     ];
   }, [apiServiceModules]);
 
-  // ---- helper: toggle a branch in the multi-select, auto-fallback to "all" ----
+// ---- helper: toggle a branch in the single-select ----
   const toggleBranch = (id) => {
-    if (id === "all") {
-      setSelectedBranchIds(["all"]);
-      return;
-    }
-    setSelectedBranchIds((prev) => {
-      let next;
-      if (prev.includes("all")) {
-        next = [id];
-      } else if (prev.includes(id)) {
-        next = prev.filter((bId) => bId !== id);
-      } else {
-        next = [...prev, id];
-      }
-      if (branches.length > 0 && next.length === branches.length) return ["all"];
-      if (next.length === 0) return ["all"];
-      return next;
-    });
+    setSelectedBranchIds([id]);
   };
 
-  // ---- helper: toggle a module in the multi-select, auto-fallback to "all" ----
+  // ---- helper: toggle a module in the single-select ----
   const toggleModule = (id) => {
-    if (id === "all") {
-      setSelectedModules(["all"]);
-      return;
-    }
-    setSelectedModules((prev) => {
-      let next;
-      if (prev.includes("all")) {
-        next = [id];
-      } else if (prev.includes(id)) {
-        next = prev.filter((mId) => mId !== id);
-      } else {
-        next = [...prev, id];
-      }
-      if (apiServiceModules.length > 0 && next.length === apiServiceModules.length) return ["all"];
-      if (next.length === 0) return ["all"];
-      return next;
-    });
+    setSelectedModules([id]);
   };
 
   const isAllBranches = selectedBranchIds.includes("all");

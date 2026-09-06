@@ -629,7 +629,7 @@ const translations = {
     setPreparationTime: "Set Preparation Time",
     durationInMinutes: "Estimated Preparation Time (in minutes)",
     cancel: "Cancel",
-    confirm: "Confirm & Start Preparing",
+    confirm: "Send",
     durationUpdatedSuccess: "Preparation time set successfully",
     durationUpdateError: "Failed to set preparation time",
 
