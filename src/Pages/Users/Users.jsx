@@ -21,6 +21,7 @@ export default function Users() {
         name: item.name,
         email: item.email,
         phone: item.phone,
+        points: item.points ?? 0, // 👈 تم إضافة حقل النقاط هنا ليمرر إلى الجدول
         status: item.status || item.userStatus || 'active',
         photo: item.photo,
         restaurantName: item.restaurant?.name,
@@ -67,8 +68,12 @@ export default function Users() {
         },
         {
             accessorKey: 'points',
-            header: t('Points'),
-            cell: ({ row }) => row.original.points || 0,
+            header: t('Points', { defaultValue: 'Points' }),
+            cell: ({ row }) => (
+                <span className="font-semibold text-amber-600">
+                    {row.original.points ?? 0}
+                </span>
+            ),
         },
         {
             accessorKey: 'status',
