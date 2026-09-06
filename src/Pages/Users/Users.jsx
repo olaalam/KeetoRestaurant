@@ -66,6 +66,11 @@ export default function Users() {
             header: t('phoneHeader'),
         },
         {
+            accessorKey: 'points',
+            header: t('Points'),
+            cell: ({ row }) => row.original.points || 0,
+        },
+        {
             accessorKey: 'status',
             header: t('statusHeader'),
             cell: ({ row }) => {

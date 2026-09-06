@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import AddPage from '@/components/AddPage';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '@/api/axios';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { useTranslation } from "@/hooks/useTranslation";
@@ -46,6 +46,7 @@ const DeliveryZoneAdd = () => {
     const location = useLocation();
     const navigate = useNavigate();
     const { t } = useTranslation();
+    const queryClient = useQueryClient(); // ⬅️ جديد: عشان نقدر نعمل invalidate يدويًا
 
     const isEdit = Boolean(id);
 
@@ -72,6 +73,11 @@ const DeliveryZoneAdd = () => {
     const [coordinates, setCoordinates] = useState([]);
     
     const [dataLoaded, setDataLoaded] = useState(false);
+
+    // ⬅️ جديد: كل ما الـ id يتغير (تعديل عنصر مختلف) اعتبر إن الفورم لسه محتاج يتحمل من جديد
+    useEffect(() => {
+        setDataLoaded(false);
+    }, [id]);
 
     const { data: selectionData = { zones: [], cities: [], branches: [] }, isLoading: isLoadingZones } = useQuery({
         queryKey: ['DeliveryZonesSelect'],
@@ -272,6 +278,10 @@ const DeliveryZoneAdd = () => {
             initialData={initialValues}
             transformPayload={transformPayload}
             onSuccessAction={(res) => {
+                // ⬅️ جديد: امسح كاش العنصر المفرد ده تحديدًا عشان لو رجع يفتحه تاني
+                // React Query يعمل fetch جديد من السيرفر مش يورّي نسخة قديمة قاعدة في الكاش
+                queryClient.invalidateQueries({ queryKey: ['DeliveryZoneSingle', id] });
+
                 const targetId = String(
                     res?.data?.data?.id ||
                     res?.data?.id ||
