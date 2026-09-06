@@ -336,7 +336,7 @@ export default function PricingProduct({ branchId: branchIdProp }) {
       {/* HEADER */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2 border-b border-slate-100 dark:border-slate-800">
         <h2 className="text-2xl font-bold text-slate-800 tracking-tight dark:text-slate-100">
-          {t("productPosPricing") || "Product POS Pricing"}
+          {t("productPricing")}
         </h2>
       </div>
 

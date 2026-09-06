@@ -621,6 +621,7 @@ const translations = {
     assignDeliveryError: "Failed to assign delivery man",
     searchDeliveryMan: "Search by name or phone...",
     noResultsFound: "No matching results found",
+    productPricing:"Product Pricing",
 
     // Preparation Duration Section
     orderDuration: "Preparation Duration",
@@ -2016,6 +2017,7 @@ const translations = {
     "addonCategoryNameHeader": "اسم الفئة",
     "addonCategoryNameArHeader": "اسم الفئة (عربي)",
     "addonCategoryNameFrHeader": "اسم الفئة (فرانكو)",
+    productPricing: "تسعير المنتجات",
 
     // Category
     "categoriesTitle": "الفئات",
