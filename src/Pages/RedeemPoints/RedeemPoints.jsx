@@ -1,18 +1,17 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Search,
   Loader2,
   Gift,
-  Hash,
   User,
   Phone,
-  Package,
   Calendar,
   Clock,
   CheckCircle2,
   XCircle,
   AlertCircle,
   Coins,
+  Store // ضفت أيكون للفرع
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -21,6 +20,10 @@ import { Separator } from "@/components/ui/separator";
 import { useGet } from "@/hooks/useGet";
 import { usePost } from "@/hooks/usePost";
 import { useTranslation } from "@/hooks/useTranslation";
+
+// افترضي إن ده مسار الـ store بتاعك اللي فيه بيانات اليوزر
+// عدلي المسار على حسب المشروع عندك
+// import { useAuthStore } from "@/store/authStore"; 
 
 function InfoRow({ icon: Icon, label, value, dir }) {
   if (value === undefined || value === null || value === "") return null;
@@ -48,23 +51,50 @@ export default function RedeemPoints() {
   const { t } = useTranslation();
   const [codeInput, setCodeInput] = useState("");
   const [activeCode, setActiveCode] = useState(null);
+  
+  // 1. جلب بيانات اليوزر من الستور (عدليها حسب طريقتك في جلب الـ state)
+  // const userBranchId = useAuthStore((state) => state.user?.branchId);
+  // مؤقتاً لحد ما تظبطي الـ import، هنفترض إننا جبناها:
+  const userBranchId = null; // غيريها للـ variable الحقيقي من Zustand
 
-  // 1. Fetch redemption code details
+  const [selectedBranchId, setSelectedBranchId] = useState(userBranchId || "");
+
+  // تحديث الـ selected branch لو اتغير من الستور
+  useEffect(() => {
+    if (userBranchId) {
+      setSelectedBranchId(userBranchId);
+    }
+  }, [userBranchId]);
+
+  // 2. Fetch Branches (هنعمل fetch بس لو اليوزر ملوش فرع محدد)
+  const { data: branchesData, isFetching: isFetchingBranches } = useGet(
+    ["branchesList"],
+    "/api/restaurant/branches",
+    {},
+    { enabled: !userBranchId } 
+  );
+
+  const branches = branchesData?.data?.data || branchesData?.data || [];
+
+  // 3. Fetch redemption code details (GET request with Query Param)
+  const verifyUrl = activeCode 
+    ? `/api/restaurant/points-orders/verify/${activeCode}?branchId=${selectedBranchId}` 
+    : null;
+
   const {
     data: verifyData,
     isFetching,
     isError,
   } = useGet(
-    ["pointsOrderVerify", activeCode],
-    activeCode ? `/api/restaurant/points-orders/verify/${activeCode}` : null,
+    ["pointsOrderVerify", activeCode, selectedBranchId],
+    verifyUrl,
     {},
-    { enabled: !!activeCode, retry: false }
+    { enabled: !!activeCode && !!selectedBranchId, retry: false }
   );
 
-  // Extract order object from response structure
   const order = verifyData?.data?.data || verifyData?.data || verifyData || null;
 
-  // 2. Action mutation for accept/reject
+  // 4. Action mutation for accept/reject (POST request with Body Param)
   const actionMutation = usePost(
     "/api/restaurant/points-orders",
     "post",
@@ -72,6 +102,11 @@ export default function RedeemPoints() {
   );
 
   const handleSearch = () => {
+    if (!selectedBranchId) {
+      // تقدري تحطي Toast هنا يطلب منه يختار فرع الأول
+      alert(t("pleaseSelectBranch") || "Please select a branch first");
+      return;
+    }
     const trimmed = codeInput.trim();
     if (!trimmed) return;
     setActiveCode(trimmed);
@@ -82,12 +117,13 @@ export default function RedeemPoints() {
   };
 
   const handleAction = (actionType) => {
-    if (!order) return;
+    if (!order || !selectedBranchId) return;
 
     actionMutation.mutate(
       {
         redeemRequestId: order.redeemRequestId || order.id,
         action: actionType, // "approve" | "reject"
+        branchId: selectedBranchId, // إرسال الـ branchId في الـ Body
       },
       {
         onSuccess: () => {
@@ -98,12 +134,9 @@ export default function RedeemPoints() {
     );
   };
 
-  const isApproving =
-    actionMutation.isPending && actionMutation.variables?.action === "approve";
-  const isRejecting =
-    actionMutation.isPending && actionMutation.variables?.action === "reject";
+  const isApproving = actionMutation.isPending && actionMutation.variables?.action === "approve";
+  const isRejecting = actionMutation.isPending && actionMutation.variables?.action === "reject";
 
-  // Date formatter based on locale
   const formatDate = (dateString) => {
     if (!dateString) return null;
     return new Date(dateString).toLocaleString(undefined, {
@@ -118,6 +151,37 @@ export default function RedeemPoints() {
         {t("redeemPoints") || "Redeem Points"}
       </h1>
 
+      {/* Branch Selector (يظهر فقط لو اليوزر ملوش فرع ثابت) */}
+      {!userBranchId && (
+        <div className="flex items-center gap-3">
+          <div className="relative flex-1">
+            <Store className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+            <select
+              value={selectedBranchId}
+              onChange={(e) => {
+                setSelectedBranchId(e.target.value);
+                setActiveCode(null); // ريست الكود لو غير الفرع
+              }}
+              disabled={isFetchingBranches}
+              className="w-full h-14 pl-12 pr-4 bg-white border border-gray-200 rounded-2xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition-all appearance-none"
+            >
+              <option value="" disabled>
+                {t("selectBranch") || "Select Branch..."}
+              </option>
+              {branches.map((branch) => (
+                <option key={branch.id} value={branch.id}>
+                  {/* تقدري تستخدمي branch.nameAr لو شغالة على العربي */}
+                  {branch.name} 
+                </option>
+              ))}
+            </select>
+            {isFetchingBranches && (
+              <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-gray-400" />
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Search Input Bar */}
       <div className="flex items-center gap-3">
         <div className="relative flex-1">
@@ -127,14 +191,15 @@ export default function RedeemPoints() {
             value={codeInput}
             onChange={(e) => setCodeInput(e.target.value)}
             onKeyDown={handleKeyDown}
+            disabled={!selectedBranchId} // نقفل البحث لو لسه مختارش الفرع
             placeholder={t("enterTheCode") || "Enter redemption code"}
-            className="w-full h-14 pr-12 pl-4 bg-gray-100 border border-gray-200 rounded-2xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition-all"
+            className="w-full h-14 pr-12 pl-4 bg-gray-100 border border-gray-200 rounded-2xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition-all disabled:opacity-60"
           />
         </div>
         <Button
           onClick={handleSearch}
-          disabled={isFetching || !codeInput.trim()}
-          className="h-14 px-8 rounded-2xl bg-primary hover:bg-primary/90 text-white font-bold text-base shrink-0"
+          disabled={isFetching || !codeInput.trim() || !selectedBranchId}
+          className="h-14 px-8 rounded-2xl bg-primary hover:bg-primary/90 text-white font-bold text-base shrink-0 disabled:opacity-60"
         >
           {isFetching ? (
             <Loader2 className="w-5 h-5 animate-spin" />
@@ -161,7 +226,7 @@ export default function RedeemPoints() {
             <AlertCircle className="w-7 h-7 text-red-500" />
           </div>
           <p className="text-sm font-semibold text-gray-700">
-            {t("codeNotFound") || "Code not found"}
+            {t("codeNotFound") || "Code not found or invalid for this branch"}
           </p>
         </div>
       )}
