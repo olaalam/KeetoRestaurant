@@ -11,7 +11,10 @@ export default function DeliveryZone() {
     const location = useLocation();
     const { t } = useTranslation();
     const [highlightedId, setHighlightedId] = useState(null);
-    const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 15 });
+const savedSize = localStorage.getItem("tablePageSize");
+  const initialPageSize = savedSize ? Number(savedSize) : 15;
+
+  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: initialPageSize });
 
     // 💡 الحل البديل والأقوى: قراءة اللغة مباشرة من الـ Local Storage الخاص بالتطبيق
     const getLanguage = () => {

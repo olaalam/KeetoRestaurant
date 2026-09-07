@@ -26,12 +26,12 @@ const DeliveryManAdd = () => {
 
   const rawData = state?.deliveryManData || deliveryManData;
 
-  // التأكد من أن القيمة المبدئية يتم تمريرها كـ Boolean
+  // التأكد من أن القيمة المبدئية يتم تمريرها كـ Boolean صريح
   const initialData = rawData ? {
     ...rawData,
-    isActive: rawData.isActive === true || rawData.isActive === "true" || rawData.isActive === 1
+    isActive: rawData.isActive === true || rawData.isActive === "true" || rawData.isActive === 1 || rawData.isActive === "1"
   } : {
-    isActive: true // القيمة الافتراضية عند الإضافة
+    isActive: true 
   };
 
   const deliveryManFields = [
@@ -90,23 +90,20 @@ const DeliveryManAdd = () => {
         method={id ? "PUT" : "POST"}
         fields={deliveryManFields}
         initialData={initialData}
-        // إضافة دالة تحويل البيانات قبل الإرسال (تأكد من اسم الـ prop في مكونة AddPage عندك، قد تكون transformData أو formatPayload)
-        transformData={(submitData) => {
-          // إذا كانت AddPage تستخدم FormData بسبب وجود ملف (صورة)
-          if (submitData instanceof FormData) {
-            const isActiveValue = submitData.get('isActive');
-            const isBoolTrue = isActiveValue === 'true' || isActiveValue === true || isActiveValue === '1';
-            // في حالة FormData لا يمكن إرسال boolean صريح، لذا نرسلها كـ 1 أو 0 (وهي الطريقة الصحيحة للـ Backend)
-            submitData.set('isActive', isBoolTrue ? 1 : 0);
-            return submitData;
-          }
+        
+        // غيرنا هنا الاسم ليطابق الـ Prop في مكون AddPage
+        transformPayload={(submitData) => {
+          // دالة مساعدة عشان نحدد القيمة كـ Boolean صريح
+          const parseBoolean = (val) => val === 'true' || val === true || val === '1' || val === 1;
 
-          // إذا كانت AddPage ترسل البيانات كـ JSON
+          // بما إن مكون AddPage بيحول الصورة لـ base64 وبيبعت الداتا كـ JSON دايماً
+          // فإحنا مش محتاجين جزء الـ FormData خالص هنا وهنرجع الـ Object متعدل مباشرة
           return {
             ...submitData,
-            isActive: submitData.isActive === 'true' || submitData.isActive === true || submitData.isActive === 1
+            isActive: parseBoolean(submitData.isActive)
           };
         }}
+        
         onSuccessAction={(res) => {
           const targetId = res?.data?.data?.id || res?.data?.id || res?.id || initialData?.id || id;
           navigate("/delivery-man", { state: { highlightedId: targetId } });

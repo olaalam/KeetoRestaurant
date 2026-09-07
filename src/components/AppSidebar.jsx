@@ -62,25 +62,29 @@ export function AppSidebar({ side = "left" }) {
     ? translatedModules.find((m) => m.key === storedModule.key) || storedModule
     : null;
 
-  useEffect(() => {
-    if (activeModule && activeModule.items) {
-      const activeParentMenu = activeModule.items.find(
-        (item) =>
-          item.subItems?.some((subItem) =>
-            location.pathname.includes(subItem.url),
-          ) || location.pathname.includes(item.url),
-      );
+useEffect(() => {
+    if (!activeModule?.items) return;
 
-      if (activeParentMenu) {
-        setOpenMenus((prev) => {
-          if (!prev.includes(activeParentMenu.title)) {
-            return [...prev, activeParentMenu.title];
-          }
-          return prev;
-        });
-      }
+    const activeParentMenu = activeModule.items.find(
+      (item) =>
+        item.subItems?.some((subItem) =>
+          location.pathname.includes(subItem.url),
+        ) || location.pathname.includes(item.url),
+    );
+
+    if (activeParentMenu) {
+      setOpenMenus((prev) =>
+        prev.includes(activeParentMenu.title)
+          ? prev
+          : [...prev, activeParentMenu.title],
+      );
     }
-  }, [location.pathname, activeModule]);
+    // بنعتمد على location.pathname و activeModule?.key (قيم ثابتة) مش على
+    // activeModule نفسه، لأنه بيتعمل من جديد (reference جديدة) كل مرة orderCounts
+    // بتتحدث (polling كل 30 ثانية) أو أي re-render تاني. لو فضلنا معتمدين على
+    // الـ object، الـ effect كان بيشتغل تاني ويفتح القايمة تلقائي فورًا بعد ما
+    // المستخدم يقفلها، فكانت بتبان إنها "مش بتتقفل خالص".
+  }, [location.pathname, activeModule?.key]);
 
   const toggleMenu = (title) => {
     setOpenMenus((prev) =>
@@ -137,7 +141,6 @@ export function AppSidebar({ side = "left" }) {
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu className="space-y-1 px-2">
-              {/* Safe check using optional chaining */}
               {activeModule.items?.map((item) => {
                 const active = location.pathname === item.url;
                 const IconComponent = item.icon;
@@ -147,50 +150,45 @@ export function AppSidebar({ side = "left" }) {
                 return (
                   <div key={item.title}>
                     <SidebarMenuItem>
-                      <SidebarMenuButton
-                        asChild={!hasSubItems}
-                        tooltip={item.title}
-                      >
-                        {hasSubItems ? (
-                          <button
-                            onClick={() => toggleMenu(item.title)}
-                            className={`flex items-center w-full gap-3 px-3 py-2 rounded-xl transition-all duration-200 cursor-pointer ${
-                              open
-                                ? "gap-3 px-3 py-2 justify-start"
-                                : "justify-center py-2"
-                            } ${
-                              active
-                                ? "bg-primary text-white shadow-md"
-                                : "text-gray-600 hover:bg-gray-200"
-                            }`}
-                          >
-                            {IconComponent ? (
-                              <IconComponent size={20} />
-                            ) : (
-                              <HelpCircle size={20} />
-                            )}
-                            {open && (
-                              <>
-                                <span className="text-sm font-medium">
-                                  {item.title}
-                                </span>
-                                <span className="ml-auto">
-                                  {isOpen ? (
-                                    <ChevronDown size={18} />
-                                  ) : (
-                                    <ChevronRight size={18} />
-                                  )}
-                                </span>
-                              </>
-                            )}
-                          </button>
-                        ) : (
+                      {hasSubItems ? (
+                        /* استخدام div تفاعلي بدلاً من SidebarMenuButton لمنع مشاكل تداخل الـ DOM والأزرار */
+                        <div
+                          onClick={() => toggleMenu(item.title)}
+                          title={!open ? item.title : undefined}
+                          className={`flex items-center w-full gap-3 px-3 py-2 rounded-xl transition-all duration-200 cursor-pointer select-none ${
+                            open ? "justify-start" : "justify-center"
+                          } ${
+                            active
+                              ? "bg-primary text-white shadow-md"
+                              : "text-gray-600 hover:bg-gray-200"
+                          }`}
+                        >
+                          {IconComponent ? (
+                            <IconComponent size={20} className="shrink-0" />
+                          ) : (
+                            <HelpCircle size={20} className="shrink-0" />
+                          )}
+                          {open && (
+                            <>
+                              <span className="text-sm font-medium truncate">
+                                {item.title}
+                              </span>
+                              <span className="ml-auto shrink-0">
+                                {isOpen ? (
+                                  <ChevronDown size={18} />
+                                ) : (
+                                  <ChevronRight size={18} />
+                                )}
+                              </span>
+                            </>
+                          )}
+                        </div>
+                      ) : (
+                        <SidebarMenuButton asChild tooltip={item.title}>
                           <Link
                             to={item.url}
                             className={`flex items-center w-full gap-3 px-3 py-2 rounded-xl transition-all duration-200 cursor-pointer ${
-                              open
-                                ? "gap-3 px-3 py-2 justify-start"
-                                : "justify-center py-2"
+                              open ? "justify-start" : "justify-center"
                             } ${
                               active
                                 ? "bg-primary text-white shadow-md"
@@ -198,23 +196,22 @@ export function AppSidebar({ side = "left" }) {
                             }`}
                           >
                             {IconComponent ? (
-                              <IconComponent size={20} />
+                              <IconComponent size={20} className="shrink-0" />
                             ) : (
-                              <HelpCircle size={20} />
+                              <HelpCircle size={20} className="shrink-0" />
                             )}
                             {open && (
-                              <span className="text-sm font-medium">
+                              <span className="text-sm font-medium truncate">
                                 {item.title}
                               </span>
                             )}
                           </Link>
-                        )}
-                      </SidebarMenuButton>
+                        </SidebarMenuButton>
+                      )}
                     </SidebarMenuItem>
 
                     {hasSubItems && isOpen && open && (
                       <div className="ml-6 mt-1 space-y-1 overflow-hidden transition-all">
-                        {/* Safe check using optional chaining for subItems */}
                         {item.subItems?.map((subItem) => {
                           const isSubActive = location.pathname === subItem.url;
                           const SubIcon = subItem.icon;
@@ -230,8 +227,8 @@ export function AppSidebar({ side = "left" }) {
                                       : "text-gray-500 hover:bg-gray-100"
                                   }`}
                                 >
-                                  {SubIcon && <SubIcon size={16} />}
-                                  <span>{subItem.title}</span>
+                                  {SubIcon && <SubIcon size={16} className="shrink-0" />}
+                                  <span className="truncate">{subItem.title}</span>
                                 </Link>
                               </SidebarMenuButton>
                             </SidebarMenuItem>

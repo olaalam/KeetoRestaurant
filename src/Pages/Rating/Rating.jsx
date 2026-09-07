@@ -34,6 +34,7 @@ const navigate = useNavigate();
   // أعمدة التقييمات العامة (General Ratings)
   const generalColumns = [
     { accessorKey: "customer.name", header: t("customerName") || "Customer Name" },
+        { accessorKey: "customer.phone", header: t("customerPhone") || "Customer Phone" },
 // { 
 //   accessorKey: "order.orderNumber", 
 //   header: t("orderNumber") || "Order Number",

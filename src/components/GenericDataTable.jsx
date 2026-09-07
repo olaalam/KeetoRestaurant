@@ -61,6 +61,12 @@ const getPaginationRange = (currentPage, totalPages) => {
   return [1, "...", current - 1, current, current + 1, "...", totalPages];
 };
 
+// دالة صغيرة لجلب الـ pageSize المحفوظ في المتصفح أو استخدام 15 كقيمة افتراضية
+const getSavedPageSize = () => {
+  const savedSize = localStorage.getItem("tablePageSize");
+  return savedSize ? Number(savedSize) : 15;
+};
+
 export default function GenericDataTable({
   columns,
   data = [],
@@ -93,7 +99,7 @@ export default function GenericDataTable({
   const queryClient = useQueryClient();
   const [internalPagination, setInternalPagination] = useState({
     pageIndex: 0,
-    pageSize: 15,
+    pageSize: getSavedPageSize(),
   });
   const pagination = controlledPagination ?? internalPagination;
   const setPagination = setControlledPagination ?? setInternalPagination;
@@ -288,7 +294,7 @@ export default function GenericDataTable({
     getPaginationRowModel: getPaginationRowModel(),
     initialState: {
       pagination: {
-        pageSize: 15,
+        pageSize: getSavedPageSize(),
       },
     },
   });
@@ -323,9 +329,11 @@ export default function GenericDataTable({
             <Select
               value={String(pagination.pageSize)}
               onValueChange={(value) => {
+                const newSize = Number(value);
+                localStorage.setItem("tablePageSize", newSize);
                 setPagination((prev) => ({
                   ...prev,
-                  pageSize: Number(value),
+                  pageSize: newSize,
                   pageIndex: 0,
                 }));
               }}

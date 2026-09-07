@@ -137,6 +137,7 @@ export default function OrderDetails() {
   const queryClient = useQueryClient();
 
   const [dialogConfig, setDialogConfig] = useState({ open: false, type: null });
+  const [confirmDialog, setConfirmDialog] = useState({ open: false, type: null });
   const [isInvoiceOpen, setIsInvoiceOpen] = useState(false);
   const [pdfUrl, setPdfUrl] = useState("");
   const [isInvoiceLoading, setIsInvoiceLoading] = useState(false);
@@ -293,10 +294,25 @@ export default function OrderDetails() {
     },
   });
   const handleStatusChange = (newStatus) => {
-    if (newStatus === "cancelled" || newStatus === "refund") {
+    if (newStatus === "delivered" || newStatus === "cancelled") {
+      // delivered & cancelled: show a plain confirmation dialog first
+      setConfirmDialog({ open: true, type: newStatus });
+    } else if (newStatus === "refund") {
       setDialogConfig({ open: true, type: newStatus });
     } else {
       updateStatusMutation.mutate({ status: newStatus });
+    }
+  };
+
+  const handleConfirmStatusChange = () => {
+    const type = confirmDialog.type;
+    setConfirmDialog({ open: false, type: null });
+
+    if (type === "cancelled") {
+      // after confirming cancellation, open the reason-selection dialog
+      setDialogConfig({ open: true, type: "cancelled" });
+    } else {
+      updateStatusMutation.mutate({ status: type });
     }
   };
 
@@ -1475,6 +1491,59 @@ export default function OrderDetails() {
                 {t("failedToDownloadInvoice") || "لم يتم تحميل الفاتورة"}
               </div>
             )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={confirmDialog.open}
+        onOpenChange={(open) => {
+          if (!open) setConfirmDialog({ open: false, type: null });
+        }}
+      >
+        <DialogContent className="sm:max-w-sm rounded-2xl bg-white p-6 shadow-xl">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-bold text-gray-900 flex items-center gap-2">
+              {confirmDialog.type === "delivered" ? (
+                <CheckCheck className="w-5 h-5 text-green-600" />
+              ) : (
+                <XCircle className="w-5 h-5 text-red-600" />
+              )}
+              {confirmDialog.type === "delivered"
+                ? t("confirmDeliveredTitle") || "تأكيد تسليم الطلب"
+                : t("confirmCancelTitle") || "تأكيد إلغاء الطلب"}
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="py-2 text-sm text-gray-600 font-medium leading-relaxed">
+            {confirmDialog.type === "delivered"
+              ? t("confirmDeliveredMessage") ||
+              "هل أنت متأكد أنك تريد تحديد هذا الطلب كـ \"تم التسليم\"؟"
+              : t("confirmCancelMessage") ||
+              "هل أنت متأكد أنك تريد إلغاء هذا الطلب؟ هتحتاج بعدها تختار سبب الإلغاء."}
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4 border-t mt-2">
+            <Button
+              variant="outline"
+              className="rounded-xl px-4"
+              onClick={() => setConfirmDialog({ open: false, type: null })}
+            >
+              {t("cancel") || "إلغاء"}
+            </Button>
+            <Button
+              className={`rounded-xl px-5 font-semibold text-white ${confirmDialog.type === "delivered"
+                ? "bg-green-600 hover:bg-green-700"
+                : "bg-red-600 hover:bg-red-700"
+                }`}
+              disabled={updateStatusMutation.isPending}
+              onClick={handleConfirmStatusChange}
+            >
+              {updateStatusMutation.isPending && (
+                <Loader2 className="w-4 h-4 animate-spin ml-2" />
+              )}
+              {t("confirm") || "تأكيد"}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

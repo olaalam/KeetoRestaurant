@@ -15,6 +15,7 @@ import {
   XCircle,
   Ban,
   Undo2,
+  Award,
 } from "lucide-react";
 import keetoImage from "../../public/WhatsApp Image 2026-05-18 at 11.27.30 AM.jpeg";
 import { icon } from "leaflet";
@@ -48,27 +49,31 @@ export const getModules = (t, orderCounts = {}) => {
       key: "dashboard",
       items: [{ title: t("dashboard"), url: "/dashboard", icon: LayoutDashboard }],
     },
+{
+  name: t("order management"),
+  key: "order",
+  items: [
     {
-      name: t("order management"),
-      key: "order",
-      items: [
-        {
-          title: t("orders"),
-          url: "/orders",
-          icon: ShoppingBag,
-          subItems: [
-            { title: `${t("AllOrders")} (${totalOrders})`, url: "/orders", icon: ShoppingBag },
-            { title: `${t("pending")} (${pending})`, url: "/orders/pending", icon: Clock },
-            { title: `${t("accepted")} (${accepted})`, url: "/orders/accepted", icon: CheckCircle2 },
-            { title: `${t("preparing")} (${preparing})`, url: "/orders/preparing", icon: Package },
-            { title: `${t("outForDelivery")} (${outDelivery})`, url: "/orders/out-for-delivery", icon: Truck },
-            { title: `${t("delivered")} (${delivered})`, url: "/orders/delivered", icon: CheckCheck },
-            { title: `${t("cancelled")} (${cancelled})`, url: "/orders/cancelled", icon: XCircle },
-            { title: `${t("refund")} (${refund})`, url: "/orders/refund", icon: Undo2 },
-          ],
-        },
+      title: t("orders"),
+      url: "/orders",
+      icon: ShoppingBag,
+      subItems: [
+        { title: `${t("AllOrders")} (${totalOrders})`, url: "/orders", icon: ShoppingBag },
+        { title: `${t("pending")} (${pending})`, url: "/orders/pending", icon: Clock },
+        { title: `${t("accepted")} (${accepted})`, url: "/orders/accepted", icon: CheckCircle2 },
+        { title: `${t("preparing")} (${preparing})`, url: "/orders/preparing", icon: Package },
+        { title: `${t("outForDelivery")} (${outDelivery})`, url: "/orders/out-for-delivery", icon: Truck },
+        { title: `${t("delivered")} (${delivered})`, url: "/orders/delivered", icon: CheckCheck },
+        { title: `${t("cancelled")} (${cancelled})`, url: "/orders/cancelled", icon: XCircle },
+        { title: `${t("refund")} (${refund})`, url: "/orders/refund", icon: Undo2 },
+
       ],
     },
+    {
+      title: t("redeemPoints") || "Redeem Points", url: "/redeem-points", icon: Award
+    },
+  ],
+},
     {
       name: t("product management"),
       key: "content",

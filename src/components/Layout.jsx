@@ -223,24 +223,34 @@ export default function Layout() {
                 </span>
               </div>
 
-              {/* Body Text */}
-              <div className="flex items-center justify-center text-center text-xl sm:text-2xl font-bold text-slate-800 dark:text-slate-200 leading-relaxed">
+{/* Body Text */}
+              <div className="flex flex-col items-center justify-center text-center text-xl sm:text-2xl font-bold text-slate-800 dark:text-slate-200 leading-relaxed gap-2">
                 {isCancelled ? (
-                  <span>
-                    {t("orderCancelledDesc")
-                      ? t("orderCancelledDesc").replace("{orderNumber}", newOrderPopup.latestNotification?.data?.dailyOrderNumber || '')
-                      : `Order #${newOrderPopup.latestNotification?.data?.dailyOrderNumber || ''} was cancelled by the customer.`}
+                  <>
+                    <div className="flex items-center gap-2 bg-red-50 dark:bg-red-950/50 px-4 py-2 rounded-2xl border border-red-200 dark:border-red-900">
+                      <span className="text-slate-500 text-lg">
+                        {t("orderNumberLabel") || "Order #"}
+                      </span>
+                      <span className="text-3xl font-black text-red-600 dark:text-red-400">
+                        #{newOrderPopup.latestNotification?.data?.dailyOrderNumber}
+                      </span>
+                    </div>
+                    
+                    <span className="text-base font-medium text-slate-600 dark:text-slate-400">
+                      {newOrderPopup.latestNotification?.body || t("orderCancelledDefaultDesc")}
+                    </span>
+
                     {newOrderPopup.latestNotification?.data?.reason && (
-                      <span className="block text-lg font-normal text-slate-600 dark:text-slate-400 mt-1">
-                        {t("cancelReasonLabel") ? `${t("cancelReasonLabel")}: ${newOrderPopup.latestNotification.data.reason}` : `Reason: ${newOrderPopup.latestNotification.data.reason}`}
+                      <span className="text-sm font-semibold text-rose-500 bg-rose-50 dark:bg-rose-950/30 px-3 py-1 rounded-xl mt-1">
+                        {t("cancelReasonLabel") || "Reason"}: {newOrderPopup.latestNotification.data.reason}
                       </span>
                     )}
-                  </span>
+                  </>
                 ) : (
                   <span>
                     {t("newOrdersCountMessage")
                       ? t("newOrdersCountMessage").replace("{count}", newOrderPopup.count)
-                      : `لديك ${newOrderPopup.count} تنبيه طلب جديد، يرجى التحقق.`}
+                      : `You have ${newOrderPopup.count} new order alert(s).`}
                   </span>
                 )}
               </div>

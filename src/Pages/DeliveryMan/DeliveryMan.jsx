@@ -8,8 +8,10 @@ export default function DeliveryMan() {
   const location = useLocation();
   const navigate = useNavigate();
   const [highlightedId, setHighlightedId] = useState(null);
-  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 15 });
-  
+const savedSize = localStorage.getItem("tablePageSize");
+  const initialPageSize = savedSize ? Number(savedSize) : 15;
+
+  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: initialPageSize });  
   const { t } = useTranslation();
 
   // إعدادات الـ API

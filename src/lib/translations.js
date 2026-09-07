@@ -839,6 +839,23 @@ const translations = {
     "orderStatusUpdatedSuccessfully": "Order status updated successfully",
     "statusUpdatedSuccess": "Status updated successfully",
     "statusUpdateError": "Failed to update status",
+    //redeempoints
+    "redeemPoints": "Redeem Points",
+  "enterTheCode": "Enter redemption code",
+  "search": "Search",
+  "loading": "Searching...",
+  "codeNotFound": "Code not found",
+  "redeemDetails": "Redemption Request Details",
+  "expired": "Expired",
+  "foodItem": "Food Item",
+  "customerName": "Customer Name",
+  "phone": "Phone Number",
+  "pointsDeducted": "Points Deducted",
+  "points": "Points",
+  "createdAt": "Request Date",
+  "expiresAt": "Expiration Date",
+  "reject": "Reject",
+  "accept": "Accept",
 
     // Additional Form Fields
     "maxDiscount": "Max Discount",
@@ -967,6 +984,7 @@ const translations = {
     "metaImageHeader": "Meta Image",
     "statusHeader": "Status",
     "noImageText": "No Image",
+    redeemPoints:"redeem Points",
 
     // City
     "citiesTitle": "Cities",
@@ -974,6 +992,7 @@ const translations = {
 
     // Country
     "countriesTitle": "Countries",
+      orderNumberLabel:"Order #",
 
     // Coupon
     "couponsTitle": "Coupons",
@@ -2031,6 +2050,7 @@ const translations = {
     "metaImageHeader": "الصورة التعريفية",
     "statusHeader": "الحالة",
     "noImageText": "لا توجد صورة",
+    orderNumberLabel:"رقم الطلب",
 
     // City
     "citiesTitle": "المدن",
@@ -2142,6 +2162,24 @@ const translations = {
     "unavailableBranches": "الفروع غير المتاحة",
     "viewBranches": "عرض الفروع",
     "noUnavailableBranches": "لا توجد فروع غير متاحة",
+    redeemPoints:"تبديل النقاط",
+    //redeempoints
+    "redeemPoints": "استبدال النقاط",
+  "enterTheCode": "أدخل كود الاستبدال",
+  "search": "بحث",
+  "loading": "جاري البحث...",
+  "codeNotFound": "لم يتم العثور على هذا الكود",
+  "redeemDetails": "تفاصيل طلب الاستبدال",
+  "expired": "منتهي الصلاحية",
+  "foodItem": "الوجبة / المنتج",
+  "customerName": "اسم العميل",
+  "phone": "رقم الهاتف",
+  "pointsDeducted": "النقاط المخصومة",
+  "points": "نقطة",
+  "createdAt": "تاريخ الطلب",
+  "expiresAt": "تاريخ انتهاء الصلاحية",
+  "reject": "رفض",
+  "accept": "قبول",
 
 
 

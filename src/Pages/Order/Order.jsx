@@ -41,33 +41,16 @@ export default function Order() {
   // جلب جداول المواعيد من الـ Auth Store
   const schedules = useAuthStore((state) => state.schedules);
 
-  // ضبط التاريخ بناءً على وقت إغلاق المطعم
-  useEffect(() => {
-    if (!startDate && !endDate && schedules && schedules.length > 0) {
-      const todayIndex = new Date().getDay();
-      const todaySchedule = schedules.find((s) => s.dayOfWeek === todayIndex);
-
-      if (todaySchedule && !todaySchedule.isOffDay) {
-        const closingTime = todaySchedule.closingTime;
-        const [closingHour] = closingTime.split(":").map(Number);
-
-        const now = new Date();
-        const formattedToday = now.toISOString().split("T")[0];
-
-        if (closingHour < 6) {
-          const tomorrow = new Date(now);
-          tomorrow.setDate(now.getDate() + 1);
-          const formattedTomorrow = tomorrow.toISOString().split("T")[0];
-
-          setStartDate(formattedToday);
-          setEndDate(formattedTomorrow);
-        } else {
-          setStartDate(formattedToday);
-          setEndDate(formattedToday);
-        }
-      }
-    }
-  }, [schedules, startDate, endDate, setStartDate, setEndDate]);
+// استبدل الـ useEffect الحالي بهذا الكود:
+useEffect(() => {
+  if (!startDate && schedules && schedules.length > 0) {
+    const now = new Date();
+    const formattedToday = now.toISOString().split("T")[0];
+    setStartDate(formattedToday);
+    // ترك الـ endDate فارغاً بحيث لا يكون له قيمة افتراضية
+    setEndDate("");
+  }
+}, [schedules, startDate, setStartDate, setEndDate]);
 
   const orderStatuses = [
     "pending",

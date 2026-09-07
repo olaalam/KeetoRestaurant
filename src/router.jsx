@@ -93,6 +93,7 @@ import BlockedUsers from "./Pages/BlockedUsers/BlockedUsers";
 import FreeDelivery from "./Pages/FreeDelivery/FreeDelivery";
 import FreeDeliveryAdd from "./Pages/FreeDelivery/FreeDeliveryAdd";
 import PricingProduct from "./Pages/PricingProduct/PricingProduct";
+import RedeemPoints from "./Pages/RedeemPoints/RedeemPoints";
 const router = createBrowserRouter([
   {
     path: "/login",
@@ -619,6 +620,11 @@ const router = createBrowserRouter([
         path: "pricing-product",
         element: <PricingProduct />
       },
+            {
+        path: "redeem-points",
+        element: <RedeemPoints />
+      },
+
 
 
     ],

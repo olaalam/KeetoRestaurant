@@ -52,11 +52,10 @@ const Foods = () => {
     const [branchControlOpen, setBranchControlOpen] = useState(false);
     const [selectedFoodForBranch, setSelectedFoodForBranch] = useState(null);
 
-    const [pagination, setPagination] = useState({
-        pageIndex: 0,
-        pageSize: 15,
-    });
+const savedSize = localStorage.getItem("tablePageSize");
+  const initialPageSize = savedSize ? Number(savedSize) : 15;
 
+  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: initialPageSize });
     const getActualLanguage = (i18n) => {
         try {
             const storedLangData = localStorage.getItem('keeto-language');
@@ -446,7 +445,7 @@ const Foods = () => {
                     </div>
                 </div>
 
-                {( selectedSubCategory !== 'all') && (
+                {(selectedSubCategory !== 'all') && (
                     <Button
                         variant="ghost"
                         size="sm"
