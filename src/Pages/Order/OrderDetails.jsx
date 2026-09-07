@@ -473,20 +473,21 @@ export default function OrderDetails() {
               </Badge>
             )}
 
-            {(order.paymentMethodName || order.paymentMethodNameAr) && (
-              <Badge
-                variant="outline"
-                className="bg-emerald-50/70 border-emerald-200 text-emerald-800 h-8 sm:h-10 font-semibold rounded-xl px-2.5 sm:px-3 text-xs sm:text-sm flex items-center gap-1.5 shadow-sm"
-              >
-                <CreditCard className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                <span className="capitalize">
-                  {document.documentElement.dir === "rtl" && order.paymentMethodNameAr
-                    ? order.paymentMethodNameAr
-                    : order.paymentMethodName?.replace(/_/g, " ")}
-                </span>
-              </Badge>
-            )}
-          </div>
+{(order.paymentMethodName || order.paymentMethodNameAr || order.isPointsRedeemed) && (
+  <Badge
+    variant="outline"
+    className="bg-emerald-50/70 border-emerald-200 text-emerald-800 h-8 sm:h-10 font-semibold rounded-xl px-2.5 sm:px-3 text-xs sm:text-sm flex items-center gap-1.5 shadow-sm"
+  >
+    <CreditCard className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+    <span className="capitalize">
+      {order.isPointsRedeemed
+        ? (document.documentElement.dir === "rtl" ? "استبدال نقاط" : "Points Redemption")
+        : (document.documentElement.dir === "rtl" && order.paymentMethodNameAr
+          ? order.paymentMethodNameAr
+          : order.paymentMethodName?.replace(/_/g, " "))}
+    </span>
+  </Badge>
+)}       </div>
 
           <div className="shrink-0">
             {order.orderSource && (

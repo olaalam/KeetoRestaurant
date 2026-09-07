@@ -984,7 +984,7 @@ const translations = {
     "metaImageHeader": "Meta Image",
     "statusHeader": "Status",
     "noImageText": "No Image",
-    redeemPoints:"redeem Points",
+    redeemPoints:"Redeem Points",
 
     // City
     "citiesTitle": "Cities",
