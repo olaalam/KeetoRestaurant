@@ -106,7 +106,7 @@ const AdminAdd = () => {
       name: "roleId",
       label: t("role") || "Role",
       type: "combobox",
-      required: true,
+      required: false,
       options: roleOptions,
     },
     ...(!shouldHideBranch
