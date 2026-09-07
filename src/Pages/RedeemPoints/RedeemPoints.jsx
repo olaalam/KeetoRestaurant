@@ -11,7 +11,7 @@ import {
   XCircle,
   AlertCircle,
   Coins,
-  Store // ضفت أيكون للفرع
+  Store
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -20,10 +20,7 @@ import { Separator } from "@/components/ui/separator";
 import { useGet } from "@/hooks/useGet";
 import { usePost } from "@/hooks/usePost";
 import { useTranslation } from "@/hooks/useTranslation";
-
-// افترضي إن ده مسار الـ store بتاعك اللي فيه بيانات اليوزر
-// عدلي المسار على حسب المشروع عندك
-// import { useAuthStore } from "@/store/authStore"; 
+import useAuthStore from "../../store/useAuthStore";
 
 function InfoRow({ icon: Icon, label, value, dir }) {
   if (value === undefined || value === null || value === "") return null;
@@ -52,10 +49,8 @@ export default function RedeemPoints() {
   const [codeInput, setCodeInput] = useState("");
   const [activeCode, setActiveCode] = useState(null);
   
-  // 1. جلب بيانات اليوزر من الستور (عدليها حسب طريقتك في جلب الـ state)
-  // const userBranchId = useAuthStore((state) => state.user?.branchId);
-  // مؤقتاً لحد ما تظبطي الـ import، هنفترض إننا جبناها:
-  const userBranchId = null; // غيريها للـ variable الحقيقي من Zustand
+  // 1. جلب بيانات اليوزر والفرع من الـ Auth Store
+  const userBranchId = useAuthStore((state) => state.user?.branchId || state.branchId);
 
   const [selectedBranchId, setSelectedBranchId] = useState(userBranchId || "");
 
@@ -103,7 +98,6 @@ export default function RedeemPoints() {
 
   const handleSearch = () => {
     if (!selectedBranchId) {
-      // تقدري تحطي Toast هنا يطلب منه يختار فرع الأول
       alert(t("pleaseSelectBranch") || "Please select a branch first");
       return;
     }
@@ -170,7 +164,6 @@ export default function RedeemPoints() {
               </option>
               {branches.map((branch) => (
                 <option key={branch.id} value={branch.id}>
-                  {/* تقدري تستخدمي branch.nameAr لو شغالة على العربي */}
                   {branch.name} 
                 </option>
               ))}
