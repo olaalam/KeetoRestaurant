@@ -29,9 +29,9 @@ const Foods = () => {
     const [selectedVariations, setSelectedVariations] = useState(null);
     const location = useLocation();
 
-    // 💡 حالات الفلترة (Server-Side Filter)
-    const [selectedCategory, setSelectedCategory] = useState('all');
-    const [selectedSubCategory, setSelectedSubCategory] = useState('all');
+    // 💡 حالات الفلترة (Server-Side Filter) - قراءة القيم السابقة لو متوفرة
+    const [selectedCategory, setSelectedCategory] = useState(location.state?.category || 'all');
+    const [selectedSubCategory, setSelectedSubCategory] = useState(location.state?.subCategory || 'all');
 
     // 💡 حالات البحث داخل الـ Select
     const [categorySearch, setCategorySearch] = useState('');
@@ -55,7 +55,10 @@ const Foods = () => {
 const savedSize = localStorage.getItem("tablePageSize");
   const initialPageSize = savedSize ? Number(savedSize) : 15;
 
-  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: initialPageSize });
+  const [pagination, setPagination] = useState({
+    pageIndex: location.state?.pageIndex ?? location.state?.fromPage ?? 0,
+    pageSize: initialPageSize
+  });
     const getActualLanguage = (i18n) => {
         try {
             const storedLangData = localStorage.getItem('keeto-language');
@@ -201,6 +204,8 @@ const savedSize = localStorage.getItem("tablePageSize");
 
                 return () => clearTimeout(timer);
             }
+        } else if (location.state?.pageIndex !== undefined && foods.length) {
+            setPagination(prev => ({ ...prev, pageIndex: location.state.pageIndex }));
         }
     }, [location.state, foods, pagination.pageSize]);
 
@@ -466,9 +471,33 @@ const savedSize = localStorage.getItem("tablePageSize");
                 queryKey={['foods']}
                 editApiUrl="/api/restaurant/food"
                 deleteApiUrl="/api/restaurant/food"
-                onAdd={() => navigate('/foods/add')}
+                onAdd={() => navigate('/foods/add', {
+                    state: {
+                        fromPage: pagination.pageIndex,
+                        category: selectedCategory,
+                        subCategory: selectedSubCategory
+                    }
+                })}
                 highlightedId={highlightedId}
-                onEdit={(row) => navigate(`/foods/edit/${row.id}`)}
+                onEdit={(row) => {
+                    navigate(location.pathname + location.search, {
+                        replace: true,
+                        state: {
+                            highlightedId: row.id,
+                            pageIndex: pagination.pageIndex,
+                            category: selectedCategory,
+                            subCategory: selectedSubCategory
+                        }
+                    });
+                    navigate(`/foods/edit/${row.id}`, {
+                        state: {
+                            fromPage: pagination.pageIndex,
+                            returnId: row.id,
+                            category: selectedCategory,
+                            subCategory: selectedSubCategory
+                        }
+                    });
+                }}
                 pagination={pagination}
                 setPagination={setPagination}
             />

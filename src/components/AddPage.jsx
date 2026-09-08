@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Controller, useForm } from 'react-hook-form';
 import { usePost } from '@/hooks/usePost';
 import { useUpdate } from '@/hooks/useUpdate';
@@ -27,6 +28,8 @@ const AddPage = ({
     bypassIdInEdit = false,
 }) => {
     const isEdit = method === 'PUT' || !!initialData?.id;
+    const navigate = useNavigate();
+    const location = useLocation();
     const formMethods = useForm({
         defaultValues: initialData || {}
     });
@@ -35,6 +38,39 @@ const AddPage = ({
     const updateMutation = useUpdate(apiUrl, queryKey);
     const { t } = useTranslation();
     const [openCombobox, setOpenCombobox] = useState({});
+
+    const handleCancel = () => {
+        const editMatch = location.pathname.match(/^(\/.*?)\/edit\/([^/]+)$/);
+        if (editMatch) {
+            navigate(editMatch[1], {
+                state: {
+                    highlightedId: initialData?.id || editMatch[2],
+                    pageIndex: location.state?.fromPage,
+                    category: location.state?.category,
+                    subCategory: location.state?.subCategory,
+                },
+            });
+            return;
+        }
+
+        const addMatch = location.pathname.match(/^(\/.*?)\/add$/);
+        if (addMatch) {
+            navigate(addMatch[1], {
+                state: {
+                    pageIndex: location.state?.fromPage,
+                    category: location.state?.category,
+                    subCategory: location.state?.subCategory,
+                },
+            });
+            return;
+        }
+
+        if (window.history.length <= 2) {
+            navigate("/");
+        } else {
+            navigate(-1);
+        }
+    };
 
     // استخدام useRef للاحتفاظ بهوية الـ fields دون التسبب في إعادة تشغيل الـ useEffect
     const fieldsRef = useRef(fields);
@@ -363,6 +399,14 @@ const AddPage = ({
                     </div>
 
                     <div className="flex items-center justify-end gap-4 pt-4 border-t">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={handleCancel}
+                            className="w-full md:w-32"
+                        >
+                            {t("cancel") || "إلغاء"}
+                        </Button>
                         <Button type="submit" disabled={isLoading} className="w-full md:w-32">
                             {isLoading ? (
                                 <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> {t("savingBtn")}</>

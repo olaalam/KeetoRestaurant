@@ -5,7 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AppSidebar } from "./AppSidebar";
 import useSidebarStore from "@/store/useSidebarStore";
 import useAuthStore from "@/store/useAuthStore";
-import { LogOut, ChevronLeft, ChevronRight, UserCircle2, Bell, ShoppingBag, XCircle, Sun, Moon } from "lucide-react";
+import { LogOut, ChevronLeft, ChevronRight, UserCircle2, Bell, ShoppingBag, XCircle, Sun, Moon, Tag } from "lucide-react";
 import useThemeStore from "@/store/useThemeStore";
 
 import {
@@ -154,8 +154,51 @@ export default function Layout() {
     markSingleAsRead({ id: `notifications/${id}/read`, payload: {} });
   };
 
-  // وظيفة الرجوع للخلف
+  // وظيفة الرجوع للخلف مع الحفاظ على الصفحة والعنصر المحدد
   const handleBack = () => {
+    // 1. مسار إعدادات الفروع المخصص
+    const branchSettingMatch = location.pathname.match(/^(\/branches\/setting)\/edit\/([^/]+)$/);
+    if (branchSettingMatch) {
+      navigate(`/branches/setting/${branchSettingMatch[2]}`, {
+        state: {
+          highlightedId: branchSettingMatch[2],
+          pageIndex: location.state?.fromPage,
+        },
+      });
+      return;
+    }
+
+    // 2. فحص مسارات التعديل العامة edit
+    const editMatch = location.pathname.match(/^(\/.*?)\/edit\/([^/]+)$/);
+    if (editMatch) {
+      const parentPath = editMatch[1];
+      const editId = editMatch[2];
+      navigate(parentPath, {
+        state: {
+          highlightedId: editId,
+          pageIndex: location.state?.fromPage,
+          category: location.state?.category,
+          subCategory: location.state?.subCategory,
+        },
+      });
+      return;
+    }
+
+    // 3. فحص مسارات الإضافة add
+    const addMatch = location.pathname.match(/^(\/.*?)\/add$/);
+    if (addMatch) {
+      const parentPath = addMatch[1];
+      navigate(parentPath, {
+        state: {
+          pageIndex: location.state?.fromPage,
+          category: location.state?.category,
+          subCategory: location.state?.subCategory,
+        },
+      });
+      return;
+    }
+
+    // 4. الرجوع العادي
     if (window.history.length <= 2) {
       navigate("/");
       setActiveModule(null);
@@ -195,7 +238,6 @@ export default function Layout() {
     if (orderId) {
       navigate(`/orders/details/${orderId}`);
     } else {
-      مفتاح
       navigate('/orders');
     }
   };
@@ -223,7 +265,7 @@ export default function Layout() {
                 </span>
               </div>
 
-{/* Body Text */}
+              {/* Body Text */}
               <div className="flex flex-col items-center justify-center text-center text-xl sm:text-2xl font-bold text-slate-800 dark:text-slate-200 leading-relaxed gap-2">
                 {isCancelled ? (
                   <>
@@ -254,8 +296,6 @@ export default function Layout() {
                   </span>
                 )}
               </div>
-
-
 
               {/* Buttons */}
               <div className="mt-6 flex flex-col sm:flex-row justify-center gap-3">
@@ -338,6 +378,32 @@ export default function Layout() {
 
               {/* Right Section: Notifications & Profile */}
               <div className="flex items-center gap-3">
+
+                {/* Product Pricing Button */}
+                <button
+                  onClick={() => {
+                    const pricingModule = translatedModules.find(
+                      (m) =>
+                        m.key === "product-pricing" ||
+                        m.key === "productPricing" ||
+                        m.key === "pricing" ||
+                        m.path === "/product-pricing" ||
+                        m.path === "/pricing" ||
+                        (m.name && m.name.toLowerCase().includes("pricing"))
+                    );
+
+                    if (pricingModule) {
+                      setActiveModule(pricingModule);
+                    }
+                    navigate("/pricing-product");
+                  }}
+                  className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 text-primary hover:bg-primary hover:text-white transition-all duration-200 font-semibold text-sm shadow-sm active:scale-95"
+                  title={t("productPricing") || "Product Pricing"}
+                >
+                  <Tag size={20} className="shrink-0" />
+                  <span>{t("productPricing") || "Product Pricing"}</span>
+                </button>
+
                 {/* Orders Button */}
                 <button
                   onClick={() => {

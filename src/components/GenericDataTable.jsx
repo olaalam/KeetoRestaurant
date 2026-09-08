@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import {
   useReactTable,
   getCoreRowModel,
@@ -96,9 +97,12 @@ export default function GenericDataTable({
   const [inactiveReason, setInactiveReason] = useState("");
 
   const { t, isRTL } = useTranslation();
+  const location = useLocation();
   const queryClient = useQueryClient();
+  const activeHighlightedId = highlightedId ?? location.state?.highlightedId;
+
   const [internalPagination, setInternalPagination] = useState({
-    pageIndex: 0,
+    pageIndex: location.state?.pageIndex ?? location.state?.fromPage ?? 0,
     pageSize: getSavedPageSize(),
   });
   const pagination = controlledPagination ?? internalPagination;
@@ -107,6 +111,30 @@ export default function GenericDataTable({
   useEffect(() => {
     setPagination((prev) => ({ ...prev, pageIndex: 0 }));
   }, [globalFilter, setPagination]);
+    const sortedData = useMemo(() => {
+    if (!Array.isArray(data)) return [];
+    return [...data].sort((a, b) => {
+      const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return bTime - aTime;
+    });
+  }, [data]);
+
+
+  // الانتقال التلقائي لصفحة العنصر المُراد تمييزه أو الصفحة السابقة عند توفر البيانات
+  useEffect(() => {
+    if (activeHighlightedId && sortedData.length) {
+      const index = sortedData.findIndex(
+        (item) => String(item.id || item.menuItemId || item.pointId || item.expenseId) === String(activeHighlightedId)
+      );
+      if (index !== -1) {
+        const targetPageIndex = Math.floor(index / pagination.pageSize);
+        setPagination((prev) => ({ ...prev, pageIndex: targetPageIndex }));
+      }
+    } else if (location.state?.pageIndex !== undefined && sortedData.length) {
+      setPagination((prev) => ({ ...prev, pageIndex: location.state.pageIndex }));
+    }
+  }, [activeHighlightedId, sortedData, pagination.pageSize, setPagination, location.state?.pageIndex]);
 
   const updateStatusMutation = useMutation({
     mutationFn: async ({ id, newStatus, keyName, reason }) => {
@@ -150,14 +178,6 @@ export default function GenericDataTable({
     });
   };
 
-  const sortedData = useMemo(() => {
-    if (!Array.isArray(data)) return [];
-    return [...data].sort((a, b) => {
-      const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-      const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-      return bTime - aTime;
-    });
-  }, [data]);
 
   const tableColumns = useMemo(() => {
     const baseColumns = [
@@ -258,7 +278,24 @@ export default function GenericDataTable({
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => onEdit(row.original)}
+                onClick={() => {
+                  try {
+                    window.history.replaceState(
+                      {
+                        ...window.history.state,
+                        usr: {
+                          ...window.history.state?.usr,
+                          highlightedId: row.original.id || row.original.menuItemId || row.original.pointId || row.original.expenseId,
+                          pageIndex: pagination.pageIndex,
+                        },
+                      },
+                      document.title
+                    );
+                  } catch (e) {
+                    console.error("Error saving history state:", e);
+                  }
+                  onEdit(row.original);
+                }}
                 className="h-8 w-8 text-slate-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-lg transition-colors"
               >
                 <Pencil className="h-4 w-4" />
@@ -367,7 +404,26 @@ export default function GenericDataTable({
           </div>
 
           {onAdd && (
-            <Button onClick={onAdd} className="h-10 rounded-xl font-medium shadow-sm hover:opacity-95 bg-primary text-primary-foreground gap-2 shrink-0 transition-all">
+            <Button
+              onClick={() => {
+                try {
+                  window.history.replaceState(
+                    {
+                      ...window.history.state,
+                      usr: {
+                        ...window.history.state?.usr,
+                        pageIndex: pagination.pageIndex,
+                      },
+                    },
+                    document.title
+                  );
+                } catch (e) {
+                  console.error("Error saving history state:", e);
+                }
+                onAdd();
+              }}
+              className="h-10 rounded-xl font-medium shadow-sm hover:opacity-95 bg-primary text-primary-foreground gap-2 shrink-0 transition-all"
+            >
               <Plus className="h-4 w-4" />
               <span>{t("addNew")}</span>
             </Button>
@@ -408,7 +464,8 @@ export default function GenericDataTable({
                 </TableRow>
               ) : table.getRowModel().rows?.length ? (
                 table.getRowModel().rows.map((row) => {
-                  const isHighlighted = String(row.original.id) === String(highlightedId);
+                  const rowId = row.original.id || row.original.menuItemId || row.original.pointId || row.original.expenseId;
+                  const isHighlighted = String(rowId) === String(activeHighlightedId);
                   return (
                     <TableRow
                       key={row.id}

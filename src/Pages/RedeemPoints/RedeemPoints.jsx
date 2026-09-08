@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Search,
   Loader2,
@@ -11,7 +11,9 @@ import {
   XCircle,
   AlertCircle,
   Coins,
-  Store
+  Store,
+  ChevronDown,
+  Check
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -21,6 +23,136 @@ import { useGet } from "@/hooks/useGet";
 import { usePost } from "@/hooks/usePost";
 import { useTranslation } from "@/hooks/useTranslation";
 import useAuthStore from "../../store/useAuthStore";
+
+// مكون مخصص لاختيار الفرع بشكل احترافي
+function BranchSelect({ branches, selectedBranchId, onSelect, isFetching, t }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const dropdownRef = useRef(null);
+
+  const selectedBranch = branches.find((b) => String(b.id) === String(selectedBranchId));
+
+  // تصفية الفروع بناءً على نص البحث
+  const filteredBranches = branches.filter((branch) =>
+    branch.name?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+        setSearchQuery(""); // تصفير البحث عند إغلاق القائمة
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleToggle = () => {
+    if (!isFetching) {
+      if (isOpen) setSearchQuery("");
+      setIsOpen(!isOpen);
+    }
+  };
+
+  return (
+    <div className="relative w-full" ref={dropdownRef}>
+      {/* Trigger Button */}
+      <button
+        type="button"
+        onClick={handleToggle}
+        disabled={isFetching}
+        className={`w-full h-14 px-4 bg-white border rounded-2xl flex items-center justify-between transition-all duration-200 shadow-sm hover:border-primary/50 ${
+          isOpen
+            ? "border-primary ring-4 ring-primary/10 shadow-md"
+            : "border-gray-200 hover:bg-gray-50/50"
+        } ${isFetching ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}`}
+      >
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+            <Store className="w-5 h-5" />
+          </div>
+          <div className="text-start min-w-0 flex-1">
+            <p className="text-[11px] font-medium text-gray-400 leading-none mb-1">
+              {t("branch") || "الفرع"}
+            </p>
+            <p className="text-sm font-bold text-gray-900 truncate">
+              {selectedBranch ? selectedBranch.name : (t("selectBranch") || "اختر الفرع...")}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 shrink-0">
+          {isFetching ? (
+            <Loader2 className="w-5 h-5 animate-spin text-primary" />
+          ) : (
+            <ChevronDown
+              className={`w-5 h-5 text-gray-400 transition-transform duration-200 ${
+                isOpen ? "rotate-180 text-primary" : ""
+              }`}
+            />
+          )}
+        </div>
+      </button>
+
+      {/* Dropdown Menu */}
+      {isOpen && (
+        <div className="absolute z-50 w-full mt-2 bg-white border border-gray-100 rounded-2xl shadow-xl overflow-hidden animate-in fade-in-50 zoom-in-95">
+          
+          {/* حقل البحث داخل الـ Dropdown */}
+          <div className="p-2 border-b border-gray-100 bg-gray-50/50">
+            <div className="relative flex items-center">
+              <Search className="w-4 h-4 text-gray-400 absolute right-3 pointer-events-none" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder={t("searchBranch") || "بحث عن فرع..."}
+                className="w-full h-10 pr-9 pl-3 text-xs bg-white border border-gray-200 rounded-xl font-medium focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                autoFocus
+              />
+            </div>
+          </div>
+
+          {/* قائمة الخيارات */}
+          <div className="max-h-52 overflow-y-auto py-1">
+            {filteredBranches.length === 0 ? (
+              <div className="p-4 text-center text-xs font-semibold text-gray-400">
+                {t("noBranchesFound") || "لم يتم العثور على نتائج"}
+              </div>
+            ) : (
+              filteredBranches.map((branch) => {
+                const isSelected = String(branch.id) === String(selectedBranchId);
+                return (
+                  <button
+                    key={branch.id}
+                    type="button"
+                    onClick={() => {
+                      onSelect(branch.id);
+                      setIsOpen(false);
+                      setSearchQuery("");
+                    }}
+                    className={`w-full px-4 py-2.5 flex items-center justify-between text-start text-sm font-semibold transition-all duration-150 ${
+                      isSelected
+                        ? "bg-primary/10 text-primary"
+                        : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <Store className={`w-4 h-4 shrink-0 ${isSelected ? "text-primary" : "text-gray-400"}`} />
+                      <span className="truncate">{branch.name}</span>
+                    </div>
+                    {isSelected && <Check className="w-4 h-4 text-primary shrink-0" />}
+                  </button>
+                );
+              })
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 function InfoRow({ icon: Icon, label, value, dir }) {
   if (value === undefined || value === null || value === "") return null;
@@ -147,32 +279,16 @@ export default function RedeemPoints() {
 
       {/* Branch Selector (يظهر فقط لو اليوزر ملوش فرع ثابت) */}
       {!userBranchId && (
-        <div className="flex items-center gap-3">
-          <div className="relative flex-1">
-            <Store className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-            <select
-              value={selectedBranchId}
-              onChange={(e) => {
-                setSelectedBranchId(e.target.value);
-                setActiveCode(null); // ريست الكود لو غير الفرع
-              }}
-              disabled={isFetchingBranches}
-              className="w-full h-14 pl-12 pr-4 bg-white border border-gray-200 rounded-2xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition-all appearance-none"
-            >
-              <option value="" disabled>
-                {t("selectBranch") || "Select Branch..."}
-              </option>
-              {branches.map((branch) => (
-                <option key={branch.id} value={branch.id}>
-                  {branch.name} 
-                </option>
-              ))}
-            </select>
-            {isFetchingBranches && (
-              <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-gray-400" />
-            )}
-          </div>
-        </div>
+        <BranchSelect
+          branches={branches}
+          selectedBranchId={selectedBranchId}
+          onSelect={(branchId) => {
+            setSelectedBranchId(branchId);
+            setActiveCode(null); // ريست الكود لو غير الفرع
+          }}
+          isFetching={isFetchingBranches}
+          t={t}
+        />
       )}
 
       {/* Search Input Bar */}

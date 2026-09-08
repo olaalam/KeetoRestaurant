@@ -163,7 +163,14 @@ const FoodAdd = () => {
       transformPayload={transformBeforeSubmit}
       onSuccessAction={(res) => {
         const targetId = String(res?.data?.data?.id || res?.data?.id || res?.id || id);
-        navigate("/foods", { state: { highlightedId: targetId } });
+        navigate("/foods", {
+          state: {
+            highlightedId: targetId,
+            category: state?.category,
+            subCategory: state?.subCategory,
+            pageIndex: state?.fromPage,
+          }
+        });
       }}
     >
       {({ register, control, formState: { errors, submitCount }, setValue, watch }) => {

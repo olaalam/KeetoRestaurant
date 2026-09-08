@@ -40,12 +40,12 @@ const ICONS_BY_MODULE = {
   delivery: Bike,
   dine_in: UtensilsCrossed,
 };
+
 const getStoredBranchId = () => {
   try {
     const authStorage = localStorage.getItem("auth-storage");
     if (!authStorage) return null;
     const parsed = JSON.parse(authStorage);
-    // التعديل هنا: الوصول إلى user ثم branchId
     return parsed?.state?.user?.branchId || null;
   } catch (error) {
     console.error("Error reading auth-storage from localStorage", error);
@@ -57,14 +57,12 @@ export default function PricingProduct({ branchId: branchIdProp }) {
   const { t, isRTL } = useTranslation();
 
   const [search, setSearch] = useState("");
-// استخدام الـ branchId القادم من الـ prop أو من الـ localStorage
   const currentBranchId = branchIdProp || getStoredBranchId();
 
   // ---- multi-select branches state ----
   const [selectedBranchIds, setSelectedBranchIds] = useState(
     currentBranchId ? [currentBranchId] : ["all"]
   );
-
 
   // ---- multi-select modules state (default: all) ----
   const [selectedModules, setSelectedModules] = useState(["all"]);
@@ -97,12 +95,10 @@ export default function PricingProduct({ branchId: branchIdProp }) {
     ];
   }, [apiServiceModules]);
 
-// ---- helper: toggle a branch in the single-select ----
   const toggleBranch = (id) => {
     setSelectedBranchIds([id]);
   };
 
-  // ---- helper: toggle a module in the single-select ----
   const toggleModule = (id) => {
     setSelectedModules([id]);
   };
@@ -120,7 +116,6 @@ export default function PricingProduct({ branchId: branchIdProp }) {
   );
   const subCategories = subCategoriesRes?.data?.data?.subcategories || subCategoriesRes?.data?.data || [];
 
-  // 💡 تكوين الرابط الديناميكي بناءً على اختيار القسم الفرعي والفروع والوحدات
   const queryParams = new URLSearchParams();
 
   if (!isAllBranches && branchIdsParam) {
@@ -164,33 +159,20 @@ export default function PricingProduct({ branchId: branchIdProp }) {
     return item.finalCalculatedPrice ?? item.mainBasePrice ?? item.price ?? "0.00";
   };
 
-  // 💡 جلب حالة الـ Out of Stock (من الـ Food مباشرة لو الكل محدد، أو من الـ channelPricing عند الفلترة)
   const getIsOutOfStock = (item) => {
-    if (isAllBranches && isAllModules) {
-      return Boolean(
-        item.isOutOfStock ??
-        item.outOfStock ??
-        (item.isAvailable !== undefined ? !item.isAvailable : false)
-      );
-    } else {
-      if (item.channelPricing && item.channelPricing.length > 0) {
-        const matchingCp = item.channelPricing.find((cp) =>
-          (selectedBranchIds.includes("all") || selectedBranchIds.includes(cp.branchId)) &&
-          (selectedModules.includes("all") || selectedModules.includes(cp.serviceModule))
-        );
-        if (matchingCp) {
-          return matchingCp.status === "inactive";
-        }
-      }
-      return Boolean(
-        item.isOutOfStock ??
-        item.outOfStock ??
-        (item.isAvailable !== undefined ? !item.isAvailable : false)
-      );
-    }
+    return Boolean(item.isOutOfStock);
   };
 
-  // 💡 جلب السعر المناسب حسب حالة الفلترة أو الـ channelPricing
+  const getIsFoodOff = (item) => {
+    return item.computedStatus === "inactive" || item.status === "inactive";
+  };
+
+  const getBranchIdForSubCategoryAction = () => {
+    if (currentBranchId) return currentBranchId;
+    if (!isAllBranches && selectedBranchIds.length === 1) return selectedBranchIds[0];
+    return null;
+  };
+
   const getItemPriceForChannel = (item) => {
     if (isAllBranches && isAllModules) {
       return Number(getDisplayPrice(item) || 0);
@@ -212,13 +194,11 @@ export default function PricingProduct({ branchId: branchIdProp }) {
   const openPriceModal = (item) => {
     setPriceModalItem(item);
 
-    // Set Main Product Initial State
     setMainItemEdit({
       price: String(getItemPriceForChannel(item) ?? ""),
       status: !getIsOutOfStock(item)
     });
 
-    // Set Variations Initial State
     const vEdit = {};
     if (item.variations && item.variations.length > 0) {
       item.variations.forEach(variation => {
@@ -260,7 +240,6 @@ export default function PricingProduct({ branchId: branchIdProp }) {
 
     const promises = [];
 
-    // 1. Prepare Main Product Payload
     const mainPayload = {
       foodId: priceModalItem.id,
       branchId: branchToSend,
@@ -271,7 +250,6 @@ export default function PricingProduct({ branchId: branchIdProp }) {
 
     promises.push(api.post("/api/restaurant/pricing/product-channel", mainPayload));
 
-    // 2. Prepare Variants Payload
     if (priceModalItem.variations?.length) {
       priceModalItem.variations.forEach(variation => {
         variation.options?.forEach(opt => {
@@ -306,12 +284,10 @@ export default function PricingProduct({ branchId: branchIdProp }) {
   const toggleOutOfStock = async (foodId, currentStockStatus) => {
     try {
       if (isAllBranches && isAllModules) {
-        // لو الكل محدد (All)، بنعدل على الـ Food API العام مباشرة
         await api.put(`/api/restaurant/food/${foodId}`, {
           isOutOfStock: currentStockStatus
         });
       } else {
-        // لو فيه فرع أو خدمة محددة، بنستخدم الـ product-channel
         const item = items.find((i) => i.id === foodId);
         const currentPrice = getItemPriceForChannel(item);
 
@@ -331,6 +307,90 @@ export default function PricingProduct({ branchId: branchIdProp }) {
     }
   };
 
+  const toggleSubCategoryStatusHeader = async (checked) => {
+    const branchId = getBranchIdForSubCategoryAction();
+
+    if (!selectedSubCategoryId) {
+      toast.error(t('selectSubCategoryFirst') || 'من فضلك اختر قسم فرعي أولاً');
+      return;
+    }
+    if (!branchId) {
+      toast.error(t('selectSpecificBranchFirst') || 'من فضلك اختر فرع محدد أولاً');
+      return;
+    }
+
+    try {
+      await api.put(
+        `/api/restaurant/subcategories/${selectedSubCategoryId}/branch/${branchId}/status`,
+        { status: checked ? "active" : "inactive" }
+      );
+      toast.success(t('statusUpdatedSuccessfully') || 'تم تحديث الحالة بنجاح');
+      refetch();
+    } catch (error) {
+      console.error("Error updating subcategory status:", error);
+      toast.error(t('failedToUpdateStatus') || 'فشل تحديث الحالة');
+    }
+  };
+
+  const toggleFoodStatus = async (foodId, checked) => {
+    try {
+      await api.put(
+        `/api/restaurant/food/status/${foodId}`,
+        { status: checked ? "active" : "inactive" }
+      );
+      toast.success(t('statusUpdatedSuccessfully') || 'تم تحديث الحالة بنجاح');
+      refetch();
+    } catch (error) {
+      console.error("Error updating food status:", error);
+      toast.error(t('failedToUpdateStatus') || 'فشل تحديث الحالة');
+    }
+  };
+
+  const toggleSubCategoryOutOfStock = async (checked) => {
+    const branchId = getBranchIdForSubCategoryAction();
+
+    if (!selectedSubCategoryId) {
+      toast.error(t('selectSubCategoryFirst') || 'من فضلك اختر قسم فرعي أولاً');
+      return;
+    }
+    if (!branchId) {
+      toast.error(t('selectSpecificBranchFirst') || 'من فضلك اختر فرع محدد أولاً');
+      return;
+    }
+
+    try {
+      await api.put(
+        `/api/restaurant/subcategories/${selectedSubCategoryId}/branch/${branchId}/out-of-stock`,
+        { isOutOfStock: checked }
+      );
+      toast.success(t('statusUpdatedSuccessfully') || 'تم تحديث الحالة بنجاح');
+      refetch();
+    } catch (error) {
+      console.error("Error updating subcategory out-of-stock:", error);
+      toast.error(t('failedToUpdateStatus') || 'فشل تحديث الحالة');
+    }
+  };
+
+  const currentSubCategoryFromMenu = useMemo(() => {
+    const resData = productsRes?.data?.data;
+    const subs = resData?.subcategories || subCategories;
+    if (!selectedSubCategoryId || !Array.isArray(subs)) return null;
+    return subs.find((sc) => sc.id === selectedSubCategoryId);
+  }, [productsRes, subCategories, selectedSubCategoryId]);
+
+  const subCategoryOutOfStockValue = useMemo(() => {
+    if (!currentSubCategoryFromMenu) return false;
+    return Boolean(currentSubCategoryFromMenu.allProductsOutOfStock);
+  }, [currentSubCategoryFromMenu]);
+
+  // تعديل الشرط هنا ليكون true فقط عندما يكون computedStatus هو active
+  const subCategoryOffValue = useMemo(() => {
+    if (!currentSubCategoryFromMenu) return false;
+    return currentSubCategoryFromMenu.computedStatus === "active";
+  }, [currentSubCategoryFromMenu]);
+
+  const isSubCategoryActionDisabled = !getBranchIdForSubCategoryAction();
+
   return (
     <div className="space-y-6 w-full">
       {/* HEADER */}
@@ -340,7 +400,7 @@ export default function PricingProduct({ branchId: branchIdProp }) {
         </h2>
       </div>
 
-{/* BRANCHES ROW (multi-select) - التعديل هنا: استخدام currentBranchId */}
+      {/* BRANCHES ROW (multi-select) */}
       {!currentBranchId && (
         <div className="flex flex-wrap items-center gap-2">
           <Button
@@ -478,7 +538,38 @@ export default function PricingProduct({ branchId: branchIdProp }) {
                     {t("price") || "Price"}
                   </TableHead>
                   <TableHead className="h-14 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 py-4 px-6 text-center">
-                    {t("outOfStock") || "Out of Stock"}
+                    <div className="flex items-center justify-center gap-2">
+                      <span>{t("outOfStock") || "Out of Stock"}</span>
+                      <Switch
+                        checked={subCategoryOutOfStockValue}
+                        disabled={!selectedSubCategoryId || isSubCategoryActionDisabled}
+                        onCheckedChange={(checked) => toggleSubCategoryOutOfStock(checked)}
+                        title={
+                          !selectedSubCategoryId
+                            ? (t("selectSubCategoryFirst") || "اختر قسم فرعي أولاً")
+                            : isSubCategoryActionDisabled
+                            ? (t("selectSpecificBranchFirst") || "اختر فرع محدد أولاً")
+                            : (t("markSubCategoryOutOfStock") || "تعطيل كل منتجات القسم الفرعي")
+                        }
+                      />
+                    </div>
+                  </TableHead>
+                  <TableHead className="h-14 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 py-4 px-6 text-center">
+                    <div className="flex items-center justify-center gap-2">
+                      <span>{t("off") || "Off"}</span>
+                      <Switch
+                        checked={subCategoryOffValue}
+                        disabled={!selectedSubCategoryId || isSubCategoryActionDisabled}
+                        onCheckedChange={(checked) => toggleSubCategoryStatusHeader(checked)}
+                        title={
+                          !selectedSubCategoryId
+                            ? (t("selectSubCategoryFirst") || "اختر قسم فرعي أولاً")
+                            : isSubCategoryActionDisabled
+                            ? (t("selectSpecificBranchFirst") || "اختر فرع محدد أولاً")
+                            : (t("toggleSubCategoryStatus") || "تفعيل/تعطيل القسم الفرعي بالكامل")
+                        }
+                      />
+                    </div>
                   </TableHead>
                 </TableRow>
               </TableHeader>
@@ -486,7 +577,7 @@ export default function PricingProduct({ branchId: branchIdProp }) {
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={4} className="text-center h-48">
+                    <TableCell colSpan={5} className="text-center h-48">
                       <div className="flex items-center justify-center">
                         <LoadingSpinner className="h-6 w-6 text-primary" />
                       </div>
@@ -532,13 +623,23 @@ export default function PricingProduct({ branchId: branchIdProp }) {
                             />
                           </div>
                         </TableCell>
+                        <TableCell className="py-4 px-6 text-center">
+                          <div className="flex items-center justify-center">
+                            <Switch
+                              checked={!getIsFoodOff(item)}
+                              onCheckedChange={(checked) => {
+                                toggleFoodStatus(item.id, checked);
+                              }}
+                            />
+                          </div>
+                        </TableCell>
                       </TableRow>
                     );
                   })
                 ) : (
                   <TableRow>
                     <TableCell
-                      colSpan={4}
+                      colSpan={5}
                       className="text-center h-48 text-sm text-slate-400 font-medium"
                     >
                       {t("noDataFound") || "No data found"}

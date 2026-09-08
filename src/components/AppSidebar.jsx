@@ -162,7 +162,7 @@ export function AppSidebar({ side = "left" }) {
                               open ? "justify-start" : "justify-center"
                             } ${
                               isParentActive
-                                ? "bg-yellow-400 text-slate-900 font-semibold shadow-md"
+                                ? "bg-primary text-slate-900 font-semibold shadow-md"
                                 : "text-gray-600 hover:bg-gray-200"
                             }`}
                           >
@@ -201,7 +201,7 @@ export function AppSidebar({ side = "left" }) {
                               open ? "justify-start" : "justify-center"
                             } ${
                               location.pathname === item.url
-                                ? "bg-yellow-400 text-slate-900 font-semibold shadow-md"
+                                ? "bg-primary text-slate-900 font-semibold shadow-md"
                                 : "text-gray-600 hover:bg-gray-200"
                             }`}
                           >
@@ -234,7 +234,7 @@ export function AppSidebar({ side = "left" }) {
                                   to={subItem.url}
                                   className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all ${
                                     isSubActive
-                                      ? "bg-yellow-400 text-slate-900 font-medium shadow-sm"
+                                      ? "bg-primary text-slate-900 font-medium shadow-sm"
                                       : "text-gray-500 hover:bg-gray-100"
                                   }`}
                                 >

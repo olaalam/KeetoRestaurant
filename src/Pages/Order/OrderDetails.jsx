@@ -1512,7 +1512,7 @@ export default function OrderDetails() {
               )}
               {confirmDialog.type === "delivered"
                 ? t("confirmDeliveredTitle") || "تأكيد تسليم الطلب"
-                : t("confirmCancelTitle") || "تأكيد إلغاء الطلب"}
+                : t("cancelConfirmation") || "تأكيد إلغاء الطلب"}
             </DialogTitle>
           </DialogHeader>
 

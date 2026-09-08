@@ -66,6 +66,7 @@ const translations = {
     of: "of",
     prev: "Prev",
     next: "Next",
+    cancelConfirmation:"Cancel Confirmation",
 
     // AddPage
     editTitle: "Edit",
@@ -1621,6 +1622,7 @@ const translations = {
     "back": "رجوع",
     "processing": "جاري المعالجة...",
     "confirmCancellation": "تأكيد الإلغاء",
+    cancelConfirmation:"تأكيد الإلغاء",
     // Navigation & Statuses
     orderNumber: "رقم الطلب",
     previous: "السابق",
