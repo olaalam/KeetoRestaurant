@@ -30,6 +30,7 @@ const SettingPageAdd = () => {
 
     const defaultInitialData = {
         foodManagement: false,
+        productView: "normal",
         scheduledDelivery: false,
         reviewsSection: false,
         posSection: true,
@@ -94,6 +95,7 @@ const SettingPageAdd = () => {
         return {
             id: rawData.settings?.id || rawData.id,
             foodManagement: rawData.settings?.foodManagement ?? false,
+            productView: rawData.settings?.productView || "normal",
             scheduledDelivery: rawData.settings?.scheduledDelivery ?? false,
             reviewsSection: rawData.settings?.reviewsSection ?? false,
             posSection: rawData.settings?.posSection ?? true,
@@ -139,6 +141,7 @@ const SettingPageAdd = () => {
         return {
             settings: {
                 foodManagement: data.foodManagement ?? false,
+                productView: data.productView || "normal",
                 scheduledDelivery: data.scheduledDelivery ?? false,
                 reviewsSection: data.reviewsSection ?? false,
                 posSection: data.posSection ?? true,
@@ -239,6 +242,17 @@ const SettingPageAdd = () => {
                                         />
                                     </div>
                                 ))}
+
+                                <div className="space-y-2">
+                                    <Label className="text-gray-700 font-medium">{t('productViewLabel', { defaultValue: 'Product View' })}</Label>
+                                    <select
+                                        {...register("productView")}
+                                        className="w-full p-2 border border-input rounded-md text-sm h-10 bg-white focus:outline-none focus:ring-2 focus:ring-ring"
+                                    >
+                                        <option value="normal">normal</option>
+                                        <option value="select">select</option>
+                                    </select>
+                                </div>
 
                                 {isRepeatNotificationEnabled && (
                                     <>

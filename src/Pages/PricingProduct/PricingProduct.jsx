@@ -75,6 +75,11 @@ export default function PricingProduct({ branchId: branchIdProp }) {
   const [variantsEdit, setVariantsEdit] = useState({});
   const [isSaving, setIsSaving] = useState(false);
 
+  // ---- points edit modal state ----
+  const [pointsModalItem, setPointsModalItem] = useState(null);
+  const [pointsEditValue, setPointsEditValue] = useState("");
+  const [isSavingPoints, setIsSavingPoints] = useState(false);
+
   // ---- fetch branches + service modules for tabs/select ----
   const { data: selectRes } = useGet("pricing-select", "/api/restaurant/pricing/select");
 
@@ -163,6 +168,24 @@ export default function PricingProduct({ branchId: branchIdProp }) {
     return Boolean(item.isOutOfStock);
   };
 
+  // زي getItemPriceForChannel بالظبط، بس بيرجع حالة out-of-stock/active
+  // الخاصة بالفرع والموديول المختارين فعليًا، مش الحالة العامة للمنتج
+  const getIsOutOfStockForChannel = (item) => {
+    // if (isAllBranches && isAllModules) {
+    //   return getIsOutOfStock(item);
+    // }
+    // if (item.channelPricing && item.channelPricing.length > 0) {
+    //   const matchingCp = item.channelPricing.find((cp) =>
+    //     (selectedBranchIds.includes("all") || selectedBranchIds.includes(cp.branchId)) &&
+    //     (selectedModules.includes("all") || selectedModules.includes(cp.serviceModule))
+    //   );
+    //   if (matchingCp && matchingCp.status) {
+    //     return matchingCp.status === "inactive";
+    //   }
+    // }
+    return getIsOutOfStock(item);
+  };
+
   const getIsFoodOff = (item) => {
     return item.computedStatus === "inactive" || item.status === "inactive";
   };
@@ -219,6 +242,34 @@ export default function PricingProduct({ branchId: branchIdProp }) {
     setPriceModalItem(null);
     setMainItemEdit({ price: "", status: true });
     setVariantsEdit({});
+  };
+
+  const openPointsModal = (item) => {
+    setPointsModalItem(item);
+    setPointsEditValue(String(item.points ?? 0));
+  };
+
+  const closePointsModal = () => {
+    setPointsModalItem(null);
+    setPointsEditValue("");
+  };
+
+  const savePointsModal = async () => {
+    if (!pointsModalItem) return;
+    setIsSavingPoints(true);
+    try {
+      await api.put(`/api/restaurant/food/${pointsModalItem.id}`, {
+        points: Number(pointsEditValue) || 0
+      });
+      toast.success(t('statusUpdatedSuccessfully') || 'تم تحديث البيانات بنجاح');
+      closePointsModal();
+      refetch();
+    } catch (err) {
+      console.error("Error updating points:", err);
+      toast.error(t('failedToUpdateStatus') || 'فشل في تحديث البيانات');
+    } finally {
+      setIsSavingPoints(false);
+    }
   };
 
   const handleVariantChange = (optId, field, value) => {
@@ -288,15 +339,9 @@ export default function PricingProduct({ branchId: branchIdProp }) {
           isOutOfStock: currentStockStatus
         });
       } else {
-        const item = items.find((i) => i.id === foodId);
-        const currentPrice = getItemPriceForChannel(item);
-
-        await api.post("/api/restaurant/pricing/product-channel", {
-          foodId: foodId,
-          branchId: selectedBranchIds,
-          serviceModule: selectedModules,
-          price: currentPrice,
-          status: currentStockStatus ? "inactive" : "active"
+        const branchId = getBranchIdForSubCategoryAction();
+        await api.put(`/api/restaurant/food/${foodId}/branch/${branchId}/out-of-stock`, {
+          isOutOfStock: currentStockStatus
         });
       }
       toast.success(t('statusUpdatedSuccessfully') || 'تم تحديث الحالة بنجاح');
@@ -332,16 +377,26 @@ export default function PricingProduct({ branchId: branchIdProp }) {
     }
   };
 
-  const toggleFoodStatus = async (foodId, checked) => {
+const toggleFoodStatus = async (foodId, checked) => {
+    // هنجيب الـ branchId باستخدام الدالة المتاحة في الملف
+    const branchId = getBranchIdForSubCategoryAction();
+
+    // التأكد من اختيار فرع محدد قبل تنفيذ الطلب
+    if (!branchId) {
+      toast.error(t('selectSpecificBranchFirst') || 'من فضلك اختر فرع محدد أولاً');
+      return;
+    }
+
     try {
+      // استخدام الـ API الجديد مع تمرير الـ branchId والـ foodId
       await api.put(
-        `/api/restaurant/food/status/${foodId}`,
+        `/api/restaurant/food/${foodId}/branch/${branchId}/status`,
         { status: checked ? "active" : "inactive" }
       );
       toast.success(t('statusUpdatedSuccessfully') || 'تم تحديث الحالة بنجاح');
       refetch();
     } catch (error) {
-      console.error("Error updating food status:", error);
+      console.error("Error updating food lock status:", error);
       toast.error(t('failedToUpdateStatus') || 'فشل تحديث الحالة');
     }
   };
@@ -380,7 +435,7 @@ export default function PricingProduct({ branchId: branchIdProp }) {
 
   const subCategoryOutOfStockValue = useMemo(() => {
     if (!currentSubCategoryFromMenu) return false;
-    return Boolean(currentSubCategoryFromMenu.allProductsOutOfStock);
+    return Boolean(currentSubCategoryFromMenu.isOutOfStock);
   }, [currentSubCategoryFromMenu]);
 
   // تعديل الشرط هنا ليكون true فقط عندما يكون computedStatus هو active
@@ -538,6 +593,9 @@ export default function PricingProduct({ branchId: branchIdProp }) {
                     {t("price") || "Price"}
                   </TableHead>
                   <TableHead className="h-14 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 py-4 px-6 text-center">
+                    {t("points") || "Points"}
+                  </TableHead>
+                  <TableHead className="h-14 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 py-4 px-6 text-center">
                     <div className="flex items-center justify-center gap-2">
                       <span>{t("outOfStock") || "Out of Stock"}</span>
                       <Switch
@@ -577,7 +635,7 @@ export default function PricingProduct({ branchId: branchIdProp }) {
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center h-48">
+                    <TableCell colSpan={6} className="text-center h-48">
                       <div className="flex items-center justify-center">
                         <LoadingSpinner className="h-6 w-6 text-primary" />
                       </div>
@@ -613,10 +671,24 @@ export default function PricingProduct({ branchId: branchIdProp }) {
                             </button>
                           </div>
                         </TableCell>
+                        <TableCell className="py-4 px-6">
+                          <div className="flex items-center justify-center gap-2">
+                            <span className="text-sm font-bold text-primary">
+                              {item.points ?? 0}
+                            </span>
+                            <button
+                              onClick={() => openPointsModal(item)}
+                              className="h-7 w-7 inline-flex items-center justify-center rounded-lg text-slate-400 hover:text-primary hover:bg-primary/5 transition-all"
+                              title={t("update") || "Update"}
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        </TableCell>
                         <TableCell className="py-4 px-6 text-center">
                           <div className="flex items-center justify-center">
                             <Switch
-                              checked={getIsOutOfStock(item)}
+                              checked={getIsOutOfStockForChannel(item)}
                               onCheckedChange={(checked) => {
                                 toggleOutOfStock(item.id, checked);
                               }}
@@ -639,7 +711,7 @@ export default function PricingProduct({ branchId: branchIdProp }) {
                 ) : (
                   <TableRow>
                     <TableCell
-                      colSpan={5}
+                      colSpan={6}
                       className="text-center h-48 text-sm text-slate-400 font-medium"
                     >
                       {t("noDataFound") || "No data found"}
@@ -739,6 +811,42 @@ export default function PricingProduct({ branchId: branchIdProp }) {
             </Button>
             <Button onClick={savePriceModal} disabled={isSaving}>
               {isSaving ? <LoadingSpinner className="h-4 w-4 mr-2" /> : null}
+              {t("save") || "Save"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* POINTS EDIT MODAL */}
+      <Dialog open={!!pointsModalItem} onOpenChange={(open) => !open && closePointsModal()}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{t("editPoints") || "تعديل النقاط"}</DialogTitle>
+          </DialogHeader>
+
+          {pointsModalItem && (
+            <div className="space-y-1.5 mt-2">
+              <h3 className="font-semibold text-slate-800 dark:text-slate-200 mb-2">
+                {pointsModalItem.name || pointsModalItem.nameAr}
+              </h3>
+              <label className="text-xs font-medium text-slate-500">
+                {t("points") || "Points"}
+              </label>
+              <Input
+                type="number"
+                value={pointsEditValue}
+                onChange={(e) => setPointsEditValue(e.target.value)}
+                className="h-10"
+              />
+            </div>
+          )}
+
+          <DialogFooter className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
+            <Button variant="outline" onClick={closePointsModal} disabled={isSavingPoints}>
+              {t("cancel") || "Cancel"}
+            </Button>
+            <Button onClick={savePointsModal} disabled={isSavingPoints}>
+              {isSavingPoints ? <LoadingSpinner className="h-4 w-4 mr-2" /> : null}
               {t("save") || "Save"}
             </Button>
           </DialogFooter>

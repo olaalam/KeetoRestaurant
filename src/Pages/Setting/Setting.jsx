@@ -54,6 +54,15 @@ export default function Setting() {
             )
         },
         {
+            accessorKey: "productView",
+            header: t("productView", { defaultValue: "Product View" }),
+            cell: ({ getValue }) => (
+                <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-800 capitalize">
+                    {getValue() || 'normal'}
+                </span>
+            )
+        },
+        {
             accessorKey: "scheduledDelivery",
             header: t("scheduledDelivery", { defaultValue: "Scheduled Delivery" }),
             cell: ({ getValue }) => getValue() ? t("yes", { defaultValue: "Yes" }) : t("no", { defaultValue: "No" })
