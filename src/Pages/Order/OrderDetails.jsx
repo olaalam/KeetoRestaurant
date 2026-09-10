@@ -1201,7 +1201,7 @@ export default function OrderDetails() {
                 onClick={() => setIsDurationDialogOpen(true)}
                 className="rounded-xl h-9 px-4 font-semibold text-xs border-primary text-primary hover:bg-primary/5 transition-colors"
               >
-                {t("add") || "إضافة / تعديل"}
+                {t("edit") || "  تعديل"}
               </Button>
             </CardContent>
           </Card>

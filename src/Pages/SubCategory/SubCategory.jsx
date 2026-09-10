@@ -60,6 +60,29 @@ export default function SubCategory() {
     };
 
     const columns = [
+        {
+            accessorKey: 'image',
+            header: t('image'),
+            cell: ({ row }) => {
+                const imageUrl = row.original.image;
+                
+                // إذا لم توجد صورة، نعرض علامة شرطة (-)
+                if (!imageUrl) {
+                    return <span className="text-gray-400 text-sm flex justify-center">-</span>;
+                }
+
+                // في حالة وجود صورة، نقوم برسم عنصر img
+                return (
+                    <div className="flex justify-center items-center">
+                        <img
+                            src={imageUrl}
+                            alt={row.original.name || "subcategory image"}
+                            className="w-12 h-12 object-cover rounded-md border border-slate-200 shadow-sm"
+                        />
+                    </div>
+                );
+            }
+        },
         { accessorKey: 'name', header: t('name') },
         { accessorKey: 'nameAr', header: t('nameAr') },
         { accessorKey: 'nameFr', header: t('nameFr') },

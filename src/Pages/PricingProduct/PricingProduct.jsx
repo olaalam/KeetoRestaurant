@@ -602,6 +602,7 @@ const toggleFoodStatus = async (foodId, checked) => {
                         checked={subCategoryOutOfStockValue}
                         disabled={!selectedSubCategoryId || isSubCategoryActionDisabled}
                         onCheckedChange={(checked) => toggleSubCategoryOutOfStock(checked)}
+                        className="data-[state=checked]:bg-gray-300 data-[state=unchecked]:bg-yellow-400"
                         title={
                           !selectedSubCategoryId
                             ? (t("selectSubCategoryFirst") || "اختر قسم فرعي أولاً")
@@ -692,6 +693,7 @@ const toggleFoodStatus = async (foodId, checked) => {
                               onCheckedChange={(checked) => {
                                 toggleOutOfStock(item.id, checked);
                               }}
+                              className="data-[state=checked]:bg-gray-300 data-[state=unchecked]:bg-yellow-400"
                             />
                           </div>
                         </TableCell>

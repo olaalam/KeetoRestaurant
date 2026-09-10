@@ -73,6 +73,7 @@ const FoodAdd = () => {
 
         variations:
           raw.variations?.map((v) => ({
+            id: v.id,
             name: v.name || "",
             nameAr: v.nameAr || "",
             nameFr: v.nameFr || "",
@@ -82,6 +83,7 @@ const FoodAdd = () => {
             max: v.max ? Number(v.max) : 1,
             options:
               v.options?.map((o) => ({
+                id: o.id,
                 optionName: o.optionName || "",
                 optionNameAr: o.optionNameAr || "",
                 optionNameFr: o.optionNameFr || "",
@@ -608,6 +610,8 @@ const VariationsSection = ({ control, register, setValue, watch }) => {
         const selectionType = watch(`variations.${index}.selectionType`);
         return (
           <div key={item.id} className="p-6 border-2 rounded-xl bg-white relative space-y-4 shadow-sm">
+            <input type="hidden" {...register(`variations.${index}.id`)} />
+            
             <Button
               type="button"
               variant="ghost"
@@ -701,6 +705,8 @@ const OptionsSection = ({ nestIndex, control, register }) => {
 
       {fields.map((item, k) => (
         <div key={item.id} className="flex items-end gap-4 bg-slate-50 p-3 rounded-lg">
+          <input type="hidden" {...register(`variations.${nestIndex}.options.${k}.id`)} />
+
           <div className="flex-1 space-y-1">
             <Label className="text-xs">{t("optionNameLabel")}</Label>
             <Input {...register(`variations.${nestIndex}.options.${k}.optionName`)} className="bg-white" />
