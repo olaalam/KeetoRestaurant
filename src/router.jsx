@@ -86,6 +86,7 @@ import DeliveryManAdd from "./Pages/DeliveryMan/DeliveryManAdd";
 import OutOfStockIngredients from "./Pages/OutOfStockList/OutOfStockList";
 import Users from "./Pages/Users/Users";
 import UsersAdd from "./Pages/Users/UsersAdd";
+import UserDetails from "./Pages/Users/UserDetails";
 import ZoneMap from "./Pages/ZoneMap/ZoneMap";
 import Upselling from "./Pages/Upselling/Upselling";
 import UpsellingAdd from "./Pages/Upselling/UpsellingAdd";
@@ -94,6 +95,8 @@ import FreeDelivery from "./Pages/FreeDelivery/FreeDelivery";
 import FreeDeliveryAdd from "./Pages/FreeDelivery/FreeDeliveryAdd";
 import PricingProduct from "./Pages/PricingProduct/PricingProduct";
 import RedeemPoints from "./Pages/RedeemPoints/RedeemPoints";
+import OrderDelayAdd from "./Pages/OrderDelay/OrderDelayAdd";
+import OrderDelay from "./Pages/OrderDelay/OrderDelay";
 const router = createBrowserRouter([
   {
     path: "/login",
@@ -592,6 +595,11 @@ const router = createBrowserRouter([
         element: <UsersAdd />
 
       },
+            {
+        path: "users/:id",
+        element: <UserDetails />
+
+      },
       {
         path: "zone-map",
         element: <ZoneMap />
@@ -624,6 +632,20 @@ const router = createBrowserRouter([
         path: "redeem-points",
         element: <RedeemPoints />
       },
+            {
+        path: "delay-order",
+        element: <OrderDelay />
+      },
+      {
+        path: "delay-order/add",
+        element: <OrderDelayAdd />
+      },
+      {
+        path: "delay-order/edit/:id",
+        element: <OrderDelayAdd />
+
+      },
+      
 
 
 

@@ -7,7 +7,7 @@ import LoadingSpinner from '@/components/LoadingSpinner';
 import { useTranslation } from "@/hooks/useTranslation"; 
 
 const DiscountAdd = () => {
-    const { t } = useTranslation(); // 2. تفعيل دالة الترجمة
+    const { t } = useTranslation();
     const { id } = useParams(); 
     const { state } = useLocation();
 
@@ -20,7 +20,7 @@ const DiscountAdd = () => {
         }
     });
 
-    // جلب بيانات الخصم في حالة التعديل (إذا لم تكن متوفرة في الـ state)
+    // جلب بيانات الخصم في حالة التعديل
     const { data: DiscountData, isLoading: isFetching } = useQuery({
         queryKey: ['Discount', id],
         queryFn: async () => {
@@ -30,7 +30,6 @@ const DiscountAdd = () => {
         enabled: !!id && !state?.DiscountData, 
     });
 
-    // 3. تحديد البيانات الأولية (إما القادمة من الصفحة السابقة أو من الـ API)
     const initialData = state?.DiscountData || DiscountData;
 
     const DiscountFields = [
@@ -40,7 +39,7 @@ const DiscountAdd = () => {
         { name: 'logo', label: t('logo'), type: 'file', required: false },
         {
             name: 'foodIds',
-            label: t('food'), // الآن ستعمل بدون مشاكل
+            label: t('food'),
             required: false,
             type: 'multi-select',
             options: (selectData?.foods || []).map(f => ({
@@ -49,12 +48,7 @@ const DiscountAdd = () => {
             }))
         },
         { name: 'maxDiscount', label: t('maxDiscount'), type: 'number', required: false },
-        { name: 'discountValue', label: t('discountValue'), type: 'number', required: true },
-        { name: 'minOrderAmount', label: t('minOrderAmount'), type: 'number', required: false },
-        { name: 'usageLimit', label: t('usageLimit'), type: 'number', required: false },
-        { name: 'startDate', label: t('startDate'), type: 'date', required: true },
-        { name: 'endDate', label: t('endDate'), type: 'date', required: true },
-        { 
+                { 
             name: 'discountType', 
             label: t('discountType'), 
             required: true, 
@@ -64,16 +58,21 @@ const DiscountAdd = () => {
                 { value: 'fixed_amount', label: t('fixedAmount') }
             ] 
         },
+        { name: 'discountValue', label: t('discountValue'), type: 'number', required: true },
+        { name: 'minOrderAmount', label: t('minOrderAmount'), type: 'number', required: false },
+        { name: 'usageLimit', label: t('usageLimit'), type: 'number', required: false },
+        { name: 'startDate', label: t('startDate'), type: 'date', required: true },
+        { name: 'endDate', label: t('endDate'), type: 'date', required: true },
+
     ];
 
-    // 4. الانتظار حتى ينتهي تحميل بيانات الخصم أو بيانات الأطعمة لضمان عدم ظهور حقول فارغة
     if ((id && isFetching) || isSelectDataLoading) {
         return <LoadingSpinner />;
     }
 
     return (
         <AddPage
-            title={id ? "Edit Discount" : "Add Discount"} // تحسين بسيط للعنوان ليناسب التعديل أو الإضافة
+            title={id ? "Edit Discount" : "Add Discount"} 
             apiUrl="/api/restaurant/discounts" 
             queryKey="Discounts"
             fields={DiscountFields}

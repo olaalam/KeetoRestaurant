@@ -51,6 +51,7 @@ const SettingPageAdd = () => {
         resetDailyOrderNumberTime: "00:00",
         isAlwaysOpen: false,
         isSameTimeEveryDay: false,
+        isTemporarilyClosed: false,
         firstColor: "",
         secondColor: "",
         firstTextColor: "",
@@ -116,6 +117,7 @@ const SettingPageAdd = () => {
             resetDailyOrderNumberTime: rawData.settings?.resetDailyOrderNumberTime ? rawData.settings.resetDailyOrderNumberTime.substring(0, 5) : "00:00",
             isAlwaysOpen: rawData.settings?.isAlwaysOpen ?? false,
             isSameTimeEveryDay: rawData.settings?.isSameTimeEveryDay ?? false,
+            isTemporarilyClosed: rawData.settings?.isTemporarilyClosed ?? false,
             firstColor: rawData.settings?.firstColor || "",
             secondColor: rawData.settings?.secondColor || "",
             firstTextColor: rawData.settings?.firstTextColor || "",
@@ -162,6 +164,7 @@ const SettingPageAdd = () => {
                 resetDailyOrderNumberTime: data.resetDailyOrderNumberTime || "00:00",
                 isAlwaysOpen: data.isAlwaysOpen ?? false,
                 isSameTimeEveryDay: data.isSameTimeEveryDay ?? false,
+                isTemporarilyClosed: data.isTemporarilyClosed ?? false,
                 firstColor: data.firstColor || "",
                 secondColor: data.secondColor || "",
                 firstTextColor: data.firstTextColor || "",
@@ -196,6 +199,7 @@ const SettingPageAdd = () => {
         { name: "canEditOrder", label: t('canEditOrderLabel') },
         { name: "isAlwaysOpen", label: t('isAlwaysOpenLabel') },
         { name: "isSameTimeEveryDay", label: t('sameTimeEveryDayLabel') },
+        { name: "isTemporarilyClosed", label: t('isTemporarilyClosedLabel', { defaultValue: 'Temporarily Closed' }) },
         { name: "repeatNotification", label: t('repeatNotificationLabel') },
     ];
 

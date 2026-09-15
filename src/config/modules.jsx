@@ -18,13 +18,12 @@ import {
   Award,
 } from "lucide-react";
 import keetoImage from "../../public/WhatsApp Image 2026-05-18 at 11.27.30 AM.jpeg";
-import { icon } from "leaflet";
 
-const KeetoIcon = (props) => (
+const KeetoIcon = ({ className }) => (
   <img
-    src={keetoImage}
+    src="/WhatsApp Image 2026-05-18 at 11.27.30 AM.jpeg" // المسار المباشر من مجلد public
     alt="Keeto"
-    className={`object-contain rounded-sm ${props.className || "w-5 h-5"}`}
+    className={`w-5 h-5 h-5 object-contain shrink-0 rounded-sm ${className || ""}`}
   />
 );
 
@@ -103,7 +102,7 @@ export const getModules = (t, orderCounts = {}) => {
       key: "marketing",
       items: [
         { title: t("social"), url: "/social", icon: ShoppingBag },
-        { title: t("discount"), url: "/discount", icon: ShoppingBag },
+        { title: t("offers"), url: "/discount", icon: ShoppingBag },
         { title: t("coupon"), url: "/coupon", icon: ShoppingBag },
         { title: t("freedelivery"), url: "/free-delivery", icon: ShoppingBag },
         { title: t("rating"), url: "/rating", icon: ShoppingBag },
@@ -161,6 +160,7 @@ export const getModules = (t, orderCounts = {}) => {
         { title: t("qr"), url: "/qr", icon: ShoppingBag },
         { title: t("policy"), url: "/policy", icon: ShoppingBag },
         { title: t("setting"), url: "/setting", icon: ShoppingBag },
+        { title: t("delayOrder"), url: "/delay-order", icon: ShoppingBag },
       ],
     },
 

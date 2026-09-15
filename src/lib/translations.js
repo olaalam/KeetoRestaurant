@@ -940,6 +940,7 @@ const translations = {
     deliveryMen: "Delivery Men",
     cashiers: "Cashiers",
     freedelivery: "Free Delivery",
+    offers: "Offers",
     //rating
 
     "restaurantRate": "Restaurant Rate",
@@ -1580,6 +1581,7 @@ const translations = {
     "inStock": "متوفر في المخزن",
     "outOfStock": "نفذ من المخزن",
     "stockStatus": "حالة المخزون",
+    offers:"العروض",
     "foods": "الوجبات",
     "manageFoods": "إدارة الوجبات",
     "statusUpdatedSuccessfully": "تم تحديث الحالة بنجاح",

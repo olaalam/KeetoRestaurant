@@ -934,13 +934,23 @@ export default function OrderDetails() {
 
             <div className="space-y-2 text-sm text-gray-800">
               <div className="flex items-center gap-3 flex-wrap">
-                <div className="flex items-center gap-1.5">
-                  <span className="font-semibold text-gray-900">
-                    {t("name") || "Name"}:
-                  </span>
-                  <span>{order.customer?.name || t("unknown")}</span>
-                </div>
-
+<div className="flex items-center gap-1.5">
+  <span className="font-semibold text-gray-900">
+    {t("name") || "Name"}:
+  </span>
+  <button
+    type="button"
+    onClick={() => {
+      const userId = order.customer?.id || order.userId || order.customerId;
+      if (userId) {
+        navigate(`/users/${userId}`);
+      }
+    }}
+    className="font-bold text-primary hover:underline hover:text-primary/80 transition-colors bg-transparent border-none cursor-pointer p-0 m-0 text-start"
+  >
+    {order.customer?.name || t("unknown")}
+  </button>
+</div>
                 <div className="text-xs font-semibold text-gray-600 bg-gray-100 border border-gray-200 px-2.5 py-0.5 rounded-md shadow-2xs">
                   total orders:{" "}
                   <span className="font-bold text-gray-900">

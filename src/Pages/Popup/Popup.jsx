@@ -3,19 +3,20 @@ import { useQuery } from '@tanstack/react-query';
 import api from '@/api/axios';
 import GenericDataTable from '@/components/GenericDataTable';
 import { useNavigate } from 'react-router-dom';
-import { useTranslation } from "@/hooks/useTranslation"; // استيراد هوك الترجمة
+import { useTranslation } from "@/hooks/useTranslation";
 
 export default function Popup() {
     const navigate = useNavigate();
-    const { t } = useTranslation(); // تفعيل الهوك
+    const { t } = useTranslation();
 
     const { data: popup = [], isLoading } = useQuery({
         queryKey: ['popup'],
         queryFn: async () => {
             const res = await api.get('/api/restaurant/popups');
-            return res.data.data.data;
+            return res.data?.data?.data || [];
         }
     });
+
     const formatDate = (dateString) => {
         if (!dateString) return '-';
         return new Date(dateString).toLocaleDateString('en-GB', {
@@ -24,6 +25,7 @@ export default function Popup() {
             day: '2-digit'
         });
     };
+
     const columns = [
         {
             accessorKey: "Title",
@@ -124,16 +126,66 @@ export default function Popup() {
             header: t("status"),
         },
         {
+            accessorKey: "linkType",
+            header: t("linkType") || "Link Type",
+            cell: ({ row }) => {
+                const type = row.getValue("linkType");
+                return (
+                    <span className="capitalize font-medium text-gray-700 bg-gray-100 px-2.5 py-1 rounded-md text-xs">
+                        {type || "-"}
+                    </span>
+                );
+            }
+        },
+        {
+            id: "targetValue",
+            header: t("target") || "Linked Item / Link",
+            cell: ({ row }) => {
+                const item = row.original;
+
+                switch (item.linkType) {
+                    case "link":
+                        return item.link ? (
+                            <a 
+                                href={item.link} 
+                                target="_blank" 
+                                rel="noopener noreferrer" 
+                                className="text-blue-600 hover:underline text-sm truncate max-w-[200px] block"
+                            >
+                                {item.link}
+                            </a>
+                        ) : "-";
+
+                    case "product":
+                    case "food":
+                        return item.foodNameAr || item.foodName || "-";
+
+                    case "subcategory":
+                        return item.subcategoryNameAr || item.subcategoryName || "-";
+
+                    case "category":
+                        return item.categoryNameAr || item.categoryName || "-";
+
+                    case "discount":
+                        return item.discountNameAr || item.discountName || "-";
+
+                    default:
+                        return "-";
+                }
+            }
+        },
+        {
             accessorKey: "startDate",
-            header: t("startDate")
-            , cell: (info) => formatDate(info.getValue())
+            header: t("startDate"),
+            cell: (info) => formatDate(info.getValue())
         },
         {
             accessorKey: "endDate",
-            header: t("endDate")
-            , cell: (info) => formatDate(info.getValue())
+            header: t("endDate"),
+            cell: (info) => formatDate(info.getValue())
         },
     ];
+
     return (
         <div className="container mx-auto py-10">
             <GenericDataTable

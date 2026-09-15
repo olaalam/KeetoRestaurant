@@ -8,7 +8,7 @@ import api from '@/api/axios';
 import UsersAdd from './UsersAdd';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Mail, Phone, Copy, Check } from 'lucide-react';
-
+import { useNavigate } from 'react-router-dom';
 // مكون خاص بعرض بيانات الاتصال بارتفاع ومسافات متساوية تماماً لكل الصفوف
 const UserContactCell = ({ email, phone }) => {
     const [copied, setCopied] = useState(false);
@@ -69,6 +69,7 @@ export default function Users() {
     const [editingUser, setEditingUser] = useState(null);
     const queryClient = useQueryClient();
     const { t } = useTranslation();
+    const navigate = useNavigate();
     const { data, isLoading } = useGet('restaurant-users', '/api/restaurant/restaurant-users');
 
     const rawList = data?.data?.data || [];
@@ -112,9 +113,17 @@ export default function Users() {
                 );
             },
         },
-        {
+{
             accessorKey: 'name',
             header: t('nameHeader'),
+            cell: ({ row }) => (
+                <button
+                    onClick={() => navigate(`/users/${row.original.userId}`)}
+                    className="font-semibold text-primary hover:underline hover:text-primary/80 transition-colors bg-transparent border-none cursor-pointer p-0 m-0"
+                >
+                    {row.original.name}
+                </button>
+            ),
         },
         {
             accessorKey: 'email',

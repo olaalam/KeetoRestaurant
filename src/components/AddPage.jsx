@@ -72,7 +72,6 @@ const AddPage = ({
         }
     };
 
-    // استخدام useRef للاحتفاظ بهوية الـ fields دون التسبب في إعادة تشغيل الـ useEffect
     const fieldsRef = useRef(fields);
     useEffect(() => {
         fieldsRef.current = fields;
@@ -85,14 +84,12 @@ const AddPage = ({
         reader.onerror = error => reject(error);
     });
 
-    // تحويل initialData إلى نص JSON لمراقبة التغيير الحقيقي في البيانات فقط وليس الـ Reference
     const initialDataString = JSON.stringify(initialData);
 
     useEffect(() => {
         if (initialData) {
             const formattedData = { ...initialData };
 
-            // استخدام fieldsRef.current لتجنب وضع fields في التبعيات
             fieldsRef.current.forEach(field => {
                 if (field.type === 'date' && initialData[field.name]) {
                     try {
@@ -105,23 +102,21 @@ const AddPage = ({
                 }
             });
 
-            // عمل reset فقط عندما تتغير البيانات القادمة فعلياً من الـ API
             reset(formattedData, { keepDirtyValues: true });
         }
-    }, [initialDataString, reset]); // ✅ الآن التبعية مستقرة تماماً ولن تسبب Loop
+    }, [initialDataString, reset]);
 
     const onSubmit = (data) => {
         const payloadToSend = transformPayload ? transformPayload(data) : data;
 
         if (isEdit) {
-            // 💡 إذا كانت الخاصية true نرسل الرابط الأصلي صافي، وإلا نتركه null ليقوم الهوك بدمج الـ id تلقائياً
             const customUrl = bypassIdInEdit ? apiUrl : null;
 
             updateMutation.mutate(
                 {
                     id: initialData?.id || data?.id,
                     payload: payloadToSend,
-                    customUrl: customUrl // 👈 نمرر الرابط المخصص هنا للهوك
+                    customUrl: customUrl
                 },
                 {
                     onSuccess: (res) => {
@@ -242,6 +237,8 @@ const AddPage = ({
                                         rules={{ required: fieldItem.required }}
                                         render={({ field: { onChange: formOnChange, value = [] } }) => {
                                             const safeValue = Array.isArray(value) ? value : [];
+                                            const [searchVal, setSearchVal] = React.useState("");
+
                                             const handleToggleOption = (optionValue) => {
                                                 const stringValue = String(optionValue);
                                                 let updatedValue = [];
@@ -258,38 +255,72 @@ const AddPage = ({
                                                 }
                                             };
 
+                                            const filteredOptions = searchVal.trim()
+                                                ? fieldItem.options?.filter(o => o.label.toLowerCase().includes(searchVal.toLowerCase()))
+                                                : fieldItem.options;
+
                                             return (
                                                 <div className="space-y-2">
-                                                    <Select onValueChange={handleToggleOption} value="">
-                                                        <SelectTrigger className={errors[fieldItem.name] ? "border-destructive w-full" : "w-full"}>
-                                                            <SelectValue placeholder={`${t("selectField")} ${fieldItem.label}...`} />
-                                                        </SelectTrigger>
-                                                        <SelectContent>
-                                                            {fieldItem.options?.map((option) => {
-                                                                const isSelected = safeValue.includes(String(option.value));
-                                                                return (
-                                                                    <SelectItem
-                                                                        key={option.value}
-                                                                        value={String(option.value)}
-                                                                        className={isSelected ? "bg-accent text-accent-foreground font-medium" : ""}
-                                                                    >
-                                                                        <div className="flex items-center gap-2">
-                                                                            <input
-                                                                                type="checkbox"
-                                                                                checked={isSelected}
-                                                                                readOnly
-                                                                                className="rounded border-gray-300 text-primary focus:ring-primary h-3 w-3"
-                                                                            />
-                                                                            {option.label}
-                                                                        </div>
-                                                                    </SelectItem>
-                                                                );
-                                                            })}
-                                                        </SelectContent>
-                                                    </Select>
+                                                    <Popover
+                                                        open={openCombobox[fieldItem.name] || false}
+                                                        onOpenChange={(isOpen) => {
+                                                            setOpenCombobox(prev => ({ ...prev, [fieldItem.name]: isOpen }));
+                                                            if (!isOpen) setSearchVal("");
+                                                        }}
+                                                    >
+                                                        <PopoverTrigger asChild>
+                                                            <Button
+                                                                variant="outline"
+                                                                role="combobox"
+                                                                className={cn(
+                                                                    "w-full justify-between font-normal text-left h-10 bg-white border-input",
+                                                                    errors[fieldItem.name] ? "border-destructive text-destructive" : ""
+                                                                )}
+                                                            >
+                                                                {safeValue.length > 0
+                                                                    ? `${safeValue.length} ${t("selected") || "selected"}`
+                                                                    : `${t("selectField")} ${fieldItem.label}...`}
+                                                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                                            </Button>
+                                                        </PopoverTrigger>
+                                                        <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0 PopoverContent" align="start">
+                                                            <Command shouldFilter={false}>
+                                                                <CommandInput
+                                                                    placeholder={`${t("searchField")} ${fieldItem.label}...`}
+                                                                    value={searchVal}
+                                                                    onValueChange={setSearchVal}
+                                                                />
+                                                                <CommandList>
+                                                                    <CommandEmpty>{t("noResultsFound")}</CommandEmpty>
+                                                                    <CommandGroup>
+                                                                        {filteredOptions?.map((option) => {
+                                                                            const isSelected = safeValue.includes(String(option.value));
+                                                                            return (
+                                                                                <CommandItem
+                                                                                    key={option.value}
+                                                                                    value={String(option.value)}
+                                                                                    onSelect={() => handleToggleOption(option.value)}
+                                                                                >
+                                                                                    <div className="flex items-center gap-2 w-full cursor-pointer">
+                                                                                        <input
+                                                                                            type="checkbox"
+                                                                                            checked={isSelected}
+                                                                                            onChange={() => {}}
+                                                                                            className="rounded border-gray-300 text-primary focus:ring-primary h-4 w-4"
+                                                                                        />
+                                                                                        <span>{option.label}</span>
+                                                                                    </div>
+                                                                                </CommandItem>
+                                                                            );
+                                                                        })}
+                                                                    </CommandGroup>
+                                                                </CommandList>
+                                                            </Command>
+                                                        </PopoverContent>
+                                                    </Popover>
 
                                                     {safeValue.length > 0 && (
-                                                        <div className="flex flex-wrap gap-1.5 p-2 border rounded-md bg-muted/30">
+                                                        <div className="flex flex-wrap gap-1.5 p-2 border rounded-md bg-muted/30 max-h-32 overflow-y-auto">
                                                             {safeValue.map((val) => {
                                                                 const option = fieldItem.options?.find(o => String(o.value) === String(val));
                                                                 return (

@@ -59,6 +59,40 @@ export default function PricingProduct({ branchId: branchIdProp }) {
   const [search, setSearch] = useState("");
   const currentBranchId = branchIdProp || getStoredBranchId();
 
+  // ---- Restaurant Online / Offline Status ----
+  const { data: settingsRes, refetch: refetchSettings } = useGet(
+    "restaurant-settings",
+    "/api/restaurant/restaurantsetting"
+  );
+
+  // قراءة الحالة مباشرة من الباك أند
+
+const isOnline = Boolean(settingsRes?.data?.settings?.isTemporarilyClosed);
+
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+
+const handleStatusToggle = async (checked) => {
+  setIsUpdatingStatus(true);
+  try {
+    await api.put("/api/restaurant/restaurantsetting", {
+      settings: {
+        isTemporarilyClosed: checked,
+      },
+    });
+    toast.success(
+      checked
+        ? t("restaurantIsNowOnline🟢") 
+        : t("restaurantIsNowOffline🔴") 
+    );
+    refetchSettings();
+  } catch (error) {
+    console.error("Error updating restaurant status:", error);
+    toast.error(t("failedToUpdateStatus") || "فشل في تغيير حالة المطعم");
+  } finally {
+    setIsUpdatingStatus(false);
+  }
+};
+
   // ---- multi-select branches state ----
   const [selectedBranchIds, setSelectedBranchIds] = useState(
     currentBranchId ? [currentBranchId] : ["all"]
@@ -168,21 +202,7 @@ export default function PricingProduct({ branchId: branchIdProp }) {
     return Boolean(item.isOutOfStock);
   };
 
-  // زي getItemPriceForChannel بالظبط، بس بيرجع حالة out-of-stock/active
-  // الخاصة بالفرع والموديول المختارين فعليًا، مش الحالة العامة للمنتج
   const getIsOutOfStockForChannel = (item) => {
-    // if (isAllBranches && isAllModules) {
-    //   return getIsOutOfStock(item);
-    // }
-    // if (item.channelPricing && item.channelPricing.length > 0) {
-    //   const matchingCp = item.channelPricing.find((cp) =>
-    //     (selectedBranchIds.includes("all") || selectedBranchIds.includes(cp.branchId)) &&
-    //     (selectedModules.includes("all") || selectedModules.includes(cp.serviceModule))
-    //   );
-    //   if (matchingCp && matchingCp.status) {
-    //     return matchingCp.status === "inactive";
-    //   }
-    // }
     return getIsOutOfStock(item);
   };
 
@@ -377,18 +397,15 @@ export default function PricingProduct({ branchId: branchIdProp }) {
     }
   };
 
-const toggleFoodStatus = async (foodId, checked) => {
-    // هنجيب الـ branchId باستخدام الدالة المتاحة في الملف
+  const toggleFoodStatus = async (foodId, checked) => {
     const branchId = getBranchIdForSubCategoryAction();
 
-    // التأكد من اختيار فرع محدد قبل تنفيذ الطلب
     if (!branchId) {
       toast.error(t('selectSpecificBranchFirst') || 'من فضلك اختر فرع محدد أولاً');
       return;
     }
 
     try {
-      // استخدام الـ API الجديد مع تمرير الـ branchId والـ foodId
       await api.put(
         `/api/restaurant/food/${foodId}/branch/${branchId}/status`,
         { status: checked ? "active" : "inactive" }
@@ -438,7 +455,6 @@ const toggleFoodStatus = async (foodId, checked) => {
     return Boolean(currentSubCategoryFromMenu.isOutOfStock);
   }, [currentSubCategoryFromMenu]);
 
-  // تعديل الشرط هنا ليكون true فقط عندما يكون computedStatus هو active
   const subCategoryOffValue = useMemo(() => {
     if (!currentSubCategoryFromMenu) return false;
     return currentSubCategoryFromMenu.computedStatus === "active";
@@ -448,11 +464,65 @@ const toggleFoodStatus = async (foodId, checked) => {
 
   return (
     <div className="space-y-6 w-full">
-      {/* HEADER */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2 border-b border-slate-100 dark:border-slate-800">
-        <h2 className="text-2xl font-bold text-slate-800 tracking-tight dark:text-slate-100">
-          {t("productPricing")}
-        </h2>
+      {/* HEADER WITH ONLINE / OFFLINE TOGGLE */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-800">
+        <div className="space-y-1">
+          <h2 className="text-2xl font-bold text-slate-800 tracking-tight dark:text-slate-100">
+            {t("productPricing")}
+          </h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            {t("managePricingAndStoreStatus") || "إدارة حالة المطعم وتوافر المنتجات"}
+          </p>
+        </div>
+
+        {/* STORE ONLINE / OFFLINE CARD */}
+        <div
+          className={cn(
+            "flex items-center gap-3 px-4 py-2.5 rounded-2xl border transition-all duration-300 shadow-sm",
+            isOnline
+              ? "bg-emerald-50/70 border-emerald-200/80 dark:bg-emerald-950/20 dark:border-emerald-800/40"
+              : "bg-rose-50/70 border-rose-200/80 dark:bg-rose-950/20 dark:border-rose-800/40"
+          )}
+        >
+          {/* Animated Status Indicator */}
+          <div className="relative flex items-center justify-center">
+            <span
+              className={cn(
+                "relative flex h-3 w-3 rounded-full",
+                isOnline ? "bg-emerald-500" : "bg-rose-500"
+              )}
+            >
+              {isOnline && (
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+              )}
+            </span>
+          </div>
+
+          {/* Text Labels */}
+          <div className="flex flex-col min-w-[110px]">
+            <span
+              className={cn(
+                "text-xs font-bold leading-none",
+                isOnline ? "text-emerald-700 dark:text-emerald-400" : "text-rose-700 dark:text-rose-400"
+              )}
+            >
+              {isOnline ? t("restaurantIsOnline") : t("restaurantIsOffline")}
+            </span>
+            <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">
+              {isOnline ? t("restaurantAcceptsOrders") : t("restaurantClosedTemporarily")}
+            </span>
+          </div>
+
+          {/* Switch Control */}
+          <Switch
+            checked={isOnline}
+            disabled={isUpdatingStatus}
+            onCheckedChange={handleStatusToggle}
+            className={cn(
+              "data-[state=checked]:bg-emerald-500 data-[state=unchecked]:bg-rose-400"
+            )}
+          />
+        </div>
       </div>
 
       {/* BRANCHES ROW (multi-select) */}

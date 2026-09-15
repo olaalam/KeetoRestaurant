@@ -79,7 +79,7 @@ export default function Discount() {
     return (
         <div className="container mx-auto py-10">
             <GenericDataTable
-                title="Discounts"
+                title="Offers"
                 columns={columns}
                 data={discounts}
                 isLoading={isLoading}
