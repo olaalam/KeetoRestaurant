@@ -12,9 +12,8 @@ export default function Discount() {
     const { t } = useTranslation();
     
     const [isDialogOpen, setIsDialogOpen] = useState(false);
-    const [selectedFoodIds, setSelectedFoodIds] = useState([]); 
+    const [selectedFoods, setSelectedFoods] = useState([]); 
 
-    // جلب البيانات من الـ API
     const { data: discounts = [], isLoading } = useQuery({
         queryKey: ['discounts'],
         queryFn: async () => {
@@ -24,8 +23,8 @@ export default function Discount() {
         }
     });
 
-    const openFoodDialog = (foodIds) => {
-        setSelectedFoodIds(foodIds || []);
+    const openFoodDialog = (foods) => {
+        setSelectedFoods(foods || []);
         setIsDialogOpen(true);
     };
 
@@ -50,11 +49,11 @@ export default function Discount() {
         { accessorKey: 'nameAr', header: 'Name (Ar)' },
         { accessorKey: 'nameFr', header: 'Name (Fr)' },
         {
-            accessorKey: 'foodIds', 
+            accessorKey: 'foods', 
             header: 'Foods', 
             cell: ({ row }) => (
                 <button
-                    onClick={() => openFoodDialog(row.original.foodIds)} 
+                    onClick={() => openFoodDialog(row.original.foods)} 
                     className="flex items-center gap-1 px-3 py-1 bg-orange-100 text-orange-600 rounded-md hover:bg-orange-200 transition-colors"
                 >
                     <Eye size={16} />
@@ -67,10 +66,8 @@ export default function Discount() {
         { accessorKey: 'maxDiscount', header: 'Max Discount' },
         { accessorKey: 'minOrderAmount', header: 'Min Order' },
         { accessorKey: 'usageLimit', header: 'Limit' },
-        // { formatDate(info.getValue()) },
         { accessorKey: 'endDate', header: 'End Date', cell: (info) => formatDate(info.getValue()) },
         { 
-            // 💡 هنا سيتعرف الجدول العام تلقائياً على isActive ويقوم ببناء السويتش
             accessorKey: 'isActive', 
             header: 'Status',
         }
@@ -92,11 +89,11 @@ export default function Discount() {
             
             {isDialogOpen && (
                 <FoodListDialog
-                    foodIds={selectedFoodIds} 
+                    foods={selectedFoods} 
                     isOpen={isDialogOpen}
                     onClose={() => {
                         setIsDialogOpen(false);
-                        setSelectedFoodIds([]); 
+                        setSelectedFoods([]); 
                     }}
                 />
             )}
