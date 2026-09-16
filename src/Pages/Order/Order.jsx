@@ -18,6 +18,7 @@ import ReasonDialog from "./ReasonDialog";
 import { Input } from "@/components/ui/input";
 import useDateRangeStore from "../../store/Usedaterangestore";
 import useAuthStore from "../../store/useAuthStore";
+import { hasPermission } from "@/lib/permissions";
 
 export default function Order() {
   const navigate = useNavigate();
@@ -40,6 +41,8 @@ export default function Order() {
 
   // جلب جداول المواعيد من الـ Auth Store
   const schedules = useAuthStore((state) => state.schedules);
+  const user = useAuthStore((state) => state.user);
+  const canFilterOrders = hasPermission(user, "order", "filter");
 
 // استبدل الـ useEffect الحالي بهذا الكود:
 useEffect(() => {
@@ -87,11 +90,13 @@ useEffect(() => {
     },
   });
 
-  const updateStatusMutation = useMutation({
-    mutationFn: async ({ orderId, status, cancelReasonId }) => {
+const updateStatusMutation = useMutation({
+    mutationFn: async ({ orderId, status, cancelReasonId, customReason }) => {
       const formattedStatus = status.replace(/_/g, "-");
       const payload = { orderId, status: formattedStatus };
+      
       if (cancelReasonId) payload.cancelReasonId = cancelReasonId;
+      if (customReason) payload.customReason = customReason;
 
       const { data } = await api.put(
         `/api/restaurant/order/${orderId}`,
@@ -339,6 +344,7 @@ useEffect(() => {
           <Input
             type="date"
             value={startDate}
+            disabled={!canFilterOrders}
             onChange={(e) => setStartDate(e.target.value)}
             className="w-40 h-10 cursor-pointer dark:[color-scheme:dark] [&::-webkit-calendar-picker-indicator]:dark:invert"
           />
@@ -352,6 +358,7 @@ useEffect(() => {
           <Input
             type="date"
             value={endDate}
+            disabled={!canFilterOrders}
             onChange={(e) => setEndDate(e.target.value)}
             className="w-40 h-10 cursor-pointer dark:[color-scheme:dark] [&::-webkit-calendar-picker-indicator]:dark:invert"
           />
@@ -432,16 +439,16 @@ useEffect(() => {
         actions={false}
       />
 
-      <ReasonDialog
+<ReasonDialog
         isOpen={dialogConfig.open}
         onClose={() =>
           setDialogConfig({ open: false, type: null, orderId: null })
         }
-        onConfirm={(cancelReasonId) =>
+        onConfirm={(data) =>
           updateStatusMutation.mutate({
             orderId: dialogConfig.orderId,
             status: dialogConfig.type,
-            cancelReasonId,
+            ...data,
           })
         }
         title={

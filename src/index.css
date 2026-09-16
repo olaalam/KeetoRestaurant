@@ -149,8 +149,15 @@
     @apply border-border outline-ring/50;
   }
 
+  #root {
+    min-height: 100vh;
+    min-width: 0;
+  }
+
   body {
     @apply bg-background text-foreground;
+    min-width: 320px;
+    overflow-x: hidden;
   }
 
   html {

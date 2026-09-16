@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useLocation, useNavigate, Outlet } from "react-router-dom";
+import { useLocation, useNavigate, Outlet, Navigate } from "react-router-dom";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AppSidebar } from "./AppSidebar";
@@ -22,6 +22,7 @@ import api from "@/api/axios";
 import LanguageSwitcher from "./LanguageSwitcher";
 import { useTranslation } from "@/hooks/useTranslation";
 import { getModules } from "@/config/modules";
+import { canViewModule } from "@/lib/permissions";
 
 export default function Layout() {
   const storedModule = useSidebarStore((state) => state.activeModule);
@@ -31,7 +32,8 @@ export default function Layout() {
   const { theme, setTheme } = useThemeStore();
 
   // نجيب الـ module بالترجمة الحالية
-  const translatedModules = getModules(t);
+  const allModules = getModules(t);
+  const translatedModules = allModules.filter((module) => canViewModule(user, module));
   const activeModule = storedModule
     ? translatedModules.find((m) => m.key === storedModule.key) || storedModule
     : null;
@@ -42,6 +44,14 @@ export default function Layout() {
 
   const location = useLocation();
   const navigate = useNavigate();
+
+  const routeModule = allModules.find((module) =>
+    module.items?.some((item) => {
+      const urls = [item.url, ...(item.subItems?.map((subItem) => subItem.url) || [])];
+      return urls.some((url) => url && (location.pathname === url || location.pathname.startsWith(`${url}/`)));
+    }),
+  );
+  const canAccessRoute = !routeModule || canViewModule(user, routeModule);
 
   // ---- Notification Sound ----
   const audioRef = useRef(null);
@@ -319,10 +329,10 @@ export default function Layout() {
 
         <main className="relative flex flex-col flex-1 min-w-0 max-h-screen overflow-hidden bg-background">
           <header className="flex-none sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-            <div className="flex items-center justify-between p-4 h-16">
+            <div className="flex min-h-16 items-center justify-between gap-2 px-3 py-2 sm:gap-4 sm:p-4">
 
               {/* Left Section */}
-              <div className="flex items-center gap-4 overflow-hidden">
+              <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden sm:gap-4">
                 {activeModule && <SidebarTrigger className="shrink-0" />}
 
                 <div className="flex items-center gap-3 truncate">
@@ -370,14 +380,14 @@ export default function Layout() {
               </div>
 
               {/* Center: Logo */}
-              <div>
+              <div className="hidden shrink-0 sm:block">
                 <button onClick={() => navigate("/")}>
-                  <img className="w-30 h-15" src="/logo.webp" alt="Logo" />
+                  <img className="h-12 w-24 object-contain lg:h-15 lg:w-30" src="/logo.webp" alt="Logo" />
                 </button>
               </div>
 
               {/* Right Section: Notifications & Profile */}
-              <div className="flex items-center gap-3">
+              <div className="flex shrink-0 items-center gap-1 sm:gap-3">
 
                 {/* Product Pricing Button */}
                 <button
@@ -397,11 +407,11 @@ export default function Layout() {
                     }
                     navigate("/pricing-product");
                   }}
-                  className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 text-primary hover:bg-primary hover:text-white transition-all duration-200 font-semibold text-sm shadow-sm active:scale-95"
+                  className="flex items-center gap-2 rounded-full bg-primary/10 px-2 py-1.5 text-primary shadow-sm transition-all duration-200 hover:bg-primary hover:text-white active:scale-95 sm:px-3.5 sm:text-sm"
                   title={t("productPricing") || "Product Pricing"}
                 >
                   <Tag size={20} className="shrink-0" />
-                  <span>{t("productPricing") || "Product Pricing"}</span>
+                  <span className="hidden sm:inline">{t("productPricing") || "Product Pricing"}</span>
                 </button>
 
                 {/* Orders Button */}
@@ -420,11 +430,11 @@ export default function Layout() {
                     }
                     navigate("/orders");
                   }}
-                  className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 text-primary hover:bg-primary hover:text-white transition-all duration-200 font-semibold text-sm shadow-sm active:scale-95"
+                  className="flex items-center gap-2 rounded-full bg-primary/10 px-2 py-1.5 text-primary shadow-sm transition-all duration-200 hover:bg-primary hover:text-white active:scale-95 sm:px-3.5 sm:text-sm"
                   title={t("orders") || "Orders"}
                 >
                   <ShoppingBag size={20} className="shrink-0" />
-                  <span>{t("orders") || "Orders"}</span>
+                  <span className="hidden sm:inline">{t("orders") || "Orders"}</span>
                 </button>
 
                 {/* Language Switcher */}
@@ -572,9 +582,9 @@ export default function Layout() {
           </header>
 
           {/* Content */}
-          <div className="flex-1 overflow-auto bg-slate-50/30 dark:bg-transparent">
-            <div className="p-6 h-full">
-              <Outlet />
+          <div className="min-h-0 flex-1 overflow-auto bg-slate-50/30 dark:bg-transparent">
+            <div className="h-full p-3 sm:p-6">
+              {canAccessRoute ? <Outlet /> : <Navigate to="/" replace />}
             </div>
           </div>
         </main>

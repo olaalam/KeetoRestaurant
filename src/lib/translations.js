@@ -857,6 +857,9 @@ const translations = {
   "expiresAt": "Expiration Date",
   "reject": "Reject",
   "accept": "Accept",
+  DelayMinutes: "Delay (Minutes)",
+  emails: "Emails",
+  orderDelay: "Order Delay",
 
     // Additional Form Fields
     "maxDiscount": "Max Discount",
@@ -956,6 +959,7 @@ const translations = {
     "date": "Date",
     "phone": "Phone Number",
     "totalOrders": "Total Orders",
+    orderStatus: "Order Status",
     //outofstock
 
     "outOfStockFoods": "Out of Stock Foods",
@@ -1799,6 +1803,7 @@ const translations = {
     "category": "الفئة",
     "ordersCount": "عدد الطلبات",
     "totalAmount": "الإجمالي",
+    orderDelay: "تأخير الطلب",
 
     "additionalFinancialMetrics": "المقاييس المالية الإضافية",
     "subtotal": "المجموع الفرعي",
@@ -1929,6 +1934,9 @@ const translations = {
     "failedToChangePassword": "فشل تغيير كلمة المرور",
     "profileUpdatedSuccessfully": "تم تحديث الملف الشخصي بنجاح",
     "failedToUpdateProfile": "فشل تحديث البيانات",
+    orderStatus: "حالة الطلب",
+    emails: "البريد الإلكتروني",
+    DelayMinutes: "دقائق التأخير",
 
     // Success & Error Messages
     "updateStatusSuccessfully": "تم تحديث الحالة بنجاح",

@@ -1,9 +1,10 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react"; // 💡 أضفنا useState
 import AddPage from "@/components/AddPage";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input"; // 💡 استيراد مكون الـ Input (تأكد من وجوده أو استخدم <input> العادي)
 import { useQuery } from "@tanstack/react-query";
-import { Loader2 } from "lucide-react";
+import { Loader2, Search } from "lucide-react"; // 💡 أضفنا أيقونة البحث
 import { useTranslation } from "@/hooks/useTranslation";
 import api from "@/api/axios";
 import { useNavigate, useParams } from "react-router-dom";
@@ -13,6 +14,9 @@ export default function PermissionAdd() {
   const { id } = useParams();
   const navigate = useNavigate();
   const norm = (v) => v?.trim().toLowerCase();
+
+  // 💡 State لحفظ كلمة البحث
+  const [searchTerm, setSearchTerm] = useState("");
 
   // ================= Schema =================
   const { data: schema, isLoading: isSchemaLoading } = useQuery({
@@ -62,10 +66,7 @@ export default function PermissionAdd() {
       queryKey="roles"
       initialData={role}
       onSuccessAction={(res) => {
-        // 💡 تصحيح: تم استبدال initialData بـ role لاستخراج المعرف الصحيح لـ الوميض (Highlight)
         const targetId = res?.data?.data?.id || res?.data?.id || res?.id || role?.id;
-        
-        // التوجيه لصفحة الـ permissions وتمرير الـ ID المضيء بداخل الـ state
         navigate("/permissions", { state: { highlightedId: targetId } });
       }}
       fields={[
@@ -80,7 +81,6 @@ export default function PermissionAdd() {
       {({ setValue, watch }) => {
         const permissions = watch("permissions") || [];
 
-        // 💡 تصحيح: جعل دالة فحص الـ actions تعتمد على حالة الفورم الحالية أولاً (permissions) لكي تتفاعل الأزرار فوراً عند الضغط
         const getModuleActions = (module) => {
           const formModule = permissions.find((p) => norm(p.module) === norm(module));
           if (formModule) {
@@ -93,7 +93,6 @@ export default function PermissionAdd() {
           const mod = norm(module);
           const act = norm(action);
 
-          // إذا لم تكن الصلاحيات قد عُدلت بعد في الـ Form State، نقوم بتهيئة المصفوفة بناءً على الـ permissionMap الأساسي لضمان عدم فقدان الصلاحيات الأخرى
           let updated = permissions.length > 0 ? [...permissions] : availableModules.map(m => ({
             module: m,
             actions: (permissionMap[norm(m)] || []).map(a => ({ action: a }))
@@ -125,7 +124,6 @@ export default function PermissionAdd() {
           setValue("permissions", updated, { shouldDirty: true });
         };
 
-        // تحديد/إلغاء تحديد كل الـ Actions في Module معين
         const toggleModulePermissions = (module, isChecked) => {
           const mod = norm(module);
           let updated = permissions.length > 0 ? [...permissions] : availableModules.map(m => ({
@@ -146,14 +144,12 @@ export default function PermissionAdd() {
             if (index !== -1) {
               updated.splice(index, 1);
             } else {
-              // إذا كان غير موجود بالفورم ولكنه يملك صلاحيات بالـ map، نقوم بحذفه بصورة صريحة
               updated = updated.filter(p => norm(p.module) !== mod);
             }
           }
           setValue("permissions", updated, { shouldDirty: true });
         };
 
-        // تحديد/إلغاء تحديد كل الصلاحيات بالكامل
         const toggleAllPermissions = (isChecked) => {
           if (isChecked) {
             const allPermissions = availableModules.map((module) => ({
@@ -166,7 +162,11 @@ export default function PermissionAdd() {
           }
         };
 
-        // التحقق مما إذا كانت كل الصلاحيات محددة (لزر Select All الرئيسي)
+        // 💡 فلترة الموديولات بناءً على كلمة البحث المدخلة
+        const filteredModules = availableModules.filter((module) =>
+          module.toLowerCase().includes(searchTerm.trim().toLowerCase())
+        );
+
         const isAllGlobalChecked =
           availableModules.length > 0 &&
           availableModules.every((module) => {
@@ -177,7 +177,18 @@ export default function PermissionAdd() {
         return (
           <div className="space-y-6">
 
-            {/* زر تحديد الكل (Global Select All) */}
+            {/* 💡 حقل البحث (Search Input) */}
+            <div className="relative">
+              <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5 pointer-events-none" />
+              <Input
+                type="text"
+                placeholder={t("searchModules", "ابحث عن الصلاحية...")}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pr-10" // ترك مسافة للأيقونة على اليمين (في حالة الـ RTL)
+              />
+            </div>
+
             <div className="flex items-center gap-2 pb-4 border-b border-gray-200">
               <Checkbox
                 checked={isAllGlobalChecked}
@@ -189,17 +200,22 @@ export default function PermissionAdd() {
               </Label>
             </div>
 
-            {availableModules.map((module) => {
+            {/* 💡 رسالة في حالة عدم تطابق أي موديول مع البحث */}
+            {filteredModules.length === 0 && (
+              <div className="text-center text-gray-500 py-8">
+                {t("noResults", "لا توجد نتائج مطابقة لبحثك.")}
+              </div>
+            )}
+
+            {/* 💡 استخدام filteredModules بدلًا من availableModules */}
+            {filteredModules.map((module) => {
               const currentModuleActions = getModuleActions(module);
-              // التحقق مما إذا كانت كل الصلاحيات محددة داخل هذا الموديول
               const isModuleFullyChecked =
                 availableActions.length > 0 &&
                 availableActions.every((action) => currentModuleActions.includes(norm(action)));
 
               return (
                 <div key={module} className="border p-4 rounded-lg">
-
-                  {/* زر تحديد الكل الخاص بالـ Module */}
                   <div className="flex items-center gap-2 mb-4 pb-2 border-b border-gray-100">
                     <Checkbox
                       checked={isModuleFullyChecked}
@@ -211,7 +227,6 @@ export default function PermissionAdd() {
                     </Label>
                   </div>
 
-                  {/* الـ Actions الفردية */}
                   <div className="grid grid-cols-2 gap-3 pl-6">
                     {availableActions.map((action) => {
                       const isChecked = currentModuleActions.includes(norm(action));

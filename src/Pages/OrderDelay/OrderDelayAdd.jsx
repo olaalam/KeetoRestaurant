@@ -18,9 +18,8 @@ const QUERY_KEY = "orderDelayAlerts";
 const ORDER_STATUS_OPTIONS = [
   { value: "pending", labelAr: "قيد الانتظار", labelEn: "Pending" },
   { value: "preparing", labelAr: "قيد التحضير", labelEn: "Preparing" },
-  { value: "ready", labelAr: "جاهز", labelEn: "Ready" },
-  { value: "delivered", labelAr: "تم التوصيل", labelEn: "Delivered" },
-  { value: "cancelled", labelAr: "ملغي", labelEn: "Cancelled" },
+  { value: "accepted", labelAr: "جاهز", labelEn: "Ready" },
+  { value: "out_for_delivery", labelAr: "قيد التوصيل", labelEn: "Out for Delivery" },
 ];
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -64,26 +63,26 @@ export default function OrderDelayAdd() {
   const fields = [
     {
       name: "name",
-      label: t("nameField") || "اسم التنبيه",
+      label: t("name") || "اسم التنبيه",
       type: "text",
       required: true,
     },
     {
       name: "maxDelayMinutes",
-      label: t("maxDelayField") || "الحد الأقصى للتأخير (دقيقة)",
+      label: t("DelayMinutes") || "الحد الأقصى للتأخير (دقيقة)",
       type: "number",
       required: true,
     },
     {
       name: "orderStatus",
-      label: t("orderStatusField") || "حالات الطلب",
+      label: t("orderStatus") || "حالات الطلب",
       type: "multi-select",
       options: orderStatusOptions,
       required: true,
     },
     {
       name: "isActive",
-      label: t("activeField") || "مفعل",
+      label: t("active") || "مفعل",
       type: "switch",
     },
   ];
@@ -97,7 +96,7 @@ export default function OrderDelayAdd() {
 
   return (
     <AddPage
-      title={t("orderDelayAlertTitle") || "تنبيه تأخير الطلبات"}
+      title={t("orderDelay") || "تنبيه تأخير الطلبات"}
       apiUrl={API_URL}
       queryKey={QUERY_KEY}
       method={id ? "PUT" : "POST"}
@@ -158,7 +157,7 @@ function EmailsAndBranchesFields({ formMethods, branchOptions, t }) {
             />
           )}
         />
-        <Label>{t("allBranchesField") || "كل الفروع"}</Label>
+        <Label>{t("allBranches") || "كل الفروع"}</Label>
       </div>
 
       {/* اختيار فروع محددة - يظهر فقط لو مش كل الفروع */}
@@ -174,7 +173,7 @@ function EmailsAndBranchesFields({ formMethods, branchOptions, t }) {
           render={({ field: { value = [], onChange }, fieldState: { error } }) => (
             <div className="space-y-2">
               <Label>
-                {t("branchesField") || "الفروع"} <span className="text-destructive">*</span>
+                {t("branches") || "الفروع"} <span className="text-destructive">*</span>
               </Label>
               <div className="flex flex-wrap gap-2 border rounded-md p-3 max-h-40 overflow-y-auto">
                 {branchOptions.length === 0 && (
@@ -227,7 +226,7 @@ function EmailsInput({ value, onChange, error, t }) {
   return (
     <div className="space-y-2">
       <Label>
-        {t("emailsField") || "البريد الإلكتروني"} <span className="text-destructive">*</span>
+        {t("emails") || "البريد الإلكتروني"} <span className="text-destructive">*</span>
       </Label>
       <div className="flex gap-2">
         <Input

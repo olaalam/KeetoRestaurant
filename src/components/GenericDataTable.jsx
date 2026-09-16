@@ -341,16 +341,16 @@ export default function GenericDataTable({
   const paginationRange = useMemo(() => getPaginationRange(currentPage, totalPages), [currentPage, totalPages]);
 
   return (
-    <div className="space-y-6 w-full relative">
+    <div className="relative w-full min-w-0 space-y-4 sm:space-y-6">
       {/* HEADER */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2 border-b border-slate-100">
         <div className="flex items-center gap-4">
-          <div className="h-12 w-12 flex items-center justify-center rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 text-primary shadow-sm border border-primary/10 shrink-0">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-primary/10 bg-gradient-to-br from-primary/20 to-primary/5 text-primary shadow-sm sm:h-12 sm:w-12">
             <span className="text-xl font-black uppercase">{title?.[0]}</span>
           </div>
 
           <div className="space-y-0.5">
-            <h2 className="text-xl font-bold text-slate-800 tracking-tight dark:text-slate-100">
+            <h2 className="truncate text-lg font-bold tracking-tight text-slate-800 dark:text-slate-100 sm:text-xl">
               {title}
             </h2>
             <p className="text-xs text-slate-400 font-medium">
@@ -434,7 +434,7 @@ export default function GenericDataTable({
       {/* TABLE BOX */}
       <div className="rounded-2xl border border-slate-100 bg-white dark:bg-slate-950 shadow-sm overflow-hidden transition-all">
         <div className="overflow-x-auto">
-          <Table>
+          <Table className="min-w-[680px]">
             <TableHeader className="bg-slate-50/70 dark:bg-slate-900/50 border-b border-slate-100">
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow key={headerGroup.id} className="hover:bg-transparent border-none">

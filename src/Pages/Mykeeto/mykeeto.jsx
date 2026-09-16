@@ -545,7 +545,7 @@ export default function DetailedFinancialReport() {
           <Download className="w-3.5 h-3.5" /> Export PDF
         </button>
         <GenericDataTable
-          title={t("branchesPerformanceBreakdown")}
+          title={t("PerformanceBreakdown")}
           columns={branchColumns}
           data={reportData?.branchBreakdown || []}
           isLoading={isLoading}

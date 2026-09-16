@@ -67,31 +67,32 @@ export default function PricingProduct({ branchId: branchIdProp }) {
 
   // قراءة الحالة مباشرة من الباك أند
 
-const isOnline = Boolean(settingsRes?.data?.settings?.isTemporarilyClosed);
+const isOnline = !settingsRes?.data?.settings?.isTemporarilyClosed;
 
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 
-const handleStatusToggle = async (checked) => {
-  setIsUpdatingStatus(true);
-  try {
-    await api.put("/api/restaurant/restaurantsetting", {
-      settings: {
-        isTemporarilyClosed: checked,
-      },
-    });
-    toast.success(
-      checked
-        ? t("restaurantIsNowOnline🟢") 
-        : t("restaurantIsNowOffline🔴") 
-    );
-    refetchSettings();
-  } catch (error) {
-    console.error("Error updating restaurant status:", error);
-    toast.error(t("failedToUpdateStatus") || "فشل في تغيير حالة المطعم");
-  } finally {
-    setIsUpdatingStatus(false);
-  }
-};
+  const handleStatusToggle = async (checked) => {
+    setIsUpdatingStatus(true);
+    try {
+      await api.put("/api/restaurant/restaurantsetting", {
+        settings: {
+          // بنبعت عكس حالة السويتش: لو السويتش مفتوح (true) يبقى الإغلاق المؤقت (false)
+          isTemporarilyClosed: !checked,
+        },
+      });
+      toast.success(
+        checked
+          ? t("restaurantIsNowOnline🟢") 
+          : t("restaurantIsNowOffline🔴") 
+      );
+      refetchSettings();
+    } catch (error) {
+      console.error("Error updating restaurant status:", error);
+      toast.error(t("failedToUpdateStatus") || "فشل في تغيير حالة المطعم");
+    } finally {
+      setIsUpdatingStatus(false);
+    }
+  };
 
   // ---- multi-select branches state ----
   const [selectedBranchIds, setSelectedBranchIds] = useState(
@@ -756,27 +757,55 @@ const handleStatusToggle = async (checked) => {
                             </button>
                           </div>
                         </TableCell>
-                        <TableCell className="py-4 px-6 text-center">
-                          <div className="flex items-center justify-center">
-                            <Switch
-                              checked={getIsOutOfStockForChannel(item)}
-                              onCheckedChange={(checked) => {
-                                toggleOutOfStock(item.id, checked);
-                              }}
-                              className="data-[state=checked]:bg-gray-300 data-[state=unchecked]:bg-yellow-400"
-                            />
-                          </div>
-                        </TableCell>
-                        <TableCell className="py-4 px-6 text-center">
-                          <div className="flex items-center justify-center">
-                            <Switch
-                              checked={!getIsFoodOff(item)}
-                              onCheckedChange={(checked) => {
-                                toggleFoodStatus(item.id, checked);
-                              }}
-                            />
-                          </div>
-                        </TableCell>
+{/* عمود الـ Out of Stock */}
+<TableCell className="py-4 px-6 text-center">
+  <div className="flex items-center justify-center gap-2">
+    <Switch
+      checked={getIsOutOfStockForChannel(item)}
+      onCheckedChange={(checked) => {
+        toggleOutOfStock(item.id, checked);
+      }}
+      className="data-[state=checked]:bg-gray-300 data-[state=unchecked]:bg-yellow-400"
+    />
+    <span
+      className={cn(
+        "text-xs font-semibold min-w-[80px] text-start transition-colors",
+        getIsOutOfStockForChannel(item) ? "text-rose-500" : "text-emerald-500"
+      )}
+    >
+      {getIsOutOfStockForChannel(item)
+        ? t("outOfStock") || "Out of Stock"
+        : t("available") || "Available"}
+    </span>
+  </div>
+</TableCell>
+
+{/* عمود الـ Off / On */}
+<TableCell className="py-4 px-6 text-center">
+  <div className="flex items-center justify-center gap-2 min-w-[90px]">
+    {/* لو المنتج شغال (مفتوح)، هنظهر كلمة On على الشمال */}
+    {!getIsFoodOff(item) && (
+      <span className="text-xs font-semibold text-emerald-500">
+        {t("on") || "On"}
+      </span>
+    )}
+
+    <Switch
+      checked={!getIsFoodOff(item)}
+      onCheckedChange={(checked) => {
+        toggleFoodStatus(item.id, checked);
+      }}
+    />
+
+    {/* لو المنتج مقفول، هنظهر كلمة Off على اليمين */}
+    {getIsFoodOff(item) && (
+      <span className="text-xs font-semibold text-rose-500">
+        {t("off") || "Off"}
+      </span>
+    )}
+  </div>
+</TableCell>
+
                       </TableRow>
                     );
                   })

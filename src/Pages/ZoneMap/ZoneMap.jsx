@@ -71,6 +71,24 @@ const RecenterMap = ({ center, zoom }) => {
   return null;
 };
 
+const MapResizeHandler = () => {
+  const map = useMap();
+
+  useEffect(() => {
+    const container = map.getContainer();
+    const resizeObserver = new ResizeObserver(() => {
+      map.invalidateSize({ animate: false });
+    });
+
+    resizeObserver.observe(container);
+    map.invalidateSize({ animate: false });
+
+    return () => resizeObserver.disconnect();
+  }, [map]);
+
+  return null;
+};
+
 // 💡 Same logic as MapClickHandler in InteractiveZoneMap.jsx, but applied to the main map 
 // so other zones remain visible in their colors during editing
 const EditMapClickHandler = ({ enabled, coverageType, setCoordinates }) => {
@@ -351,13 +369,14 @@ export default function ZoneMap() {
   return (
     <div className="flex flex-col gap-4 p-4 lg:flex-row lg:h-[calc(100vh-100px)]">
       {/* Map - Left Side */}
-      <Card className="relative flex-1 overflow-hidden rounded-2xl shadow-sm border-slate-200 min-h-[450px]">
+      <Card className="relative h-[60vh] min-h-[320px] flex-1 overflow-hidden rounded-2xl border-slate-200 shadow-sm lg:h-auto lg:min-h-[450px]">
         <MapContainer
           center={mapCenter}
           zoom={12}
           scrollWheelZoom={true}
-          className="h-full w-full z-10"
+          className="z-10 h-full min-h-[320px] w-full"
         >
+          <MapResizeHandler />
           <RecenterMap center={mapCenter} />
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'

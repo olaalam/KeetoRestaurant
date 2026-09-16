@@ -9,10 +9,14 @@ import { useTranslation } from "@/hooks/useTranslation";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import useDateRangeStore from "../../store/Usedaterangestore";
+import useAuthStore from "@/store/useAuthStore";
+import { hasPermission } from "@/lib/permissions";
 
 export default function OrdersList({ status }) {
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const user = useAuthStore((state) => state.user);
+  const canFilterOrders = hasPermission(user, "order", "filter");
 
   const { startDate, endDate, setStartDate, setEndDate, clearDateRange } =
     useDateRangeStore();
@@ -198,13 +202,14 @@ export default function OrdersList({ status }) {
 
   return (
     <div className="container mx-auto py-10">
-      <div className="flex items-center gap-4 mb-6 bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
+      <div className="flex flex-wrap items-center gap-4 mb-6 bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
         <label className="text-sm font-bold text-slate-700">
           {t("startDate") || "Start Date"}:
         </label>
         <Input
           type="date"
           value={startDate}
+          disabled={!canFilterOrders}
           onChange={(e) => setStartDate(e.target.value)}
           className="w-48 h-10"
         />
@@ -214,10 +219,11 @@ export default function OrdersList({ status }) {
         <Input
           type="date"
           value={endDate}
+          disabled={!canFilterOrders}
           onChange={(e) => setEndDate(e.target.value)}
           className="w-48 h-10"
         />
-        <Button variant="outline" onClick={clearDateRange} className="h-10">
+        <Button variant="outline" onClick={clearDateRange} disabled={!canFilterOrders} className="h-10">
           {t("clearFilter") || "Clear Filter"}
         </Button>
       </div>
