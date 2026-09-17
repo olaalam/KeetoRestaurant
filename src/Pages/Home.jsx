@@ -7,7 +7,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "@/hooks/useTranslation";
 import useAuthStore from "@/store/useAuthStore";
-import { canViewModule } from "@/lib/permissions";
+import { filterModulesByPermissions } from "@/lib/permissions";
 
 export default function Home() {
   const setActiveModule = useSidebarStore((s) => s.setActiveModule);
@@ -15,7 +15,7 @@ export default function Home() {
   const [globalFilter, setGlobalFilter] = useState("");
   const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
-  const modules = getModules(t).filter((module) => canViewModule(user, module));
+  const modules = filterModulesByPermissions(user, getModules(t));
 
   const getDefaultItemUrl = (module) => {
     const firstItem = module.items?.[0];

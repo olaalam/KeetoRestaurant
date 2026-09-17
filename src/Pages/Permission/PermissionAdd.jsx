@@ -8,12 +8,14 @@ import { Loader2, Search } from "lucide-react"; // 💡 أضفنا أيقونة 
 import { useTranslation } from "@/hooks/useTranslation";
 import api from "@/api/axios";
 import { useNavigate, useParams } from "react-router-dom";
+import { PERMISSION_ACTIONS, PERMISSION_MODULES } from "@/lib/permissions";
 
 export default function PermissionAdd() {
   const { t } = useTranslation();
   const { id } = useParams();
   const navigate = useNavigate();
-  const norm = (v) => v?.trim().toLowerCase();
+  const norm = (v) =>
+    String(v || "").trim().toLowerCase().replace(/[\s_-]+/g, "");
 
   // 💡 State لحفظ كلمة البحث
   const [searchTerm, setSearchTerm] = useState("");
@@ -42,7 +44,7 @@ export default function PermissionAdd() {
     const map = {};
 
     role?.permissions?.forEach((p) => {
-      map[norm(p.module)] = p.actions.map((a) => norm(a.action));
+      map[norm(p.module)] = p.actions.map((a) => norm(typeof a === "string" ? a : a.action));
     });
 
     return map;
@@ -56,8 +58,10 @@ export default function PermissionAdd() {
     );
   }
 
-  const availableModules = schema?.modules || [];
-  const availableActions = schema?.actions || [];
+  const availableModules = schema?.modules?.length ? schema.modules : PERMISSION_MODULES;
+  const availableActions = schema?.actions?.length
+    ? schema.actions.map((action) => (typeof action === "string" ? action : action.action))
+    : PERMISSION_ACTIONS;
 
   return (
     <AddPage
@@ -84,7 +88,7 @@ export default function PermissionAdd() {
         const getModuleActions = (module) => {
           const formModule = permissions.find((p) => norm(p.module) === norm(module));
           if (formModule) {
-            return formModule.actions?.map((a) => norm(a.action)) || [];
+            return formModule.actions?.map((a) => norm(typeof a === "string" ? a : a.action)) || [];
           }
           return permissionMap[norm(module)] || [];
         };
@@ -106,11 +110,13 @@ export default function PermissionAdd() {
               actions: [{ action }],
             });
           } else {
-            const currentActions = updated[index].actions.map((a) => norm(a.action));
+            const currentActions = updated[index].actions.map((a) =>
+              norm(typeof a === "string" ? a : a.action),
+            );
 
             if (currentActions.includes(act)) {
               updated[index].actions = updated[index].actions.filter(
-                (a) => norm(a.action) !== act
+                (a) => norm(typeof a === "string" ? a : a.action) !== act,
               );
             } else {
               updated[index].actions.push({ action });

@@ -401,6 +401,7 @@ const translations = {
     veg: "Veg",
     nonveg: "Non-Veg",
     both: "Both",
+    exportPDF: "Export PDF",
 
     //expense-categories
     Name: "Name",
@@ -684,13 +685,18 @@ const translations = {
     "status": "Status",
     "active": "Active",
     "unknown": "Unknown",
-    "currency": "E£",
+    "currency": "EGP",
     "na": "N/A",
 
-    "grandTotalSales": "Grand Total Sales",
+    "grandSales": "Grand Sales",
+    NetSalesAfterCancellations: "Net Sales After Cancellations",
     "deliveredRevenue": "Delivered Revenue",
     "appCommissionKeeto": "App Commission (Keeto)",
     "totalOrdersCount": "Total Orders Count",
+    totalPaymentAmount: "Total Payment Amount",
+    cashOnDelivery: "Cash on Delivery",
+    visaCard: "Visa Card",
+    paymentMethodReport: "Payment Method Report",
 
     "branchName": "Branch Name",
     "totalOrders": "Total Orders",
@@ -739,7 +745,7 @@ const translations = {
 
     "invoicesFinancialReports": "Invoices & Financial Reports",
     "invoicesSubtitle": "Manage your restaurant statements and platform settlements.",
-    "currency": "E£",
+    "currency": "EGP",
     "na": "N/A",
     "unknown": "Unknown",
     "downloadErrorAlert": "Could not download PDF invoice. Please try again.",
@@ -1443,6 +1449,11 @@ const translations = {
     "comboName": "اسم المجموعة",
     "confidencePercent": "نسبة الثقة %",
     "noCombosAvailable": "لا توجد مجموعات متاحة",
+    paymentMethodReport: "تقرير طريقة الدفع",
+    visaCard: "فيزا",
+    cashOnDelivery: "الدفع عند الاستلام",
+    totalPaymentAmount: "إجمالي مبلغ الدفع",
+    exportPDF: "تصدير الملف",
 
 
     // WalletR page
@@ -1790,6 +1801,7 @@ const translations = {
     "na": "غير متوفر",
 
     "grandTotalSales": "إجمالي المبيعات الكلي",
+    "NetSalesAfterCancellations": "إجمالي المبيعات الصافية بعد الإلغاء",
     "deliveredRevenue": "العوائد المستلمة",
     "appCommissionKeeto": "عمولة التطبيق (كيتو)",
     "totalOrdersCount": "إجمالي عدد الطلبات",

@@ -28,6 +28,7 @@ import { useQuery } from "@tanstack/react-query";
 import api from "@/api/axios";
 import useAuthStore from "@/store/useAuthStore";
 import useDateRangeStore from "../store/Usedaterangestore";
+import { filterModulesByPermissions } from "@/lib/permissions";
 
 export function AppSidebar({ side = "left" }) {
   const { open } = useSidebar();
@@ -56,7 +57,7 @@ export function AppSidebar({ side = "left" }) {
     },
   );
 
-  const translatedModules = getModules(t, orderCounts);
+  const translatedModules = filterModulesByPermissions(user, getModules(t, orderCounts));
   const activeModule = storedModule
     ? translatedModules.find((m) => m.key === storedModule.key) || storedModule
     : null;

@@ -48,31 +48,31 @@ export const getModules = (t, orderCounts = {}) => {
       key: "dashboard",
       items: [{ title: t("dashboard"), url: "/dashboard", icon: LayoutDashboard }],
     },
-{
-  name: t("order management"),
-  key: "order",
-  items: [
     {
-      title: t("orders"),
-      url: "/orders",
-      icon: ShoppingBag,
-      subItems: [
-        { title: `${t("AllOrders")} (${totalOrders})`, url: "/orders", icon: ShoppingBag },
-        { title: `${t("pending")} (${pending})`, url: "/orders/pending", icon: Clock },
-        { title: `${t("accepted")} (${accepted})`, url: "/orders/accepted", icon: CheckCircle2 },
-        { title: `${t("preparing")} (${preparing})`, url: "/orders/preparing", icon: Package },
-        { title: `${t("outForDelivery")} (${outDelivery})`, url: "/orders/out-for-delivery", icon: Truck },
-        { title: `${t("delivered")} (${delivered})`, url: "/orders/delivered", icon: CheckCheck },
-        { title: `${t("cancelled")} (${cancelled})`, url: "/orders/cancelled", icon: XCircle },
-        { title: `${t("refund")} (${refund})`, url: "/orders/refund", icon: Undo2 },
+      name: t("order management"),
+      key: "order",
+      items: [
+        {
+          title: t("orders"),
+          url: "/orders",
+          icon: ShoppingBag,
+          subItems: [
+            { title: `${t("AllOrders")} (${totalOrders})`, url: "/orders", icon: ShoppingBag },
+            { title: `${t("pending")} (${pending})`, url: "/orders/pending", icon: Clock },
+            { title: `${t("accepted")} (${accepted})`, url: "/orders/accepted", icon: CheckCircle2 },
+            { title: `${t("preparing")} (${preparing})`, url: "/orders/preparing", icon: Package },
+            { title: `${t("outForDelivery")} (${outDelivery})`, url: "/orders/out-for-delivery", icon: Truck },
+            { title: `${t("delivered")} (${delivered})`, url: "/orders/delivered", icon: CheckCheck },
+            { title: `${t("cancelled")} (${cancelled})`, url: "/orders/cancelled", icon: XCircle },
+            { title: `${t("refund")} (${refund})`, url: "/orders/refund", icon: Undo2 },
 
+          ],
+        },
+        {
+          title: t("redeemPoints") || "Redeem Points", url: "/redeem-points", icon: Award
+        },
       ],
     },
-    {
-      title: t("redeemPoints") || "Redeem Points", url: "/redeem-points", icon: Award
-    },
-  ],
-},
     {
       name: t("product management"),
       key: "content",
@@ -146,6 +146,7 @@ export const getModules = (t, orderCounts = {}) => {
       items: [
         { title: t("myKeeto"), url: "/mykeeto", icon: KeetoIcon },
         { title: t("invoice"), url: "/invoice", icon: KeetoIcon },
+        { title: t("paymentMethods"), url: "/payment-method-report", icon: KeetoIcon },
       ],
     },
 

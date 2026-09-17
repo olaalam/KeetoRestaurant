@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import api from "@/api/axios";
 import GenericDataTable from "@/components/GenericDataTable";
@@ -14,14 +14,31 @@ import {
   Globe,
   AlertTriangle,
   Download,
+  Calendar,
 } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { useTranslation } from "@/hooks/useTranslation"; 
 
+// هيلبر بسيط عشان نجيب تاريخ النهاردة بصيغة YYYY-MM-DD (المطلوبة لـ <input type="date" />)
+const getTodayDateString = () => {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, "0");
+  const day = String(today.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
 export default function DetailedFinancialReport() {
-  const { startDate, endDate } = useParams();
-  const { t } = useTranslation(); 
+  // لو الصفحة اتفتحت بلينك فيه params جاهزة هنستخدمها كقيمة ابتدائية،
+  // ولو مفيش هنرجع لـ default: start = النهاردة, end = فاضي لحد ما اليوزر يحددها
+  const params = useParams();
+  const { t } = useTranslation();
+
+  const [startDate, setStartDate] = useState(
+    params.startDate || getTodayDateString()
+  );
+  const [endDate, setEndDate] = useState(params.endDate || "");
 
   // 1. جلب تقرير المطعم المالي التفصيلي من الـ API
   const { data: reportData, isLoading } = useQuery({
@@ -89,17 +106,16 @@ export default function DetailedFinancialReport() {
     doc.setTextColor(120);
     doc.setFontSize(10);
     doc.text(`Period: ${startDate || "N/A"} - ${endDate || "N/A"}`, 14, 35);
-
-    // Financial Cards Summary in PDF
+// Financial Cards Summary in PDF
     const cards = [
+      {
+        title: "Grand Sales",
+        value: `${financials?.grossTotalAllOrders ?? "0.00"} EGP`,
+      },
       {
         title: "Total Sales",
         value: `${financials?.totalRevenue ?? "0.00"} EGP`,
       },
-      // {
-      //   title: "Delivered Revenue",
-      //   value: `${financials?.deliveredRevenue ?? "0.00"} EGP`,
-      // },
       {
         title: "Commission",
         value: `${financials?.totalAppCommission ?? "0.00"} EGP`,
@@ -239,20 +255,20 @@ export default function DetailedFinancialReport() {
     doc.save(`${restaurantInfo?.name || "Restaurant"}_Detailed_Report.pdf`);
   };
 
-  // 3. كروت الإحصائيات (الحسابات المباشرة)
+// 3. كروت الإحصائيات (الحسابات المباشرة)
   const statsCards = [
     {
-      title: t("grandTotalSales"),
+      title: t("grandSales") || "Grand Sales",
+      value: `${financials?.grossTotalAllOrders ?? "0.00"} ${t("currency")}`,
+      icon: DollarSign,
+      bgIcon: "bg-emerald-100 text-emerald-600",
+    },
+    {
+      title: t("NetSalesAfterCancellations"),
       value: `${financials?.totalRevenue ?? "0.00"} ${t("currency")}`,
       icon: ShoppingBag,
       bgIcon: "bg-orange-100 text-orange-600",
     },
-    // {
-    //   title: t("deliveredRevenue"),
-    //   value: `${financials?.deliveredRevenue ?? "0.00"} ${t("currency")}`,
-    //   icon: DollarSign,
-    //   bgIcon: "bg-green-100 text-green-600",
-    // },
     {
       title: t("appCommissionKeeto"),
       value: `${financials?.totalAppCommission ?? "0.00"} ${t("currency")}`,
@@ -361,6 +377,39 @@ export default function DetailedFinancialReport() {
           >
             {restaurantInfo?.status ? t(restaurantInfo.status) : t("unknown")}
           </span>
+        </div>
+      </div>
+
+      {/* Date Range Filter */}
+      <div className="flex flex-col sm:flex-row sm:items-end gap-4 bg-white border rounded-2xl shadow-sm p-4">
+        <div className="flex items-center gap-2 text-slate-500">
+          <Calendar className="w-4 h-4" />
+          <span className="text-sm font-semibold">
+            {t("filterByDate") || "Filter by date"}
+          </span>
+        </div>
+        <div className="flex flex-col gap-1">
+          <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+            {t("startDate") || "Start Date"}
+          </label>
+          <input
+            type="date"
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+            className="px-3 py-2 border rounded-lg text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-300"
+          />
+        </div>
+        <div className="flex flex-col gap-1">
+          <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+            {t("endDate") || "End Date"}
+          </label>
+          <input
+            type="date"
+            value={endDate}
+            min={startDate || undefined}
+            onChange={(e) => setEndDate(e.target.value)}
+            className="px-3 py-2 border rounded-lg text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-300"
+          />
         </div>
       </div>
 

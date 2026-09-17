@@ -22,7 +22,7 @@ import api from "@/api/axios";
 import LanguageSwitcher from "./LanguageSwitcher";
 import { useTranslation } from "@/hooks/useTranslation";
 import { getModules } from "@/config/modules";
-import { canViewModule } from "@/lib/permissions";
+import { filterModulesByPermissions, getPermissionKey, hasPermission } from "@/lib/permissions";
 
 export default function Layout() {
   const storedModule = useSidebarStore((state) => state.activeModule);
@@ -33,7 +33,7 @@ export default function Layout() {
 
   // نجيب الـ module بالترجمة الحالية
   const allModules = getModules(t);
-  const translatedModules = allModules.filter((module) => canViewModule(user, module));
+  const translatedModules = filterModulesByPermissions(user, allModules);
   const activeModule = storedModule
     ? translatedModules.find((m) => m.key === storedModule.key) || storedModule
     : null;
@@ -45,13 +45,15 @@ export default function Layout() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const routeModule = allModules.find((module) =>
-    module.items?.some((item) => {
+  const routeItem = allModules
+    .flatMap((module) => module.items || [])
+    .find((item) => {
       const urls = [item.url, ...(item.subItems?.map((subItem) => subItem.url) || [])];
       return urls.some((url) => url && (location.pathname === url || location.pathname.startsWith(`${url}/`)));
-    }),
-  );
-  const canAccessRoute = !routeModule || canViewModule(user, routeModule);
+    });
+  const routePermissionKey = getPermissionKey(routeItem) ||
+    getPermissionKey(routeItem?.subItems?.find((subItem) => location.pathname.startsWith(subItem.url)));
+  const canAccessRoute = !routePermissionKey || hasPermission(user, routePermissionKey, "View");
 
   // ---- Notification Sound ----
   const audioRef = useRef(null);

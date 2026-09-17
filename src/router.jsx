@@ -97,6 +97,7 @@ import PricingProduct from "./Pages/PricingProduct/PricingProduct";
 import RedeemPoints from "./Pages/RedeemPoints/RedeemPoints";
 import OrderDelayAdd from "./Pages/OrderDelay/OrderDelayAdd";
 import OrderDelay from "./Pages/OrderDelay/OrderDelay";
+import PaymentMethodRepo from "./Pages/PaymentMethodRepo/PaymentMethodRepo";
 const router = createBrowserRouter([
   {
     path: "/login",
@@ -644,6 +645,10 @@ const router = createBrowserRouter([
         path: "delay-order/edit/:id",
         element: <OrderDelayAdd />
 
+      },
+                  {
+        path: "payment-method-report",
+        element: <PaymentMethodRepo />
       },
       
 
