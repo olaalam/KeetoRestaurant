@@ -46,7 +46,12 @@ export const getModules = (t, orderCounts = {}) => {
     {
       name: t("dashboard"),
       key: "dashboard",
-      items: [{ title: t("dashboard"), url: "/dashboard", icon: LayoutDashboard }],
+      items: [{
+        title: t("dashboard"),
+        url: "/dashboard",
+        icon: LayoutDashboard,
+        permissionKey: "dashboard",
+      }],
     },
     {
       name: t("order management"),

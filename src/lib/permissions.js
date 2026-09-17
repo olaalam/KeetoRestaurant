@@ -47,6 +47,7 @@ export const PERMISSION_MODULES = [
 ];
 
 const URL_PERMISSION_KEYS = {
+  "/dashboard": "dashboard",
   "/admins": "restaurantadmin",
   "/foods": "food",
   "/addons": "addon",
