@@ -54,7 +54,16 @@ export default function FreeDelivery() {
         return [];
     }, [data]);
 
-    const handleAdd = tableData.length === 0 ? () => navigate('/free-delivery/add') : undefined;
+    // دالة الإضافة
+    const handleAdd = () => {
+        navigate('/free-delivery/add');
+    };
+
+    // دالة التعديل
+    const handleEdit = (row) => {
+        const id = row.id || row.menuItemId;
+        navigate(id ? `/free-delivery/edit/${id}` : '/free-delivery/edit', { state: { editData: row } });
+    };
 
     return (
         <div className="p-6">
@@ -64,9 +73,11 @@ export default function FreeDelivery() {
                 data={tableData}
                 isLoading={isLoading}
                 queryKey={queryKey}
+                editApiUrl={apiUrl}
                 deleteApiUrl={apiUrl}
                 deleteWithoutId={true}
-                onAdd={handleAdd}
+                // onAdd={handleAdd}
+                onEdit={handleEdit}
             />
         </div>
     );
