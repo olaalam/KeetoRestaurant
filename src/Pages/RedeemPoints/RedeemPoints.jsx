@@ -13,7 +13,8 @@ import {
   Coins,
   Store,
   ChevronDown,
-  Check
+  Check,
+  Info
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -155,7 +156,11 @@ function BranchSelect({ branches, selectedBranchId, onSelect, isFetching, t }) {
 }
 
 function InfoRow({ icon: Icon, label, value, dir }) {
-  if (value === undefined || value === null || value === "") return null;
+  let displayValue = "-";
+
+  if (value !== undefined && value !== null && value !== "") {
+    displayValue = value;
+  }
 
   return (
     <div className="flex items-start gap-3 bg-gray-50 rounded-xl p-3">
@@ -169,7 +174,7 @@ function InfoRow({ icon: Icon, label, value, dir }) {
             dir === "ltr" ? "dir-ltr text-right" : ""
           }`}
         >
-          {value}
+          {displayValue}
         </p>
       </div>
     </div>
@@ -413,7 +418,7 @@ export default function RedeemPoints() {
                 icon={Coins}
                 label={t("pointsDeducted") || "Points Deducted"}
                 value={
-                  order.pointsDeducted !== undefined
+                  order.pointsDeducted !== undefined && order.pointsDeducted !== null
                     ? `${order.pointsDeducted} ${t("points") || "Points"}`
                     : order.points
                 }
@@ -427,6 +432,27 @@ export default function RedeemPoints() {
                 icon={Clock}
                 label={t("expiresAt") || "Expiration Date"}
                 value={formatDate(order.expiresAt)}
+              />
+              <InfoRow
+                icon={Store}
+                label={t("isAvailableInBranch") || "Is Available In Branch"}
+                value={
+                  order.isAvailableInBranch === true
+                    ? t("yes") || "Yes"
+                    : order.isAvailableInBranch === false
+                    ? t("no") || "No"
+                    : null
+                }
+              />
+              <InfoRow
+                icon={AlertCircle}
+                label={t("unavailabilityReason") || "Unavailability Reason"}
+                value={order.unavailabilityReason}
+              />
+              <InfoRow
+                icon={Info}
+                label={t("availabilityDetails") || "Availability Details"}
+                value={order.availabilityDetails}
               />
             </div>
 

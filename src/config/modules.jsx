@@ -116,6 +116,7 @@ export const getModules = (t, orderCounts = {}) => {
         { title: t("points"), url: "/points", icon: Beef },
         { title: t("galleryimage"), url: "/image", icon: ShoppingBag },
         { title: t("upselling"), url: "/upselling", icon: ShoppingBag },
+        { title: t("bundle"), url: "/bundle", icon: ShoppingBag },
 
       ],
     },
@@ -127,9 +128,7 @@ export const getModules = (t, orderCounts = {}) => {
         { title: t("deliveryMen"), url: "/delivery-man", icon: UserCog },
         { title: t("cashiers"), url: "/cashiers", icon: UserCog },
         { title: t("users"), url: "/users", icon: UserCog },
-        { title: t("blockedusers"), url: "/blocked-users", icon: UserCog },
-
-
+        { title: t("blockedusers"), url: "/blocked-users", icon: UserCog }
 
       ],
     },
@@ -141,6 +140,17 @@ export const getModules = (t, orderCounts = {}) => {
         { title: t("expense-categories"), url: "/expense-categories", icon: ShieldCheck },
         { title: t("expense"), url: "/expense", icon: ShieldCheck },
         { title: t("financialAccounts"), url: "/financialAccounts", icon: UserCog },
+
+
+      ],
+    },
+        {
+      name: t("DeliveryAccounts"),
+      key: "deliveryAccounts",
+      items: [
+        { title: t("outfordelivery"), url: "/out-for-delivery-page", icon: ShieldCheck },
+        { title: t("assigndeliveryman"), url: "/assign-delivery-man", icon: ShieldCheck },
+        { title: t("collectdeliverycash"), url: "/collect-delivery-cash", icon: UserCog },
 
 
       ],

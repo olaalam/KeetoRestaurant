@@ -98,6 +98,11 @@ import RedeemPoints from "./Pages/RedeemPoints/RedeemPoints";
 import OrderDelayAdd from "./Pages/OrderDelay/OrderDelayAdd";
 import OrderDelay from "./Pages/OrderDelay/OrderDelay";
 import PaymentMethodRepo from "./Pages/PaymentMethodRepo/PaymentMethodRepo";
+import Bundles from "./Pages/Bundles/Bundles";
+import BundlesAdd from "./Pages/Bundles/BundlesAdd";
+import OutForDelivery from "./Pages/DeliveryAccount/OutForDelivery";
+import AssignDeliveryMan from "./Pages/DeliveryAccount/AssignDeliveryMan";
+import CollectDeliveryCash from "./Pages/DeliveryAccount/CollectDeliveryCash";
 const router = createBrowserRouter([
   {
     path: "/login",
@@ -596,7 +601,7 @@ const router = createBrowserRouter([
         element: <UsersAdd />
 
       },
-            {
+      {
         path: "users/:id",
         element: <UserDetails />
 
@@ -629,11 +634,11 @@ const router = createBrowserRouter([
         path: "pricing-product",
         element: <PricingProduct />
       },
-            {
+      {
         path: "redeem-points",
         element: <RedeemPoints />
       },
-            {
+      {
         path: "delay-order",
         element: <OrderDelay />
       },
@@ -646,11 +651,34 @@ const router = createBrowserRouter([
         element: <OrderDelayAdd />
 
       },
-                  {
+      {
         path: "payment-method-report",
         element: <PaymentMethodRepo />
       },
-      
+      {
+        path: "bundle",
+        element: <Bundles />
+      },
+      {
+        path: "bundle/add",
+        element: <BundlesAdd />
+      },
+      {
+        path: "bundle/edit/:id",
+        element: <BundlesAdd />
+      },
+      {
+        path: "out-for-delivery-page",
+        element: <OutForDelivery />
+      },
+      {
+        path: "assign-delivery-man",
+        element: <AssignDeliveryMan />
+      },
+      {
+        path: "collect-delivery-cash",
+        element: <CollectDeliveryCash />
+      }
 
 
 

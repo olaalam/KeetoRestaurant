@@ -136,9 +136,12 @@ export default function GenericDataTable({
     }
   }, [activeHighlightedId, sortedData, pagination.pageSize, setPagination, location.state?.pageIndex]);
 
-  const updateStatusMutation = useMutation({
+const updateStatusMutation = useMutation({
     mutationFn: async ({ id, newStatus, keyName, reason }) => {
-      const url = editApiUrl.includes("discounts")
+      const isBundle = editApiUrl.includes("bundles");
+      const isDiscount = editApiUrl.includes("discounts");
+      
+      const url = (isBundle || isDiscount)
         ? `${editApiUrl}/${id}/toggle-status`
         : `${editApiUrl}/${id}`;
 
@@ -149,6 +152,10 @@ export default function GenericDataTable({
         requestBody.inactiveReason = reason;
       }
 
+      // استخدام PATCH مع الـ Bundles كما طلبت
+      if (isBundle) {
+         return await api.patch(url, requestBody);
+      }
       return await api.put(url, requestBody);
     },
     onSuccess: () => {
