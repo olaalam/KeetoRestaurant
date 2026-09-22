@@ -1,10 +1,10 @@
-import React, { useMemo, useState } from "react"; // 💡 أضفنا useState
+import React, { useMemo, useState } from "react";
 import AddPage from "@/components/AddPage";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input"; // 💡 استيراد مكون الـ Input (تأكد من وجوده أو استخدم <input> العادي)
+import { Input } from "@/components/ui/input";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, Search } from "lucide-react"; // 💡 أضفنا أيقونة البحث
+import { Loader2, Search } from "lucide-react";
 import { useTranslation } from "@/hooks/useTranslation";
 import api from "@/api/axios";
 import { useNavigate, useParams } from "react-router-dom";
@@ -17,7 +17,6 @@ export default function PermissionAdd() {
   const norm = (v) =>
     String(v || "").trim().toLowerCase().replace(/[\s_-]+/g, "");
 
-  // 💡 State لحفظ كلمة البحث
   const [searchTerm, setSearchTerm] = useState("");
 
   // ================= Schema =================
@@ -39,15 +38,34 @@ export default function PermissionAdd() {
     },
   });
 
+  const availableModules = schema?.modules?.length ? schema.modules : PERMISSION_MODULES;
+  const availableActions = schema?.actions?.length
+    ? schema.actions.map((action) => (typeof action === "string" ? action : action.action))
+    : PERMISSION_ACTIONS;
+
   // ================= Permission Map =================
   const permissionMap = useMemo(() => {
     const map = {};
-
     role?.permissions?.forEach((p) => {
       map[norm(p.module)] = p.actions.map((a) => norm(typeof a === "string" ? a : a.action));
     });
-
     return map;
+  }, [role]);
+
+  // تجهيز البيانات الأولية للـ role بحيث تكون متوافقة تماماً مع الفورم
+  const formattedInitialData = useMemo(() => {
+    if (!role) return {};
+    const formattedPermissions = role.permissions ? role.permissions.map(p => ({
+      module: p.module,
+      actions: p.actions.map(a => ({
+        action: typeof a === "string" ? a : a.action
+      }))
+    })) : [];
+
+    return {
+      ...role,
+      permissions: formattedPermissions
+    };
   }, [role]);
 
   if (isSchemaLoading || isRoleLoading) {
@@ -58,17 +76,12 @@ export default function PermissionAdd() {
     );
   }
 
-  const availableModules = schema?.modules?.length ? schema.modules : PERMISSION_MODULES;
-  const availableActions = schema?.actions?.length
-    ? schema.actions.map((action) => (typeof action === "string" ? action : action.action))
-    : PERMISSION_ACTIONS;
-
   return (
     <AddPage
       title={t("roleLabel")}
       apiUrl="/api/restaurant/roles"
       queryKey="roles"
-      initialData={role}
+      initialData={formattedInitialData}
       onSuccessAction={(res) => {
         const targetId = res?.data?.data?.id || res?.data?.id || res?.id || role?.id;
         navigate("/permissions", { state: { highlightedId: targetId } });
@@ -83,25 +96,38 @@ export default function PermissionAdd() {
       })}
     >
       {({ setValue, watch }) => {
-        const permissions = watch("permissions") || [];
+        const permissions = watch("permissions");
+
+        // دالة لجلب الحالة الحالية بدمج الـ form state مع الـ permissionMap الأصلي للـ role
+        const getFullCurrentPermissions = () => {
+          if (Array.isArray(permissions)) {
+            return [...permissions];
+          }
+          // لو لم يتم التعديل بعد، نبنيها من البيانات الأصلية للـ role
+          return availableModules.map((m) => {
+            const modKey = norm(m);
+            const acts = permissionMap[modKey] || [];
+            return {
+              module: m,
+              actions: acts.map(a => ({ action: a }))
+            };
+          }).filter(m => m.actions.length > 0);
+        };
 
         const getModuleActions = (module) => {
-          const formModule = permissions.find((p) => norm(p.module) === norm(module));
+          const currentList = getFullCurrentPermissions();
+          const formModule = currentList.find((p) => norm(p.module) === norm(module));
           if (formModule) {
             return formModule.actions?.map((a) => norm(typeof a === "string" ? a : a.action)) || [];
           }
-          return permissionMap[norm(module)] || [];
+          return [];
         };
 
         const togglePermission = (module, action) => {
           const mod = norm(module);
           const act = norm(action);
 
-          let updated = permissions.length > 0 ? [...permissions] : availableModules.map(m => ({
-            module: m,
-            actions: (permissionMap[norm(m)] || []).map(a => ({ action: a }))
-          })).filter(m => m.actions.length > 0);
-
+          let updated = getFullCurrentPermissions();
           const index = updated.findIndex((p) => norm(p.module) === mod);
 
           if (index === -1) {
@@ -127,16 +153,12 @@ export default function PermissionAdd() {
             }
           }
 
-          setValue("permissions", updated, { shouldDirty: true });
+          setValue("permissions", updated, { shouldDirty: true, shouldValidate: true });
         };
 
         const toggleModulePermissions = (module, isChecked) => {
           const mod = norm(module);
-          let updated = permissions.length > 0 ? [...permissions] : availableModules.map(m => ({
-            module: m,
-            actions: (permissionMap[norm(m)] || []).map(a => ({ action: a }))
-          })).filter(m => m.actions.length > 0);
-
+          let updated = getFullCurrentPermissions();
           const index = updated.findIndex((p) => norm(p.module) === mod);
 
           if (isChecked) {
@@ -150,10 +172,10 @@ export default function PermissionAdd() {
             if (index !== -1) {
               updated.splice(index, 1);
             } else {
-              updated = updated.filter(p => norm(p.module) !== mod);
+              updated = updated.filter((p) => norm(p.module) !== mod);
             }
           }
-          setValue("permissions", updated, { shouldDirty: true });
+          setValue("permissions", updated, { shouldDirty: true, shouldValidate: true });
         };
 
         const toggleAllPermissions = (isChecked) => {
@@ -162,13 +184,12 @@ export default function PermissionAdd() {
               module,
               actions: availableActions.map((action) => ({ action })),
             }));
-            setValue("permissions", allPermissions, { shouldDirty: true });
+            setValue("permissions", allPermissions, { shouldDirty: true, shouldValidate: true });
           } else {
-            setValue("permissions", [], { shouldDirty: true });
+            setValue("permissions", [], { shouldDirty: true, shouldValidate: true });
           }
         };
 
-        // 💡 فلترة الموديولات بناءً على كلمة البحث المدخلة
         const filteredModules = availableModules.filter((module) =>
           module.toLowerCase().includes(searchTerm.trim().toLowerCase())
         );
@@ -182,8 +203,6 @@ export default function PermissionAdd() {
 
         return (
           <div className="space-y-6">
-
-            {/* 💡 حقل البحث (Search Input) */}
             <div className="relative">
               <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5 pointer-events-none" />
               <Input
@@ -191,7 +210,7 @@ export default function PermissionAdd() {
                 placeholder={t("searchModules", "ابحث عن الصلاحية...")}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pr-10" // ترك مسافة للأيقونة على اليمين (في حالة الـ RTL)
+                className="pr-10"
               />
             </div>
 
@@ -206,14 +225,12 @@ export default function PermissionAdd() {
               </Label>
             </div>
 
-            {/* 💡 رسالة في حالة عدم تطابق أي موديول مع البحث */}
             {filteredModules.length === 0 && (
               <div className="text-center text-gray-500 py-8">
                 {t("noResults", "لا توجد نتائج مطابقة لبحثك.")}
               </div>
             )}
 
-            {/* 💡 استخدام filteredModules بدلًا من availableModules */}
             {filteredModules.map((module) => {
               const currentModuleActions = getModuleActions(module);
               const isModuleFullyChecked =
