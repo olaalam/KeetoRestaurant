@@ -227,7 +227,7 @@ const DiscountAdd = () => {
             <div className="flex items-center justify-between mb-8">
                 <div>
                     <h1 className="text-3xl font-bold text-gray-900">{id ? t('editDiscount') : t('addDiscount')}</h1>
-                    <p className="text-gray-500 mt-1 text-sm">manageYourDiscountDetails</p>
+                    <p className="text-gray-500 mt-1 text-sm">{t('manageYourDiscountDetails')}</p>
                 </div>
                 <button 
                     onClick={() => navigate(-1)} 
@@ -249,7 +249,7 @@ const DiscountAdd = () => {
                                 : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
                             }`}
                         >
-                            {t('basicData')}
+                            {t('offerInfo')}
                         </button>
                         <button
                             type="button"
@@ -260,7 +260,7 @@ const DiscountAdd = () => {
                                 : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
                             }`}
                         >
-                            {t('variableData')}
+                            {t('DiscountedProducts')}
                         </button>
                     </div>
                 </div>

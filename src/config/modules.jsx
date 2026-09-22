@@ -159,9 +159,9 @@ export const getModules = (t, orderCounts = {}) => {
       name: t("report"),
       key: "business",
       items: [
-        { title: t("myKeeto"), url: "/mykeeto", icon: KeetoIcon },
-        { title: t("invoice"), url: "/invoice", icon: KeetoIcon },
-        { title: t("paymentMethods"), url: "/payment-method-report", icon: KeetoIcon },
+        { title: t("myKeeto"), url: "/mykeeto", icon: KeetoIcon, permissionKey: "report" },
+        { title: t("invoice"), url: "/invoice", icon: KeetoIcon, permissionKey: "report" },
+        { title: t("paymentMethods"), url: "/payment-method-report", icon: KeetoIcon, permissionKey: "report" },
       ],
     },
 

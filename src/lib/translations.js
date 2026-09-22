@@ -11,6 +11,7 @@ const translations = {
     profile: "Profile",
     logout: "Log out",
     backToHome: "Back to home",
+    addDiscount: "Add Discount",
 
     // Sidebar modules (from modules.jsx)
     dashboard: "Dashboard",
@@ -507,6 +508,9 @@ cashDeliveryOrdersTitle: "Cash Delivery Orders",
     "manageFoods": "Manage Foods",
     "statusUpdatedSuccessfully": "Status updated successfully",
     "failedToUpdateStatus": "Failed to update status",
+    DiscountedProducts: "Discounted Products",
+    offerInfo: "Offer Information",
+    manageYourDiscountDetails: "Manage your discount details and the products it applies to.",
     //order
     "ordersManagement": "Orders Management",
     "orderNumber": "Order Number",
@@ -2133,7 +2137,8 @@ cashDeliveryOrdersTitle: "Cash Delivery Orders",
     "addonCategoryNameArHeader": "اسم الفئة (عربي)",
     "addonCategoryNameFrHeader": "اسم الفئة (فرانكو)",
     productPricing: "تسعير المنتجات",
-
+manageYourDiscountDetails: "إدارة تفاصيل الخصم الخاص بك",
+addDiscount: "إضافة خصم",
     // Category
     "categoriesTitle": "الفئات",
     "categoryNameHeader": "الاسم",
@@ -2282,6 +2287,8 @@ cashDeliveryOrdersTitle: "Cash Delivery Orders",
   "accept": "قبول",
   deliveryManagement: "إدارة التوصيل",
   pendingOrders: "الطلبات المعلقة",
+  offerInfo:"معلومات العرض",
+  DiscountedProducts:"المنتجات المخفضة",
   
 cashDeliveryOrdersTitle: "طلبات التوصيل النقدية",
   

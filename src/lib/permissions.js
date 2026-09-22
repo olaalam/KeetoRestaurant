@@ -75,6 +75,8 @@ const URL_PERMISSION_KEYS = {
   "/expense": "expense",
   "/financialAccounts": "financialAccount",
   "/mykeeto": "report",
+  "/invoice": "report",
+  "/payment-method-report": "report",
   "/qr": "restaurant QR",
   "/policy": "policy",
   "/setting": "restaurantsetting",
