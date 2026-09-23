@@ -6,7 +6,6 @@ import LoadingSpinner from '@/components/LoadingSpinner';
 import { useTranslation } from "@/hooks/useTranslation";
 import { Plus, Trash2, Save, ArrowLeft, ImagePlus, X, ChevronDown, Check } from 'lucide-react'; 
 
-// مكون فرعي لاختيار المنتجات بـ Checkboxes داخل Dropdown مخصصة باستخدام لون الـ primary
 const FoodMultiSelect = ({ foods, selectedIds, onChange }) => {
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef(null);
@@ -97,12 +96,13 @@ const DiscountAdd = () => {
 
     const [basicData, setBasicData] = useState({
         name: '', nameAr: '', nameFr: '',
-        maxDiscount: '', minOrderAmount: '', usageLimit: '',
-        startDate: '', endDate: '', logo: null
+        minOrderAmount: '', usageLimit: '',
+        startDate: '', endDate: '', logo: null,
+        isActive: true
     });
 
     const [variableData, setVariableData] = useState([
-        { foodIds: [], discountType: 'percentage', discountValue: '' }
+        { foodIds: [], discountType: 'percentage', discountValue: '', maxDiscount: '' }
     ]);
 
     const { data: selectData, isLoading: isSelectDataLoading } = useQuery({
@@ -119,41 +119,55 @@ const DiscountAdd = () => {
             const { data } = await api.get(`/api/restaurant/discounts/${id}`);
             return data.data.data;
         },
-        enabled: !!id && !state?.DiscountData,
+        // enabled: !!id && !state?.DiscountData,
     });
 
     const initialData = state?.DiscountData || DiscountData;
 
-    useEffect(() => {
+useEffect(() => {
         if (initialData) {
             setBasicData({
                 name: initialData.name || '',
                 nameAr: initialData.nameAr || '',
                 nameFr: initialData.nameFr || '',
-                maxDiscount: initialData.maxDiscount || '',
                 minOrderAmount: initialData.minOrderAmount || '',
                 usageLimit: initialData.usageLimit || '',
                 startDate: initialData.startDate?.split('T')[0] || '',
                 endDate: initialData.endDate?.split('T')[0] || '',
-                logo: initialData.logo || null
+                logo: initialData.logo || null,
+                isActive: initialData.isActive ?? true
             });
             
             if (initialData.logo) {
                 setImagePreview(initialData.logo);
             }
 
-            if (initialData.discountDetails && initialData.discountDetails.length > 0) {
-                const formattedDetails = initialData.discountDetails.map(d => ({
+            // فحص تفاصيل المنتجات بناءً على هيكل الـ Response
+            const existingDetails = initialData.foodGroups || initialData.discountDetails;
+            
+            if (existingDetails && existingDetails.length > 0) {
+                const formattedDetails = existingDetails.map(d => ({
                     ...d,
-                    foodIds: (d.foodIds || []).map(String)
+                    foodIds: (d.foodIds || []).map(String),
+                    maxDiscount: d.maxDiscount || ''
                 }));
                 setVariableData(formattedDetails);
+            } else if (initialData.foodIds) {
+                // التعامل مع الـ Response الجديد المباشر (Flat Response)
+                setVariableData([
+                    {
+                        foodIds: (initialData.foodIds || []).map(String),
+                        discountType: initialData.discountType || 'percentage',
+                        discountValue: initialData.discountValue || '',
+                        maxDiscount: initialData.maxDiscount || ''
+                    }
+                ]);
             }
         }
     }, [initialData]);
 
     const handleAddVariableRow = () => {
-        setVariableData([...variableData, { foodIds: [], discountType: 'percentage', discountValue: '' }]);
+        setVariableData([...variableData, { foodIds: [], discountType: 'percentage', discountValue: '', maxDiscount: '' }]);
     };
 
     const handleRemoveVariableRow = (index) => {
@@ -185,26 +199,37 @@ const DiscountAdd = () => {
         setImagePreview(null);
     };
 
-    const mutation = useMutation({
+const mutation = useMutation({
         mutationFn: async () => {
-            const payload = new FormData();
-            
-            Object.keys(basicData).forEach(key => {
-                if (basicData[key] !== null && basicData[key] !== '') {
-                    payload.append(key, basicData[key]);
-                }
-            });
+            const payload = {
+                name: basicData.name,
+                nameAr: basicData.nameAr,
+                nameFr: basicData.nameFr,
+                minOrderAmount: basicData.minOrderAmount ? Number(basicData.minOrderAmount) : 0,
+                usageLimit: basicData.usageLimit ? Number(basicData.usageLimit) : 0, // تم تصحيح basicData.usageLimit هنا
+                startDate: basicData.startDate ? new Date(basicData.startDate).toISOString() : null,
+                endDate: basicData.endDate ? new Date(basicData.endDate).toISOString() : null,
+                isActive: basicData.isActive,
+                logo: null,
+                foodGroups: variableData.map(group => {
+                    const groupData = {
+                        discountType: group.discountType,
+                        discountValue: Number(group.discountValue),
+                        foodIds: group.foodIds
+                    };
+                    
+                    if (group.maxDiscount !== '' && group.maxDiscount !== null) {
+                        groupData.maxDiscount = Number(group.maxDiscount);
+                    }
 
-            payload.append('discountDetails', JSON.stringify(variableData));
+                    return groupData;
+                })
+            };
 
             if (id) {
-                return await api.put(`/api/restaurant/discounts/${id}`, payload, {
-                    headers: { 'Content-Type': 'multipart/form-data' }
-                });
+                return await api.put(`/api/restaurant/discounts/${id}`, payload);
             } else {
-                return await api.post('/api/restaurant/discounts', payload, {
-                    headers: { 'Content-Type': 'multipart/form-data' }
-                });
+                return await api.post('/api/restaurant/discounts', payload);
             }
         },
         onSuccess: () => {
@@ -212,7 +237,6 @@ const DiscountAdd = () => {
             navigate(-1);
         }
     });
-
     const handleSubmit = (e) => {
         e.preventDefault();
         mutation.mutate();
@@ -302,7 +326,7 @@ const DiscountAdd = () => {
                             <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-5">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">{t('name')} *</label>
-                                    <input required type="text" className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all" value={basicData.name} onChange={e => setBasicData({...basicData, name: e.target.value})} placeholder="e.g. Summer Sale" />
+                                    <input required type="text" className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all" value={basicData.name} onChange={e => setBasicData({...basicData, name: e.target.value})} placeholder="e.g. Ramadan Offer" />
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">{t('nameAr')} *</label>
@@ -312,10 +336,7 @@ const DiscountAdd = () => {
                                     <label className="block text-sm font-medium text-gray-700 mb-1">{t('nameFr')} *</label>
                                     <input required type="text" className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all" value={basicData.nameFr} onChange={e => setBasicData({...basicData, nameFr: e.target.value})} />
                                 </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('maxDiscount')}</label>
-                                    <input type="number" className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all" value={basicData.maxDiscount} onChange={e => setBasicData({...basicData, maxDiscount: e.target.value})} />
-                                </div>
+
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">{t('minOrderAmount')}</label>
                                     <input type="number" className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all" value={basicData.minOrderAmount} onChange={e => setBasicData({...basicData, minOrderAmount: e.target.value})} />
@@ -359,7 +380,7 @@ const DiscountAdd = () => {
                                     </div>
 
                                     <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-start">
-                                        <div className="md:col-span-6">
+                                        <div className="md:col-span-4">
                                             <label className="block text-sm font-medium text-gray-700 mb-1">{t('food')} *</label>
                                             <FoodMultiSelect 
                                                 foods={selectData?.foods || []}
@@ -380,7 +401,7 @@ const DiscountAdd = () => {
                                             </select>
                                         </div>
 
-                                        <div className="md:col-span-3">
+                                        <div className="md:col-span-2">
                                             <label className="block text-sm font-medium text-gray-700 mb-1">{t('discountValue')} *</label>
                                             <div className="relative">
                                                 <input 
@@ -397,6 +418,17 @@ const DiscountAdd = () => {
                                                     </span>
                                                 </div>
                                             </div>
+                                        </div>
+                                        
+                                        <div className="md:col-span-3">
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">{t('maxDiscount')}</label>
+                                            <input 
+                                                type="number" 
+                                                className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all bg-white" 
+                                                value={row.maxDiscount} 
+                                                onChange={e => handleVariableChange(index, 'maxDiscount', e.target.value)} 
+                                                placeholder="e.g. 50"
+                                            />
                                         </div>
                                     </div>
                                 </div>

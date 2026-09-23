@@ -9,14 +9,13 @@ import {
   Wallet,
   Download,
   DollarSign,
-  ShoppingBag,
   Calendar,
 } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { useTranslation } from "@/hooks/useTranslation";
 
-// هيلبر بسيط عشان نجيب تاريخ النهاردة بصيغة YYYY-MM-DD (المطلوبة لـ <input type="date" />)
+// هيلبر بسيط لتاريخ اليوم بصيغة YYYY-MM-DD
 const getTodayDateString = () => {
   const today = new Date();
   const year = today.getFullYear();
@@ -26,65 +25,80 @@ const getTodayDateString = () => {
 };
 
 export default function PaymentMethodRepo() {
-  // لو الصفحة بتتفتح بلينك فيه params جاهزة هنستخدمها كقيمة ابتدائية،
-  // ولو مفيش هنرجع لـ default: start = النهاردة, end = فاضي
   const params = useParams();
   const { t } = useTranslation();
 
+  // الـ States الخاصة بالفلترة
   const [startDate, setStartDate] = useState(
     params.startDate || getTodayDateString()
   );
   const [endDate, setEndDate] = useState(params.endDate || "");
+  const [paymentMethodName, setPaymentMethodName] = useState(
+    params.paymentMethodName || ""
+  );
+  const [branchId, setBranchId] = useState(params.branchId || "");
 
-  // 1. جلب التقرير المالي من الـ API
-  const { data: reportData, isLoading } = useQuery({
-    queryKey: ["paymentMethodReport", startDate, endDate],
+  // 1. جلب التقرير المالي من الباك إند
+  const { data: responseData, isLoading } = useQuery({
+    queryKey: [
+      "paymentMethodReport",
+      startDate,
+      endDate,
+      paymentMethodName,
+      branchId,
+    ],
     queryFn: async () => {
-      const res = await api.get("/api/restaurant/report/my-restaurant", {
-        params: { startDate, endDate },
+      const res = await api.get("/api/restaurant/report/payment-method", {
+        params: {
+          startDate: startDate || undefined,
+          endDate: endDate || undefined,
+          paymentMethodName: paymentMethodName || undefined,
+          branchId: branchId || undefined,
+        },
       });
-      return res.data?.data?.data || null;
+      // الوصول للبيانات داخل res.data.data.data
+      return res.data?.data?.data || res.data?.data || null;
     },
-    // لو حابب متجيبش داتا غير لما اليوزر يحدد الـ endDate، سيبها enabled: !!endDate
-    // حاليًا سايبها شغالة بس بالـ startDate عشان تجيب داتا يوم بيوم لحد ما يحدد end
   });
 
-  const restaurantInfo = reportData?.restaurant;
-  const rawPaymentData = reportData?.ordersByPayment || [];
+  // استخراج البيانات المحدثة
+  const summary = responseData?.summary || {};
+  const paymentSummary = summary?.paymentSummary || {};
+  const rawOrders = responseData?.orders || [];
 
-  // 2. تجهيز بيانات الجدول
-  const paymentTableData = rawPaymentData.map((item) => ({
-    ...item,
-    paymentMethodLabel: t(item.paymentMethod) || item.paymentMethod,
-    totalAmountFormatted: `${item.totalAmount} ${t("currency") || "EGP"}`,
+  // 2. تجهيز قائمة الطلبات للجدول
+  const ordersTableData = rawOrders.map((order) => ({
+    ...order,
+    paymentMethodFormatted:
+      t(order.paymentMethodName) || order.paymentMethodName?.replace(/_/g, " "),
+    totalAmountFormatted: `${parseFloat(order.totalAmount || 0).toFixed(2)} ${
+      t("currency") || "EGP"
+    }`,
+    formattedDate: order.createdAt
+      ? new Date(order.createdAt).toLocaleString("ar-EG", {
+          dateStyle: "short",
+          timeStyle: "short",
+        })
+      : "N/A",
   }));
 
-  // 3. حساب الإحصائيات الإجمالية لطرق الدفع
-  const totalAmountSum = rawPaymentData
-    .reduce((acc, curr) => acc + parseFloat(curr.totalAmount || 0), 0)
-    .toFixed(2);
+  // 3. استخراج كروت الإحصائيات الديناميكية
+  const totalAmountSum = summary?.totalAmount || "0.00";
+  const totalOrdersCount = summary?.totalOrders || 0;
 
-  const totalOrdersCount = rawPaymentData.reduce(
-    (acc, curr) => acc + (curr.count || 0),
-    0
-  );
-
-  const getMethodStats = (methodKey) => {
-    const item = rawPaymentData.find((i) => i.paymentMethod === methodKey);
-    return {
-      count: item?.count || 0,
-      amount: item?.totalAmount || "0.00",
-    };
+  const cashStats = paymentSummary?.cash_on_delivery || {
+    count: 0,
+    totalAmount: "0.00",
+  };
+  const visaStats = paymentSummary?.visa || { count: 0, totalAmount: "0.00" };
+  const walletStats = paymentSummary?.wallet || {
+    count: 0,
+    totalAmount: "0.00",
   };
 
-  const cashStats = getMethodStats("cash_on_delivery");
-  const visaStats = getMethodStats("visa");
-  const walletStats = getMethodStats("wallet");
-
-  // 4. كروت الإحصائيات
   const statsCards = [
     {
-      title: t("totalPaymentAmount") || "Total Payment Revenue",
+      title: t("totalPaymentAmount") || "Total Revenue",
       value: `${totalAmountSum} ${t("currency") || "EGP"}`,
       subText: `${totalOrdersCount} ${t("orders") || "Orders"}`,
       icon: DollarSign,
@@ -92,98 +106,105 @@ export default function PaymentMethodRepo() {
     },
     {
       title: t("cashOnDelivery") || "Cash On Delivery",
-      value: `${cashStats.amount} ${t("currency") || "EGP"}`,
+      value: `${cashStats.totalAmount} ${t("currency") || "EGP"}`,
       subText: `${cashStats.count} ${t("orders") || "Orders"}`,
       icon: Banknote,
       bgIcon: "bg-amber-100 text-amber-600",
     },
     {
       title: t("visaCard") || "Visa / Online Card",
-      value: `${visaStats.amount} ${t("currency") || "EGP"}`,
+      value: `${visaStats.totalAmount} ${t("currency") || "EGP"}`,
       subText: `${visaStats.count} ${t("orders") || "Orders"}`,
       icon: CreditCard,
       bgIcon: "bg-blue-100 text-blue-600",
     },
     {
       title: t("wallet") || "Wallet",
-      value: `${walletStats.amount} ${t("currency") || "EGP"}`,
+      value: `${walletStats.totalAmount} ${t("currency") || "EGP"}`,
       subText: `${walletStats.count} ${t("orders") || "Orders"}`,
       icon: Wallet,
       bgIcon: "bg-purple-100 text-purple-600",
     },
   ];
 
-  // 5. أعمدة الجدول
+  // 4. أعمدة جدول الطلبات (Orders Table)
   const columns = [
-    { accessorKey: "paymentMethodLabel", header: t("paymentMethod") || "Payment Method" },
-    { accessorKey: "count", header: t("ordersCount") || "Orders Count" },
-    { accessorKey: "totalAmountFormatted", header: t("totalAmount") || "Total Amount" },
+    {
+      accessorKey: "orderNumber",
+      header: t("orderNumber") || "Order #",
+    },
+    {
+      accessorKey: "userName",
+      header: t("customer") || "Customer",
+    },
+    {
+      accessorKey: "branchName",
+      header: t("branch") || "Branch",
+    },
+    {
+      accessorKey: "paymentMethodFormatted",
+      header: t("paymentMethod") || "Payment Method",
+    },
+    {
+      accessorKey: "totalAmountFormatted",
+      header: t("totalAmount") || "Total Amount",
+    },
+    {
+      accessorKey: "status",
+      header: t("status") || "Status",
+    },
+    {
+      accessorKey: "formattedDate",
+      header: t("date") || "Date",
+    },
   ];
 
-  // 6. تصدير التقرير بصيغة PDF
+  // 5. تصدير قائمة الطلبات لـ PDF
   const exportPDF = () => {
     const doc = new jsPDF("portrait");
 
-    // Header Background
     doc.setFillColor(30, 41, 59);
     doc.rect(0, 0, 220, 25, "F");
 
-    // Title
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(16);
-    doc.text(
-      `${restaurantInfo?.name || "Restaurant"} - Payment Method Report`,
-      14,
-      16
-    );
+    doc.text("Payment Method Orders Report", 14, 16);
 
-    // Period Metadata
     doc.setTextColor(120);
     doc.setFontSize(10);
     doc.text(`Period: ${startDate || "N/A"} - ${endDate || "N/A"}`, 14, 35);
 
-    // Summary Table in PDF
     autoTable(doc, {
       startY: 45,
       theme: "grid",
       headStyles: { fillColor: [30, 41, 59], textColor: 255 },
-      head: [["Payment Method", "Orders Count", "Total Amount"]],
-      body: paymentTableData.map((item) => [
-        item.paymentMethodLabel,
-        item.count,
+      head: [["Order #", "Customer", "Branch", "Payment", "Amount", "Status"]],
+      body: ordersTableData.map((item) => [
+        item.orderNumber,
+        item.userName,
+        item.branchName,
+        item.paymentMethodName,
         `${item.totalAmount} EGP`,
+        item.status,
       ]),
     });
 
-    doc.save(`Payment_Method_Report.pdf`);
+    doc.save(`Payment_Orders_Report.pdf`);
   };
 
   return (
     <div className="container mx-auto py-10 space-y-8">
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-6">
-        <div className="flex items-center gap-4">
-          {restaurantInfo?.logo && (
-            <img
-              src={restaurantInfo.logo}
-              alt="logo"
-              className="w-14 h-14 rounded-full object-cover border shadow-sm"
-            />
-          )}
-          <div>
-            <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
-              {t("paymentMethodReport") || "Payment Method Report"}
-            </h1>
-            <p className="text-sm text-slate-500 font-medium">
-              {t("reviewingAnalyticsFor") || "Reviewing payment breakdown for"}{" "}
-              <span className="text-slate-800 font-bold">
-                {restaurantInfo?.name || t("yourRestaurant") || "Your Restaurant"}
-              </span>
-            </p>
-          </div>
+        <div>
+          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
+            {t("paymentMethodReport") || "Payment Method Report"}
+          </h1>
+          <p className="text-sm text-slate-500 font-medium mt-1">
+            {t("reviewingAnalyticsFor") || "Reviewing payment breakdown and orders"}
+          </p>
         </div>
 
-        {/* Download PDF Button */}
         <button
           onClick={exportPDF}
           className="px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition flex items-center gap-2 font-bold shadow text-sm self-start sm:self-auto"
@@ -192,14 +213,16 @@ export default function PaymentMethodRepo() {
         </button>
       </div>
 
-      {/* Date Range Filter */}
-      <div className="flex flex-col sm:flex-row sm:items-end gap-4 bg-white border rounded-2xl shadow-sm p-4">
-        <div className="flex items-center gap-2 text-slate-500">
+      {/* Filter Section */}
+      <div className="flex flex-wrap items-end gap-4 bg-white border rounded-2xl shadow-sm p-4">
+        <div className="flex items-center gap-2 text-slate-500 self-center">
           <Calendar className="w-4 h-4" />
           <span className="text-sm font-semibold">
-            {t("filterByDate") || "Filter by date"}
+            {t("filterBy") || "Filter"}
           </span>
         </div>
+
+        {/* Start Date */}
         <div className="flex flex-col gap-1">
           <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
             {t("startDate") || "Start Date"}
@@ -211,6 +234,8 @@ export default function PaymentMethodRepo() {
             className="px-3 py-2 border rounded-lg text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-300"
           />
         </div>
+
+        {/* End Date */}
         <div className="flex flex-col gap-1">
           <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
             {t("endDate") || "End Date"}
@@ -222,6 +247,27 @@ export default function PaymentMethodRepo() {
             onChange={(e) => setEndDate(e.target.value)}
             className="px-3 py-2 border rounded-lg text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-300"
           />
+        </div>
+
+        {/* Payment Method Filter */}
+        <div className="flex flex-col gap-1 min-w-[180px]">
+          <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+            {t("paymentMethod") || "Payment Method"}
+          </label>
+          <select
+            value={paymentMethodName}
+            onChange={(e) => setPaymentMethodName(e.target.value)}
+            className="px-3 py-2 border rounded-lg text-sm text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-slate-300"
+          >
+            <option value="">
+              {t("allMethods") || "All Payment Methods"}
+            </option>
+            <option value="cash_on_delivery">
+              {t("cashOnDelivery") || "Cash On Delivery"}
+            </option>
+            <option value="visa">{t("visa") || "Visa / Online Card"}</option>
+            <option value="wallet">{t("wallet") || "Wallet"}</option>
+          </select>
         </div>
       </div>
 
@@ -255,14 +301,14 @@ export default function PaymentMethodRepo() {
         })}
       </div>
 
-      {/* Payment Method Data Table */}
+      {/* Orders Data Table */}
       <div className="border rounded-2xl bg-white p-4 shadow-sm">
         <GenericDataTable
-          title={t("ordersByPaymentMethod") || "Orders by Payment Method"}
+          title={t("ordersList") || "Orders List"}
           columns={columns}
-          data={paymentTableData}
+          data={ordersTableData}
           isLoading={isLoading}
-          queryKey="paymentMethodReportTable"
+          queryKey="paymentMethodReportOrders"
           onEdit={false}
           actions={false}
         />

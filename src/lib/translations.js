@@ -733,6 +733,8 @@ cashDeliveryOrdersTitle: "Cash Delivery Orders",
     "ordersByType": "Orders by Type",
     "ordersBySource": "Orders by Source",
     "branchesPerformanceBreakdown": "Branches Performance Breakdown",
+    editDiscount: "Edit Discount",
+    notregistered: "Not Registered",
 
     "pending": "Pending",
     "accepted": "Accepted",
@@ -2130,6 +2132,7 @@ cashDeliveryOrdersTitle: "Cash Delivery Orders",
     "date": "التاريخ",
     "phone": "رقم الهاتف",
     "totalOrders": "إجمالي الطلبات",
+    editDiscount: "تعديل الخصم",
 
     // AddonsCat
     "addonCategoriesTitle": "فئات الإضافات",
@@ -2354,6 +2357,7 @@ cashDeliveryOrdersTitle: "طلبات التوصيل النقدية",
   "cashCollectedSuccess": "تم التحصيل! تم الانتقال تلقائياً إلى:",
   "cashCollectedEnd": "تم التحصيل بنجاح. لا يوجد عمال توصيل آخرين في القائمة.",
   withDeliveryMan: "مع عامل التوصيل",
+  notregistered: "غير مسجل",
 
 
 

@@ -13,22 +13,16 @@ import {
   CreditCard,
   Store,
   Receipt,
-  HomeIcon,
   ArrowLeft,
   User,
-  Phone,
-  Mail,
   Calendar,
-  Hash,
   Info,
   ShoppingBag,
   Loader2,
   Copy,
-  Printer,
   ChevronLeft,
   ChevronRight,
   Search,
-  ChevronDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -146,7 +140,6 @@ export default function OrderDetails() {
   const [selectedDeliveryMan, setSelectedDeliveryMan] = useState("");
 
   const [deliverySearchQuery, setDeliverySearchQuery] = useState("");
-  const [isDeliveryDropdownOpen, setIsDeliveryDropdownOpen] = useState(false);
 
   const [isDurationDialogOpen, setIsDurationDialogOpen] = useState(false);
   const [preparationDuration, setPreparationDuration] = useState("");
@@ -217,8 +210,8 @@ export default function OrderDetails() {
       return res.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(["order", orderId]);
-      queryClient.invalidateQueries(["orders"]);
+      queryClient.invalidateQueries({ queryKey: ["order", orderId] });
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
       toast.success(t("statusUpdatedSuccess") || "تم تحديث حالة الطلب بنجاح");
       setDialogConfig({ open: false, type: null });
     },
@@ -257,7 +250,6 @@ export default function OrderDetails() {
 
   const assignDeliveryMutation = useMutation({
     mutationFn: async (deliveryManId) => {
-      // 1. تحديث المندوب دائماً
       const res = await api.put(
         `/api/restaurant/order/${orderId}/assign-delivery`,
         {
@@ -265,7 +257,6 @@ export default function OrderDetails() {
         },
       );
 
-      // 2. لو مفيش مندوب قديم (أول مرة يتعين) وكان الطلب في حالة preparing، نغير الحالة لـ out_for_delivery
       const hasDeliveryMan = order?.deliveryMan?.id || order?.deliveryManId;
       if (!hasDeliveryMan && order?.status === "preparing") {
         await api.put(`/api/restaurant/order/${orderId}`, {
@@ -276,8 +267,8 @@ export default function OrderDetails() {
       return res.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(["order", orderId]);
-      queryClient.invalidateQueries(["orders"]);
+      queryClient.invalidateQueries({ queryKey: ["order", orderId] });
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
       toast.success(
         t("deliveryManAssignedSuccess") ||
         "تم حفظ بيانات المندوب بنجاح",
@@ -293,9 +284,9 @@ export default function OrderDetails() {
       );
     },
   });
+
   const handleStatusChange = (newStatus) => {
     if (newStatus === "delivered" || newStatus === "cancelled") {
-      // delivered & cancelled: show a plain confirmation dialog first
       setConfirmDialog({ open: true, type: newStatus });
     } else if (newStatus === "refund") {
       setDialogConfig({ open: true, type: newStatus });
@@ -309,7 +300,6 @@ export default function OrderDetails() {
     setConfirmDialog({ open: false, type: null });
 
     if (type === "cancelled") {
-      // after confirming cancellation, open the reason-selection dialog
       setDialogConfig({ open: true, type: "cancelled" });
     } else {
       updateStatusMutation.mutate({ status: type });
@@ -392,11 +382,11 @@ export default function OrderDetails() {
     : currentStatusStyle.labelKey;
 
   const deliveryPerson = order.deliveryMan || order.driver;
-
   const displayAddress = order.shippingAddress || order.address;
 
   return (
     <div className="w-full mx-auto py-8 px-4 sm:px-6 space-y-6">
+      {/* Mobile Header */}
       <div className="flex 2xl:hidden flex-col gap-3 bg-white p-3 sm:p-5 rounded-2xl border shadow-sm mb-6">
         <div className="flex items-center justify-between gap-2 w-full">
           <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
@@ -415,7 +405,7 @@ export default function OrderDetails() {
 
             <Badge className={`${currentStatusStyle.color} h-9 sm:h-11 font-bold rounded-xl border px-2.5 sm:px-3 text-xs sm:text-sm flex items-center gap-1.5 shadow-sm`}>
               <StatusIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-              <span className="truncate max-w-[90px] sm:max-w-none">{t(currentStatusStyle.labelKey)}</span>
+              <span className="truncate max-w-[90px] sm:max-w-none">{t(displayCurrentLabel)}</span>
             </Badge>
           </div>
 
@@ -473,21 +463,28 @@ export default function OrderDetails() {
               </Badge>
             )}
 
-{(order.paymentMethodName || order.paymentMethodNameAr || order.isPointsRedeemed) && (
-  <Badge
-    variant="outline"
-    className="bg-emerald-50/70 border-emerald-200 text-emerald-800 h-8 sm:h-10 font-semibold rounded-xl px-2.5 sm:px-3 text-xs sm:text-sm flex items-center gap-1.5 shadow-sm"
-  >
-    <CreditCard className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-    <span className="capitalize">
-      {order.isPointsRedeemed
-        ? (document.documentElement.dir === "rtl" ? "استبدال نقاط" : "Points Redemption")
-        : (document.documentElement.dir === "rtl" && order.paymentMethodNameAr
-          ? order.paymentMethodNameAr
-          : order.paymentMethodName?.replace(/_/g, " "))}
-    </span>
-  </Badge>
-)}       </div>
+            {(order.customer?.isGuest || order.paymentMethodName || order.paymentMethodNameAr || order.isPointsRedeemed) && (
+              <Badge
+                variant="outline"
+                className="bg-emerald-50/70 border-emerald-200 text-emerald-800 h-8 sm:h-10 font-semibold rounded-xl px-2.5 sm:px-3 text-xs sm:text-sm flex items-center gap-1.5 shadow-sm"
+              >
+                {order.customer?.isGuest ? (
+                  <User className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                ) : (
+                  <CreditCard className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                )}
+                <span className="capitalize">
+                  {order.customer?.isGuest
+                    ? t("notregistered")
+                    : order.isPointsRedeemed
+                      ? (document.documentElement.dir === "rtl" ? "استبدال نقاط" : "Points Redemption")
+                      : (document.documentElement.dir === "rtl" && order.paymentMethodNameAr
+                        ? order.paymentMethodNameAr
+                        : order.paymentMethodName?.replace(/_/g, " "))}
+                </span>
+              </Badge>
+            )}
+          </div>
 
           <div className="shrink-0">
             {order.orderSource && (
@@ -509,6 +506,7 @@ export default function OrderDetails() {
         </div>
       </div>
 
+      {/* Desktop Header */}
       <div className="hidden 2xl:flex w-full items-center justify-between gap-4 bg-white p-5 rounded-2xl border shadow-sm mb-6">
         <div className="flex flex-1 items-center gap-3 flex-wrap w-full">
           <Button
@@ -538,7 +536,7 @@ export default function OrderDetails() {
               className={`${currentStatusStyle.color} h-11 font-bold rounded-xl border px-3.5 text-sm flex items-center gap-2 shadow-sm leading-none`}
             >
               <StatusIcon className="w-4 h-4" />
-              {t(currentStatusStyle.labelKey)}
+              {t(displayCurrentLabel)}
             </Badge>
 
             {order.orderType && (
@@ -559,17 +557,24 @@ export default function OrderDetails() {
               </Badge>
             )}
 
-            {(order.paymentMethodName || order.paymentMethodNameAr) && (
+            {(order.customer?.isGuest || order.paymentMethodName || order.paymentMethodNameAr || order.isPointsRedeemed) && (
               <Badge
                 variant="outline"
                 className="bg-emerald-50/70 border-emerald-200 text-emerald-800 h-11 font-semibold rounded-xl px-3.5 text-sm flex items-center gap-2 shadow-sm leading-none"
               >
-                <CreditCard className="w-4 h-4 text-emerald-600" />
+                {order.customer?.isGuest ? (
+                  <User className="w-4 h-4 text-emerald-600" />
+                ) : (
+                  <CreditCard className="w-4 h-4 text-emerald-600" />
+                )}
                 <span className="capitalize">
-                  {document.documentElement.dir === "rtl" &&
-                    order.paymentMethodNameAr
-                    ? order.paymentMethodNameAr
-                    : order.paymentMethodName?.replace(/_/g, " ")}
+                  {order.customer?.isGuest
+                    ? t("notregistered")
+                    : order.isPointsRedeemed
+                      ? (document.documentElement.dir === "rtl" ? "استبدال نقاط" : "Points Redemption")
+                      : (document.documentElement.dir === "rtl" && order.paymentMethodNameAr
+                        ? order.paymentMethodNameAr
+                        : order.paymentMethodName?.replace(/_/g, " "))}
                 </span>
               </Badge>
             )}
@@ -632,6 +637,7 @@ export default function OrderDetails() {
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         <div className="space-y-6 xl:col-span-2">
+          {/* Order Info Card */}
           <Card className="rounded-2xl border shadow-sm overflow-hidden bg-white">
             <CardHeader className="border-b bg-gray-50/50 px-6 py-4">
               <CardTitle className="text-md font-bold text-gray-800 flex items-center gap-2">
@@ -701,6 +707,7 @@ export default function OrderDetails() {
             </CardContent>
           </Card>
 
+          {/* Order Items Table */}
           <Card className="rounded-2xl border shadow-sm overflow-hidden bg-white">
             <CardHeader className="border-b bg-gray-50/50 px-6 py-4">
               <CardTitle className="text-md font-bold text-gray-800 flex items-center gap-2">
@@ -832,6 +839,7 @@ export default function OrderDetails() {
             </CardContent>
           </Card>
 
+          {/* Payment Summary */}
           <Card className="rounded-2xl border shadow-sm bg-white">
             <CardHeader className="border-b bg-gray-50/50 px-6 py-4">
               <CardTitle className="text-md font-bold text-gray-800 flex items-center gap-2">
@@ -873,7 +881,6 @@ export default function OrderDetails() {
                 </div>
               )}
 
-              {/* --- جزء عرض قيمة الخصم (Discount Amount) --- */}
               {order.discount && parseFloat(order.discount.discountAmount) > 0 && (
                 <div className="flex justify-between text-sm text-red-500 font-medium">
                   <span>
@@ -887,7 +894,6 @@ export default function OrderDetails() {
                 </div>
               )}
 
-              {/* --- جزء عرض كود الخصم (Coupon Code) مدعوم بالمسار الجديد --- */}
               {(order.couponCode || order.discount?.couponCode) && (
                 <div className="flex justify-between text-sm text-emerald-600 font-medium">
                   <span>{t("couponCode") || "كود الخصم المستخم"}</span>
@@ -934,23 +940,23 @@ export default function OrderDetails() {
 
             <div className="space-y-2 text-sm text-gray-800">
               <div className="flex items-center gap-3 flex-wrap">
-<div className="flex items-center gap-1.5">
-  <span className="font-semibold text-gray-900">
-    {t("name") || "Name"}:
-  </span>
-  <button
-    type="button"
-    onClick={() => {
-      const userId = order.customer?.id || order.userId || order.customerId;
-      if (userId) {
-        navigate(`/users/${userId}`);
-      }
-    }}
-    className="font-bold text-primary hover:underline hover:text-primary/80 transition-colors bg-transparent border-none cursor-pointer p-0 m-0 text-start"
-  >
-    {order.customer?.name || t("unknown")}
-  </button>
-</div>
+                <div className="flex items-center gap-1.5">
+                  <span className="font-semibold text-gray-900">
+                    {t("name") || "Name"}:
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const userId = order.customer?.id || order.userId || order.customerId;
+                      if (userId) {
+                        navigate(`/users/${userId}`);
+                      }
+                    }}
+                    className="font-bold text-primary hover:underline hover:text-primary/80 transition-colors bg-transparent border-none cursor-pointer p-0 m-0 text-start"
+                  >
+                    {order.customer?.name || t("unknown")}
+                  </button>
+                </div>
                 <div className="text-xs font-semibold text-gray-600 bg-gray-100 border border-gray-200 px-2.5 py-0.5 rounded-md shadow-2xs">
                   total orders:{" "}
                   <span className="font-bold text-gray-900">
@@ -994,9 +1000,10 @@ export default function OrderDetails() {
                   <span>{t("notAvailable")}</span>
                 )}
               </div>
+
               <div className="flex items-center gap-1.5 flex-wrap">
                 <span className="font-semibold text-gray-900">
-                  {t("alternatePhone") || "alternatePhone"}:
+                  {t("alternatePhone") || "رقم أخر"}:
                 </span>
                 {order.customer?.alternatePhone ? (
                   <div className="flex items-center gap-1.5">
@@ -1059,7 +1066,6 @@ export default function OrderDetails() {
                     <span className="font-semibold text-gray-900">
                       {t("buildingNumber") || "Build Num"}:
                     </span>
-                    {/* هنا نراعي اختلاف اسم الخاصية بين shippingAddress و address */}
                     <span>{displayAddress.building || displayAddress.number || "-"}</span>
                   </div>
                   <div className="flex items-center gap-1.5">
@@ -1187,6 +1193,7 @@ export default function OrderDetails() {
             </Card>
           )}
 
+          {/* Preparation Duration Card */}
           <Card className="rounded-2xl border shadow-sm bg-white overflow-hidden">
             <CardHeader className="border-b bg-gray-50/50 px-6 py-4">
               <CardTitle className="text-sm font-bold text-gray-800 flex items-center gap-2">
@@ -1211,11 +1218,12 @@ export default function OrderDetails() {
                 onClick={() => setIsDurationDialogOpen(true)}
                 className="rounded-xl h-9 px-4 font-semibold text-xs border-primary text-primary hover:bg-primary/5 transition-colors"
               >
-                {t("edit") || "  تعديل"}
+                {t("edit") || "تعديل"}
               </Button>
             </CardContent>
           </Card>
 
+          {/* Status Change Card */}
           <Card className="rounded-2xl border shadow-sm bg-white overflow-hidden">
             <CardHeader className="border-b bg-gray-50/50 px-6 py-4">
               <CardTitle className="text-sm font-bold text-gray-800 flex items-center gap-2">
@@ -1313,6 +1321,7 @@ export default function OrderDetails() {
         </div>
       </div>
 
+      {/* Duration Dialog */}
       <Dialog
         open={isDurationDialogOpen}
         onOpenChange={setIsDurationDialogOpen}
@@ -1368,6 +1377,7 @@ export default function OrderDetails() {
         </DialogContent>
       </Dialog>
 
+      {/* Assign Delivery Dialog */}
       <Dialog
         open={isAssignDialogOpen}
         onOpenChange={(open) => {
@@ -1386,7 +1396,6 @@ export default function OrderDetails() {
           </DialogHeader>
 
           <div className="py-4 space-y-4">
-            {/* شريط البحث في الأعلى */}
             <div className="relative w-full">
               <Search className="absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
@@ -1398,7 +1407,6 @@ export default function OrderDetails() {
               />
             </div>
 
-            {/* قائمة عمال التوصيل */}
             {isDeliveryLoading ? (
               <div className="flex justify-center py-8">
                 <Loader2 className="w-6 h-6 animate-spin text-primary" />
@@ -1474,6 +1482,7 @@ export default function OrderDetails() {
         </DialogContent>
       </Dialog>
 
+      {/* Invoice Modal */}
       <Dialog
         open={isInvoiceOpen}
         onOpenChange={(open) => {
@@ -1506,6 +1515,7 @@ export default function OrderDetails() {
         </DialogContent>
       </Dialog>
 
+      {/* Confirmation Dialog */}
       <Dialog
         open={confirmDialog.open}
         onOpenChange={(open) => {
@@ -1559,6 +1569,7 @@ export default function OrderDetails() {
         </DialogContent>
       </Dialog>
 
+      {/* Reason Dialog */}
       <ReasonDialog
         isOpen={dialogConfig.open}
         onClose={() => setDialogConfig({ open: false, type: null })}
