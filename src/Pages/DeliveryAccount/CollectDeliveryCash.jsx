@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { useGet } from "@/hooks/useGet";
 import GenericDataTable from "@/components/GenericDataTable";
 import {
@@ -17,9 +17,17 @@ import { useTranslation } from "@/hooks/useTranslation";
 
 
 export default function CollectDeliveryCash() {
-  const { t } = useTranslation(); // Initialize translation hook
+  const { t } = useTranslation();
   const [selectedDeliveryManId, setSelectedDeliveryManId] = useState("all");
   const [note, setNote] = useState(t("defaultCollectNote", "Cash fully collected from delivery man"));
+  
+  // State لحفظ الطلبات المحددة
+  const [selectedOrderIds, setSelectedOrderIds] = useState([]);
+
+  // تصفير التحديد عند تغيير المندوب
+  useEffect(() => {
+    setSelectedOrderIds([]);
+  }, [selectedDeliveryManId]);
 
   // 1. Fetch active delivery men
   const { data: deliveryMenRes, isLoading: isLoadingMen } = useGet(
@@ -28,7 +36,6 @@ export default function CollectDeliveryCash() {
     { isActive: true }
   );
   
-  // Extract array based on API structure
   const deliveryMen = Array.isArray(deliveryMenRes) 
     ? deliveryMenRes 
     : Array.isArray(deliveryMenRes?.data) 
@@ -44,7 +51,6 @@ export default function CollectDeliveryCash() {
     selectedDeliveryManId !== "all" ? { deliveryManId: selectedDeliveryManId } : {}
   );
 
-  // Extract data to match the new response structure
   const responseData = collectRes?.data?.data || collectRes?.data || collectRes || {};
   const summary = responseData.summary || {};
   
@@ -61,29 +67,28 @@ export default function CollectDeliveryCash() {
     "collectCash"
   );
 
-  // 4. Execute collection and auto-transition to next delivery man
+  // 4. Execute collection using ONLY selected orders
   const handleCollect = () => {
     if (selectedDeliveryManId === "all") {
       toast.error(t("errorSelectDeliveryMan", "Please select a specific delivery man first to complete collection"));
       return;
     }
     
-    if (!orders.length) {
-      toast.error(t("errorNoOrders", "No orders to collect for this delivery man"));
+    if (selectedOrderIds.length === 0) {
+      toast.error(t("errorNoOrdersSelected", "Please select at least one order to collect"));
       return;
     }
-
-    const orderIds = orders.map((order) => order.id || order.orderId);
 
     collectCashMutation(
       {
         deliveryManId: selectedDeliveryManId,
-        orderIds,
+        orderIds: selectedOrderIds, // إرسال الأوردرات المحددة فقط
         note,
       },
       {
         onSuccess: () => {
-          setNote(t("defaultCollectNote", "Cash fully collected from delivery man")); // Reset note
+          setNote(t("defaultCollectNote", "Cash fully collected from delivery man"));
+          setSelectedOrderIds([]); // تصفير التحديد بعد النجاح
           
           const currentIndex = deliveryMen.findIndex(
             (dm) => dm.id === selectedDeliveryManId
@@ -102,18 +107,83 @@ export default function CollectDeliveryCash() {
     );
   };
 
-  // 5. Table columns compatible with the new response
+  // دوال التحكم في الـ Checkboxes
+  const toggleOrderSelection = (id) => {
+    setSelectedOrderIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
+  const toggleSelectAll = () => {
+    // تحديد الطلبات اللي لسه متحصلتش فقط
+    const selectableOrders = orders.filter((o) => !o.isCashCollected);
+    if (selectedOrderIds.length === selectableOrders.length && selectableOrders.length > 0) {
+      setSelectedOrderIds([]); // إلغاء تحديد الكل
+    } else {
+      setSelectedOrderIds(selectableOrders.map((o) => o.id || o.orderId)); // تحديد الكل
+    }
+  };
+
+  // 5. Table columns 
   const columns = useMemo(
     () => [
-      { accessorKey: "orderNumber", header: t("orderNumber", "Order Number") },
+      {
+        id: "selection",
+        // Checkbox لتحديد الكل
+        header: () => (
+          <input
+            type="checkbox"
+            className="w-4 h-4 cursor-pointer accent-emerald-600"
+            checked={
+              orders.filter(o => !o.isCashCollected).length > 0 &&
+              selectedOrderIds.length === orders.filter(o => !o.isCashCollected).length
+            }
+            onChange={toggleSelectAll}
+          />
+        ),
+        cell: ({ row }) => {
+          const order = row.original;
+          const id = order.id || order.orderId;
+          const isCollected = order.isCashCollected; // الاعتماد على الـ Key
+
+          // لو متحصل يظهر علامة صح، لو لأ يظهر Checkbox عشان نختاره
+          if (isCollected) {
+            return <CheckCircle className="w-5 h-5 text-emerald-500" />;
+          }
+
+          return (
+            <input
+              type="checkbox"
+              className="w-4 h-4 cursor-pointer accent-emerald-600"
+              checked={selectedOrderIds.includes(id)}
+              onChange={() => toggleOrderSelection(id)}
+            />
+          );
+        },
+      },
+      { accessorKey: "dailyOrderNumber", header: t("orderNumber", "Order Number") },
       { accessorKey: "customerName", header: t("customerName", "Customer Name") },
       { 
         accessorKey: "totalAmount", 
         header: t("amount", "Amount"), 
         cell: ({ row }) => <span className="font-bold">{row.getValue("totalAmount")} {t("currency", "EGP")}</span> 
       },
+      {
+        // العمود الجديد الخاص بـ Cash on Hand
+        accessorKey: "cashOnHandCol",
+        header: t( "CashonHand"),
+        cell: ({ row }) => {
+          const order = row.original;
+          const status = (order.status || "").toLowerCase();
+          
+          if (status === "delivered") {
+            return <span className="font-bold text-emerald-600">{order.totalAmount} {t("currency", "EGP")}</span>;
+          }
+          return <span className="text-slate-400 font-bold text-lg">-</span>;
+        }
+      },
       { 
-        accessorKey: "paymentMethodName", // Use English payment method name from response
+        accessorKey: "paymentMethodName", 
         header: t("paymentMethod", "Payment Method") 
       },
       { 
@@ -121,14 +191,13 @@ export default function CollectDeliveryCash() {
         header: t("status", "Status"),
         cell: ({ row }) => {
             const status = row.getValue("status");
-            // Translate common statuses
             if (status === "delivered") return <span className="text-emerald-600 font-medium">{t("statusDelivered", "Delivered")}</span>;
             if (status === "pending") return <span className="text-amber-600 font-medium">{t("statusPending", "Pending")}</span>;
-            return status; // Return raw status if no translation match
+            return status;
         }
       }
     ],
-    [t]
+    [t, orders, selectedOrderIds] // إضافة Dependencies المهمة
   );
 
   return (
@@ -169,11 +238,11 @@ export default function CollectDeliveryCash() {
             />
             <Button 
               onClick={handleCollect} 
-              disabled={isCollecting || !orders.length}
+              disabled={isCollecting || selectedOrderIds.length === 0} // تعطيل الزر لو مفيش أوردرات متحددة
               className="bg-emerald-600 hover:bg-emerald-700 text-white shrink-0 shadow-sm transition-all"
             >
               <CheckCircle className="w-4 h-4 mr-2" />
-              {t("collectCashButton", "Collect Cash")}
+              {t("collectCashButton", "Collect Cash")} ({selectedOrderIds.length})
             </Button>
           </div>
         )}

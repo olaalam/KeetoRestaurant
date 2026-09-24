@@ -23,8 +23,12 @@ export default function Discount() {
         }
     });
 
-    const openFoodDialog = (foods) => {
-        setSelectedFoods(foods || []);
+    // استخراج كافة الأصناف من داخل الـ groups وعرضها
+    const openFoodDialog = (groups = [], directFoods = []) => {
+        const foodsFromGroups = groups.flatMap((group) => group.foods || []);
+        const foodsToShow = foodsFromGroups.length > 0 ? foodsFromGroups : directFoods;
+
+        setSelectedFoods(foodsToShow);
         setIsDialogOpen(true);
     };
 
@@ -43,7 +47,9 @@ export default function Discount() {
             accessorKey: 'logo',
             header: 'Logo',
             cell: ({ row }) => (
-                <img src={row.original.logo} alt={row.original.name} className="w-10 h-10 object-cover rounded-md" />
+                row.original.logo ? (
+                    <img src={row.original.logo} alt={row.original.name} className="w-10 h-10 object-cover rounded-md" />
+                ) : '-'
             )
         },
         { accessorKey: 'nameAr', header: 'Name (Ar)' },
@@ -51,25 +57,34 @@ export default function Discount() {
         {
             accessorKey: 'foods', 
             header: 'Foods', 
-            cell: ({ row }) => (
-                <button
-                    onClick={() => openFoodDialog(row.original.foods)} 
-                    className="flex items-center gap-1 px-3 py-1 bg-orange-100 text-orange-600 rounded-md hover:bg-orange-200 transition-colors"
-                >
-                    <Eye size={16} />
-                    {t('viewFood')}
-                </button>
-            )
+            cell: ({ row }) => {
+                const groups = row.original.groups || [];
+                const directFoods = row.original.foods || [];
+                // حساب مجموع أصناف المأكولات الموجودة في كافة المجموعات
+                const totalFoodsCount = groups.reduce((acc, g) => acc + (g.foods?.length || 0), 0) || directFoods.length;
+
+                return (
+                    <button
+                        onClick={() => openFoodDialog(groups, directFoods)} 
+                        className="flex items-center gap-1 px-3 py-1 bg-orange-100 text-orange-600 rounded-md hover:bg-orange-200 transition-colors text-xs font-semibold"
+                    >
+                        <Eye size={16} />
+                        {t('viewFood')} ({totalFoodsCount})
+                    </button>
+                );
+            }
         },
-        { accessorKey: 'discountType', header: 'Type' },
-        { accessorKey: 'discountValue', header: 'Value' },
-        { accessorKey: 'maxDiscount', header: 'Max Discount' },
         { accessorKey: 'minOrderAmount', header: 'Min Order' },
         { accessorKey: 'usageLimit', header: 'Limit' },
         { accessorKey: 'endDate', header: 'End Date', cell: (info) => formatDate(info.getValue()) },
         { 
             accessorKey: 'isActive', 
             header: 'Status',
+            cell: ({ row }) => (
+                <span className={`px-2 py-1 text-xs font-semibold rounded-full ${row.original.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                    {row.original.isActive ? 'Active' : 'Inactive'}
+                </span>
+            )
         }
     ];
 

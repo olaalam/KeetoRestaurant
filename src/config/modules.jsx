@@ -144,7 +144,7 @@ export const getModules = (t, orderCounts = {}) => {
 
       ],
     },
-        {
+    {
       name: t("DeliveryAccounts"),
       key: "deliveryAccounts",
       items: [
@@ -161,7 +161,8 @@ export const getModules = (t, orderCounts = {}) => {
       items: [
         { title: t("myKeeto"), url: "/mykeeto", icon: KeetoIcon, permissionKey: "report" },
         { title: t("invoice"), url: "/invoice", icon: KeetoIcon, permissionKey: "report" },
-        { title: t("paymentMethods"), url: "/payment-method-report", icon: KeetoIcon, permissionKey: "report" },
+        { title: t("paymentMethods"), url: "/payment-method-report", icon: KeetoIcon, permissionKey: "report" }, 
+        { title: t("visa-repo"), url: "/visa-repo", icon: KeetoIcon, permissionKey: "report" },
       ],
     },
 

@@ -3,24 +3,24 @@ import { useQuery } from '@tanstack/react-query';
 import api from '@/api/axios';
 import GenericDataTable from '@/components/GenericDataTable';
 import { useNavigate } from 'react-router-dom';
-import { useTranslation } from "@/hooks/useTranslation"; // استيراد هوك الترجمة
+import { useTranslation } from "@/hooks/useTranslation";
 
 export default function Image() {
     const navigate = useNavigate();
-    const { t } = useTranslation(); // تفعيل الهوك
+    const { t } = useTranslation();
 
     const { data: image = [], isLoading } = useQuery({
         queryKey: ['image'],
         queryFn: async () => {
-            const res = await api.get('/api/restaurant/image');
-            return res.data.data.data; 
+            const res = await api.get('/api/restaurant/image/select-branch');
+            return res.data?.data?.data || res.data?.data || []; 
         }
     });
 
     const columns = [
         {
             accessorKey: "img", 
-            header: t("image"),
+            header: t("image") || "الصورة",
             cell: ({ row }) => {
                 const imageStr = row.getValue("img");
                 return (
@@ -33,7 +33,7 @@ export default function Image() {
                             />
                         ) : (
                             <div className="flex items-center justify-center h-full text-[10px] text-gray-400">
-                                {t("noImage")}
+                                {t("noImage") || "لا توجد صورة"}
                             </div>
                         )}
                     </div>
@@ -42,22 +42,27 @@ export default function Image() {
         },
         {
             accessorKey: "periorty",
-            header: t("priority"),
+            header: t("priority") || "الأولوية",
         },
+        {
+            accessorKey: "branchName",
+            header: t("branch") || "الفرع",
+            cell: ({ row }) => row.original.branch?.name || row.original.branchName || row.original.branchId || "-"
+        }
     ];
 
     return (
         <div className="container mx-auto py-10">
             <GenericDataTable
-                title={t("restaurantImages")}
+                title={t("restaurantImages") || "صور المطعم"}
                 columns={columns}
                 data={image}
                 isLoading={isLoading}
                 queryKey="image"
-                editApiUrl="/api/restaurant/image"
-                deleteApiUrl="/api/restaurant/image"
+                editApiUrl="/api/restaurant/image/select-branch"
+                deleteApiUrl="/api/restaurant/image/select-branch"
                 onAdd={() => navigate("/image/add")}
-                onEdit={(image) => navigate(`/image/edit/${image.id}`)}
+                onEdit={(image) => navigate(`/image/edit/${image.id}`, { state: { imageData: image } })}
             />
         </div>
     );

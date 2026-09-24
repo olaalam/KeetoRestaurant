@@ -52,15 +52,14 @@ export default function AssignDeliveryMan() {
     }
   }, [userBranchId]);
 
-  // Selection & Filter states
+  // Selection states
   const [selectedDeliveryManId, setSelectedDeliveryManId] = useState("");
   const [selectedOrderIds, setSelectedOrderIds] = useState([]);
-  const [orderStatusFilter, setOrderStatusFilter] = useState("all"); 
   const [note, setNote] = useState("");
 
   // Set default note translated when component mounts or language changes
   useEffect(() => {
-    setNote(t("defaultCollectionNote"));
+    setNote(t("defaultAssignNote") || "يرجى توصيل الطلبات في أسرع وقت");
   }, [t]);
 
   // 2. Fetch active delivery drivers
@@ -99,38 +98,14 @@ export default function AssignDeliveryMan() {
     });
   }, [pendingOrdersRes]);
 
-  // 4. Fetch selected delivery driver's orders
-  const deliveryOrdersQueryParams = useMemo(() => {
-    const params = { deliveryManId: selectedDeliveryManId };
-    if (orderStatusFilter !== "all") {
-      params.status = orderStatusFilter;
-    }
-    return params;
-  }, [selectedDeliveryManId, orderStatusFilter]);
-
-  const { data: deliveryOrdersRes, isFetching: isFetchingDeliveryOrders } = useGet(
-    ["deliveryOrders", selectedDeliveryManId, orderStatusFilter],
-    "/api/restaurant/delivery-men/delivery-orders",
-    deliveryOrdersQueryParams,
-    { enabled: !!selectedDeliveryManId }
-  );
-
-  // Extract driver orders & summary
-  const { currentManOrders, summaryData } = useMemo(() => {
-    const responseData = deliveryOrdersRes?.data?.data || deliveryOrdersRes?.data || deliveryOrdersRes || {};
-    const orders = Array.isArray(responseData.orders) ? responseData.orders : [];
-    const summary = responseData.summary || null;
-    return { currentManOrders: orders, summaryData: summary };
-  }, [deliveryOrdersRes]);
-
-  // Mutation for collecting cash
-  const collectCashMutation = usePost(
-    "/api/restaurant/delivery-men/collect-cash",
+  // Mutation for assigning orders
+  const assignOrdersMutation = usePost(
+    "/api/restaurant/delivery-men/assign-orders",
     "post",
-    "assignedOrders"
+    "pendingOrders" // Revalidate pending orders after success
   );
 
-  // Toggle order selection
+  // Toggle order selection from pending orders
   const toggleOrderSelection = (orderId) => {
     setSelectedOrderIds((prev) =>
       prev.includes(orderId)
@@ -139,30 +114,30 @@ export default function AssignDeliveryMan() {
     );
   };
 
-  // Toggle select all orders
+  // Toggle select all pending orders
   const toggleSelectAllOrders = () => {
-    if (selectedOrderIds.length === currentManOrders.length) {
+    if (selectedOrderIds.length === pendingOrders.length) {
       setSelectedOrderIds([]);
     } else {
-      setSelectedOrderIds(currentManOrders.map((o) => o.id));
+      setSelectedOrderIds(pendingOrders.map((o) => o.id));
     }
   };
 
-  // Calculate total cash of selected orders
-  const totalCash = useMemo(() => {
-    return currentManOrders
+  // Calculate total cash of selected pending orders
+  const totalSelectedCash = useMemo(() => {
+    return pendingOrders
       .filter((o) => selectedOrderIds.includes(o.id))
       .reduce((sum, o) => sum + (Number(o.totalAmount || o.amount) || 0), 0);
-  }, [currentManOrders, selectedOrderIds]);
+  }, [pendingOrders, selectedOrderIds]);
 
-  // Submit cash collection
-  const handleCollectCashSubmit = () => {
+  // Submit assignment
+  const handleAssignSubmit = () => {
     if (!selectedDeliveryManId) {
-      toast.error(t("selectDeliveryManFirst"));
+      toast.error(t("selectDeliveryManFirst") || "الرجاء اختيار مندوب التوصيل أولاً");
       return;
     }
     if (selectedOrderIds.length === 0) {
-      toast.error(t("selectOrdersFirst"));
+      toast.error(t("selectOrdersFirst") || "الرجاء تحديد الطلبات أولاً");
       return;
     }
 
@@ -172,9 +147,10 @@ export default function AssignDeliveryMan() {
       note: note,
     };
 
-    collectCashMutation.mutate(payload, {
+    assignOrdersMutation.mutate(payload, {
       onSuccess: () => {
         setSelectedOrderIds([]);
+        toast.success(t("ordersAssignedSuccessfully") || "تم تعيين الطلبات للمندوب بنجاح");
       },
     });
   };
@@ -211,7 +187,8 @@ export default function AssignDeliveryMan() {
               {t("deliveryManagement")}
             </h1>
             <p className="text-xs text-gray-400 font-medium">
-              {t("deliveryManagementSub")}
+              {t("assignOrdersToDeliveryMan")}
+              
             </p>
           </div>
         </div>
@@ -261,10 +238,7 @@ export default function AssignDeliveryMan() {
                   <button
                     key={manId}
                     type="button"
-                    onClick={() => {
-                      setSelectedDeliveryManId(manId);
-                      setSelectedOrderIds([]);
-                    }}
+                    onClick={() => setSelectedDeliveryManId(manId)}
                     className={`w-full p-3.5 rounded-2xl border text-start transition-all flex items-center justify-between ${
                       isSelected
                         ? "border-primary bg-primary/5 ring-2 ring-primary/20 shadow-sm"
@@ -303,18 +277,34 @@ export default function AssignDeliveryMan() {
           </CardContent>
         </Card>
 
-        {/* ==================== Section 2: Pending Orders ==================== */}
+        {/* ==================== Section 2: Pending Orders (Selectable) ==================== */}
         <Card className="rounded-3xl border border-gray-100 shadow-sm overflow-hidden flex flex-col h-[540px]">
-          <div className="bg-gray-50/80 border-b border-gray-100 p-4 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Package className="w-5 h-5 text-primary" />
-              <h2 className="font-bold text-gray-800 text-sm">
-                {t("pendingOrdersTitle")}
-              </h2>
+          <div className="bg-gray-50/80 border-b border-gray-100 p-4 flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Package className="w-5 h-5 text-primary" />
+                <h2 className="font-bold text-gray-800 text-sm">
+                  {t("pendingOrdersTitle")}
+                </h2>
+              </div>
+              <Badge className="bg-blue-50 text-blue-700 border border-blue-200 text-xs font-semibold">
+                {pendingOrders.length} {t("orders")}
+              </Badge>
             </div>
-            <Badge className="bg-blue-50 text-blue-700 border border-blue-200 text-xs font-semibold">
-              {pendingOrders.length} {t("orders")}
-            </Badge>
+            {/* Select All Button */}
+            {pendingOrders.length > 0 && (
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={toggleSelectAllOrders}
+                  className="text-xs font-bold text-primary hover:underline"
+                >
+                  {selectedOrderIds.length === pendingOrders.length
+                    ? t("deselectAll") || "إلغاء التحديد"
+                    : t("selectAll") || "تحديد الكل"}
+                </button>
+              </div>
+            )}
           </div>
 
           <CardContent className="p-4 flex-1 overflow-y-auto space-y-3">
@@ -332,24 +322,37 @@ export default function AssignDeliveryMan() {
               </div>
             ) : (
               pendingOrders.map((order) => {
-                const orderNum = order.orderNumber || order.code || order.id;
+                const orderNum = order.dailyOrderNumber || order.code || order.id;
                 const total = order.totalAmount || order.amount || 0;
-                const subtotal = order.subtotal || 0;
-                const deliveryFee = order.deliveryFee || 0;
                 const formattedAddress = parseAddress(order.shippingAddress || order.address, t("noAddress"));
                 const customerName = order.customerName || t("customer");
                 const customerPhone = order.customerPhone || "-";
+                
+                const isChecked = selectedOrderIds.includes(order.id);
 
                 return (
                   <div
                     key={order.id || orderNum}
-                    className="p-3.5 bg-gray-50/60 rounded-2xl border border-gray-100 space-y-2.5 hover:bg-white hover:shadow-sm transition-all"
+                    onClick={() => toggleOrderSelection(order.id)}
+                    className={`p-3.5 rounded-2xl border cursor-pointer transition-all space-y-2.5 ${
+                      isChecked
+                        ? "border-primary bg-primary/5 shadow-sm ring-1 ring-primary/20"
+                        : "border-gray-100 bg-gray-50/60 hover:bg-white hover:border-gray-200"
+                    }`}
                   >
-                    {/* Order Number & Status */}
+                    {/* Order Number & Status with Checkbox */}
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-black text-gray-900 dir-ltr">
-                        #{orderNum}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          readOnly
+                          className="w-4 h-4 rounded text-primary focus:ring-primary accent-primary cursor-pointer"
+                        />
+                        <span className="text-xs font-black text-gray-900 dir-ltr">
+                          #{orderNum}
+                        </span>
+                      </div>
                       {renderStatusBadge(order.status)}
                     </div>
 
@@ -365,18 +368,13 @@ export default function AssignDeliveryMan() {
                       </div>
                     </div>
 
-                    {/* Shipping Address */}
-                    <div className="flex items-center gap-1.5 text-xs text-gray-500">
-                      <MapPin className="w-3.5 h-3.5 text-primary shrink-0" />
-                      <span className="truncate">{formattedAddress}</span>
-                    </div>
-
-                    {/* Amounts Breakdown */}
+                    {/* Address & Total */}
                     <div className="flex items-center justify-between text-[11px] bg-white p-2 rounded-xl border border-gray-100/80 mt-1">
-                      <div className="text-gray-500 font-medium">
-                        {t("subtotal")}: <span className="font-bold text-gray-800">{subtotal}</span> | {t("deliveryFee")}: <span className="font-bold text-gray-800">{deliveryFee}</span>
+                      <div className="flex items-center gap-1.5 text-xs text-gray-500 truncate">
+                        <MapPin className="w-3.5 h-3.5 text-primary shrink-0" />
+                        <span className="truncate">{formattedAddress}</span>
                       </div>
-                      <div className="text-emerald-600 font-black text-xs">
+                      <div className="text-emerald-600 font-black text-xs shrink-0">
                         {total} {t("currencyEGP")}
                       </div>
                     </div>
@@ -387,132 +385,58 @@ export default function AssignDeliveryMan() {
           </CardContent>
         </Card>
 
-        {/* ==================== Section 3: Selected Driver Orders ==================== */}
+        {/* ==================== Section 3: Summary (ملخص التعيين) ==================== */}
         <Card className="rounded-3xl border border-gray-100 shadow-sm overflow-hidden flex flex-col h-[540px]">
-          <div className="bg-gray-50/80 border-b border-gray-100 p-4 flex flex-col gap-3">
+          <div className="bg-primary/10 border-b border-primary/10 p-4 flex flex-col gap-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 min-w-0">
                 <Truck className="w-5 h-5 text-primary shrink-0" />
-                <h2 className="font-bold text-gray-800 text-sm truncate">
+                <h2 className="font-bold text-primary text-sm truncate">
                   {selectedDeliveryMan
-                    ? `${selectedDeliveryMan.name}`
-                    : t("deliveryOrders")}
+                    ? selectedDeliveryMan.name
+                    : " " + (t("noDeliveryManSelected"))}
                 </h2>
               </div>
-              {currentManOrders.length > 0 && (
-                <button
-                  type="button"
-                  onClick={toggleSelectAllOrders}
-                  className="text-xs font-bold text-primary hover:underline shrink-0"
-                >
-                  {selectedOrderIds.length === currentManOrders.length
-                    ? t("deselectAll")
-                    : t("selectAll")}
-                </button>
-              )}
-            </div>
-
-            {/* Status Filter */}
-            <div className="flex gap-1 bg-gray-200/50 p-1 rounded-xl text-[11px] font-bold">
-              {[
-                { key: "all", label: t("filterAll") },
-                { key: "out_for_delivery", label: t("filterOutForDelivery") },
-                { key: "delivered", label: t("filterDelivered") }
-              ].map((item) => (
-                <button
-                  key={item.key}
-                  type="button"
-                  onClick={() => {
-                    setOrderStatusFilter(item.key);
-                    setSelectedOrderIds([]);
-                  }}
-                  className={`flex-1 py-1.5 rounded-lg transition-all ${
-                    orderStatusFilter === item.key
-                      ? "bg-white text-primary shadow-sm font-black"
-                      : "text-gray-500 hover:text-gray-800"
-                  }`}
-                >
-                  {item.label}
-                </button>
-              ))}
+              <Badge className="bg-white text-primary border border-primary/20 text-xs font-semibold shadow-sm">
+                {selectedOrderIds.length} {t("orders")}
+              </Badge>
             </div>
           </div>
 
-          <CardContent className="p-4 flex-1 overflow-y-auto space-y-3">
+          <CardContent className="p-4 flex-1 overflow-y-auto space-y-3 bg-gray-50/30">
             {!selectedDeliveryManId ? (
               <div className="flex flex-col items-center justify-center h-full gap-2 text-gray-400 text-center p-4">
                 <User className="w-8 h-8 text-gray-300" />
                 <p className="text-xs font-semibold">
-                  {t("selectDeliveryManToView")}
+                  {t("selectDeliveryManFirst") }
                 </p>
               </div>
-            ) : isFetchingDeliveryOrders ? (
-              <div className="flex flex-col items-center justify-center h-full gap-2 text-gray-400">
-                <Loader2 className="w-6 h-6 animate-spin text-primary" />
-                <span className="text-xs">{t("loading")}</span>
-              </div>
-            ) : currentManOrders.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full gap-2 text-gray-400">
+            ) : selectedOrderIds.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-full gap-2 text-gray-400 text-center p-4">
                 <Package className="w-8 h-8 text-gray-300" />
                 <p className="text-xs font-semibold">
-                  {t("noOrdersForStatus")}
+                  {t("noOrdersToCollect") }
                 </p>
               </div>
             ) : (
-              currentManOrders.map((order) => {
-                const isChecked = selectedOrderIds.includes(order.id);
-                const formattedAddress = parseAddress(order.shippingAddress || order.address, t("noAddress"));
-
-                return (
-                  <div
-                    key={order.id}
-                    onClick={() => toggleOrderSelection(order.id)}
-                    className={`p-3.5 rounded-2xl border cursor-pointer transition-all space-y-2.5 ${
-                      isChecked
-                        ? "border-primary bg-primary/5 shadow-sm"
-                        : "border-gray-100 bg-white hover:bg-gray-50"
-                    }`}
-                  >
-                    {/* Header */}
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          checked={isChecked}
-                          onChange={() => {}}
-                          className="w-4 h-4 rounded text-primary focus:ring-primary accent-primary cursor-pointer"
-                        />
-                        <span className="text-xs font-black text-gray-900 dir-ltr">
-                          {order.orderNumber}
+              pendingOrders
+                .filter((order) => selectedOrderIds.includes(order.id))
+                .map((order) => {
+                  const orderNum = order.dailyOrderNumber || order.code || order.id;
+                  return (
+                    <div key={order.id} className="p-3 bg-white rounded-xl border border-gray-200 flex items-center justify-between shadow-sm">
+                      <div className="flex flex-col gap-1">
+                        <span className="text-xs font-black text-gray-900 dir-ltr">#{orderNum}</span>
+                        <span className="text-[10px] text-gray-500 font-bold truncate max-w-[120px]">
+                          {order.customerName || t("customer")}
                         </span>
                       </div>
-                      {renderStatusBadge(order.status)}
-                    </div>
-
-                    {/* Customer & Total */}
-                    <div className="flex items-center justify-between text-xs pt-1 border-t border-gray-100/60">
-                      <div className="flex items-center gap-1.5 text-gray-700 font-bold truncate max-w-[170px]">
-                        <User className="w-3.5 h-3.5 text-gray-400 shrink-0" />
-                        <span className="truncate">{order.customerName || t("customer")}</span>
+                      <div className="text-emerald-600 font-black text-xs bg-emerald-50 px-2 py-1 rounded-md border border-emerald-100">
+                        {order.totalAmount || order.amount} {t("currencyEGP")}
                       </div>
-                      <span className="font-black text-emerald-600 shrink-0">
-                        {order.totalAmount} {t("currencyEGP")}
-                      </span>
                     </div>
-
-                    {/* Address & Payment Method */}
-                    <div className="flex items-center justify-between text-[11px] text-gray-400">
-                      <div className="flex items-center gap-1 truncate max-w-[180px]">
-                        <MapPin className="w-3 h-3 text-gray-400 shrink-0" />
-                        <span className="truncate">{formattedAddress}</span>
-                      </div>
-                      <span className="bg-gray-100 px-2 py-0.5 rounded text-gray-600 font-medium shrink-0">
-                        {order.paymentMethodDisplay?.nameAr || order.paymentMethodNameAr || t("unknownPayment")}
-                      </span>
-                    </div>
-                  </div>
-                );
-              })
+                  );
+                })
             )}
           </CardContent>
         </Card>
@@ -523,13 +447,13 @@ export default function AssignDeliveryMan() {
       <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm space-y-2">
         <label className="text-xs font-bold text-gray-700 flex items-center gap-2">
           <FileText className="w-4 h-4 text-primary" />
-          {t("noteTitle")}
+          {t("noteTitle") || "ملاحظات للمندوب"}
         </label>
         <Input
           type="text"
           value={note}
           onChange={(e) => setNote(e.target.value)}
-          placeholder={t("enterNotePlaceholder")}
+          placeholder={t("enterNotePlaceholder") || "اكتب ملاحظاتك هنا..."}
           className="h-11 rounded-xl bg-gray-50 border-gray-200 text-sm"
         />
       </div>
@@ -544,32 +468,28 @@ export default function AssignDeliveryMan() {
           </div>
           <div>
             <p className="text-xs text-gray-400 font-semibold mb-1">
-              {t("totalOrdersSelected")}
+              {t("totalOrdersSelected") || "الطلبات المحددة"}
             </p>
             <h3 className="text-2xl font-black text-gray-900">
               {selectedOrderIds.length}{" "}
               <span className="text-xs font-medium text-gray-400">
-                / {currentManOrders.length}
+                / {pendingOrders.length}
               </span>
             </h3>
           </div>
         </Card>
 
-        {/* Selected Total Cash / Remaining Cash */}
+        {/* Selected Total Cash */}
         <Card className="rounded-3xl border border-gray-100 shadow-sm bg-gradient-to-br from-emerald-50/50 to-white p-6 flex items-center gap-4">
           <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0">
             <Wallet className="w-7 h-7" />
           </div>
           <div>
             <p className="text-xs text-gray-400 font-semibold mb-1">
-              {selectedOrderIds.length > 0 
-                ? t("totalCashSelected")
-                : t("remainingCashWithDriver")}
+              {t("totalCashSelected") || "إجمالي المبالغ للطلبات"}
             </p>
             <h3 className="text-2xl font-black text-emerald-600">
-              {selectedOrderIds.length > 0 
-                ? `${totalCash} ${t("currencyEGP")}` 
-                : summaryData ? `${summaryData.cashWithDeliveryMan} ${t("currencyEGP")}` : `0 ${t("currencyEGP")}`}
+              {totalSelectedCash} {t("currencyEGP")}
             </h3>
           </div>
         </Card>
@@ -577,20 +497,20 @@ export default function AssignDeliveryMan() {
         {/* Submit Action Button */}
         <Card className="rounded-3xl border border-gray-100 shadow-sm bg-gradient-to-br from-primary/5 to-white p-4 flex items-center justify-center">
           <Button
-            onClick={handleCollectCashSubmit}
+            onClick={handleAssignSubmit}
             disabled={
-              collectCashMutation.isPending ||
+              assignOrdersMutation.isPending ||
               !selectedDeliveryManId ||
               selectedOrderIds.length === 0
             }
             className="w-full h-16 rounded-2xl bg-primary hover:bg-primary/90 text-white font-bold text-base shadow-lg shadow-primary/25 flex items-center justify-center gap-3 transition-all disabled:opacity-50"
           >
-            {collectCashMutation.isPending ? (
+            {assignOrdersMutation.isPending ? (
               <Loader2 className="w-6 h-6 animate-spin" />
             ) : (
               <>
                 <Send className="w-5 h-5 dir-rtl:rotate-180" />
-                <span>{t("collectSelectedCash")}</span>
+                <span>{t("assignOrders")}</span>
               </>
             )}
           </Button>
