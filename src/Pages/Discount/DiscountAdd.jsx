@@ -143,8 +143,8 @@ useEffect(() => {
             }
 
             // فحص تفاصيل المنتجات بناءً على هيكل الـ Response
-            const existingDetails = initialData.foodGroups || initialData.discountDetails;
-            
+// فحص تفاصيل المنتجات بناءً على هيكل الـ Response
+const existingDetails = initialData.groups || initialData.foodGroups || initialData.discountDetails;            
             if (existingDetails && existingDetails.length > 0) {
                 const formattedDetails = existingDetails.map(d => ({
                     ...d,
@@ -210,7 +210,7 @@ const mutation = useMutation({
                 startDate: basicData.startDate ? new Date(basicData.startDate).toISOString() : null,
                 endDate: basicData.endDate ? new Date(basicData.endDate).toISOString() : null,
                 isActive: basicData.isActive,
-                logo: null,
+                logo: basicData.logo ? imagePreview : null,
                 foodGroups: variableData.map(group => {
                     const groupData = {
                         discountType: group.discountType,
