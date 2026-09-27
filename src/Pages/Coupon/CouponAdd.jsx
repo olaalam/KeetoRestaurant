@@ -22,13 +22,13 @@ const CouponAdd = () => {
 
     const initialData = state?.CouponData || CouponData;
 
-    // حالة لتتبع نوع الخصم الحالي
-    const [discountType, setDiscountType] = useState('percentage');
+    // حالة لتتبع نوع استخدام المستخدم (fixed أو unlimited)
+    const [userUsageType, setUserUsageType] = useState('fixed');
 
-    // تعيين القيمة عند جلب بيانات التعديل
+    // تعيين القيم عند جلب بيانات التعديل
     useEffect(() => {
-        if (initialData?.discountType) {
-            setDiscountType(initialData.discountType);
+        if (initialData?.userUsageType) {
+            setUserUsageType(initialData.userUsageType);
         }
     }, [initialData]);
 
@@ -45,27 +45,49 @@ const CouponAdd = () => {
             options: [
                 { value: 'percentage', label: t('percentage') },
                 { value: 'fixed_amount', label: t('fixedAmount') }
-            ],
-            onChange: (e) => {
-                const value = e?.target ? e.target.value : e;
-                setDiscountType(value);
-            }
+            ]
         },
         { name: 'discountValue', label: t('discountValue'), type: 'number', required: true },
         { name: 'maxDiscount', label: t('maxDiscount') || 'Max Discount', type: 'number', required: false },
         { name: 'minOrderAmount', label: t('minOrderAmount') || 'Min Order Amount', type: 'number', required: false },
         { name: 'usageLimit', label: t('usageLimit') || 'Usage Limit', type: 'number', required: false },
 
-        // إظهار حقل perUserLimit فقط إذا كان نوع الخصم fixed_amount
-        ...(discountType === 'fixed_amount' ? [
+        // نوع استخدام الكوبون للمستخدم
+        {
+            name: 'userUsageType',
+            label: t('userUsageType') || 'User Usage Type',
+            required: true,
+            type: 'select',
+            options: [
+                { value: 'fixed', label: t('fixed') || 'Fixed' },
+                { value: 'unlimited', label: t('unlimited') || 'Unlimited' }
+            ],
+            onChange: (e) => {
+                const value = e?.target ? e.target.value : e;
+                setUserUsageType(value);
+            }
+        },
+
+        // إظهار حقل perUserLimit فقط إذا كان userUsageType هو fixed
+        ...(userUsageType === 'fixed' ? [
             {
                 name: 'perUserLimit',
                 label: t('perUserLimit') || 'Per User Limit',
                 type: 'number',
                 required: false,
-                defaultValue: 5
+                defaultValue: 3
             }
         ] : []),
+
+
+        // تفعيل أو تعطيل الكوبون باستخدام Switch
+        {
+            name: 'isActive',
+            label: t('isActive') || 'Is Active',
+            type: 'switch', // تم تغيير النوع إلى switch
+            required: false,
+            defaultValue: true
+        },
 
         { name: 'startDate', label: t('startDate'), type: 'date', required: true },
         { name: 'endDate', label: t('endDate'), type: 'date', required: true },
@@ -81,12 +103,31 @@ const CouponAdd = () => {
             fields={CouponFields}
             initialData={initialData}
             transformData={(data) => {
-                // إذا كان fixed_amount نرسل الحقل، وإذا لم يكن نقوم بحذفه من البيانات المرسلة
-                if (data.discountType === 'fixed_amount') {
-                    return { ...data, perUserLimit: data.perUserLimit || 5 };
+                let formattedData = { ...data };
+
+                // معالجة المطاعم بناءً على الإدخال في الحقل
+                // إذا أدخل المستخدم قيم، نعتبره specific ونرسل restaurantIds كمصفوفة
+                // إذا تركه فارغاً، نعتبره global ونحذف restaurantIds ونرسل restaurantId: []
+                if (formattedData.restaurantIds && formattedData.restaurantIds.trim() !== '') {
+                     if (typeof formattedData.restaurantIds === 'string') {
+                         formattedData.restaurantIds = formattedData.restaurantIds.split(',').map(id => id.trim());
+                     }
+                } else {
+                     formattedData.restaurantId = [];
+                     delete formattedData.restaurantIds;
                 }
-                const { perUserLimit, ...rest } = data;
-                return rest;
+
+                // معالجة حد الاستخدام للمستخدم
+                if (formattedData.userUsageType === 'fixed') {
+                    formattedData.perUserLimit = Number(formattedData.perUserLimit) || 2; // Default limit
+                } else {
+                    delete formattedData.perUserLimit;
+                }
+
+                // التأكد من أن isActive يتم إرسالها كـ Boolean
+                formattedData.isActive = !!formattedData.isActive;
+
+                return formattedData;
             }}
             onSuccessAction={() => {
                 window.history.back();
