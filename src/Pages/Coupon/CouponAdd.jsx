@@ -24,11 +24,26 @@ const CouponAdd = () => {
 
     // حالة لتتبع نوع استخدام المستخدم (fixed أو unlimited)
     const [userUsageType, setUserUsageType] = useState('fixed');
+    
+    // حالة لتتبع نوع حد الاستخدام العام للكوبون
+    const [usageLimitType, setUsageLimitType] = useState('fixed');
 
     // تعيين القيم عند جلب بيانات التعديل
     useEffect(() => {
-        if (initialData?.userUsageType) {
-            setUserUsageType(initialData.userUsageType);
+        if (initialData) {
+            if (initialData.userUsageType) {
+                setUserUsageType(initialData.userUsageType);
+            }
+            
+            // تعيين حالة usageLimitType عند التعديل
+            if (initialData.usageLimitType) {
+                setUsageLimitType(initialData.usageLimitType);
+            } else if (initialData.usageLimit === null || initialData.usageLimit === undefined) {
+                // إذا لم يكن هناك حد استخدام مخزن، نعتبره غير محدود
+                setUsageLimitType('unlimited');
+            } else {
+                setUsageLimitType('fixed');
+            }
         }
     }, [initialData]);
 
@@ -50,7 +65,27 @@ const CouponAdd = () => {
         { name: 'discountValue', label: t('discountValue'), type: 'number', required: true },
         { name: 'maxDiscount', label: t('maxDiscount') || 'Max Discount', type: 'number', required: false },
         { name: 'minOrderAmount', label: t('minOrderAmount') || 'Min Order Amount', type: 'number', required: false },
-        { name: 'usageLimit', label: t('usageLimit') || 'Usage Limit', type: 'number', required: false },
+        
+        // حقل نوع حد الاستخدام العام (الجديد)
+        {
+            name: 'usageLimitType',
+            label: t('usageLimitType') || 'Usage Limit Type',
+            required: true,
+            type: 'select',
+            options: [
+                { value: 'fixed', label: t('fixed') || 'Fixed' },
+                { value: 'unlimited', label: t('unlimited') || 'Unlimited' }
+            ],
+            onChange: (e) => {
+                const value = e?.target ? e.target.value : e;
+                setUsageLimitType(value);
+            }
+        },
+
+        // إظهار حقل usageLimit فقط إذا كان usageLimitType هو fixed
+        ...(usageLimitType === 'fixed' ? [
+            { name: 'usageLimit', label: t('usageLimit') || 'Usage Limit', type: 'number', required: false }
+        ] : []),
 
         // نوع استخدام الكوبون للمستخدم
         {
@@ -79,12 +114,11 @@ const CouponAdd = () => {
             }
         ] : []),
 
-
         // تفعيل أو تعطيل الكوبون باستخدام Switch
         {
             name: 'isActive',
             label: t('isActive') || 'Is Active',
-            type: 'switch', // تم تغيير النوع إلى switch
+            type: 'switch', 
             required: false,
             defaultValue: true
         },
@@ -105,9 +139,7 @@ const CouponAdd = () => {
             transformData={(data) => {
                 let formattedData = { ...data };
 
-                // معالجة المطاعم بناءً على الإدخال في الحقل
-                // إذا أدخل المستخدم قيم، نعتبره specific ونرسل restaurantIds كمصفوفة
-                // إذا تركه فارغاً، نعتبره global ونحذف restaurantIds ونرسل restaurantId: []
+                // معالجة المطاعم
                 if (formattedData.restaurantIds && formattedData.restaurantIds.trim() !== '') {
                      if (typeof formattedData.restaurantIds === 'string') {
                          formattedData.restaurantIds = formattedData.restaurantIds.split(',').map(id => id.trim());
@@ -117,9 +149,16 @@ const CouponAdd = () => {
                      delete formattedData.restaurantIds;
                 }
 
+                // معالجة حد الاستخدام العام للكوبون
+                if (formattedData.usageLimitType === 'unlimited') {
+                    delete formattedData.usageLimit;
+                } else {
+                    formattedData.usageLimit = Number(formattedData.usageLimit) || null;
+                }
+
                 // معالجة حد الاستخدام للمستخدم
                 if (formattedData.userUsageType === 'fixed') {
-                    formattedData.perUserLimit = Number(formattedData.perUserLimit) || 2; // Default limit
+                    formattedData.perUserLimit = Number(formattedData.perUserLimit) || 2; 
                 } else {
                     delete formattedData.perUserLimit;
                 }

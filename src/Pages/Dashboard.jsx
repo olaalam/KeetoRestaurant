@@ -18,6 +18,7 @@ import {
 import { DollarSign, ShoppingCart, TrendingUp, Star, Filter, Calendar } from 'lucide-react';
 import { useGet } from '@/hooks/useGet';
 import { useTranslation } from '@/hooks/useTranslation';
+import WalletCard from './Wallet/WalletCard';
 
 // ألوان مطابقة لتصميم Figma
 const BRAND_YELLOW = '#F5A623';
@@ -152,32 +153,40 @@ const filteredGeoData = geographicMap
                 </div>
             </div>
 
-            {/* البطاقات العلوية (3 بطاقات كما في التصميم) */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-start gap-4">
-                    <div className="p-3 bg-yellow-50 rounded-xl text-yellow-500"><DollarSign size={24} /></div>
-                    <div>
-                        <p className="text-sm text-gray-500 font-medium mb-1">{t("Total Revenue")}</p>
-                        <h3 className="text-3xl font-bold text-gray-900">{parseFloat(cards.totalRevenue || 0).toLocaleString()} EGP</h3>
-                    </div>
-                </div>
+{/* البطاقات العلوية */}
+<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    
+    {/* كارت محفظة المطعم الجديد */}
+    <WalletCard />
 
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-start gap-4">
-                    <div className="p-3 bg-gray-100 rounded-xl text-gray-600"><ShoppingCart size={24} /></div>
-                    <div>
-                        <p className="text-sm text-gray-500 font-medium mb-1">{t("Total Orders")}</p>
-                        <h3 className="text-3xl font-bold text-gray-900">{cards.numberOfOrders || 0}</h3>
-                    </div>
-                </div>
+    {/* كارت Total Revenue */}
+    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-start gap-4">
+        <div className="p-3 bg-yellow-50 rounded-xl text-yellow-500"><DollarSign size={24} /></div>
+        <div>
+            <p className="text-sm text-gray-500 font-medium mb-1">{t("Total Revenue")}</p>
+            <h3 className="text-3xl font-bold text-gray-900">{parseFloat(cards.totalRevenue || 0).toLocaleString()} EGP</h3>
+        </div>
+    </div>
 
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-start gap-4">
-                    <div className="p-3 bg-orange-50 rounded-xl text-orange-500"><TrendingUp size={24} /></div>
-                    <div>
-                        <p className="text-sm text-gray-500 font-medium mb-1">{t("Avg. Order Value")}</p>
-                        <h3 className="text-3xl font-bold text-gray-900">{parseFloat(cards.averageOrderValue || 0).toFixed(2)} EGP</h3>
-                    </div>
-                </div>
-            </div>
+    {/* كارت Total Orders */}
+    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-start gap-4">
+        <div className="p-3 bg-gray-100 rounded-xl text-gray-600"><ShoppingCart size={24} /></div>
+        <div>
+            <p className="text-sm text-gray-500 font-medium mb-1">{t("Total Orders")}</p>
+            <h3 className="text-3xl font-bold text-gray-900">{cards.numberOfOrders || 0}</h3>
+        </div>
+    </div>
+
+    {/* كارت Avg. Order Value */}
+    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-start gap-4">
+        <div className="p-3 bg-orange-50 rounded-xl text-orange-500"><TrendingUp size={24} /></div>
+        <div>
+            <p className="text-sm text-gray-500 font-medium mb-1">{t("Avg. Order Value")}</p>
+            <h3 className="text-3xl font-bold text-gray-900">{parseFloat(cards.averageOrderValue || 0).toFixed(2)} EGP</h3>
+        </div>
+    </div>
+
+</div>
 
             {/* صفحة المخططات الرئيسية - عمودين */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">

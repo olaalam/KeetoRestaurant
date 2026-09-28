@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/api/axios';
 import GenericDataTable from '@/components/GenericDataTable';
 import { useNavigate } from 'react-router-dom';
@@ -10,6 +10,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 export default function Discount() {
     const navigate = useNavigate();
     const { t } = useTranslation();
+    const queryClient = useQueryClient();
     
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [selectedFoods, setSelectedFoods] = useState([]); 
@@ -20,6 +21,25 @@ export default function Discount() {
             const res = await api.get('/api/restaurant/discounts');
             const result = res.data?.data?.data ?? res.data?.data ?? [];
             return Array.isArray(result) ? result : [];
+        }
+    });
+
+    // إضافة useMutation لتغيير حالة الخصم
+    const toggleStatusMutation = useMutation({
+        mutationFn: async ({ id, newStatus }) => {
+            // تنويه: تأكد من أن هذا المسار (Endpoint) يطابق الباك إند الخاص بك
+            // قد تحتاج لتغيير '/api/restaurant/discounts' إلى مسار تغيير الحالة المخصص
+            return await api.put(`/api/restaurant/discounts/${id}`, {
+                isActive: newStatus
+            });
+        },
+        onSuccess: () => {
+            // تحديث الجدول بمجرد نجاح العملية
+            queryClient.invalidateQueries({ queryKey: ['discounts'] });
+        },
+        onError: (error) => {
+            console.error("Failed to update status:", error);
+            // يمكنك إضافة رسالة خطأ هنا (Toast) إذا كنت تستخدم مكتبة للاشعارات
         }
     });
 
@@ -80,11 +100,28 @@ export default function Discount() {
         { 
             accessorKey: 'isActive', 
             header: 'Status',
-            cell: ({ row }) => (
-                <span className={`px-2 py-1 text-xs font-semibold rounded-full ${row.original.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                    {row.original.isActive ? 'Active' : 'Inactive'}
-                </span>
-            )
+            cell: ({ row }) => {
+                const isChecked = row.original.isActive;
+                const isPending = toggleStatusMutation.isPending && toggleStatusMutation.variables?.id === row.original.id;
+
+                return (
+                    <label className="relative inline-flex items-center cursor-pointer">
+                        <input 
+                            type="checkbox" 
+                            className="sr-only peer" 
+                            checked={isChecked}
+                            disabled={isPending}
+                            onChange={() => {
+                                toggleStatusMutation.mutate({
+                                    id: row.original.id,
+                                    newStatus: !isChecked
+                                });
+                            }}
+                        />
+                        <div className={`w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary ${isPending ? 'opacity-50 cursor-not-allowed' : ''}`}></div>
+                    </label>
+                );
+            }
         }
     ];
 

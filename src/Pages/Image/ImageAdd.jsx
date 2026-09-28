@@ -15,7 +15,7 @@ const ImageAdd = () => {
     const { data: branches = [], isLoading: isLoadingBranches } = useQuery({
         queryKey: ['branches'],
         queryFn: async () => {
-            const { data } = await api.get('/api/restaurant/branch');
+            const { data } = await api.get('/api/restaurant/branches');
             return data?.data?.data || data?.data || [];
         }
     });
@@ -24,7 +24,7 @@ const ImageAdd = () => {
     const { data: imageData, isLoading: isFetching } = useQuery({
         queryKey: ['image', id],
         queryFn: async () => {
-            const { data } = await api.get(`/api/restaurant/image/select-branch/${id}`);
+            const { data } = await api.get(`/api/restaurant/image/${id}`);
             return data?.data?.data || data?.data; 
         },
         enabled: !!id && !state?.imageData, 
@@ -33,15 +33,16 @@ const ImageAdd = () => {
     const rawData = state?.imageData || imageData;
 
     // تجهيز البيانات الابتدائية للفورم
-    const initialData = React.useMemo(() => {
+const initialData = React.useMemo(() => {
         if (!rawData) return null;
 
         return {
+            id: rawData.id, // السطر الجديد: إضافة الـ id
             img: rawData.img || "",
             periorty: rawData.periorty || 1,
             branchId: rawData.branchId || rawData.branch?.id || ""
         };
-    }, [rawData]);
+    }, [rawData])
 
     // تحويل الفروع إلى خيارات للقائمة المنسدلة
     const branchOptions = branches.map((branch) => ({
@@ -77,7 +78,7 @@ const ImageAdd = () => {
     return (
         <AddPage
             title={t("restaurantImages") || "صور المطعم"}
-            apiUrl="/api/restaurant/image/select-branch" 
+            apiUrl="/api/restaurant/image"
             queryKey="images" 
             fields={imageFields}
             initialData={initialData} 

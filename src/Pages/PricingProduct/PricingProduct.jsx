@@ -303,7 +303,7 @@ const isOnline = !settingsRes?.data?.settings?.isTemporarilyClosed;
     }));
   };
 
-  const savePriceModal = async () => {
+const savePriceModal = async () => {
     if (!priceModalItem) return;
     setIsSaving(true);
 
@@ -317,7 +317,7 @@ const isOnline = !settingsRes?.data?.settings?.isTemporarilyClosed;
       branchId: branchToSend,
       serviceModule: serviceModuleToSend,
       price: Number(mainItemEdit.price),
-      status: mainItemEdit.status ? "active" : "inactive"
+      branchPriceStatus: mainItemEdit.status ? "active" : "inactive" 
     };
 
     promises.push(api.post("/api/restaurant/pricing/product-channel", mainPayload));
@@ -332,7 +332,8 @@ const isOnline = !settingsRes?.data?.settings?.isTemporarilyClosed;
               branchId: branchToSend,
               serviceModule: serviceModuleToSend,
               price: Number(editedOpt.price),
-              status: editedOpt.status ? "active" : "inactive"
+              // تم تغيير المفتاح هنا من status إلى branchPriceStatus
+              branchPriceStatus: editedOpt.status ? "active" : "inactive"
             };
             promises.push(api.post("/api/restaurant/pricing/variant-channel", varPayload));
           }
@@ -352,7 +353,6 @@ const isOnline = !settingsRes?.data?.settings?.isTemporarilyClosed;
       setIsSaving(false);
     }
   };
-
   const toggleOutOfStock = async (foodId, currentStockStatus) => {
     try {
       if (isAllBranches && isAllModules) {

@@ -12,7 +12,7 @@ export default function Image() {
     const { data: image = [], isLoading } = useQuery({
         queryKey: ['image'],
         queryFn: async () => {
-            const res = await api.get('/api/restaurant/image/select-branch');
+            const res = await api.get('/api/restaurant/image');
             return res.data?.data?.data || res.data?.data || []; 
         }
     });
@@ -59,8 +59,8 @@ export default function Image() {
                 data={image}
                 isLoading={isLoading}
                 queryKey="image"
-                editApiUrl="/api/restaurant/image/select-branch"
-                deleteApiUrl="/api/restaurant/image/select-branch"
+                editApiUrl="/api/restaurant/image"
+                deleteApiUrl="/api/restaurant/image"
                 onAdd={() => navigate("/image/add")}
                 onEdit={(image) => navigate(`/image/edit/${image.id}`, { state: { imageData: image } })}
             />

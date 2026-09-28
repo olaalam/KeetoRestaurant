@@ -9,6 +9,7 @@ import UsersAdd from './UsersAdd';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Mail, Phone, Copy, Check } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+
 // مكون خاص بعرض بيانات الاتصال بارتفاع ومسافات متساوية تماماً لكل الصفوف
 const UserContactCell = ({ email, phone }) => {
     const [copied, setCopied] = useState(false);
@@ -113,7 +114,7 @@ export default function Users() {
                 );
             },
         },
-{
+        {
             accessorKey: 'name',
             header: t('nameHeader'),
             cell: ({ row }) => (
@@ -127,6 +128,8 @@ export default function Users() {
         },
         {
             accessorKey: 'email',
+            // تجميع الإيميل ورقم الهاتف ليتعرف عليهما البحث في الجدول
+            accessorFn: (row) => `${row.email || ''} ${row.phone || ''}`,
             header: t('emailHeader'),
             cell: ({ row }) => (
                 <UserContactCell

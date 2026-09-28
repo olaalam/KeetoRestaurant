@@ -104,6 +104,7 @@ import OutForDelivery from "./Pages/DeliveryAccount/OutForDelivery";
 import AssignDeliveryMan from "./Pages/DeliveryAccount/AssignDeliveryMan";
 import CollectDeliveryCash from "./Pages/DeliveryAccount/CollectDeliveryCash";
 import VisaRepo from "./Pages/VisaRepo/VisaRepo";
+import WalletTransactions from "./Pages/Wallet/WalletTransactions";
 const router = createBrowserRouter([
   {
     path: "/login",
@@ -129,6 +130,11 @@ const router = createBrowserRouter([
         path: "/dashboard",
         element: <Dashboard />
       },
+      {
+        path: "wallet-transactions",
+        element: <WalletTransactions />
+      },
+
       {
         path: "admins",
         element: <Admin />,
@@ -680,10 +686,10 @@ const router = createBrowserRouter([
         path: "collect-delivery-cash",
         element: <CollectDeliveryCash />
       },
-            {
+      {
         path: "visa-repo",
         element: <VisaRepo />
-      }
+      },
 
 
 
