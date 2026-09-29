@@ -5,6 +5,7 @@ import {
   getCoreRowModel,
   getPaginationRowModel,
   getFilteredRowModel,
+  getSortedRowModel, // <-- إضافة هذه
   flexRender,
 } from "@tanstack/react-table";
 import {
@@ -86,6 +87,7 @@ export default function GenericDataTable({
   deleteWithoutId = false,
 }) {
   const [globalFilter, setGlobalFilter] = useState("");
+  const [sorting, setSorting] = useState([]);
   const [deleteId, setDeleteId] = useState(null);
   
   const [inactiveDialog, setInactiveDialog] = useState({
@@ -326,15 +328,21 @@ const updateStatusMutation = useMutation({
     return baseColumns;
   }, [columns, onEdit, deleteApiUrl, actions, editApiUrl, updateStatusMutation.isPending, t, requireInactiveReason]);
 
-  const table = useReactTable({
+const table = useReactTable({
     data: sortedData,
     columns: tableColumns,
-    state: { globalFilter, pagination },
+    state: { 
+      globalFilter, 
+      pagination,
+      sorting, // <-- 1. إضافة حالة الترتيب هنا
+    },
     onGlobalFilterChange: setGlobalFilter,
     onPaginationChange: setPagination,
+    onSortingChange: setSorting, // <-- 2. إضافة معالج تغيير الترتيب
     autoResetPageIndex: false,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
+    getSortedRowModel: getSortedRowModel(), // <-- 3. إضافة الموديل الخاص بالترتيب
     getPaginationRowModel: getPaginationRowModel(),
     initialState: {
       pagination: {

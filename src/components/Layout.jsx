@@ -331,7 +331,7 @@ export default function Layout() {
 
         <main className="relative flex flex-col flex-1 min-w-0 max-h-screen overflow-hidden bg-background">
           <header className="flex-none sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-            <div className="flex min-h-16 items-center justify-between gap-2 px-3 py-2 sm:gap-4 sm:p-4">
+            <div className=" relative flex min-h-16 items-center justify-between gap-2 px-3 py-2 sm:gap-4 sm:p-4">
 
               {/* Left Section */}
               <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden sm:gap-4">
@@ -381,12 +381,32 @@ export default function Layout() {
                 </div>
               </div>
 
-              {/* Center: Logo */}
-              <div className="hidden shrink-0 sm:block">
-                <button onClick={() => navigate("/")}>
-                  <img className="h-12 w-24 object-contain lg:h-15 lg:w-30" src="/logo.webp" alt="Logo" />
-                </button>
-              </div>
+{/* Center: Logo */}
+<div className="hidden sm:flex sm:items-center absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+  <button 
+    onClick={() => navigate("/")} 
+    className="flex items-center gap-3 transition-opacity hover:opacity-90 focus:outline-none"
+  >
+    {/* لوجو المطعم (إن وجد) */}
+    {(user?.restaurantLogo || user?.restaurant?.restaurantLogo) && (
+      <>
+        <img 
+          className="h-10 sm:h-12 w-auto max-w-[120px] object-contain rounded-md" 
+          src={user?.restaurantLogo || user?.restaurant?.restaurantLogo} 
+          alt={restaurantName || "Restaurant Logo"} 
+        />
+        <div className="h-6 w-[1px] bg-slate-300 dark:bg-slate-700" />
+      </>
+    )}
+
+    {/* لوجو المنصة (Keeto) */}
+    <img 
+      className="h-10 sm:h-12 w-auto max-w-[120px] object-contain" 
+      src="/logo.webp" 
+      alt="Keeto Logo" 
+    />
+  </button>
+</div>
 
               {/* Right Section: Notifications & Profile */}
               <div className="flex shrink-0 items-center gap-1 sm:gap-3">

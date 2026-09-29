@@ -7,8 +7,9 @@ import { useQueryClient } from '@tanstack/react-query';
 import api from '@/api/axios';
 import UsersAdd from './UsersAdd';
 import { useTranslation } from '@/hooks/useTranslation';
-import { Mail, Phone, Copy, Check } from 'lucide-react';
+import { Mail, Phone, Copy, Check, ArrowUpDown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+
 
 // مكون خاص بعرض بيانات الاتصال بارتفاع ومسافات متساوية تماماً لكل الصفوف
 const UserContactCell = ({ email, phone }) => {
@@ -138,9 +139,20 @@ export default function Users() {
                 />
             ),
         },
-        {
+{
             accessorKey: 'totalOrders',
-            header: t('totalOrders', { defaultValue: 'Total Orders' }),
+            header: ({ column }) => {
+                return (
+                    <button
+                        type="button"
+                        onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+                        className="flex items-center gap-1.5 hover:text-slate-900 transition-colors bg-transparent border-none cursor-pointer p-0 font-medium"
+                    >
+                        {t('totalOrders', { defaultValue: 'Total Orders' })}
+                        <ArrowUpDown className="w-3.5 h-3.5 text-slate-400" />
+                    </button>
+                );
+            },
             cell: ({ row }) => (
                 <span className="font-semibold text-slate-700">
                     {row.original.totalOrders ?? 0}
@@ -149,7 +161,18 @@ export default function Users() {
         },
         {
             accessorKey: 'points',
-            header: t('Points', { defaultValue: 'Points' }),
+            header: ({ column }) => {
+                return (
+                    <button
+                        type="button"
+                        onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+                        className="flex items-center gap-1.5 hover:text-slate-900 transition-colors bg-transparent border-none cursor-pointer p-0 font-medium"
+                    >
+                        {t('Points', { defaultValue: 'Points' })}
+                        <ArrowUpDown className="w-3.5 h-3.5 text-slate-400" />
+                    </button>
+                );
+            },
             cell: ({ row }) => (
                 <span className="font-semibold text-amber-600">
                     {row.original.points ?? 0}
