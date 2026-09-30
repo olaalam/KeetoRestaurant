@@ -39,14 +39,14 @@ export default function Policy() {
             {/* الهيدر العلوي */}
             <div className="flex justify-between items-center mb-8">
                 <h1 className="text-3xl font-bold text-primary tracking-tight">
-                    {t("Policy&Support")}
+                    {t("policyAndSupport")}
                 </h1>
                 <Button 
                     onClick={() => navigate("/policy/add")}
                     className="bg-primary hover:bg-primary/20 text-white flex items-center gap-2 rounded-xl"
                 >
                     <Plus className="w-4 h-4" />
-                    {t("Add Section")}
+                    {t("addSection")}
                 </Button>
             </div>
 
@@ -57,7 +57,7 @@ export default function Policy() {
                         {/* عنوان القسم وأزرار التحكم */}
                         <div className="flex justify-between items-center">
                             <label className="text-lg font-semibold text-gray-700 capitalize">
-                                {item.title || t("Section")}:
+                                {item.title || t("section")}:
                             </label>
                             
                             <Button
@@ -91,7 +91,7 @@ export default function Policy() {
 
                 {policyData.length === 0 && (
                     <div className="text-center py-12 text-gray-500 border-2 border-dashed rounded-2xl">
-                        {t("No data available")}
+                        {t("noDataAvailable")}
                     </div>
                 )}
             </div>

@@ -374,7 +374,7 @@ const updateStatusMutation = useMutation({
               <SelectValue placeholder={t("allSources") || "All Sources"} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">{t("all") || "All"}</SelectItem>
+              <SelectItem value="all">{t("all") }</SelectItem>
               {selectOptions?.sources?.map((src) => (
                 <SelectItem key={src.id} value={src.value}>
                   {getItemName(src)}
@@ -387,7 +387,7 @@ const updateStatusMutation = useMutation({
         {/* City Filter */}
         <div className="flex items-center gap-2">
           <label className="text-sm font-bold text-slate-700 dark:text-slate-300">
-            {t("city") || "City"}:
+            {t("city")}:
           </label>
           <Select value={cityId} onValueChange={setCityId}>
             <SelectTrigger className="w-[160px] h-10">
@@ -426,7 +426,7 @@ const updateStatusMutation = useMutation({
 
         {/* Clear Filter Button */}
         <Button variant="outline" onClick={handleClearFilters} className="h-10">
-          {t("clearFilter") || "Clear Filter"}
+          {t("clearFilter")}
         </Button>
       </div>
 

@@ -30,7 +30,7 @@ export default function BundleItemsDialog({ isOpen, onClose, bundleId, type }) {
                 </button>
                 
                 <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-4 capitalize">
-                    {type === 'foods' ? t('foodsList') || 'Foods List' : t('branchesList') || 'Branches List'}
+                    {type === 'foods' ? t('foodsList') : t('branchesList')}
                 </h3>
                 
                 <div className="max-h-80 overflow-y-auto">
@@ -44,13 +44,13 @@ export default function BundleItemsDialog({ isOpen, onClose, bundleId, type }) {
                                         <img src={item.image || item.logo} alt="item" className="w-10 h-10 rounded-md object-cover" />
                                     ) : null}
                                     <span className="font-medium text-slate-700 dark:text-slate-200">
-                                        {item.name || item.nameAr || "Unnamed Item"}
+                                        {item.name || item.nameAr || t('Unnamed Item')}
                                     </span>
                                 </li>
                             ))}
                         </ul>
                     ) : (
-                        <p className="text-center text-slate-500 py-6">{t('noDataFound') || 'No items found.'}</p>
+                        <p className="text-center text-slate-500 py-6">{t('noDataFound')}</p>
                     )}
                 </div>
             </div>

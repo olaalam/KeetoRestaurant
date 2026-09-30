@@ -50,7 +50,6 @@ export default function QR() {
             accessorKey: "qrCodeImg",
             header: t("qrCodeImage"), // ترجمة عنوان العمود
             accessorKey: "qrCodeImg",
-            header: "qrCodeImg",
             cell: ({ row }) => {
                 const imageStr = row.getValue("qrCodeImg");
                 return (

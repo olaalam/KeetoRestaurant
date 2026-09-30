@@ -36,10 +36,10 @@ export default function Bundles() {
     };
 
     const columns = [
-        { accessorKey: 'name', header: 'Name' },
+        { accessorKey: 'name', header: t('Name') },
         {
             accessorKey: 'image',
-            header: 'Image',
+            header: t('Image'),
             cell: ({ row }) => (
                 row.original.image ? (
                     <img src={row.original.image} alt={row.original.name} className="w-10 h-10 object-cover rounded-md border" />
@@ -50,48 +50,48 @@ export default function Bundles() {
         },
         {
             accessorKey: 'branches', 
-            header: 'Branches', 
+            header: t('Branches'), 
             cell: ({ row }) => (
                 <button
                     onClick={() => openItemsDialog(row.original.id, 'branches')} 
                     className="flex items-center justify-center gap-1 px-3 py-1 bg-blue-100 text-blue-600 rounded-md hover:bg-blue-200 transition-colors mx-auto"
                 >
                     <Store size={16} />
-                    {t('viewBranches') || 'Branches'}
+                    {t('viewBranches')}
                 </button>
             )
         },
         {
             accessorKey: 'foods', 
-            header: 'Foods', 
+            header: t('Foods'), 
             cell: ({ row }) => (
                 <button
                     onClick={() => openItemsDialog(row.original.id, 'foods')} 
                     className="flex items-center justify-center gap-1 px-3 py-1 bg-orange-100 text-orange-600 rounded-md hover:bg-orange-200 transition-colors mx-auto"
                 >
                     <Eye size={16} />
-                    {t('viewFoods') || 'Foods'}
+                    {t('viewFoods')}
                 </button>
             )
         },
-        { accessorKey: 'price', header: 'Price' },
+        { accessorKey: 'price', header: t('Price') },
         { 
             accessorKey: 'module', 
-            header: 'Modules',
+            header: t('Modules'),
             cell: ({ row }) => {
                 const mods = row.original.module || [];
                 return Array.isArray(mods) ? mods.map(m => m.toUpperCase()).join(', ') : mods;
             }
         },
-        { accessorKey: 'startDate', header: 'Start Date', cell: (info) => formatDate(info.getValue()) },
-        { accessorKey: 'endDate', header: 'End Date', cell: (info) => formatDate(info.getValue()) },
-        { accessorKey: 'status', header: 'Status' }
+        { accessorKey: 'startDate', header: t('Start Date'), cell: (info) => formatDate(info.getValue()) },
+        { accessorKey: 'endDate', header: t('End Date'), cell: (info) => formatDate(info.getValue()) },
+        { accessorKey: 'status', header: t('Status') }
     ];
 
     return (
         <div className="container mx-auto py-10">
             <GenericDataTable
-                title="Bundles"
+                title={t('Bundles')}
                 columns={columns}
                 data={bundles}
                 isLoading={isLoading}
@@ -99,7 +99,7 @@ export default function Bundles() {
                 deleteApiUrl="/api/restaurant/pos/bundles"
                 editApiUrl="/api/restaurant/pos/bundles" 
                 onAdd={() => navigate("/bundle/add")}
-onEdit={(bundle) => navigate(`/bundle/edit/${bundle.id}`)}
+                onEdit={(bundle) => navigate(`/bundle/edit/${bundle.id}`)}
             />
             
             {dialogState.isOpen && (

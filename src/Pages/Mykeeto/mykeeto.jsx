@@ -258,7 +258,7 @@ export default function DetailedFinancialReport() {
 // 3. كروت الإحصائيات (الحسابات المباشرة)
   const statsCards = [
     {
-      title: t("grandSales") || "Grand Sales",
+      title: t("grandSales"),
       value: `${financials?.grossTotalAllOrders ?? "0.00"} ${t("currency")}`,
       icon: DollarSign,
       bgIcon: "bg-emerald-100 text-emerald-600",
@@ -579,9 +579,9 @@ export default function DetailedFinancialReport() {
       <div className="flex justify-end">
         <button
           onClick={exportPDF}
-          className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2 font-bold shadow"
+          className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/700 transition flex items-center gap-2 font-bold shadow"
         >
-          <Download className="w-4 h-4" /> Export Complete PDF
+          <Download className="w-4 h-4" /> {t("exportCompletePDF")}
         </button>
       </div>
 
@@ -591,7 +591,7 @@ export default function DetailedFinancialReport() {
           onClick={() => exportSingleTablePDF(t("branchesPerformanceBreakdown"), branchColumns, reportData?.branchBreakdown || [])} 
           className="absolute top-4 right-4 z-10 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-lg transition text-slate-700 flex items-center gap-1 text-xs font-bold shadow-sm"
         >
-          <Download className="w-3.5 h-3.5" /> Export PDF
+          <Download className="w-3.5 h-3.5" /> {t("exportPDF")}
         </button>
         <GenericDataTable
           title={t("PerformanceBreakdown")}

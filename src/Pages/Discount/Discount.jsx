@@ -27,19 +27,15 @@ export default function Discount() {
     // إضافة useMutation لتغيير حالة الخصم
     const toggleStatusMutation = useMutation({
         mutationFn: async ({ id, newStatus }) => {
-            // تنويه: تأكد من أن هذا المسار (Endpoint) يطابق الباك إند الخاص بك
-            // قد تحتاج لتغيير '/api/restaurant/discounts' إلى مسار تغيير الحالة المخصص
             return await api.put(`/api/restaurant/discounts/${id}`, {
                 isActive: newStatus
             });
         },
         onSuccess: () => {
-            // تحديث الجدول بمجرد نجاح العملية
             queryClient.invalidateQueries({ queryKey: ['discounts'] });
         },
         onError: (error) => {
             console.error("Failed to update status:", error);
-            // يمكنك إضافة رسالة خطأ هنا (Toast) إذا كنت تستخدم مكتبة للاشعارات
         }
     });
 
@@ -62,21 +58,21 @@ export default function Discount() {
     };
 
     const columns = [
-        { accessorKey: 'name', header: 'Name' },
+        { accessorKey: 'name', header: t('Name') },
         {
             accessorKey: 'logo',
-            header: 'Logo',
+            header: t('Logo'),
             cell: ({ row }) => (
                 row.original.logo ? (
                     <img src={row.original.logo} alt={row.original.name} className="w-10 h-10 object-cover rounded-md" />
                 ) : '-'
             )
         },
-        { accessorKey: 'nameAr', header: 'Name (Ar)' },
-        { accessorKey: 'nameFr', header: 'Name (Fr)' },
+        { accessorKey: 'nameAr', header: t('Name (Ar)') },
+        { accessorKey: 'nameFr', header: t('Name (Fr)') },
         {
             accessorKey: 'foods', 
-            header: 'Foods', 
+            header: t('Foods'), 
             cell: ({ row }) => {
                 const groups = row.original.groups || [];
                 const directFoods = row.original.foods || [];
@@ -94,12 +90,12 @@ export default function Discount() {
                 );
             }
         },
-        { accessorKey: 'minOrderAmount', header: 'Min Order' },
-        { accessorKey: 'usageLimit', header: 'Limit' },
-        { accessorKey: 'endDate', header: 'End Date', cell: (info) => formatDate(info.getValue()) },
+        { accessorKey: 'minOrderAmount', header: t('Min Order') },
+        { accessorKey: 'usageLimit', header: t('Limit') },
+        { accessorKey: 'endDate', header: t('End Date'), cell: (info) => formatDate(info.getValue()) },
         { 
             accessorKey: 'isActive', 
-            header: 'Status',
+            header: t('Status'),
             cell: ({ row }) => {
                 const isChecked = row.original.isActive;
                 const isPending = toggleStatusMutation.isPending && toggleStatusMutation.variables?.id === row.original.id;
@@ -128,7 +124,7 @@ export default function Discount() {
     return (
         <div className="container mx-auto py-10">
             <GenericDataTable
-                title="Offers"
+                title={t('Offers')}
                 columns={columns}
                 data={discounts}
                 isLoading={isLoading}

@@ -108,7 +108,7 @@ const EditMapClickHandler = ({ enabled, coverageType, setCoordinates }) => {
 
 export default function ZoneMap() {
   const navigate = useNavigate();
-  const { isRTL } = useTranslation();
+  const { t, isRTL } = useTranslation();
   const queryClient = useQueryClient();
   const [selectedZoneId, setSelectedZoneId] = useState(null);
   const [mapCenter, setMapCenter] = useState([31.2001, 29.9187]); // Default: Alexandria
@@ -322,8 +322,8 @@ export default function ZoneMap() {
       setEditingZone(null);
     } catch (err) {
       console.error("Failed to save changes:", err);
-      // ⚠️ Replace with your project's toast component if preferred over alert
-      alert("Something went wrong while saving");
+      // ⚠️️ Replace with your project's toast component if preferred over alert
+      alert(t("Something went wrong while saving"));
     } finally {
       setIsSaving(false);
     }
@@ -414,7 +414,7 @@ export default function ZoneMap() {
                       <div className="text-start">
                         <strong className="text-sm font-bold">{zoneName}</strong>
                         <div className="text-xs text-slate-500 mt-1">
-                          Delivery Fee: {zone.deliveryFee} EGP
+                          {t("Delivery Fee")}: {zone.deliveryFee} {t("EGP")}
                         </div>
                       </div>
                     </Popup>
@@ -448,7 +448,7 @@ export default function ZoneMap() {
                         <div className="text-start">
                           <strong className="text-sm font-bold">{zoneName}</strong>
                           <div className="text-xs text-slate-500 mt-1">
-                            Radius: {zone.customRadiusKm} km
+                            {t("Radius")}: {zone.customRadiusKm} {t("km")}
                           </div>
                         </div>
                       </Popup>
@@ -542,18 +542,18 @@ export default function ZoneMap() {
                 >
                   <X className="h-4 w-4 text-slate-500" />
                 </button>
-                <h2 className="text-lg font-bold text-slate-800">Edit Zone</h2>
+                <h2 className="text-lg font-bold text-slate-800">{t("Edit Zone")}</h2>
               </div>
             </div>
 
             <p className="text-xs text-slate-500 -mt-2">
               {editCoverageType === "RADIUS"
-                ? "Click once on the map to set the coverage circle center, or drag the pin."
-                : "Click multiple points on the map to draw the zone shape (Polygon)."}
+                ? t("Click once on the map to set the coverage circle center, or drag the pin.")
+                : t("Click multiple points on the map to draw the zone shape (Polygon).")}
             </p>
 
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold text-slate-600">City</Label>
+              <Label className="text-xs font-semibold text-slate-600">{t("City")}</Label>
               <select
                 className="w-full h-9 px-3 text-sm border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-primary"
                 value={editCityId}
@@ -563,7 +563,7 @@ export default function ZoneMap() {
                   setEditBranchId("");
                 }}
               >
-                <option value="">Select City</option>
+                <option value="">{t("Select City")}</option>
                 {selectionData.cities.map((c) => (
                   <option key={c.id} value={String(c.id)}>
                     {isRTL ? c.nameAr || c.displayNameAr || c.name : c.name}
@@ -573,14 +573,14 @@ export default function ZoneMap() {
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold text-slate-600">Zone</Label>
+              <Label className="text-xs font-semibold text-slate-600">{t("Zone")}</Label>
               <select
                 className="w-full h-9 px-3 text-sm border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
                 value={editZoneId}
                 disabled={!editCityId}
                 onChange={(e) => handleEditZoneChange(e.target.value)}
               >
-                <option value="">Select Zone</option>
+                <option value="">{t("Select Zone")}</option>
                 {editFilteredZones.map((z) => (
                   <option key={z.id} value={String(z.id)}>
                     {isRTL ? z.nameAr || z.displayNameAr || z.name : z.name}
@@ -590,14 +590,14 @@ export default function ZoneMap() {
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold text-slate-600">Branch</Label>
+              <Label className="text-xs font-semibold text-slate-600">{t("Branch")}</Label>
               <select
                 className="w-full h-9 px-3 text-sm border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
                 value={editBranchId}
                 disabled={!editCityId}
                 onChange={(e) => setEditBranchId(e.target.value)}
               >
-                <option value="">Select Branch</option>
+                <option value="">{t("Select Branch")}</option>
                 {editFilteredBranches.map((b) => (
                   <option key={b.id} value={String(b.id)}>
                     {isRTL ? b.nameAr || b.name : b.name}
@@ -608,25 +608,25 @@ export default function ZoneMap() {
 
             <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-100">
               <div>
-                <Label className="text-sm font-semibold">Coverage Type</Label>
+                <Label className="text-sm font-semibold">{t("Coverage Type")}</Label>
               </div>
               <div className="flex items-center gap-2">
                 <span className={`text-xs font-medium ${editCoverageType === "RADIUS" ? "text-primary" : "text-slate-400"}`}>
-                  RADIUS
+                  {t("RADIUS")}
                 </span>
                 <Switch
                   checked={editCoverageType === "POLYGON"}
                   onCheckedChange={handleEditCoverageTypeChange}
                 />
                 <span className={`text-xs font-medium ${editCoverageType === "POLYGON" ? "text-primary" : "text-slate-400"}`}>
-                  POLYGON
+                  {t("POLYGON")}
                 </span>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-slate-600">Delivery Fee</Label>
+                <Label className="text-xs font-semibold text-slate-600">{t("Delivery Fee")}</Label>
                 <Input
                   type="number"
                   step="0.01"
@@ -636,7 +636,7 @@ export default function ZoneMap() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-slate-600">Min. Order Amount</Label>
+                <Label className="text-xs font-semibold text-slate-600">{t("Min. Order Amount")}</Label>
                 <Input
                   type="number"
                   step="0.01"
@@ -649,7 +649,7 @@ export default function ZoneMap() {
 
             {editCoverageType === "RADIUS" && (
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-slate-600">Radius (km)</Label>
+                <Label className="text-xs font-semibold text-slate-600">{t("Radius (km)")}</Label>
                 <Input
                   type="number"
                   step="0.1"
@@ -668,7 +668,7 @@ export default function ZoneMap() {
               onClick={() => setEditCoordinates([])}
             >
               <Trash2 className="h-3.5 w-3.5" />
-              Clear Points
+              {t("Clear Points")}
             </Button>
 
             <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
@@ -679,10 +679,10 @@ export default function ZoneMap() {
                 onClick={handleSaveEdit}
               >
                 {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                Save Changes
+                {t("Save Changes")}
               </Button>
               <Button type="button" variant="outline" className="flex-1" onClick={handleCancelEdit} disabled={isSaving}>
-                Cancel
+                {t("Cancel")}
               </Button>
             </div>
           </div>
@@ -691,10 +691,10 @@ export default function ZoneMap() {
         <div className="flex items-center justify-between pb-2 border-b border-slate-100">
           <div className="flex items-center gap-2">
             <Layers className="h-5 w-5 text-primary" />
-            <h2 className="text-lg font-bold text-slate-800">Delivery Zones</h2>
+            <h2 className="text-lg font-bold text-slate-800">{t("Delivery Zones")}</h2>
           </div>
           <Badge variant="secondary" className="rounded-lg font-semibold">
-            {searchQuery ? `${filteredListZones.length} of ${parsedZones.length}` : `${parsedZones.length} Zone(s)`}
+            {searchQuery ? `${filteredListZones.length} ${t("of")} ${parsedZones.length}` : `${parsedZones.length} ${t("Zone(s)")}`}
           </Badge>
         </div>
 
@@ -703,7 +703,7 @@ export default function ZoneMap() {
           <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
           <Input
             type="text"
-            placeholder="Search for a zone by name..."
+            placeholder={t("Search for a zone by name...")}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pr-9 h-10 text-sm bg-white rounded-xl shadow-sm border-slate-200"
@@ -721,14 +721,14 @@ export default function ZoneMap() {
 
         {filteredListZones.length === 0 && (
           <div className="text-center text-sm text-slate-400 py-8">
-            No matching results for "{searchQuery}"
+            {t("No matching results for")} "{searchQuery}"
           </div>
         )}
 
         {filteredListZones.map((zone) => {
           const zoneName = isRTL
-            ? zone.zone?.displayNameAr || zone.zone?.nameAr || "Unnamed Zone"
-            : zone.zone?.displayName || zone.zone?.name || "Unnamed Zone";
+            ? zone.zone?.displayNameAr || zone.zone?.nameAr || t("Unnamed Zone")
+            : zone.zone?.displayName || zone.zone?.name || t("Unnamed Zone");
 
           const isSelected = selectedZoneId === zone.id;
 
@@ -760,7 +760,7 @@ export default function ZoneMap() {
                   style={{ backgroundColor: zone.color }}
                 >
                   <CheckCircle2 className="h-3 w-3" />
-                  Currently Selected
+                  {t("Currently Selected")}
                 </div>
               )}
 
@@ -797,7 +797,7 @@ export default function ZoneMap() {
                   }}
                 >
                   <Pencil className="h-3.5 w-3.5" />
-                  <span>Edit</span>
+                  <span>{t("Edit")}</span>
                 </Button>
               </div>
 
@@ -805,14 +805,14 @@ export default function ZoneMap() {
               <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-50 text-xs">
                 <div className="flex items-center gap-1.5 text-slate-600">
                   <DollarSign className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
-                  <span>Delivery Fee:</span>
-                  <span className="font-bold text-slate-800">{zone.deliveryFee} EGP</span>
+                  <span>{t("Delivery Fee")}:</span>
+                  <span className="font-bold text-slate-800">{zone.deliveryFee} {t("EGP")}</span>
                 </div>
 
                 <div className="flex items-center gap-1.5 text-slate-600">
                   <ShoppingBag className="h-3.5 w-3.5 text-amber-500 shrink-0" />
-                  <span>Min. Order:</span>
-                  <span className="font-bold text-slate-800">{zone.minOrderAmount} EGP</span>
+                  <span>{t("Min. Order")}:</span>
+                  <span className="font-bold text-slate-800">{zone.minOrderAmount} {t("EGP")}</span>
                 </div>
               </div>
             </div>

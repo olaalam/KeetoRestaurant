@@ -4,25 +4,15 @@ import GenericDataTable from "@/components/GenericDataTable";
 import { useGet } from "@/hooks/useGet";
 import { useTranslation } from "@/hooks/useTranslation";
 
-// عدّلي المسار هنا لو الـ base URL مختلف عندك
 const API_URL = "/api/restaurant/order-delay-alerts";
 const QUERY_KEY = "orderDelayAlerts";
 
-const ORDER_STATUS_LABELS = {
-  pending: { ar: "قيد الانتظار", en: "Pending" },
-  preparing: { ar: "قيد التحضير", en: "Preparing" },
-  ready: { ar: "جاهز", en: "Ready" },
-  delivered: { ar: "تم التوصيل", en: "Delivered" },
-  cancelled: { ar: "ملغي", en: "Cancelled" },
-};
-
 export default function OrderDelay() {
   const navigate = useNavigate();
-  const { t, isRTL } = useTranslation();
+  const { t } = useTranslation();
 
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 15 });
 
-  // الـ API بيرجع الشكل: { success, data: { message, data: [...] } }
   const { data, isLoading } = useGet(QUERY_KEY, API_URL);
   const rows = Array.isArray(data)
     ? data
@@ -32,14 +22,20 @@ export default function OrderDelay() {
     ? data.data.data
     : [];
 
+  const getStatusLabel = (status) => {
+    if (!status) return "-";
+    const key = `status${status.charAt(0).toUpperCase() + status.slice(1)}`;
+    return t(key) || status;
+  };
+
   const columns = [
     {
       accessorKey: "name",
-      header: t("nameCol") || "اسم التنبيه",
+      header: t("alertNameCol"),
     },
     {
       id: "emails",
-      header: t("emailsCol") || "البريد الإلكتروني",
+      header: t("emailsCol"),
       cell: ({ row }) => {
         const emails = row.original.emails || [];
         return (
@@ -55,42 +51,40 @@ export default function OrderDelay() {
     },
     {
       id: "branches",
-      header: t("branchesCol") || "الفروع",
+      header: t("branchesCol"),
       cell: ({ row }) =>
         row.original.allBranches ? (
           <span className="text-xs font-semibold text-primary">
-            {t("allBranches") || "كل الفروع"}
+            {t("allBranches")}
           </span>
         ) : (
           <span className="text-xs">
-            {(row.original.branchIds || []).length} {t("branchSelected") || "فرع"}
+            {(row.original.branchIds || []).length} {t("branchSelected")}
           </span>
         ),
     },
     {
       accessorKey: "maxDelayMinutes",
-      header: t("maxDelayCol") || "الحد الأقصى للتأخير (دقيقة)",
+      header: t("maxDelayCol"),
     },
     {
       id: "orderStatus",
-      header: t("orderStatusCol") || "حالات الطلب",
+      header: t("orderStatusCol"),
       cell: ({ row }) => {
         const statuses = row.original.orderStatus || [];
-        const labels = statuses.map(
-          (s) => ORDER_STATUS_LABELS[s]?.[isRTL ? "ar" : "en"] || s
-        );
+        const labels = statuses.map((s) => getStatusLabel(s));
         return <span className="text-xs">{labels.join(", ") || "-"}</span>;
       },
     },
     {
       accessorKey: "isActive",
-      header: t("statusCol") || "الحالة",
+      header: t("statusCol"),
     },
   ];
 
   return (
     <GenericDataTable
-      title={t("orderDelayAlertsTitle") || "تنبيهات تأخير الطلبات"}
+      title={t("orderDelayAlertsTitle")}
       columns={columns}
       data={rows}
       isLoading={isLoading}
