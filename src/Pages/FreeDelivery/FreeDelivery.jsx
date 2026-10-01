@@ -76,7 +76,7 @@ export default function FreeDelivery() {
                 editApiUrl={apiUrl}
                 deleteApiUrl={apiUrl}
                 deleteWithoutId={true}
-                // onAdd={handleAdd}
+                onAdd={tableData.length === 0 ? handleAdd : undefined}
                 onEdit={handleEdit}
             />
         </div>
