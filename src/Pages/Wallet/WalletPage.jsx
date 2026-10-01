@@ -165,58 +165,7 @@ export default function WalletPage() {
                 </div>
             </div>
 
-            {/* آخر الحركات */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                <div className="flex items-center justify-between p-6 pb-4">
-                    <h4 className="text-base font-semibold text-gray-800">{t('Recent Transactions') || 'آخر الحركات'}</h4>
-                    <button
-                        onClick={() => navigate('/wallet-transactions')}
-                        className="text-sm font-medium text-yellow-600 hover:text-yellow-700"
-                    >
-                        {t('View all') || 'عرض الكل'}
-                    </button>
-                </div>
 
-                {recent.length === 0 ? (
-                    <p className="px-6 pb-6 text-sm text-gray-500">{t('No transactions yet') || 'لا توجد حركات بعد'}</p>
-                ) : (
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-sm">
-                            <thead className="bg-slate-50 text-xs text-gray-500">
-                                <tr>
-                                    <th className="px-6 py-3 text-start font-medium">{t('Reference') || 'رقم المرجع'}</th>
-                                    <th className="px-6 py-3 text-start font-medium">{t('Method') || 'طريقة الدفع'}</th>
-                                    <th className="px-6 py-3 text-start font-medium">{t('Amount') || 'المبلغ'}</th>
-                                    <th className="px-6 py-3 text-start font-medium">{t('Balance') || 'الرصيد'}</th>
-                                    <th className="px-6 py-3 text-start font-medium">{t('Date') || 'التاريخ'}</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-100">
-                                {recent.map((tx) => {
-                                    const m = methodMeta(tx.method, t);
-                                    return (
-                                        <tr key={tx.id} className="hover:bg-slate-50/60">
-                                            <td className="px-6 py-3">
-                                                <span className="font-mono text-xs text-slate-600 bg-slate-100 px-2 py-1 rounded">
-                                                    {tx.reference || '-'}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-3">
-                                                <span className={cn('text-xs font-semibold px-2 py-1 rounded-md', m.cls)}>{m.label}</span>
-                                            </td>
-                                            <td className="px-6 py-3"><Money value={tx.amount} /></td>
-                                            <td className="px-6 py-3"><Money value={tx.balanceAfter} showSign={false} /></td>
-                                            <td className="px-6 py-3 text-xs text-slate-500">
-                                                {tx.createdAt ? new Date(tx.createdAt).toLocaleString() : '-'}
-                                            </td>
-                                        </tr>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
-                    </div>
-                )}
-            </div>
         </div>
     );
 }

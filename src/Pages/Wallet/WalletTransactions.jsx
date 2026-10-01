@@ -58,6 +58,20 @@ export default function WalletTransactions() {
                 );
             }
         },
+                {
+            accessorKey: 'createdAt',
+            header: t('Date') || 'التاريخ',
+            cell: ({ row }) => {
+                if (!row.original.createdAt) return '-';
+                const date = new Date(row.original.createdAt);
+                return (
+                    <div className="flex flex-col text-xs text-slate-500 whitespace-nowrap">
+                        <span className="font-medium text-slate-700">{date.toLocaleDateString()}</span>
+                        <span>{date.toLocaleTimeString()}</span>
+                    </div>
+                );
+            }
+        },
         {
             id: 'orderInfo',
             header: t('Order Details') || 'تفاصيل الطلب',
@@ -138,38 +152,8 @@ export default function WalletTransactions() {
                 );
             }
         },
-        {
-            accessorKey: 'note',
-            header: t('Description') || 'البيان',
-            cell: ({ row }) => (
-                <div
-                    className="w-56 whitespace-normal break-words text-sm text-slate-600"
-                    style={{
-                        display: '-webkit-box',
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: 'vertical',
-                        overflow: 'hidden',
-                    }}
-                    title={row.original.note || ''}
-                >
-                    {row.original.note || '-'}
-                </div>
-            )
-        },
-        {
-            accessorKey: 'createdAt',
-            header: t('Date') || 'التاريخ',
-            cell: ({ row }) => {
-                if (!row.original.createdAt) return '-';
-                const date = new Date(row.original.createdAt);
-                return (
-                    <div className="flex flex-col text-xs text-slate-500 whitespace-nowrap">
-                        <span className="font-medium text-slate-700">{date.toLocaleDateString()}</span>
-                        <span>{date.toLocaleTimeString()}</span>
-                    </div>
-                );
-            }
-        }
+
+
     ];
 
     return (
