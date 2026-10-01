@@ -18,7 +18,6 @@ import {
 import { DollarSign, ShoppingCart, TrendingUp, Star, Filter, Calendar } from 'lucide-react';
 import { useGet } from '@/hooks/useGet';
 import { useTranslation } from '@/hooks/useTranslation';
-import WalletCard from './Wallet/WalletCard';
 
 // ألوان مطابقة لتصميم Figma
 const BRAND_YELLOW = '#F5A623';
@@ -154,11 +153,8 @@ const filteredGeoData = geographicMap
             </div>
 
 {/* البطاقات العلوية */}
-<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
     
-    {/* كارت محفظة المطعم الجديد */}
-    <WalletCard />
-
     {/* كارت Total Revenue */}
     <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-start gap-4">
         <div className="p-3 bg-yellow-50 rounded-xl text-yellow-500"><DollarSign size={24} /></div>

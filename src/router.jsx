@@ -105,6 +105,7 @@ import AssignDeliveryMan from "./Pages/DeliveryAccount/AssignDeliveryMan";
 import CollectDeliveryCash from "./Pages/DeliveryAccount/CollectDeliveryCash";
 import VisaRepo from "./Pages/VisaRepo/VisaRepo";
 import WalletTransactions from "./Pages/Wallet/WalletTransactions";
+import WalletPage from "./Pages/Wallet/WalletPage";
 const router = createBrowserRouter([
   {
     path: "/login",
@@ -133,6 +134,10 @@ const router = createBrowserRouter([
       {
         path: "wallet-transactions",
         element: <WalletTransactions />
+      },
+      {
+        path: "wallet",
+        element: <WalletPage />
       },
 
       {

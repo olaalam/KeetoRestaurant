@@ -140,6 +140,7 @@ export const getModules = (t, orderCounts = {}) => {
         { title: t("expense-categories"), url: "/expense-categories", icon: ShieldCheck },
         { title: t("expense"), url: "/expense", icon: ShieldCheck },
         { title: t("financialAccounts"), url: "/financialAccounts", icon: UserCog },
+        { title: t("wallet"), url: "/wallet", icon: UserCog },
 
 
       ],
@@ -161,7 +162,7 @@ export const getModules = (t, orderCounts = {}) => {
       items: [
         { title: t("myKeeto"), url: "/mykeeto", icon: KeetoIcon, permissionKey: "report" },
         { title: t("invoice"), url: "/invoice", icon: KeetoIcon, permissionKey: "report" },
-        { title: t("paymentMethods"), url: "/payment-method-report", icon: KeetoIcon, permissionKey: "report" }, 
+        { title: t("paymentMethods"), url: "/payment-method-report", icon: KeetoIcon, permissionKey: "report" },
         { title: t("visarepo"), url: "/visa-repo", icon: KeetoIcon, permissionKey: "report" },
       ],
     },
