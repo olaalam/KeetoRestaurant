@@ -4,7 +4,7 @@ import { ArrowRight, ArrowLeft } from 'lucide-react';
 import GenericDataTable from '@/components/GenericDataTable';
 import { useGet } from '@/hooks/useGet';
 import { useTranslation } from '@/hooks/useTranslation';
-import { amountStyle, formatMoney, methodMeta } from './WalletUtils';
+import { amountStyle, formatMoney, methodMeta } from './Walletutils';
 
 const EGP = <span className="text-xs font-normal"> EGP</span>;
 

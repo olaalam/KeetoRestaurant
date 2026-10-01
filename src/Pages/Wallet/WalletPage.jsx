@@ -4,7 +4,7 @@ import { Wallet, ArrowDownRight, ArrowUpRight, Receipt, Banknote, TrendingUp, Sc
 import { useGet } from '@/hooks/useGet';
 import { useTranslation } from '@/hooks/useTranslation';
 import { cn } from '@/lib/utils';
-import { toNum, amountStyle, formatMoney, methodMeta } from './WalletUtils';
+import { toNum, amountStyle, formatMoney, methodMeta } from './Walletutils';
 
 // رقم ملوّن (أحمر للسالب / أخضر للموجب)
 function Money({ value, className = '', showSign = true }) {
