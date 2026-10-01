@@ -135,4 +135,4 @@ export const filterModulesByPermissions = (user, modules) =>
           (!item.subItems || item.subItems.length > 0),
         ),
     }))
-    .filter((module) => module.items?.length > 0);
+    .filter((module) => module.items?.length > 0 && canViewModule(user, module));

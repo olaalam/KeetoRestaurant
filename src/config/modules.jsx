@@ -147,7 +147,7 @@ export const getModules = (t, orderCounts = {}) => {
     },
     {
       name: t("DeliveryAccounts"),
-      key: "deliveryAccounts",
+      key: "delivery_man_accounts",
       items: [
         { title: t("outfordelivery"), url: "/out-for-delivery-page", icon: ShieldCheck },
         { title: t("assigndeliveryman"), url: "/assign-delivery-man", icon: ShieldCheck },
