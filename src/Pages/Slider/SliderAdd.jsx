@@ -34,10 +34,12 @@ const SliderAdd = () => {
 
     const initialData = useMemo(() => {
         if (!rawData) return null;
-        const { periorty, ...restOfData } = rawData;
+        const { periorty, status, ...restOfData } = rawData;
         return {
             ...restOfData,
-            periorty: rawData.periorty || periorty 
+            periorty: rawData.periorty || periorty,
+            // قراءة الحالة وتحويلها لـ true/false لتعمل مع الـ Switch
+            status: status === 'active' || status === true || status === 1
         };
     }, [rawData]);
 
@@ -65,6 +67,12 @@ const SliderAdd = () => {
             label: t('priority'), 
             type: 'number', 
             required: true 
+        },
+        {
+            name: 'status',
+            label: t('status') || 'Status',
+            type: 'switch',
+            required: false 
         },
         {
             name: 'linkType',
@@ -140,6 +148,10 @@ const SliderAdd = () => {
     // دالة لتنظيف الـ Payload وإزالة الحقول المتروكة فارغة أو غير التابعة للنوع المختار
     const transformData = (data) => {
         const cleanedData = { ...data };
+
+        // تحويل حالة الـ Switch إلى نصوص ليتم إرسالها بشكل صحيح
+        cleanedData.status = cleanedData.status ? 'active' : 'inactive';
+
         const linkRelatedFields = ['link', 'categoryId', 'subcategoryId', 'foodId', 'discountId'];
 
         // تحديد الحقل الصحيح بناءً على linkType

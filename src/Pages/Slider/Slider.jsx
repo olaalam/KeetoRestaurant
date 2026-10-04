@@ -59,6 +59,7 @@ export default function Slider() {
                 {
             accessorKey: "status",
             header: t("status"),
+            
         },
         {
             id: "targetValue",

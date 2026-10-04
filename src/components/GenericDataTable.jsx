@@ -35,7 +35,7 @@ import {
   ChevronLeft,
   ChevronRight,
   AlertCircle,
-  X 
+  X
 } from "lucide-react";
 import DeleteDialog from "./DeleteDialog";
 import LoadingSpinner from "./LoadingSpinner";
@@ -89,7 +89,7 @@ export default function GenericDataTable({
   const [globalFilter, setGlobalFilter] = useState("");
   const [sorting, setSorting] = useState([]);
   const [deleteId, setDeleteId] = useState(null);
-  
+
   const [inactiveDialog, setInactiveDialog] = useState({
     isOpen: false,
     rowId: null,
@@ -113,7 +113,7 @@ export default function GenericDataTable({
   useEffect(() => {
     setPagination((prev) => ({ ...prev, pageIndex: 0 }));
   }, [globalFilter, setPagination]);
-    const sortedData = useMemo(() => {
+  const sortedData = useMemo(() => {
     if (!Array.isArray(data)) return [];
     return [...data].sort((a, b) => {
       const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
@@ -138,25 +138,25 @@ export default function GenericDataTable({
     }
   }, [activeHighlightedId, sortedData, pagination.pageSize, setPagination, location.state?.pageIndex]);
 
-const updateStatusMutation = useMutation({
+  const updateStatusMutation = useMutation({
     mutationFn: async ({ id, newStatus, keyName, reason }) => {
       const isBundle = editApiUrl.includes("bundles");
       const isDiscount = editApiUrl.includes("discounts");
-      
+
       const url = (isBundle || isDiscount)
         ? `${editApiUrl}/${id}/toggle-status`
         : `${editApiUrl}/${id}`;
 
       const requestBody = {};
       requestBody[keyName] = newStatus;
-      
+
       if (reason) {
         requestBody.inactiveReason = reason;
       }
 
       // استخدام PATCH مع الـ Bundles كما طلبت
       if (isBundle) {
-         return await api.patch(url, requestBody);
+        return await api.patch(url, requestBody);
       }
       return await api.put(url, requestBody);
     },
@@ -221,7 +221,9 @@ const updateStatusMutation = useMutation({
           ...col,
           cell: ({ row }) => {
             const currentStatus = row.getValue(col.accessorKey);
-            const isActive = currentStatus === "active" || currentStatus === "paid" || currentStatus === true || currentStatus === 1;
+
+            // 1. العرض (View): فحص الحالة إذا كانت "active" أو true
+            const isActive = currentStatus === "active" || currentStatus === true || currentStatus === 1;
             const isBlocked = currentStatus === "blocked";
             const rowId = row.original.id || row.original.menuItemId;
 
@@ -231,21 +233,8 @@ const updateStatusMutation = useMutation({
                   checked={isActive}
                   disabled={updateStatusMutation.isPending}
                   onCheckedChange={(checked) => {
-                    let newStatus;
-                    if (col.accessorKey === "isActive") {
-                      newStatus = checked;
-                    } else if (typeof currentStatus === "string") {
-                      if (currentStatus === "paid" || currentStatus === "unpaid") {
-                        newStatus = checked ? "paid" : "unpaid";
-                      } else if (currentStatus === "active" || currentStatus === "blocked") {
-                        newStatus = checked ? "active" : "blocked";
-                      } else {
-                        newStatus = checked ? "active" : "inactive";
-                      }
-                    } else {
-                      newStatus = checked;
-                    }
-
+                    // 2. الـ Payload: إرسال القيمة كـ boolean (true / false) مباشرة
+                    const newStatus = checked ? "active" : "inactive";
                     if (!checked && requireInactiveReason) {
                       setInactiveDialog({
                         isOpen: true,
@@ -260,10 +249,10 @@ const updateStatusMutation = useMutation({
                 />
                 <span className={cn(
                   "text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded-full",
-                  isActive 
-                    ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400" 
-                    : isBlocked 
-                      ? "bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400" 
+                  isActive
+                    ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400"
+                    : isBlocked
+                      ? "bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400"
                       : "bg-slate-100 text-slate-500"
                 )}>
                   {isActive ? t("active") : isBlocked ? (t("blocked") || "blocked") : t("inactive")}
@@ -328,11 +317,11 @@ const updateStatusMutation = useMutation({
     return baseColumns;
   }, [columns, onEdit, deleteApiUrl, actions, editApiUrl, updateStatusMutation.isPending, t, requireInactiveReason]);
 
-const table = useReactTable({
+  const table = useReactTable({
     data: sortedData,
     columns: tableColumns,
-    state: { 
-      globalFilter, 
+    state: {
+      globalFilter,
       pagination,
       sorting, // <-- 1. إضافة حالة الترتيب هنا
     },
@@ -580,13 +569,13 @@ const table = useReactTable({
       {inactiveDialog.isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm transition-opacity">
           <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl w-[90%] max-w-md p-6 relative animate-in zoom-in-95 duration-200">
-            <button 
+            <button
               onClick={closeInactiveDialog}
               className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors"
             >
               <X size={20} />
             </button>
-            
+
             <div className="flex items-center gap-3 mb-4">
               <div className="p-2 bg-orange-100 text-orange-600 rounded-full">
                 <AlertCircle size={24} />
@@ -595,7 +584,7 @@ const table = useReactTable({
                 {t("inactiveReasonTitle") || "سبب الإيقاف"}
               </h3>
             </div>
-            
+
             <p className="text-sm text-slate-500 mb-4">
               {t("inactiveReasonDesc") || "يرجى كتابة سبب تحويل الحالة إلى غير مفعل/موقوف للمتابعة."}
             </p>
@@ -612,8 +601,8 @@ const table = useReactTable({
               <Button variant="outline" onClick={closeInactiveDialog}>
                 {t("cancel") || "إلغاء"}
               </Button>
-              <Button 
-                onClick={submitInactiveReason} 
+              <Button
+                onClick={submitInactiveReason}
                 className="bg-orange-600 hover:bg-orange-700 text-white"
               >
                 {updateStatusMutation.isPending ? <LoadingSpinner className="h-4 w-4 mr-2" /> : null}
