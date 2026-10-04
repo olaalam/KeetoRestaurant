@@ -361,12 +361,6 @@ export default function Layout() {
                           />
                         )}
                       </button>
-
-                      <div className="h-4 w-[1px] bg-border shrink-0" />
-
-                      <span className="font-bold text-lg tracking-tight text-slate-800 dark:text-slate-100 truncate">
-                        {activeModule.name}
-                      </span>
                     </div>
                   ) : (
                     <div className="flex flex-col">
@@ -601,6 +595,17 @@ export default function Layout() {
               </div>
 
             </div>
+            {activeModule && (
+              <div className="flex min-h-12 items-center gap-3 border-t bg-muted/30 px-4 py-2 sm:px-6">
+                <span
+                  aria-hidden="true"
+                  className="h-5 w-1 shrink-0 rounded-full bg-primary"
+                />
+                <span className="min-w-0 truncate text-base font-semibold tracking-tight text-foreground">
+                  {activeModule.name}
+                </span>
+              </div>
+            )}
           </header>
 
           {/* Content */}
