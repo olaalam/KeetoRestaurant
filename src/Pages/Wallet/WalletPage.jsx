@@ -44,7 +44,7 @@ export default function WalletPage() {
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
 
-    // بناء روابط ה-Query String للطلب
+    // بناء روابط ال-Query String للطلب
     const queryParams = new URLSearchParams();
     if (startDate) queryParams.append('startDate', startDate);
     if (endDate) queryParams.append('endDate', endDate);
@@ -61,6 +61,8 @@ export default function WalletPage() {
     const foodOrdersSummary = wallet.foodOrdersSummary || {};
     const fees = wallet.fees || {};
     const planFees = wallet.currentPlanFees || {};
+    const feesAndCommissions = wallet.feesAndCommissions || {};
+    const bySource = feesAndCommissions.bySource || {};
 
     const balance = toNum(summary.balance);
     const balanceStyle = amountStyle(balance);
@@ -175,6 +177,11 @@ export default function WalletPage() {
             {/* الكروت الأربعة الجديدة (Food Orders Summary) */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                 <StatCard
+                    icon={TrendingUp}
+                    label={t('Total Earning') || 'إجمالي الأرباح'}
+                    value={foodOrdersSummary.totalAmount}
+                />
+                <StatCard
                     icon={ShoppingBag}
                     label={t('Total Orders') || 'إجمالي الطلبات'}
                     value={foodOrdersSummary.totalOrders}
@@ -185,11 +192,7 @@ export default function WalletPage() {
                     label={t('Food Order') || 'طلبات الطعام'}
                     value={foodOrdersSummary.totalSubtotal}
                 />
-                <StatCard
-                    icon={TrendingUp}
-                    label={t('Total Earning') || 'إجمالي الأرباح'}
-                    value={foodOrdersSummary.totalAmount}
-                />
+
                 <StatCard
                     icon={Truck}
                     label={t('Total Delivery Fees') || 'إجمالي رسوم التوصيل'}
@@ -197,37 +200,64 @@ export default function WalletPage() {
                 />
             </div>
 
-            {/* الرسوم */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                    <h4 className="text-base font-semibold text-gray-800 mb-4">{t('Fees') || 'الرسوم'}</h4>
-                    <dl className="space-y-3 text-sm">
-                        {[
-                            [t('Service Fees') || 'رسوم الخدمة', fees.totalServiceFeesRecorded],
-                            [t('Commission') || 'العمولة', fees.totalCommissionRecorded],
-                            [t('Subscriptions') || 'الاشتراكات', fees.totalSubscriptionsRecorded],
-                        ].map(([label, val]) => (
-                            <div key={label} className="flex justify-between">
-                                <dt className="text-gray-500">{label}</dt>
-                                <dd className="font-semibold text-slate-700" dir="ltr">{formatMoney(val)} EGP</dd>
-                            </div>
-                        ))}
-                    </dl>
-                </div>
+            {/* رسوم وعمولات كل مصدر */}
+            <section className="mb-8">
+                <h4 className="text-base font-semibold text-gray-800 mb-4">
+                    {t('Fees and Commissions by Source') || 'الرسوم والعمولات حسب المصدر'}
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    {[
+                        { key: 'keeto', label: t('Keeto') || 'كيتو' },
+                        { key: 'online_order_app', fallbackKey: 'app', label: t('App') || 'التطبيق' },
+                        { key: 'pos', label: t('POS') || 'نقاط البيع' },
+                        { key: 'online_order_web', label: t('Web') || 'الموقع' }
+                    ].map(({ key, fallbackKey, label }) => {
+                        const sourceData = bySource[key] || (fallbackKey && bySource[fallbackKey]) || {};
 
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                    <h4 className="text-base font-semibold text-gray-800 mb-4">{t('Current Plan Fees') || 'رسوم الباقة الحالية'}</h4>
-                    <dl className="space-y-3 text-sm">
-                        <div className="flex justify-between">
-                            <dt className="text-gray-500">{t('Service fee per order') || 'رسوم الخدمة لكل طلب'}</dt>
-                            <dd className="font-semibold text-slate-700" dir="ltr">{formatMoney(planFees.totalServiceFeePerOrder)} EGP</dd>
-                        </div>
-                        <div className="flex justify-between">
-                            <dt className="text-gray-500">{t('Commission rate') || 'نسبة العمولة'}</dt>
-                            <dd className="font-semibold text-slate-700" dir="ltr">{toNum(planFees.totalCommissionRatePercent).toFixed(2)}%</dd>
-                        </div>
-                    </dl>
+                        return (
+                            <div key={key} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col">
+                                <h5 className="text-base font-semibold text-gray-800 mb-4">{label}</h5>
+                                <dl className="space-y-3 text-sm flex-1">
+                                    <div className="flex justify-between">
+                                        <dt className="text-gray-500">{t('Total Orders') || 'إجمالي الطلبات'}</dt>
+                                        <dd className="font-semibold text-slate-700" dir="ltr">{sourceData.totalOrders ?? 0}</dd>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <dt className="text-gray-500">{t('Service Fees') || 'رسوم الخدمة'}</dt>
+                                        <dd className="font-semibold text-slate-700" dir="ltr">{formatMoney(sourceData.serviceFees)} EGP</dd>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <dt className="text-gray-500">{t('App Commission') || 'عمولة التطبيق'}</dt>
+                                        <dd className="font-semibold text-slate-700" dir="ltr">{formatMoney(sourceData.appCommission)} EGP</dd>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <dt className="text-gray-500">{t('Visa Commission') || 'عمولة الفيزا'}</dt>
+                                        <dd className="font-semibold text-slate-700" dir="ltr">{formatMoney(sourceData.visaCommission)} EGP</dd>
+                                    </div>
+                                    <div className="flex justify-between pt-3 border-t border-gray-100 mt-3">
+                                        <dt className="text-gray-700 font-bold">{t('Total Commission') || 'إجمالي العمولة'}</dt>
+                                        <dd className="font-bold text-slate-800" dir="ltr">{formatMoney(sourceData.totalCommission)} EGP</dd>
+                                    </div>
+                                </dl>
+                            </div>
+                        );
+                    })}
                 </div>
+            </section>
+
+            {/* رسوم الباقة الحالية */}
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                <h4 className="text-base font-semibold text-gray-800 mb-4">{t('Current Plan Fees') || 'رسوم الباقة الحالية'}</h4>
+                <dl className="space-y-3 text-sm">
+                    <div className="flex justify-between">
+                        <dt className="text-gray-500">{t('Service fee per order') || 'رسوم الخدمة لكل طلب'}</dt>
+                        <dd className="font-semibold text-slate-700" dir="ltr">{formatMoney(planFees.totalServiceFeePerOrder)} EGP</dd>
+                    </div>
+                    <div className="flex justify-between">
+                        <dt className="text-gray-500">{t('Commission rate') || 'نسبة العمولة'}</dt>
+                        <dd className="font-semibold text-slate-700" dir="ltr">{toNum(planFees.totalCommissionRatePercent).toFixed(2)}%</dd>
+                    </div>
+                </dl>
             </div>
         </div>
     );
