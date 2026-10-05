@@ -440,6 +440,7 @@ const translations = {
     "Total Earnings": "Total Earnings",
     "Pending Withdraw": "Pending Withdraw",
     tobecollected: "To be collected",
+    totalVisaCommission:"Total Visa Commission",
 
     // WalletR page
     restaurantWallet: "Restaurant Wallet",
@@ -589,6 +590,8 @@ const translations = {
     DiscountedProducts: "Discounted Products",
     offerInfo: "Offer Information",
     manageYourDiscountDetails: "Manage your discount details and the products it applies to.",
+    commissionFromVisaPayments: "Commission from Visa Payments",
+    visaCommission: "Visa Commission",
     //order
     "ordersManagement": "Orders Management",
     "orderNumber": "Order Number",
@@ -2931,6 +2934,9 @@ const translations = {
     restaurantInfo: "معلومات المطعم",
     editPoints: "تعديل النقاط",
     updateRestaurantInfoDesc: " قم بتحديث معلومات مطعمك مثل الاسم، الشعار، وصف المطعم، وألوان التطبيق.",
+    totalVisaCommission: "إجمالي عمولة الفيزا",
+    commissionFromVisaPayments: "العمولة من مدفوعات الفيزا",
+    visaCommission: "عمولة الفيزا",
 
 
 

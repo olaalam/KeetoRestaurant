@@ -12,7 +12,8 @@ import {
   XCircle,
   Copy,
   Phone,
-  User
+  User,
+  CreditCard,
 } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -69,6 +70,7 @@ const ordersTableData = rawOrders.map((order) => ({
   }));
   const totalAmountSum = summary?.totalAmount || "0.00";
   const totalOrdersCount = summary?.totalOrders || 0;
+  const totalVisaCommission = summary?.totalVisaCommission || "0.00";
   
   const successStats = summary?.success || { count: 0, totalAmount: "0.00" };
   const failedStats = summary?.failed || { count: 0, totalAmount: "0.00" };
@@ -94,7 +96,14 @@ const ordersTableData = rawOrders.map((order) => ({
       subText: `${failedStats.count} ${t("orders")}`,
       icon: XCircle,
       bgIcon: "bg-rose-100 text-rose-600",
-    }
+    },
+    {
+      title: t("totalVisaCommission"),
+      value: `${totalVisaCommission} ${t("currency")}`,
+      subText: t("commissionFromVisaPayments"),
+      icon: CreditCard,
+      bgIcon: "bg-purple-100 text-purple-600",
+    },
   ];
 
   const columns = [
@@ -148,6 +157,10 @@ const ordersTableData = rawOrders.map((order) => ({
     {
       accessorKey: "branchName",
       header: t("branch"),
+    },
+        {
+      accessorKey: "visaCommission",
+      header: t("visaCommission"),
     },
     {
       accessorKey: "gatewayName",
