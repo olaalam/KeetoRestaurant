@@ -403,6 +403,7 @@ const translations = {
     "Custom Range": "Custom Range",
     "Total Revenue": "Total Revenue",
     "Total Orders": "Total Orders",
+    "To be collected": "To be collected",
     "Avg. Order Value": "Avg. Order Value",
     "Peak Hours Analysis": "Peak Hours Analysis",
     "Orders": "Orders",
@@ -438,7 +439,7 @@ const translations = {
     "Collected Cash": "Collected Cash (COD)",
     "Total Earnings": "Total Earnings",
     "Pending Withdraw": "Pending Withdraw",
-
+    tobecollected: "To be collected",
 
     // WalletR page
     restaurantWallet: "Restaurant Wallet",
@@ -906,7 +907,7 @@ const translations = {
     "collectCash": "Collect Cash",
     "totalOrders": "Total Orders",
     "totalCash": "Total Delivered Cash",
-    "cashOnHand": "Cash With Delivery Man",
+    "cashOnHand": "Cash On Hand",
     "orderNumber": "Order Number",
     "customerName": "Customer Name",
     "amount": "Amount",
@@ -2904,6 +2905,7 @@ const translations = {
     "section": "القسم",
     "edit": "تعديل",
     "noDataAvailable": "لا توجد بيانات متاحة",
+    tobecollected: "يجب تحصيلها",
 
     "orderDelayAlertsTitle": "تنبيهات تأخير الطلبات",
     "alertNameCol": "اسم التنبيه",

@@ -130,7 +130,7 @@ export default function OutForDelivery() {
       },
       {
         accessorKey: "cashOnHand",
-        header: t("cashOnHandColumn", "الكاش المحصل"),
+        header: t("cashOnHand", "الكاش المحصل"),
         cell: ({ row }) => {
           const status = (row.original.status || "").toLowerCase();
           // عرض المبلغ فقط إذا كانت الحالة تم التسليم، غير ذلك نعرض شرطة
@@ -185,7 +185,7 @@ export default function OutForDelivery() {
             <Package className="w-6 h-6" />
           </div>
           <div>
-            <p className="text-sm font-medium text-slate-500">{t("totalOrdersCard", "إجمالي الطلبات")}</p>
+            <p className="text-sm font-medium text-slate-500">{t("totalOrders", "إجمالي الطلبات")}</p>
             <h3 className="text-xl font-bold text-slate-800 dark:text-slate-200">
               {stats.totalOrders}
             </h3>
@@ -198,7 +198,7 @@ export default function OutForDelivery() {
             <Banknote className="w-6 h-6" />
           </div>
           <div>
-            <p className="text-sm font-medium text-slate-500">{t("totalCashCard", "إجمالي النقدية")}</p>
+            <p className="text-sm font-medium text-slate-500">{t("tobecollected", "يجب تحصيلها")}</p>
             <h3 className="text-xl font-bold text-slate-800 dark:text-slate-200">
               {stats.totalCash.toFixed(2)} {t("currency", "ج.م")}
             </h3>
@@ -211,7 +211,7 @@ export default function OutForDelivery() {
             <Wallet className="w-6 h-6" />
           </div>
           <div>
-            <p className="text-sm font-medium text-slate-500">{t("cashOnHandCard", "الكاش المحصل (في اليد)")}</p>
+            <p className="text-sm font-medium text-slate-500">{t("cashOnHand", "الكاش المحصل (في اليد)")}</p>
             <h3 className="text-xl font-bold text-slate-800 dark:text-slate-200">
               {stats.cashOnHand.toFixed(2)} {t("currency", "ج.م")}
             </h3>

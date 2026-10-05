@@ -265,7 +265,7 @@ export default function CollectDeliveryCash() {
             <Banknote className="w-6 h-6" />
           </div>
           <div>
-            <p className="text-sm text-slate-500 font-medium">{t("withDeliveryMan", "With Delivery Man")}</p>
+            <p className="text-sm text-slate-500 font-medium">{t("tobecollected")}</p>
             <h4 className="text-2xl font-bold text-slate-800">{cashWithDeliveryMan} {t("currency", "EGP")}</h4>
           </div>
         </div>

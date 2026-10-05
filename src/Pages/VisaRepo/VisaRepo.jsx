@@ -9,11 +9,15 @@ import {
   Calendar,
   Activity,
   CheckCircle2,
-  XCircle
+  XCircle,
+  Copy,
+  Phone,
+  User
 } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { useTranslation } from "@/hooks/useTranslation";
+import { toast } from "sonner";
 
 const getTodayDateString = () => {
   const today = new Date();
@@ -104,8 +108,42 @@ const ordersTableData = rawOrders.map((order) => ({
       header: t("date"),
     },
     {
-      accessorKey: "userName",
-      header: t("customer"),
+      accessorKey: "customerName",
+      header: t("customerInfo"),
+      cell: ({ row }) => {
+        const handleCopyPhone = (e) => {
+          e.stopPropagation();
+          if (row.original.userPhone) {
+            navigator.clipboard.writeText(row.original.userPhone);
+            toast.success(t("copiedSuccessfully") || "تم نسخ رقم الهاتف بنجاح");
+          }
+        };
+
+        return (
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-1 font-medium text-gray-800 dark:text-gray-200">
+              <User size={14} className="text-gray-500" />
+              {row.original.userName}
+            </div>
+            <div className="flex items-center gap-1.5 text-xs text-gray-500">
+              <div className="flex items-center gap-1">
+                <Phone size={12} />
+                {row.original.userPhone}
+              </div>
+              {row.original.userPhone && (
+                <button
+                  type="button"
+                  onClick={handleCopyPhone}
+                  className="text-gray-400 hover:text-primary transition-colors p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800"
+                  title={t("copyPhone") || "نسخ الرقم"}
+                >
+                  <Copy size={12} />
+                </button>
+              )}
+            </div>
+          </div>
+        );
+      },
     },
     {
       accessorKey: "branchName",
