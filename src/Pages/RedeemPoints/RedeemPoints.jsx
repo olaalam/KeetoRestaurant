@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Search,
   Loader2,
@@ -155,12 +155,38 @@ function BranchSelect({ branches, selectedBranchId, onSelect, isFetching, t }) {
   );
 }
 
-function InfoRow({ icon: Icon, label, value, dir }) {
-  let displayValue = "-";
-
-  if (value !== undefined && value !== null && value !== "") {
-    displayValue = value;
+function formatInfoValue(value, t) {
+  if (value === undefined || value === null || value === "") return "-";
+  if (Array.isArray(value)) {
+    return value.map((item) => formatInfoValue(item, t)).join(", ");
   }
+  if (typeof value !== "object") return value;
+
+  const detailLabels = {
+    branchMenuItemStatus: "status",
+    branchStockType: "stockType",
+    branchStockQty: "stockQty",
+  };
+
+  return (
+    Object.entries(value)
+      .map(([key, detail]) => {
+        const translationKey = detailLabels[key];
+        const label = translationKey
+          ? t(translationKey)
+          : key.replace(/([A-Z])/g, " $1").trim();
+        const formattedDetail =
+          detail && typeof detail === "object"
+            ? JSON.stringify(detail)
+            : detail ?? "-";
+        return `${label}: ${formattedDetail}`;
+      })
+      .join(" · ") || "-"
+  );
+}
+
+function InfoRow({ icon: Icon, label, value, dir, t }) {
+  const displayValue = formatInfoValue(value, t);
 
   return (
     <div className="flex items-start gap-3 bg-gray-50 rounded-xl p-3">
@@ -407,12 +433,14 @@ export default function RedeemPoints() {
                 icon={User}
                 label={t("customerName") || "Customer Name"}
                 value={order.userName}
+                t={t}
               />
               <InfoRow
                 icon={Phone}
                 label={t("phone") || "Phone Number"}
                 value={order.userPhone || order.phone}
                 dir="ltr"
+                t={t}
               />
               <InfoRow
                 icon={Coins}
@@ -422,16 +450,19 @@ export default function RedeemPoints() {
                     ? `${order.pointsDeducted} ${t("points") || "Points"}`
                     : order.points
                 }
+                t={t}
               />
               <InfoRow
                 icon={Calendar}
                 label={t("createdAt") || "Request Date"}
                 value={formatDate(order.createdAt)}
+                t={t}
               />
               <InfoRow
                 icon={Clock}
                 label={t("expiresAt") || "Expiration Date"}
                 value={formatDate(order.expiresAt)}
+                t={t}
               />
               <InfoRow
                 icon={Store}
@@ -443,16 +474,19 @@ export default function RedeemPoints() {
                     ? t("no") || "No"
                     : null
                 }
+                t={t}
               />
               <InfoRow
                 icon={AlertCircle}
                 label={t("unavailabilityReason") || "Unavailability Reason"}
                 value={order.unavailabilityReason}
+                t={t}
               />
               <InfoRow
                 icon={Info}
                 label={t("availabilityDetails") || "Availability Details"}
                 value={order.availabilityDetails}
+                t={t}
               />
             </div>
 
