@@ -230,11 +230,30 @@ export default function Layout() {
     setNewOrderPopup({ open: false, count: 0, latestNotification: null });
   };
 
+  const isVisaPaymentNotification = (notification) =>
+    notification?.data?.type === "payment_issue";
+
+  const navigateToVisaReport = () => {
+    const reportModule = translatedModules.find((module) =>
+      module.items?.some((item) => item.url === "/visa-repo")
+    );
+    if (reportModule) {
+      setActiveModule(reportModule);
+    }
+    navigate("/visa-repo");
+  };
+
   // دالة التعامل مع الضغط على زر الإشعار المنبثق
   const handlePopupCheck = () => {
-    const orderId = newOrderPopup.latestNotification?.data?.orderId || notifications[0]?.data?.orderId || "";
+    const latestNotification = newOrderPopup.latestNotification;
     handlePopupClose();
 
+    if (isVisaPaymentNotification(latestNotification)) {
+      navigateToVisaReport();
+      return;
+    }
+
+    const orderId = latestNotification?.data?.orderId || notifications[0]?.data?.orderId || "";
     const ordersModule = translatedModules.find(
       (m) =>
         m.key === "orders" ||
@@ -505,19 +524,23 @@ export default function Layout() {
                 <div
                   key={notification.id}
                   onClick={() => {
-                    const orderId = notification?.data?.orderId;
-                    if (orderId) {
-                      const ordersModule = translatedModules.find(
-                        (m) =>
-                          m.key === "orders" ||
-                          m.key === "orders-management" ||
-                          m.path === "/orders" ||
-                          (m.name && m.name.toLowerCase().includes("order"))
-                      );
-                      if (ordersModule) {
-                        setActiveModule(ordersModule);
+                    if (isVisaPaymentNotification(notification)) {
+                      navigateToVisaReport();
+                    } else {
+                      const orderId = notification?.data?.orderId;
+                      if (orderId) {
+                        const ordersModule = translatedModules.find(
+                          (m) =>
+                            m.key === "orders" ||
+                            m.key === "orders-management" ||
+                            m.path === "/orders" ||
+                            (m.name && m.name.toLowerCase().includes("order"))
+                        );
+                        if (ordersModule) {
+                          setActiveModule(ordersModule);
+                        }
+                        navigate(`/orders/details/${orderId}`);
                       }
-                      navigate(`/orders/details/${orderId}`);
                     }
                     if (!notification.isRead) {
                       handleMarkAsRead(notification.id);
