@@ -568,13 +568,12 @@ export default function OrderDetails() {
                   <CreditCard className="w-4 h-4 text-emerald-600" />
                 )}
                 <span className="capitalize">
-                  {order.customer?.isGuest
-                    ? t("notregistered")
-                    : order.isPointsRedeemed
-                      ? (document.documentElement.dir === "rtl" ? "استبدال نقاط" : "Points Redemption")
-                      : (document.documentElement.dir === "rtl" && order.paymentMethodNameAr
-                        ? order.paymentMethodNameAr
-                        : order.paymentMethodName?.replace(/_/g, " "))}
+                  {order.isPointsRedeemed
+                    ? (document.documentElement.dir === "rtl" ? "استبدال نقاط" : "Points Redemption")
+                    : (document.documentElement.dir === "rtl" && order.paymentMethodNameAr
+                      ? order.paymentMethodNameAr
+                      : order.paymentMethodName?.replace(/_/g, " ")
+                    )}
                 </span>
               </Badge>
             )}
@@ -694,15 +693,31 @@ export default function OrderDetails() {
                   </span>
                 </div>
 
-                <div className={`flex items-center gap-2.5 text-sm ${(order.status === "cancelled" || order.status === "refund" || order.cancelReason || order.cancel_reason) ? "" : "sm:col-span-2"}`}>
-                  <Receipt className="w-4 h-4 text-gray-400 shrink-0" />
-                  <span className="text-gray-500 font-medium shrink-0">
-                    {t("orderNote") || "ملاحظات الطلب"}:
-                  </span>
-                  <div className="px-3.5 py-1.5 rounded-xl border-2 border-primary bg-primary/5 font-bold text-gray-900 text-base sm:text-lg">
-                    {order.note && order.note.trim() !== "" ? order.note : "-"}
-                  </div>
-                </div>
+<div
+  className={`flex items-center gap-2.5 text-sm ${
+    (order.status === "cancelled" || order.status === "refund" || order.cancelReason || order.cancel_reason || order.customer?.isGuest)
+      ? ""
+      : "sm:col-span-2"
+  }`}
+>
+  <Receipt className="w-4 h-4 text-gray-400 shrink-0" />
+  <span className="text-gray-500 font-medium shrink-0">
+    {t("orderNote") || "ملاحظات الطلب"}:
+  </span>
+  <div className="px-3.5 py-1.5 rounded-xl border-2 border-primary bg-primary/5 font-bold text-gray-900 text-base sm:text-lg">
+    {order.note && order.note.trim() !== "" ? order.note : "-"}
+  </div>
+</div>
+
+{order.customer?.isGuest && (
+  <div className="flex items-center gap-2.5 text-sm">
+    <span className="inline-flex items-center gap-1.5 rounded-lg border border-amber-300 bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-700">
+      <User className="w-3.5 h-3.5 shrink-0" />
+      {t("notregistered")}
+    </span>
+  </div>
+)}
+
               </div>
             </CardContent>
           </Card>

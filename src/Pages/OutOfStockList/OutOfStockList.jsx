@@ -102,7 +102,7 @@ export default function OutOfStockFoods() {
     ];
 
     return (
-        <div className="container mx-auto py-10">
+        <div className="container mx-auto py-2">
             {/* فلتر الفروع */}
             <div className="mb-6 flex items-center gap-4">
                 <select 

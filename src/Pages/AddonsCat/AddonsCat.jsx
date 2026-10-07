@@ -24,7 +24,7 @@ export default function AddonsCat() {
     ];
 
     return (
-        <div className="container mx-auto py-10">
+        <div className="container mx-auto py-2">
             <GenericDataTable
                 title={t('addonCategoriesTitle')}
                 columns={columns}

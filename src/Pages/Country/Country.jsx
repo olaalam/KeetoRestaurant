@@ -24,7 +24,7 @@ export default function Country() {
     ];
 
     return (
-        <div className="container mx-auto py-10">
+        <div className="container mx-auto py-2">
             <GenericDataTable
                 title={t('countriesTitle')}
                 columns={columns}

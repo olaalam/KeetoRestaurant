@@ -98,7 +98,7 @@ export default function Profile() {
     if (isLoadingProfile) return <LoadingSpinner />;
 
     return (
-        <div className="container mx-auto py-10 max-w-6xl space-y-8">
+        <div className="container mx-auto py-2 max-w-6xl space-y-8">
             <div>
                 <h1 className="text-3xl font-bold tracking-tight text-gray-900">{t("profileTitle") || "الملف الشخصي"}</h1>
                 <p className="text-muted-foreground text-sm mt-1">

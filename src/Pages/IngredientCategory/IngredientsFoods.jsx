@@ -99,7 +99,7 @@ export default function IngredientsFoods() {
     const totalBranches = branchesData.length;
 
     return (
-        <div className="container mx-auto py-10">
+        <div className="container mx-auto py-2">
             <GenericDataTable
                 title={t("foods")}
                 columns={columns}

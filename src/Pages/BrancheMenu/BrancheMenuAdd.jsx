@@ -87,7 +87,7 @@ const BrancheMenuAdd = () => {
     if ((id && isFetching) || isSelectDataLoading) return <LoadingSpinner />;
 
     return (
-        <div className="container mx-auto py-10">
+        <div className="container mx-auto py-2">
             <AddPage
                 title={t("branchMenu")}
                 apiUrl="/api/restaurant/branchemenu"

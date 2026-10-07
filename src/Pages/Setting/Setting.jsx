@@ -186,7 +186,7 @@ export default function Setting() {
     ];
 
     return (
-        <div className="container mx-auto py-10 relative">
+        <div className="container mx-auto py-2 relative">
             <GenericDataTable
                 title={t("restaurantSetting")}
                 columns={columns}

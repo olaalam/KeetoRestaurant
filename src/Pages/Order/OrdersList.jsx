@@ -201,7 +201,7 @@ export default function OrdersList({ status }) {
   const tableTitle = `${t(status)} ${t("orders")}`;
 
   return (
-    <div className="container mx-auto py-10">
+    <div className="container mx-auto py-2">
       <div className="flex flex-wrap items-center gap-4 mb-6 bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
         <label className="text-sm font-bold text-slate-700">
           {t("startDate") || "Start Date"}:

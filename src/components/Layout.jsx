@@ -57,19 +57,33 @@ export default function Layout() {
 
   // ---- Notification Sound ----
   const audioRef = useRef(null);
+  const cancelAudioRef = useRef(null);
 
   // تحميل الصوت مسبقاً
   useEffect(() => {
-    const audio = new Audio("/sounds/notification.wav");
-    audio.volume = 0.7;
-    audio.load();
-    audioRef.current = audio;
+    const notificationAudio = new Audio("/sounds/notification.wav");
+    const cancelAudio = new Audio("/sounds/CancelSound.mp3");
+    const audios = [notificationAudio, cancelAudio];
+
+    audios.forEach((audio) => {
+      audio.volume = 0.7;
+      audio.load();
+    });
+    audioRef.current = notificationAudio;
+    cancelAudioRef.current = cancelAudio;
 
     const unlock = () => {
-      audio.play().then(() => {
-        audio.pause();
-        audio.currentTime = 0;
-      }).catch(() => { });
+      audios.forEach((audio) => {
+        const volume = audio.volume;
+        audio.volume = 0;
+        audio.play().then(() => {
+          audio.pause();
+          audio.currentTime = 0;
+          audio.volume = volume;
+        }).catch(() => {
+          audio.volume = volume;
+        });
+      });
       window.removeEventListener("click", unlock);
       window.removeEventListener("keydown", unlock);
     };
@@ -82,11 +96,22 @@ export default function Layout() {
     };
   }, []);
 
-  const playNotificationSound = () => {
+  const playNotificationSound = (notification) => {
     try {
-      if (audioRef.current) {
-        audioRef.current.currentTime = 0;
-        audioRef.current.play().catch((e) => console.warn("Notification sound failed:", e));
+      const notificationType = typeof notification?.data?.type === "string"
+        ? notification.data.type.toLowerCase().replace(/[\s-]+/g, "_")
+        : "";
+      const isCancelOrPendingPayment = [
+        "cancel",
+        "pending_payment",
+        "payment_pending",
+        "payment_issue",
+      ].includes(notificationType);
+      const audio = isCancelOrPendingPayment ? cancelAudioRef.current : audioRef.current;
+
+      if (audio) {
+        audio.currentTime = 0;
+        audio.play().catch((e) => console.warn("Notification sound failed:", e));
       }
     } catch (e) {
       console.warn("Notification sound failed:", e);
@@ -139,7 +164,7 @@ export default function Layout() {
         count: totalItems,
         latestNotification: newestNotification
       });
-      playNotificationSound();
+      playNotificationSound(newestNotification);
 
       // حفظ معرّف الإشعار في المتصفح لمنع تكراره عند الـ Refresh
       localStorage.setItem("lastSeenNotifId", newestId);
@@ -349,285 +374,282 @@ export default function Layout() {
         )}
 
         <main className="relative flex flex-col flex-1 min-w-0 max-h-screen overflow-hidden bg-background">
-<header className="flex-none sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-  {/* استخدام Grid يضمن الحماية المطلقة من التداخل */}
-  <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-1.5 sm:gap-2 px-2 sm:px-4 py-2 w-full">
+          <header className="flex-none sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+            {/* Top Bar Header */}
+            <div className="flex items-center justify-between gap-2 px-2 sm:px-4 py-2 w-full">
 
-    {/* Left Section: Title / Breadcrumb */}
-    <div className="flex min-w-0 items-center gap-1.5 sm:gap-3 justify-start">
-      {activeModule && <SidebarTrigger className="shrink-0" />}
-
-      <div className="flex items-center gap-2 truncate">
-        {!activeModule && (
-          <div className="w-1 h-4 sm:h-5 bg-primary rounded-full shrink-0" />
-        )}
-
-        {activeModule ? (
-          <div className="flex items-center gap-1 overflow-hidden">
-            <button
-              onClick={handleBack}
-              className="p-1 sm:p-1.5 rounded-md hover:bg-accent shrink-0 transition-colors group/back"
-              title={t("goBack") || "Go back"}
-            >
-              {isRTL ? (
-                <ChevronRight className="w-4 h-4 sm:w-[18px] sm:h-[18px] text-muted-foreground group-hover/back:text-primary transition-transform group-hover/back:translate-x-0.5" />
-              ) : (
-                <ChevronLeft className="w-4 h-4 sm:w-[18px] sm:h-[18px] text-muted-foreground group-hover/back:text-primary transition-transform group-hover/back:-translate-x-0.5" />
-              )}
-            </button>
-          </div>
-        ) : (
-          <div className="flex flex-col truncate">
-            <span className="font-bold text-xs sm:text-base tracking-tight text-slate-800 dark:text-slate-100 truncate">
-              {t("home")}
-            </span>
-            <span className="text-[9px] sm:text-xs text-muted-foreground font-medium truncate">
-              {restaurantName} {branchName ? `- ${branchName}` : ""}
-            </span>
-          </div>
-        )}
-      </div>
-    </div>
-
-    {/* Center: Logo - responsive في كل المقاسات (يختفي فقط تحت 400px) */}
-    <div className="hidden min-[400px]:flex items-center justify-center min-w-0">
-      <button
-        onClick={() => navigate("/")}
-        className="flex items-center gap-1.5 sm:gap-2 lg:gap-3 transition-opacity hover:opacity-90 focus:outline-none shrink-0"
-      >
-        {(user?.restaurantLogo || user?.restaurant?.restaurantLogo) && (
-          <>
-            {/* لوجو المطعم: يظهر من sm وطالع عشان الموبايل ما يتزحمش */}
-            <img
-              className="hidden sm:block h-6 md:h-8 lg:h-9 w-auto max-w-[56px] md:max-w-[90px] lg:max-w-[110px] object-contain rounded-md"
-              src={user?.restaurantLogo || user?.restaurant?.restaurantLogo}
-              alt={restaurantName || "Restaurant Logo"}
-            />
-            <div className="hidden sm:block h-5 w-px bg-slate-300 dark:bg-slate-700" />
-          </>
-        )}
-        <img
-          className="h-6 sm:h-7 md:h-8 lg:h-9 w-auto max-w-[64px] sm:max-w-[80px] lg:max-w-[110px] object-contain"
-          src="/logo.webp"
-          alt="Keeto Logo"
-        />
-      </button>
-    </div>
-
-    {/* Right Section: Actions & Profile */}
-    <div className="col-start-3 flex items-center justify-end min-w-0 gap-1 sm:gap-1.5 lg:gap-2">
-
-      {/* Product Pricing Button */}
-      <button
-        onClick={() => {
-          const pricingModule = translatedModules.find(
-            (m) =>
-              m.key === "product-pricing" ||
-              m.key === "productPricing" ||
-              m.key === "pricing" ||
-              m.path === "/product-pricing" ||
-              m.path === "/pricing" ||
-              (m.name && m.name.toLowerCase().includes("pricing"))
-          );
-
-          if (pricingModule) {
-            setActiveModule(pricingModule);
-          }
-          navigate("/pricing-product");
-        }}
-        className="flex shrink-0 items-center justify-center gap-1.5 rounded-full bg-primary/10 p-1.5 sm:p-2 xl:px-3.5 xl:py-1.5 text-primary shadow-sm transition-all duration-200 hover:bg-primary hover:text-white active:scale-95"
-        title={t("productPricing") || "Product Pricing"}
-      >
-        <Tag className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-        <span className="hidden xl:inline text-xs sm:text-sm font-medium whitespace-nowrap">
-          {t("productPricing") || "Product Pricing"}
-        </span>
-      </button>
-
-      {/* Orders Button */}
-      <button
-        onClick={() => {
-          const ordersModule = translatedModules.find(
-            (m) =>
-              m.key === "orders" ||
-              m.key === "orders-management" ||
-              m.path === "/orders" ||
-              (m.name && m.name.toLowerCase().includes("order"))
-          );
-
-          if (ordersModule) {
-            setActiveModule(ordersModule);
-          }
-          navigate("/orders");
-        }}
-        className="flex shrink-0 items-center justify-center gap-1.5 rounded-full bg-primary/10 p-1.5 sm:p-2 xl:px-3.5 xl:py-1.5 text-primary shadow-sm transition-all duration-200 hover:bg-primary hover:text-white active:scale-95"
-        title={t("orders") || "Orders"}
-      >
-        <ShoppingBag className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-        <span className="hidden xl:inline text-xs sm:text-sm font-medium whitespace-nowrap">
-          {t("orders") || "Orders"}
-        </span>
-      </button>
-
-      {/* Language Switcher - يُخفى في التابلت الضيق والموبايل لمنع الزحمة */}
-      <div className="hidden md:block shrink-0 scale-90 sm:scale-100 origin-center">
-        <LanguageSwitcher />
-      </div>
-
-      {/* Theme Switcher */}
-      <button
-        onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-        className="shrink-0 rounded-full p-1 sm:p-2 text-slate-600 hover:text-primary hover:bg-accent dark:text-slate-300 dark:hover:text-primary transition-colors cursor-pointer"
-        title={theme === "dark" ? (t("lightMode") || "Light Mode") : (t("darkMode") || "Dark Mode")}
-      >
-        {theme === "dark" ? (
-          <Sun className="w-4 h-4 sm:w-5 sm:h-5" />
-        ) : (
-          <Moon className="w-4 h-4 sm:w-5 sm:h-5" />
-        )}
-      </button>
-
-      {/* Notification Dropdown */}
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <button className="relative shrink-0 rounded-full p-1 sm:p-2 hover:bg-accent transition-colors">
-            <Bell className="w-4 h-4 sm:w-5 sm:h-5 text-slate-600 hover:text-primary transition-colors" />
-
-            {/* Badge */}
-            {totalItems > 0 && (
-              <span className="absolute top-0 right-0 sm:top-1 sm:right-1 flex h-3.5 w-3.5 sm:h-4 sm:w-4 items-center justify-center rounded-full bg-red-500 text-[9px] sm:text-[10px] font-bold text-white shadow-sm border border-white dark:border-slate-900">
-                {totalItems > 99 ? '99+' : totalItems}
-              </span>
-            )}
-          </button>
-        </DropdownMenuTrigger>
-
-        <DropdownMenuContent align="end" className="w-72 sm:w-80 md:w-96 rounded-xl p-0 shadow-lg z-[100]">
-          <div className="flex items-center justify-between px-4 py-3 border-b bg-slate-50/50 rounded-t-xl">
-            <span className="font-semibold text-slate-800">{t("notifications")}</span>
-            <button
-              onClick={handleMarkAllRead}
-              disabled={isMarkingAll || unreadCount === 0}
-              className="text-xs font-medium text-blue-600 hover:text-blue-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              {isMarkingAll ? t("updating") : t("markAllRead")}
-            </button>
-          </div>
-
-          <div className="max-h-[350px] sm:max-h-[400px] overflow-y-auto">
-            {isLoadingNotifications ? (
-              <div className="p-8 text-center text-sm text-slate-500">{t("loadingNotifications")}</div>
-            ) : notifications.length === 0 ? (
-              <div className="p-8 text-center text-sm text-slate-500">{t("noNotifications")}</div>
-            ) : (
-              notifications.map((notification) => (
-                <div
-                  key={notification.id}
-                  onClick={() => {
-                    if (isVisaPaymentNotification(notification)) {
-                      navigateToVisaReport();
-                    } else {
-                      const orderId = notification?.data?.orderId;
-                      if (orderId) {
-                        const ordersModule = translatedModules.find(
-                          (m) =>
-                            m.key === "orders" ||
-                            m.key === "orders-management" ||
-                            m.path === "/orders" ||
-                            (m.name && m.name.toLowerCase().includes("order"))
-                        );
-                        if (ordersModule) {
-                          setActiveModule(ordersModule);
-                        }
-                        navigate(`/orders/details/${orderId}`);
-                      }
-                    }
-                    if (!notification.isRead) {
-                      handleMarkAsRead(notification.id);
-                    }
-                  }}
-                  className={`p-3 sm:p-4 border-b last:border-b-0 flex flex-col gap-1 transition-colors cursor-pointer ${
-                    notification.isRead ? 'bg-white hover:bg-slate-50' : 'bg-blue-50/50 hover:bg-blue-50'
-                  }`}
+              {/* Left Section: Logo + Title / Breadcrumb */}
+              <div className="flex min-w-0 items-center gap-2 sm:gap-4 justify-start">
+                {/* Logo على الشمال خالص */}
+                <button
+                  onClick={() => navigate("/")}
+                  className="flex items-center gap-1.5 sm:gap-2 lg:gap-3 transition-opacity hover:opacity-90 focus:outline-none shrink-0"
                 >
-                  <div className="flex justify-between items-start gap-2">
-                    <h4 className={`text-xs sm:text-sm leading-tight ${notification.isRead ? 'font-medium text-slate-700' : 'font-bold text-slate-900'}`}>
-                      {notification.title}
-                    </h4>
+                  {(user?.restaurantLogo || user?.restaurant?.restaurantLogo) && (
+                    <>
+                      <img
+                        className="hidden sm:block h-6 md:h-8 lg:h-9 w-auto max-w-[56px] md:max-w-[90px] lg:max-w-[110px] object-contain rounded-md"
+                        src={user?.restaurantLogo || user?.restaurant?.restaurantLogo}
+                        alt={restaurantName || "Restaurant Logo"}
+                      />
+                      <div className="hidden sm:block h-5 w-px bg-slate-300 dark:bg-slate-700" />
+                    </>
+                  )}
+                  <img
+                    className="h-6 sm:h-7 md:h-8 lg:h-9 w-auto max-w-[64px] sm:max-w-[80px] lg:max-w-[110px] object-contain"
+                    src="/logo.webp"
+                    alt="Keeto Logo"
+                  />
+                </button>
 
-                    {!notification.isRead && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleMarkAsRead(notification.id);
-                        }}
-                        className="shrink-0 text-[10px] font-medium bg-blue-100 text-blue-700 px-2 py-0.5 rounded hover:bg-blue-200 transition-colors"
-                      >
-                        {t("markRead")}
-                      </button>
-                    )}
+                {/* Title / Breadcrumb (عند عدم وجود activeModule) */}
+                {!activeModule && (
+                  <div className="flex items-center gap-2 truncate border-s border-slate-200 dark:border-slate-700 ps-2 sm:ps-3">
+                    <div className="flex flex-col truncate">
+                      <span className="font-bold text-xs sm:text-base tracking-tight text-slate-800 dark:text-slate-100 truncate">
+                        {t("home")}
+                      </span>
+                      <span className="text-[9px] sm:text-xs text-muted-foreground font-medium truncate">
+                        {restaurantName} {branchName ? `- ${branchName}` : ""}
+                      </span>
+                    </div>
                   </div>
-                  <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed">
-                    {notification.body}
-                  </p>
-                  <span className="text-[10px] text-slate-400 mt-0.5">
-                    {new Date(notification.createdAt).toLocaleString('en-US', {
-                      month: 'short',
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
+                )}
+              </div>
+
+              {/* Right Section: Actions & Profile */}
+              <div className="flex items-center justify-end min-w-0 gap-1 sm:gap-1.5 lg:gap-2">
+
+                {/* Product Pricing Button */}
+                <button
+                  onClick={() => {
+                    const pricingModule = translatedModules.find(
+                      (m) =>
+                        m.key === "product-pricing" ||
+                        m.key === "productPricing" ||
+                        m.key === "pricing" ||
+                        m.path === "/product-pricing" ||
+                        m.path === "/pricing" ||
+                        (m.name && m.name.toLowerCase().includes("pricing"))
+                    );
+
+                    if (pricingModule) {
+                      setActiveModule(pricingModule);
+                    }
+                    navigate("/pricing-product");
+                  }}
+                  className="flex shrink-0 items-center justify-center gap-1.5 rounded-full bg-primary/10 p-1.5 sm:p-2 xl:px-3.5 xl:py-1.5 text-primary shadow-sm transition-all duration-200 hover:bg-primary hover:text-white active:scale-95"
+                  title={t("productPricing") || "Product Pricing"}
+                >
+                  <Tag className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+                  <span className="hidden xl:inline text-xs sm:text-sm font-medium whitespace-nowrap">
+                    {t("productPricing") || "Product Pricing"}
                   </span>
+                </button>
+
+                {/* Orders Button */}
+                <button
+                  onClick={() => {
+                    const ordersModule = translatedModules.find(
+                      (m) =>
+                        m.key === "orders" ||
+                        m.key === "orders-management" ||
+                        m.path === "/orders" ||
+                        (m.name && m.name.toLowerCase().includes("order"))
+                    );
+
+                    if (ordersModule) {
+                      setActiveModule(ordersModule);
+                    }
+                    navigate("/orders");
+                  }}
+                  className="flex shrink-0 items-center justify-center gap-1.5 rounded-full bg-primary/10 p-1.5 sm:p-2 xl:px-3.5 xl:py-1.5 text-primary shadow-sm transition-all duration-200 hover:bg-primary hover:text-white active:scale-95"
+                  title={t("orders") || "Orders"}
+                >
+                  <ShoppingBag className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+                  <span className="hidden xl:inline text-xs sm:text-sm font-medium whitespace-nowrap">
+                    {t("orders") || "Orders"}
+                  </span>
+                </button>
+
+                {/* Language Switcher */}
+                <div className="hidden md:block shrink-0 scale-90 sm:scale-100 origin-center">
+                  <LanguageSwitcher />
                 </div>
-              ))
+
+                {/* Theme Switcher */}
+                <button
+                  onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                  className="shrink-0 rounded-full p-1 sm:p-2 text-slate-600 hover:text-primary hover:bg-accent dark:text-slate-300 dark:hover:text-primary transition-colors cursor-pointer"
+                  title={theme === "dark" ? (t("lightMode") || "Light Mode") : (t("darkMode") || "Dark Mode")}
+                >
+                  {theme === "dark" ? (
+                    <Sun className="w-4 h-4 sm:w-5 sm:h-5" />
+                  ) : (
+                    <Moon className="w-4 h-4 sm:w-5 sm:h-5" />
+                  )}
+                </button>
+
+                {/* Notification Dropdown */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className="relative shrink-0 rounded-full p-1 sm:p-2 hover:bg-accent transition-colors">
+                      <Bell className="w-4 h-4 sm:w-5 sm:h-5 text-slate-600 hover:text-primary transition-colors" />
+
+                      {/* Badge */}
+                      {totalItems > 0 && (
+                        <span className="absolute top-0 right-0 sm:top-1 sm:right-1 flex h-3.5 w-3.5 sm:h-4 sm:w-4 items-center justify-center rounded-full bg-red-500 text-[9px] sm:text-[10px] font-bold text-white shadow-sm border border-white dark:border-slate-900">
+                          {totalItems > 99 ? '99+' : totalItems}
+                        </span>
+                      )}
+                    </button>
+                  </DropdownMenuTrigger>
+
+                  <DropdownMenuContent align="end" className="w-72 sm:w-80 md:w-96 rounded-xl p-0 shadow-lg z-[100]">
+                    <div className="flex items-center justify-between px-4 py-3 border-b bg-slate-50/50 rounded-t-xl">
+                      <span className="font-semibold text-slate-800">{t("notifications")}</span>
+                      <button
+                        onClick={handleMarkAllRead}
+                        disabled={isMarkingAll || unreadCount === 0}
+                        className="text-xs font-medium text-blue-600 hover:text-blue-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        {isMarkingAll ? t("updating") : t("markAllRead")}
+                      </button>
+                    </div>
+
+                    <div className="max-h-[350px] sm:max-h-[400px] overflow-y-auto">
+                      {isLoadingNotifications ? (
+                        <div className="p-8 text-center text-sm text-slate-500">{t("loadingNotifications")}</div>
+                      ) : notifications.length === 0 ? (
+                        <div className="p-8 text-center text-sm text-slate-500">{t("noNotifications")}</div>
+                      ) : (
+                        notifications.map((notification) => (
+                          <div
+                            key={notification.id}
+                            onClick={() => {
+                              if (isVisaPaymentNotification(notification)) {
+                                navigateToVisaReport();
+                              } else {
+                                const orderId = notification?.data?.orderId;
+                                if (orderId) {
+                                  const ordersModule = translatedModules.find(
+                                    (m) =>
+                                      m.key === "orders" ||
+                                      m.key === "orders-management" ||
+                                      m.path === "/orders" ||
+                                      (m.name && m.name.toLowerCase().includes("order"))
+                                  );
+                                  if (ordersModule) {
+                                    setActiveModule(ordersModule);
+                                  }
+                                  navigate(`/orders/details/${orderId}`);
+                                }
+                              }
+                              if (!notification.isRead) {
+                                handleMarkAsRead(notification.id);
+                              }
+                            }}
+                            className={`p-3 sm:p-4 border-b last:border-b-0 flex flex-col gap-1 transition-colors cursor-pointer ${
+                              notification.isRead ? 'bg-white hover:bg-slate-50' : 'bg-blue-50/50 hover:bg-blue-50'
+                            }`}
+                          >
+                            <div className="flex justify-between items-start gap-2">
+                              <h4 className={`text-xs sm:text-sm leading-tight ${notification.isRead ? 'font-medium text-slate-700' : 'font-bold text-slate-900'}`}>
+                                {notification.title}
+                              </h4>
+
+                              {!notification.isRead && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleMarkAsRead(notification.id);
+                                  }}
+                                  className="shrink-0 text-[10px] font-medium bg-blue-100 text-blue-700 px-2 py-0.5 rounded hover:bg-blue-200 transition-colors"
+                                >
+                                  {t("markRead")}
+                                </button>
+                              )}
+                            </div>
+                            <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed">
+                              {notification.body}
+                            </p>
+                            <span className="text-[10px] text-slate-400 mt-0.5">
+                              {new Date(notification.createdAt).toLocaleString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </span>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
+                {/* Profile Dropdown */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className="shrink-0 rounded-full p-0.5 hover:bg-accent transition-colors">
+                      <UserCircle2 className="w-6 h-6 sm:w-8 sm:h-8 text-slate-600 hover:text-primary transition-colors" />
+                    </button>
+                  </DropdownMenuTrigger>
+
+                  <DropdownMenuContent align="end" className="w-48 sm:w-52 rounded-xl z-[100]">
+                    <DropdownMenuItem
+                      onClick={() => navigate("/profile")}
+                      className="cursor-pointer flex items-center gap-2"
+                    >
+                      <UserCircle2 size={16} />
+                      <span>{t("profile")}</span>
+                    </DropdownMenuItem>
+
+                    <DropdownMenuItem
+                      onClick={setLogout}
+                      className="cursor-pointer flex items-center gap-2 text-red-600 focus:text-red-600"
+                    >
+                      <LogOut size={16} />
+                      <span>{t("logout")}</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+
+            </div>
+
+            {/* Sub-header (Module Line) */}
+            {activeModule && (
+              <div className="flex min-h-10 sm:min-h-12 items-center gap-1.5 sm:gap-2.5 border-t bg-muted/30 px-3 py-1.5 sm:px-6">
+                {/* 1. زر السايدبار/القائمة */}
+                <SidebarTrigger className="shrink-0" />
+
+                {/* 2. زر الرجوع للخلف */}
+                <button
+                  onClick={handleBack}
+                  className="p-1 sm:p-1.5 rounded-md hover:bg-accent shrink-0 transition-colors group/back"
+                  title={t("goBack") || "Go back"}
+                >
+                  {isRTL ? (
+                    <ChevronRight className="w-4 h-4 sm:w-[18px] sm:h-[18px] text-muted-foreground group-hover/back:text-primary transition-transform group-hover/back:translate-x-0.5" />
+                  ) : (
+                    <ChevronLeft className="w-4 h-4 sm:w-[18px] sm:h-[18px] text-muted-foreground group-hover/back:text-primary transition-transform group-hover/back:-translate-x-0.5" />
+                  )}
+                </button>
+
+                {/* 3. الخط الملون */}
+                <span
+                  aria-hidden="true"
+                  className="h-4 sm:h-5 w-1 shrink-0 rounded-full bg-primary"
+                />
+
+                {/* 4. اسم الموديول */}
+                <span className="min-w-0 truncate text-sm sm:text-base font-semibold tracking-tight text-foreground">
+                  {activeModule.name}
+                </span>
+              </div>
             )}
-          </div>
-        </DropdownMenuContent>
-      </DropdownMenu>
-
-      {/* Profile Dropdown */}
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <button className="shrink-0 rounded-full p-0.5 hover:bg-accent transition-colors">
-            <UserCircle2 className="w-6 h-6 sm:w-8 sm:h-8 text-slate-600 hover:text-primary transition-colors" />
-          </button>
-        </DropdownMenuTrigger>
-
-        <DropdownMenuContent align="end" className="w-48 sm:w-52 rounded-xl z-[100]">
-          <DropdownMenuItem
-            onClick={() => navigate("/profile")}
-            className="cursor-pointer flex items-center gap-2"
-          >
-            <UserCircle2 size={16} />
-            <span>{t("profile")}</span>
-          </DropdownMenuItem>
-
-          <DropdownMenuItem
-            onClick={setLogout}
-            className="cursor-pointer flex items-center gap-2 text-red-600 focus:text-red-600"
-          >
-            <LogOut size={16} />
-            <span>{t("logout")}</span>
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </div>
-
-  </div>
-
-  {/* Sub-header */}
-  {activeModule && (
-    <div className="flex min-h-10 sm:min-h-12 items-center gap-2 sm:gap-3 border-t bg-muted/30 px-3 py-1.5 sm:px-6">
-      <span
-        aria-hidden="true"
-        className="h-4 sm:h-5 w-1 shrink-0 rounded-full bg-primary"
-      />
-      <span className="min-w-0 truncate text-sm sm:text-base font-semibold tracking-tight text-foreground">
-        {activeModule.name}
-      </span>
-    </div>
-  )}
-</header>
+          </header>
 
           {/* Content */}
           <div className="min-h-0 flex-1 overflow-auto bg-slate-50/30 dark:bg-transparent">

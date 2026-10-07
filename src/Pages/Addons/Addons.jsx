@@ -155,7 +155,7 @@ export default function Addons() {
     ];
 
     return (
-        <div className="container mx-auto py-10">
+        <div className="container mx-auto py-2">
             <GenericDataTable
                 title={t('modifier')}
                 columns={columns}

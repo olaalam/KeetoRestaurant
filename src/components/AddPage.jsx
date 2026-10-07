@@ -27,7 +27,8 @@ const AddPage = ({
     transformPayload,
     bypassIdInEdit = false,
 }) => {
-    const isEdit = method === 'PUT' || !!initialData?.id;
+    // التحقق مما إذا كانت الصفحة في حالة تعديل
+    const isEdit = method === 'PUT' || !!initialData?.id || !!initialData;
     const navigate = useNavigate();
     const location = useLocation();
     const formMethods = useForm({
@@ -109,7 +110,16 @@ const AddPage = ({
     const onSubmit = (data) => {
         const payloadToSend = transformPayload ? transformPayload(data) : data;
 
-        if (isEdit) {
+        // 1. إذا كان التعديل يُطلب صراحة بـ POST
+        if (isEdit && method?.toUpperCase() === 'POST') {
+            postMutation.mutate(payloadToSend, {
+                onSuccess: (res) => {
+                    onSuccessAction?.(res);
+                }
+            });
+        } 
+        // 2. إذا كان التعديل بـ PUT (السلوك الافتراضي لباقي الصفحات)
+        else if (isEdit) {
             const customUrl = bypassIdInEdit ? apiUrl : null;
 
             updateMutation.mutate(
@@ -124,7 +134,9 @@ const AddPage = ({
                     }
                 }
             );
-        } else {
+        } 
+        // 3. الإضافة العادية بـ POST
+        else {
             postMutation.mutate(payloadToSend, {
                 onSuccess: (res) => {
                     onSuccessAction?.(res);
@@ -132,6 +144,7 @@ const AddPage = ({
             });
         }
     };
+
     const isLoading = postMutation.isPending || updateMutation.isPending;
 
     return (

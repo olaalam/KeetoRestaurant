@@ -642,6 +642,10 @@ const router = createBrowserRouter([
         path: "free-delivery/add",
         element: <FreeDeliveryAdd />
       },
+            {
+        path: "free-delivery/edit/:id",
+        element: <FreeDeliveryAdd />
+      },
       {
         path: "pricing-product",
         element: <PricingProduct />

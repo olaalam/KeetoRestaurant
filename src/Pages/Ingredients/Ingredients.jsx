@@ -95,7 +95,7 @@ export default function Ingredients() {
     ];
 
     return (
-        <div className="container mx-auto py-10">
+        <div className="container mx-auto py-2">
             <GenericDataTable
                 title={t("ingredients")}
                 columns={columns}

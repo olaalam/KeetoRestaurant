@@ -1,14 +1,27 @@
 import React from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import AddPage from '@/components/AddPage';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useGet } from '@/hooks/useGet';
 
 export default function FreeDeliveryAdd() {
     const navigate = useNavigate();
     const location = useLocation();
+    const { id } = useParams(); // قراءة الـ id من الـ URL
     const { t } = useTranslation();
 
-    const initialData = location.state?.initialData || null;
+    const baseUrl = "/api/restaurant/free-delivery";
+
+    // جلب البيانات برقم الـ ID فقط عند وجود id
+    const { data: fetchedData, isLoading } = useGet(
+        `free-delivery`,
+        id ? `${baseUrl}` : baseUrl,
+        
+    );
+
+    // الأولوية لبيانات الـ API المجلوبة ثم الممررة من Navigate
+    const apiData = fetchedData?.data?.data || fetchedData?.data || fetchedData;
+    const initialData = apiData || location.state?.editData || location.state?.initialData || null;
 
     const fields = [
         {
@@ -41,13 +54,17 @@ export default function FreeDeliveryAdd() {
         }
     ];
 
+    if (id && isLoading) {
+        return <div className="p-6 text-center">{t('loading') || 'جاري التحميل...'}</div>;
+    }
+
     return (
         <div className="p-6 max-w-4xl mx-auto">
             <AddPage
                 title={t('freeDeliverySettings')}
-                apiUrl="/api/restaurant/free-delivery"
+                apiUrl={id ? `${baseUrl}` : baseUrl}
                 queryKey="free-delivery-list"
-                method={initialData ? 'PUT' : 'POST'}
+                method="POST"
                 fields={fields}
                 initialData={initialData}
                 onSuccessAction={() => navigate('/free-delivery')}

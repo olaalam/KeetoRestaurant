@@ -332,7 +332,7 @@ const updateStatusMutation = useMutation({
   ];
 
   return (
-    <div className="container mx-auto py-10">
+    <div className="container mx-auto py-2">
       {/* شريط الفلاتر */}
       <div className="flex flex-wrap items-center gap-4 mb-6 bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm">
         

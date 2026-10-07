@@ -187,7 +187,7 @@ export default function Popup() {
     ];
 
     return (
-        <div className="container mx-auto py-10">
+        <div className="container mx-auto py-2">
             <GenericDataTable
                 title={t("popups")}
                 columns={columns}

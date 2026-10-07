@@ -76,7 +76,7 @@ export default function QR() {
     ];
 
     return (
-        <div className="container mx-auto py-10">
+        <div className="container mx-auto py-2">
             <GenericDataTable
                 title={t("qrCode")} // عنوان الجدول معرب ومترجم
                 columns={columns}

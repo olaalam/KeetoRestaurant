@@ -52,7 +52,7 @@ export default function Image() {
     ];
 
     return (
-        <div className="container mx-auto py-10">
+        <div className="container mx-auto py-2">
             <GenericDataTable
                 title={t("restaurantImages") || "صور المطعم"}
                 columns={columns}

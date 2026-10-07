@@ -127,7 +127,7 @@ const updateStatusMutation = useMutation({
     ];
 
     return (
-        <div className="container mx-auto py-10">
+        <div className="container mx-auto py-2">
             <GenericDataTable
                 title={t("branchMenu")}
                 columns={columns}

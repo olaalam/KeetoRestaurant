@@ -28,7 +28,7 @@ export default function Expense() {
   ];
 
   return (
-    <div className="container mx-auto py-10">
+    <div className="container mx-auto py-2">
       <GenericDataTable
         title={t("Expense")}
         columns={columns}
