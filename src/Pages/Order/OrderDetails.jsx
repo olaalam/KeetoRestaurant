@@ -1415,7 +1415,14 @@ export default function OrderDetails() {
           }
         }}
       >
-        <DialogContent className="sm:max-w-lg rounded-2xl bg-white p-6 shadow-xl z-50">
+        <DialogContent
+          className="sm:max-w-lg rounded-2xl bg-white p-6 shadow-xl z-50"
+          onInteractOutside={(e) => {
+            if (e.target?.closest?.("[data-notification-popup]")) {
+              e.preventDefault();
+            }
+          }}
+        >
           <DialogHeader>
             <DialogTitle className="text-lg font-bold text-gray-900 flex items-center gap-2">
               <Truck className="w-5 h-5 text-primary" />
