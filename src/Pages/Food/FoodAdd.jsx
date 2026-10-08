@@ -3,7 +3,7 @@ import AddPage from "@/components/AddPage";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Controller, useFieldArray } from "react-hook-form";
+import { Controller, useFieldArray, useWatch } from "react-hook-form";
 import { SearchableSelect } from "@/components/SearchableSelect";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
@@ -701,7 +701,7 @@ const OptionsSection = ({ nestIndex, control, register }) => {
 
   return (
     <div className="space-y-3">
-      <Label className="text-blue-600 font-bold">{t("optionsPricingLabel")}</Label>
+      <Label className="text-primary font-bold">{t("optionsPricingLabel")}</Label>
 
       {fields.map((item, k) => (
         <div key={item.id} className="flex items-end gap-4 bg-slate-50 p-3 rounded-lg">
@@ -744,7 +744,7 @@ const OptionsSection = ({ nestIndex, control, register }) => {
         variant="outline"
         size="sm"
         onClick={() => append({ optionName: "", optionNameAr: "", optionNameFr: "", additionalPrice: 0 })}
-        className="mt-2 text-blue-600 border-blue-600"
+        className="mt-2 text-primary border-primary"
       >
         {t("addOptionBtn")}
       </Button>
@@ -756,6 +756,15 @@ const AddonsSection = ({ control, selectOptions }) => {
   const { fields, append, remove } = useFieldArray({ control, name: "addonsId" });
   const { t } = useTranslation();
 
+  // مراقبة جميع الـ Addons المختارة في القائمة
+  const watchedAddons = useWatch({
+    control,
+    name: "addonsId",
+  });
+
+  // تجميع الـ IDs للـ Addons المحددة حالياً
+  const selectedIds = watchedAddons?.map((item) => String(item?.addonsId)).filter(Boolean) || [];
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center border-b pb-4">
@@ -763,7 +772,7 @@ const AddonsSection = ({ control, selectOptions }) => {
         <Button
           type="button"
           onClick={() => append({ addonsId: "", status: "active" })}
-          className="bg-blue-600 hover:bg-blue-700 text-white"
+          className="bg-primary hover:bg-primary/90 text-white"
         >
           {t("addAddonBtn")}
         </Button>
@@ -785,19 +794,32 @@ const AddonsSection = ({ control, selectOptions }) => {
                 name={`addonsId.${index}.addonsId`}
                 control={control}
                 rules={{ required: t("pleaseSelectAddon") }}
-                render={({ field, fieldState }) => (
-                  <>
-                    <SearchableSelect
-                      options={selectOptions?.addons?.map((a) => ({ value: String(a.id), label: a.name })) || []}
-                      value={field.value ? String(field.value) : ""}
-                      onChange={field.onChange}
-                      placeholder={t("selectAddon")}
-                    />
-                    {fieldState.error && (
-                      <span className="text-destructive text-xs">{fieldState.error.message}</span>
-                    )}
-                  </>
-                )}
+                render={({ field, fieldState }) => {
+                  // تصفية القائمة لكل صف: استبعاد أي Addon اختير في صف آخر
+                  const filteredOptions =
+                    selectOptions?.addons
+                      ?.filter((a) => {
+                        const addonIdStr = String(a.id);
+                        const isSelectedElsewhere =
+                          selectedIds.includes(addonIdStr) && addonIdStr !== String(field.value);
+                        return !isSelectedElsewhere;
+                      })
+                      .map((a) => ({ value: String(a.id), label: a.name })) || [];
+
+                  return (
+                    <>
+                      <SearchableSelect
+                        options={filteredOptions}
+                        value={field.value ? String(field.value) : ""}
+                        onChange={field.onChange}
+                        placeholder={t("selectAddon")}
+                      />
+                      {fieldState.error && (
+                        <span className="text-destructive text-xs">{fieldState.error.message}</span>
+                      )}
+                    </>
+                  );
+                }}
               />
             </div>
 

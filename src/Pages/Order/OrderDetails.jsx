@@ -138,6 +138,7 @@ export default function OrderDetails() {
 
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const [selectedDeliveryMan, setSelectedDeliveryMan] = useState("");
+  const [isAssigned, setIsAssigned] = useState(false);
 
   const [deliverySearchQuery, setDeliverySearchQuery] = useState("");
 
@@ -257,8 +258,7 @@ export default function OrderDetails() {
         },
       );
 
-      const hasDeliveryMan = order?.deliveryMan?.id || order?.deliveryManId;
-      if (!hasDeliveryMan && order?.status === "preparing") {
+      if (order?.status === "preparing") {
         await api.put(`/api/restaurant/order/${orderId}`, {
           status: "out_for_delivery",
         });
@@ -275,6 +275,7 @@ export default function OrderDetails() {
       );
       setIsAssignDialogOpen(false);
       setSelectedDeliveryMan("");
+      setIsAssigned(false);
     },
     onError: (error) => {
       toast.error(
@@ -306,13 +307,20 @@ export default function OrderDetails() {
     }
   };
 
-  const handleAssignDelivery = () => {
+  // Front-end only: marks the order as assigned, no API call
+  const handleAssignOrder = () => {
     if (!selectedDeliveryMan) {
       toast.error(
         t("selectDeliveryManFirst") || "يرجى اختيار مندوب توصيل أولاً",
       );
       return;
     }
+    setIsAssigned(true);
+  };
+
+  // Backend call happens here only
+  const handleOutForDelivery = () => {
+    if (!isAssigned || !selectedDeliveryMan) return;
     assignDeliveryMutation.mutate(selectedDeliveryMan);
   };
 
@@ -463,27 +471,21 @@ export default function OrderDetails() {
               </Badge>
             )}
 
-            {(order.customer?.isGuest || order.paymentMethodName || order.paymentMethodNameAr || order.isPointsRedeemed) && (
-              <Badge
-                variant="outline"
-                className="bg-emerald-50/70 border-emerald-200 text-emerald-800 h-8 sm:h-10 font-semibold rounded-xl px-2.5 sm:px-3 text-xs sm:text-sm flex items-center gap-1.5 shadow-sm"
-              >
-                {order.customer?.isGuest ? (
-                  <User className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                ) : (
-                  <CreditCard className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                )}
-                <span className="capitalize">
-                  {order.customer?.isGuest
-                    ? t("notregistered")
-                    : order.isPointsRedeemed
-                      ? (document.documentElement.dir === "rtl" ? "استبدال نقاط" : "Points Redemption")
-                      : (document.documentElement.dir === "rtl" && order.paymentMethodNameAr
-                        ? order.paymentMethodNameAr
-                        : order.paymentMethodName?.replace(/_/g, " "))}
-                </span>
-              </Badge>
-            )}
+{(order.paymentMethodName || order.paymentMethodNameAr || order.isPointsRedeemed) && (
+  <Badge
+    variant="outline"
+    className="bg-emerald-50/70 border-emerald-200 text-emerald-800 h-8 sm:h-10 font-semibold rounded-xl px-2.5 sm:px-3 text-xs sm:text-sm flex items-center gap-1.5 shadow-sm"
+  >
+    <CreditCard className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+    <span className="capitalize">
+      {order.isPointsRedeemed
+        ? (document.documentElement.dir === "rtl" ? "استبدال نقاط" : "Points Redemption")
+        : (document.documentElement.dir === "rtl" && order.paymentMethodNameAr
+          ? order.paymentMethodNameAr
+          : order.paymentMethodName?.replace(/_/g, " "))}
+    </span>
+  </Badge>
+)}
           </div>
 
           <div className="shrink-0">
@@ -1309,7 +1311,10 @@ export default function OrderDetails() {
                 <div className="pt-2">
                   <Button
                     onClick={() => {
-                      if (order?.deliveryMan?.id || order?.deliveryManId) {
+                      if (
+                        !selectedDeliveryMan &&
+                        (order?.deliveryMan?.id || order?.deliveryManId)
+                      ) {
                         setSelectedDeliveryMan(order?.deliveryMan?.id || order?.deliveryManId);
                       }
                       setIsAssignDialogOpen(true);
@@ -1438,7 +1443,10 @@ export default function OrderDetails() {
                     return (
                       <div
                         key={id}
-                        onClick={() => setSelectedDeliveryMan(id)}
+                        onClick={() => {
+                          setSelectedDeliveryMan(id);
+                          setIsAssigned(false);
+                        }}
                         className={`p-4 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${isSelected
                           ? "border-2 border-primary bg-primary/5 shadow-2xs"
                           : "border-gray-200 hover:border-gray-300 bg-white"
@@ -1475,23 +1483,34 @@ export default function OrderDetails() {
               className="rounded-xl px-4 h-10 font-semibold"
               onClick={() => {
                 setIsAssignDialogOpen(false);
-                setSelectedDeliveryMan("");
                 setDeliverySearchQuery("");
               }}
             >
               {t("cancel") || "إلغاء"}
             </Button>
             <Button
+              variant={isAssigned ? "outline" : "default"}
+              className={`rounded-xl px-5 h-10 font-semibold ${
+                isAssigned
+                  ? "border-green-500 text-green-600 bg-green-50 hover:bg-green-50"
+                  : "bg-primary hover:bg-primary/90 text-white"
+              }`}
+              disabled={!selectedDeliveryMan || isAssigned}
+              onClick={handleAssignOrder}
+            >
+              {isAssigned
+                ? `✓ ${t("assigned") || "Assigned"}`
+                : t("assignOrder") || "Assign order"}
+            </Button>
+            <Button
               className="rounded-xl bg-primary hover:bg-primary/90 text-white px-5 h-10 font-semibold"
-              disabled={
-                assignDeliveryMutation.isPending || !selectedDeliveryMan
-              }
-              onClick={handleAssignDelivery}
+              disabled={!isAssigned || assignDeliveryMutation.isPending}
+              onClick={handleOutForDelivery}
             >
               {assignDeliveryMutation.isPending && (
                 <Loader2 className="w-4 h-4 animate-spin ml-2 rtl:mr-2 rtl:ml-0" />
               )}
-              {t("confirm") || "تأكيد التعيين"}
+              {t("outForDelivery") || "Out for delivery"}
             </Button>
           </div>
         </DialogContent>

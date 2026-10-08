@@ -122,6 +122,7 @@ const getPaymentInfo = (order, t) => {
 
 export default function AssignDeliveryMan() {
   const { t, isRTL } = useTranslation();
+  const [note, setNote] = useState("");
 
   // 1. Get branchId from Auth Store
   const userBranchId = useAuthStore((state) => state.user?.branchId || state.branchId);
@@ -736,7 +737,7 @@ export default function AssignDeliveryMan() {
             ) : (
               <>
                 <Send className="w-5 h-5 dir-rtl:rotate-180" />
-                <span>{t("assignOrders")}</span>
+                <span>{t("outfordelivery")}</span>
               </>
             )}
           </Button>
