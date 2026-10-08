@@ -306,7 +306,7 @@ export default function Layout() {
       <SidebarProvider dir={isRTL ? "rtl" : "ltr"}>
         {activeModule && <AppSidebar side={isRTL ? "right" : "left"} />}
         {newOrderPopup.open && (
-          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/20 backdrop-blur-[2px] px-4 z-[999999999]">
+          <div className="fixed inset-0 flex items-center justify-center bg-black/20 backdrop-blur-[2px] px-4 z-[999999999]">
             <div className={`w-full max-w-2xl rounded-2xl border ${isCancelled ? 'border-red-300 dark:border-red-500/50' : 'border-yellow-200 dark:border-yellow-500/30'} bg-white/95 dark:bg-slate-900/95 shadow-[0_20px_60px_rgba(15,23,42,0.18)] dark:shadow-none p-6 sm:p-7`}>
 
               {/* Header Icon & Title */}

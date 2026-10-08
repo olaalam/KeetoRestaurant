@@ -307,7 +307,7 @@ export default function OrderDetails() {
     }
   };
 
-  // Front-end only: marks the order as assigned, no API call
+  // Front-end only: marks the order as assigned and closes the dialog, no API call
   const handleAssignOrder = () => {
     if (!selectedDeliveryMan) {
       toast.error(
@@ -316,11 +316,19 @@ export default function OrderDetails() {
       return;
     }
     setIsAssigned(true);
+    setIsAssignDialogOpen(false);
+    setDeliverySearchQuery("");
   };
 
-  // Backend call happens here only
+  // Does both actions (assign + out for delivery) directly, backend call happens here
   const handleOutForDelivery = () => {
-    if (!isAssigned || !selectedDeliveryMan) return;
+    if (!selectedDeliveryMan) {
+      toast.error(
+        t("selectDeliveryManFirst") || "يرجى اختيار مندوب توصيل أولاً",
+      );
+      return;
+    }
+    setIsAssigned(true);
     assignDeliveryMutation.mutate(selectedDeliveryMan);
   };
 
@@ -471,21 +479,21 @@ export default function OrderDetails() {
               </Badge>
             )}
 
-{(order.paymentMethodName || order.paymentMethodNameAr || order.isPointsRedeemed) && (
-  <Badge
-    variant="outline"
-    className="bg-emerald-50/70 border-emerald-200 text-emerald-800 h-8 sm:h-10 font-semibold rounded-xl px-2.5 sm:px-3 text-xs sm:text-sm flex items-center gap-1.5 shadow-sm"
-  >
-    <CreditCard className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-    <span className="capitalize">
-      {order.isPointsRedeemed
-        ? (document.documentElement.dir === "rtl" ? "استبدال نقاط" : "Points Redemption")
-        : (document.documentElement.dir === "rtl" && order.paymentMethodNameAr
-          ? order.paymentMethodNameAr
-          : order.paymentMethodName?.replace(/_/g, " "))}
-    </span>
-  </Badge>
-)}
+            {(order.paymentMethodName || order.paymentMethodNameAr || order.isPointsRedeemed) && (
+              <Badge
+                variant="outline"
+                className="bg-emerald-50/70 border-emerald-200 text-emerald-800 h-8 sm:h-10 font-semibold rounded-xl px-2.5 sm:px-3 text-xs sm:text-sm flex items-center gap-1.5 shadow-sm"
+              >
+                <CreditCard className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                <span className="capitalize">
+                  {order.isPointsRedeemed
+                    ? (document.documentElement.dir === "rtl" ? "استبدال نقاط" : "Points Redemption")
+                    : (document.documentElement.dir === "rtl" && order.paymentMethodNameAr
+                      ? order.paymentMethodNameAr
+                      : order.paymentMethodName?.replace(/_/g, " "))}
+                </span>
+              </Badge>
+            )}
           </div>
 
           <div className="shrink-0">
@@ -1407,7 +1415,7 @@ export default function OrderDetails() {
           }
         }}
       >
-        <DialogContent className="sm:max-w-lg rounded-2xl bg-white p-6 shadow-xl">
+        <DialogContent className="sm:max-w-lg rounded-2xl bg-white p-6 shadow-xl z-50">
           <DialogHeader>
             <DialogTitle className="text-lg font-bold text-gray-900 flex items-center gap-2">
               <Truck className="w-5 h-5 text-primary" />
@@ -1499,18 +1507,18 @@ export default function OrderDetails() {
               onClick={handleAssignOrder}
             >
               {isAssigned
-                ? `✓ ${t("assigned") || "Assigned"}`
-                : t("assignOrder") || "Assign order"}
+                ? `✓ ${t("assigned", { defaultValue: "Assigned" })}`
+                : t("assignOrder", { defaultValue: "Assign order" })}
             </Button>
             <Button
               className="rounded-xl bg-primary hover:bg-primary/90 text-white px-5 h-10 font-semibold"
-              disabled={!isAssigned || assignDeliveryMutation.isPending}
+              disabled={assignDeliveryMutation.isPending}
               onClick={handleOutForDelivery}
             >
               {assignDeliveryMutation.isPending && (
                 <Loader2 className="w-4 h-4 animate-spin ml-2 rtl:mr-2 rtl:ml-0" />
               )}
-              {t("outForDelivery") || "Out for delivery"}
+              {t("outForDelivery", { defaultValue: "Out for Delivery" })}
             </Button>
           </div>
         </DialogContent>
