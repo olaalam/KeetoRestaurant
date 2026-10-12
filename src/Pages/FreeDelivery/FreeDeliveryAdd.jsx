@@ -26,25 +26,31 @@ export default function FreeDeliveryAdd() {
     const fields = [
         {
             name: 'minOrderAmount',
-            label: t('minOrderAmountHeader'),
+            label: t('minOrderAmount'),
+            type: 'number',
+            required: true
+        },
+        {
+            name: 'maxOrdersPerUser',
+            label: t('maxOrdersPerUser'),
             type: 'number',
             required: true
         },
         {
             name: 'startDate',
-            label: t('startDateHeader'),
+            label: t('startDate'),
             type: 'date',
             required: true
         },
         {
             name: 'endDate',
-            label: t('endDateHeader'),
+            label: t('endDate'),
             type: 'date',
             required: true
         },
         {
             name: 'status',
-            label: t('statusHeader'),
+            label: t('status'),
             type: 'select',
             options: [
                 { label: t('active'), value: 'active' },
@@ -60,15 +66,20 @@ export default function FreeDeliveryAdd() {
 
     return (
         <div className="p-6 max-w-4xl mx-auto">
-            <AddPage
-                title={t('freeDeliverySettings')}
-                apiUrl={id ? `${baseUrl}` : baseUrl}
-                queryKey="free-delivery-list"
-                method="POST"
-                fields={fields}
-                initialData={initialData}
-                onSuccessAction={() => navigate('/free-delivery')}
-            />
+<AddPage
+    title={t('freeDeliverySettings')}
+    apiUrl={id ? `${baseUrl}` : baseUrl}
+    queryKey="free-delivery-list"
+    method="POST"
+    fields={fields}
+    initialData={initialData}
+    transformPayload={(data) => ({
+        ...data,
+        startDate: data.startDate ? new Date(data.startDate).toISOString() : null,
+        endDate: data.endDate ? new Date(data.endDate).toISOString() : null,
+    })}
+    onSuccessAction={() => navigate('/free-delivery')}
+/>
         </div>
     );
 }

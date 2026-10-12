@@ -68,6 +68,7 @@ const translations = {
     prev: "Prev",
     next: "Next",
     cancelConfirmation: "Cancel Confirmation",
+    maxOrdersPerUser: "max Orders Per User",
 
     // AddPage
     editTitle: "Edit",
@@ -260,6 +261,8 @@ const translations = {
     "totalAmount": "Total Amount",
     "date": "Date",
     "ordersList": "Payments Log",
+    firstOrderDiscount: "First Order Discount",
+    deliveryManReport:"Delivery Man Report",
 
     // FoodAdd labels & errors
     foodNameLabel: "Food Name",
@@ -1015,6 +1018,10 @@ const translations = {
     "thursday": "Thursday",
     "friday": "Friday",
     "saturday": "Saturday",
+    totalOrdersCash:"Total Cash Orders",
+    totalOrdersVisa:"Total Visa Orders",
+    isBusy: "Is Busy",
+    cashEnabled: "Cash Enabled",
     //modules 
     dashboard: "Dashboard",
     Permissions: "Permissions",
@@ -2038,6 +2045,8 @@ const translations = {
     orderTime: "وقت الطلب",
     orderNote: "ملاحظات الطلب",
     deliveryTypeTitle: "التوصيل",
+    totalOrdersCash:"طلبات الكاش",
+    totalOrdersVisa:"طلبات الفيزا",
 
     // Order Items Section
     orderItemsTitle: "مكونات الطلب",
@@ -2183,6 +2192,7 @@ const translations = {
     "limited": "محدود",
     "daily": "يومي",
     "na": "غير محدد",
+    firstOrderDiscount: "خصم الطلب الأول",
     // my keeto 
     "detailedFinancialReport": "التقرير المالي التفصيلي",
     "reviewingAnalyticsFor": "مراجعة التحليلات الكاملة لـ",
@@ -2191,6 +2201,7 @@ const translations = {
     "active": "نشط",
     "unknown": "غير معروف",
     "currency": "ج.م",
+    "maxOrdersPerUser": "أقصى عدد طلبات لكل مستخدم",
     "na": "غير متوفر",
 
     "grandTotalSales": "إجمالي المبيعات الكلي",
@@ -2472,6 +2483,9 @@ const translations = {
     "statusHeader": "الحالة",
     "noImageText": "لا توجد صورة",
     orderNumberLabel: "رقم الطلب",
+    deliveryManReport: "تقرير المندوب",
+    cashEnabled: "هل الكاش متاح",
+    isBusy: "هل المطعم مشغول",
 
     // City
     "citiesTitle": "المدن",

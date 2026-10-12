@@ -7,6 +7,20 @@ import LoadingSpinner from '@/components/LoadingSpinner';
 import MapComponent from '@/components/MapComponent';
 import { useTranslation } from "@/hooks/useTranslation";
 import { MapPin, StepBack } from "lucide-react";
+const LocationSync = ({ methods, location, setLocation }) => {
+    const latVal = methods.watch('lat');
+    const lngVal = methods.watch('lng');
+
+    useEffect(() => {
+        const lat = parseFloat(latVal);
+        const lng = parseFloat(lngVal);
+        if (!isNaN(lat) && !isNaN(lng) && (lat !== location.lat || lng !== location.lng)) {
+            setLocation({ lat, lng });
+        }
+    }, [latVal, lngVal]);
+
+    return null;
+};
 
 const RestaurantAdd = () => {
     const { id } = useParams();
@@ -120,7 +134,7 @@ const RestaurantAdd = () => {
         { name: 'phoneNumber', label: t('phoneNumberLabel'), type: 'text', required: true },
         { name: 'deliveryRadiusKm', label: t('deliveryRadiusKm'), type: 'number', step: "0.1", required: true, },
         { name: 'address', label: t('addressLabel'), type: 'text', required: true },
-                { name: 'addressAr', label: t('addressLabelAr'), type: 'text', required: true },
+        { name: 'addressAr', label: t('addressLabelAr'), type: 'text', required: true },
         {
             name: 'cityId',
             label: t('city'),
@@ -169,7 +183,7 @@ const RestaurantAdd = () => {
     ];
 
     return (
-<AddPage
+        <AddPage
             title={t('branchTitle')}
             apiUrl="/api/restaurant/branches"
             queryKey="branches"
@@ -188,15 +202,15 @@ const RestaurantAdd = () => {
                             <h3 className="text-lg font-semibold">Zone Location</h3>
                         </div>
                         <p className="text-sm text-gray-500 mb-4">Click on the map or drag the marker to set the zone's exact location.</p>
-
+                        <LocationSync methods={methods} location={location} setLocation={setLocation} />
                         <div className="border rounded-xl p-1 relative">
                             <MapComponent
                                 form={methods}
                                 selectedLocation={location}
-                                setSelectedLocation={setLocation}
+                                setLocationState={setLocation}
                                 isMapClickEnabled={true}
                                 // --- جديد: تمرير قيمة الريدياس للخريطة ---
-                                radiusKm={currentRadiusKm} 
+                                radiusKm={currentRadiusKm}
                                 handleMapClick={(e) => {
                                     const { lat, lng } = e.latlng;
                                     setLocation({ lat, lng });

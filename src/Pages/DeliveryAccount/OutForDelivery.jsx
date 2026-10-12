@@ -9,7 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { MapPin, Phone, User, Truck, Package, Banknote, Wallet } from "lucide-react";
+import { MapPin, Phone, User, Truck, Package, Banknote, Wallet, CreditCard } from "lucide-react";
 
 export default function OutForDelivery() {
   const { t } = useTranslation();
@@ -62,18 +62,27 @@ export default function OutForDelivery() {
     let totalOrders = formattedOrders.length;
     let totalCash = 0;
     let cashOnHand = 0;
+    let totalOrdersCash = 0;
+    let totalOrdersVisa = 0;
 
     formattedOrders.forEach((order) => {
       const amount = parseFloat(order.totalAmount) || 0;
       totalCash += amount;
       
+      const paymentType = (order.paymentType || order.paymentMethod || "").toLowerCase();
+      if (paymentType === "cash") {
+        totalOrdersCash += 1;
+      } else if (paymentType === "visa" || paymentType === "card") {
+        totalOrdersVisa += 1;
+      }
+
       // إذا كان الطلب مُسلم، يتم إضافته لعهدة الكاش
       if (order.status?.toLowerCase() === "delivered") {
         cashOnHand += amount;
       }
     });
 
-    return { totalOrders, totalCash, cashOnHand };
+    return { totalOrders, totalCash, cashOnHand, totalOrdersCash, totalOrdersVisa };
   }, [formattedOrders]);
 
   // 4. إعداد أعمدة الجدول
@@ -178,7 +187,7 @@ export default function OutForDelivery() {
     <div className="space-y-6 w-full">
       
       {/* الكروت الإحصائية (Stats Cards) */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         {/* كارت إجمالي الطلبات */}
         <div className="bg-white dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4">
           <div className="p-3 bg-blue-50 dark:bg-blue-900/30 text-blue-600 rounded-xl">
@@ -192,10 +201,36 @@ export default function OutForDelivery() {
           </div>
         </div>
 
+        {/* كارت طلبات الكاش */}
+        <div className="bg-white dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4">
+          <div className="p-3 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 rounded-xl">
+            <Banknote className="w-6 h-6" />
+          </div>
+          <div>
+            <p className="text-sm font-medium text-slate-500">{t("totalOrdersCash", "طلبات الكاش")}</p>
+            <h3 className="text-xl font-bold text-slate-800 dark:text-slate-200">
+              {stats.totalOrdersCash}
+            </h3>
+          </div>
+        </div>
+
+        {/* كارت طلبات الفيزا */}
+        <div className="bg-white dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4">
+          <div className="p-3 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 rounded-xl">
+            <CreditCard className="w-6 h-6" />
+          </div>
+          <div>
+            <p className="text-sm font-medium text-slate-500">{t("totalOrdersVisa", "طلبات الفيزا")}</p>
+            <h3 className="text-xl font-bold text-slate-800 dark:text-slate-200">
+              {stats.totalOrdersVisa}
+            </h3>
+          </div>
+        </div>
+
         {/* كارت إجمالي النقدية */}
         <div className="bg-white dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4">
           <div className="p-3 bg-purple-50 dark:bg-purple-900/30 text-purple-600 rounded-xl">
-            <Banknote className="w-6 h-6" />
+            <Wallet className="w-6 h-6" />
           </div>
           <div>
             <p className="text-sm font-medium text-slate-500">{t("tobecollected", "يجب تحصيلها")}</p>
@@ -217,6 +252,7 @@ export default function OutForDelivery() {
             </h3>
           </div>
         </div>
+        
       </div>
 
       {/* شريط الفلترة بالمناديب */}

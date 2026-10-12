@@ -15,26 +15,31 @@ export default function FreeDelivery() {
     const columns = [
         {
             accessorKey: "minOrderAmount",
-            header: t('minOrderAmountHeader'),
+            header: t('minOrderAmount'),
             cell: ({ row }) => <span className="font-semibold">{row.original.minOrderAmount}</span>
         },
         {
+            accessorKey: "maxOrdersPerUser",
+            header: t('maxOrdersPerUser'),
+            cell: ({ row }) => <span className="font-semibold">{row.original.maxOrdersPerUser}</span>
+        },
+        {
             accessorKey: "startDate",
-            header: t('startDateHeader'),
+            header: t('startDate'),
             cell: ({ row }) => row.original.startDate
                 ? new Date(row.original.startDate).toLocaleDateString()
                 : t('naText')
         },
         {
             accessorKey: "endDate",
-            header: t('endDateHeader'),
+            header: t('endDate'),
             cell: ({ row }) => row.original.endDate
                 ? new Date(row.original.endDate).toLocaleDateString()
                 : t('naText')
         },
         {
             accessorKey: "status",
-            header: t('statusHeader'),
+            header: t('status'),
         }
     ];
 

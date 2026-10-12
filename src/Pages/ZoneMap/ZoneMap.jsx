@@ -5,7 +5,7 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import api from "@/api/axios";
-import { Pencil, MapPin, DollarSign, ShoppingBag, Layers, CheckCircle2, X, Save, Trash2, Loader2, Search } from "lucide-react";
+import { Pencil, MapPin, DollarSign, ShoppingBag, Layers, CheckCircle2, X, Save, Trash2, Loader2, Search, Undo2, Redo2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -91,11 +91,13 @@ const MapResizeHandler = () => {
 
 // 💡 Same logic as MapClickHandler in InteractiveZoneMap.jsx, but applied to the main map 
 // so other zones remain visible in their colors during editing
-const EditMapClickHandler = ({ enabled, coverageType, setCoordinates }) => {
+const EditMapClickHandler = ({ enabled, coverageType, setCoordinates, onNewPoint }) => {
   useMapEvents({
     click(e) {
       if (!enabled) return;
       const newPoint = { lat: e.latlng.lat, lng: e.latlng.lng };
+      // أي نقطة جديدة بتلغي الـ redo
+      if (onNewPoint) onNewPoint();
       if (coverageType === "RADIUS") {
         setCoordinates([newPoint]);
       } else {
@@ -134,6 +136,8 @@ export default function ZoneMap() {
   const [editMinOrderAmount, setEditMinOrderAmount] = useState("0.00");
   const [editCustomRadiusKm, setEditCustomRadiusKm] = useState("5.00");
   const [editCoordinates, setEditCoordinates] = useState([]);
+  // 💡 النقاط اللي اتعملها Undo (عشان نقدر نرجّعها بـ Redo)
+  const [redoStack, setRedoStack] = useState([]);
   const [isSaving, setIsSaving] = useState(false);
 
   // Fetch City/Zone/Branch lists for the edit form - same endpoint used in DeliveryZoneAdd.jsx
@@ -265,10 +269,12 @@ export default function ZoneMap() {
       rawCoords = zone.zone?.defaultCoordinates || zone.coordinates;
     }
     setEditCoordinates(parseCoordinatesToArray(rawCoords));
+    setRedoStack([]);
   };
 
   const handleCancelEdit = () => {
     setEditingZone(null);
+    setRedoStack([]);
   };
 
   // When selecting a different "Zone" from the dropdown, fetch its default data (fees/coords) like the original form
@@ -279,6 +285,7 @@ export default function ZoneMap() {
       setEditDeliveryFee(zone.deliveryFee || "0.00");
       setEditMinOrderAmount(zone.minOrderAmount || "0.00");
       setEditCoordinates(parseCoordinatesToArray(zone?.coordinates));
+      setRedoStack([]);
       if (zone?.coverageAreaRadiusKm) {
         setEditCustomRadiusKm(String(zone?.coverageAreaRadiusKm));
         setEditCoverageType("RADIUS");
@@ -291,8 +298,58 @@ export default function ZoneMap() {
     setEditCoverageType(newType);
     if (newType === "RADIUS" && editCoordinates.length > 1) {
       setEditCoordinates([editCoordinates[0]]);
+      setRedoStack([]);
     }
   };
+
+  // ============ 💡 Undo / Redo / Clear للنقاط ============
+  // Undo = يشيل آخر نقطة بس (مش كل النقاط)
+  const handleUndoPoint = () => {
+    if (editCoordinates.length === 0) return;
+    const lastPoint = editCoordinates[editCoordinates.length - 1];
+    setEditCoordinates(editCoordinates.slice(0, -1));
+    setRedoStack([...redoStack, lastPoint]);
+  };
+
+  // Redo = يرجّع آخر نقطة اتشالت
+  const handleRedoPoint = () => {
+    if (redoStack.length === 0) return;
+    const restoredPoint = redoStack[redoStack.length - 1];
+    setRedoStack(redoStack.slice(0, -1));
+    setEditCoordinates([...editCoordinates, restoredPoint]);
+  };
+
+  // Clear = يمسح كل النقاط
+  const handleClearPoints = () => {
+    setEditCoordinates([]);
+    setRedoStack([]);
+  };
+
+  // اختصارات الكيبورد وقت التعديل: Ctrl+Z = Undo ، Ctrl+Shift+Z أو Ctrl+Y = Redo
+  useEffect(() => {
+    if (!editingZone) return;
+
+    const onKeyDown = (e) => {
+      const tag = e.target?.tagName;
+      // لو بتكتبي في حقل (رسوم التوصيل مثلا) سيبي Ctrl+Z العادي بتاع النص
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || e.target?.isContentEditable) return;
+
+      const ctrl = e.ctrlKey || e.metaKey;
+      if (!ctrl) return;
+
+      const key = e.key.toLowerCase();
+      if (key === "z" && !e.shiftKey) {
+        e.preventDefault();
+        handleUndoPoint();
+      } else if ((key === "z" && e.shiftKey) || key === "y") {
+        e.preventDefault();
+        handleRedoPoint();
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [editingZone, editCoordinates, redoStack]);
 
   // 💡 Save - exactly the same payload built by transformPayload in DeliveryZoneAdd.jsx
   const handleSaveEdit = async () => {
@@ -466,6 +523,7 @@ export default function ZoneMap() {
                 enabled={true}
                 coverageType={editCoverageType}
                 setCoordinates={setEditCoordinates}
+                onNewPoint={() => setRedoStack([])}
               />
 
               {editCoverageType === "RADIUS" && editCoordinates.length > 0 && (
@@ -660,16 +718,45 @@ export default function ZoneMap() {
               </div>
             )}
 
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="gap-1.5 w-fit"
-              onClick={() => setEditCoordinates([])}
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-              {t("Clear Points")}
-            </Button>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="gap-1.5 w-fit"
+                onClick={handleUndoPoint}
+                disabled={editCoordinates.length === 0}
+                title="Ctrl+Z"
+              >
+                <Undo2 className="h-3.5 w-3.5" />
+                {t("Undo")}
+              </Button>
+
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="gap-1.5 w-fit"
+                onClick={handleRedoPoint}
+                disabled={redoStack.length === 0}
+                title="Ctrl+Shift+Z"
+              >
+                <Redo2 className="h-3.5 w-3.5" />
+                {t("Redo")}
+              </Button>
+
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="gap-1.5 w-fit"
+                onClick={handleClearPoints}
+                disabled={editCoordinates.length === 0}
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                {t("Clear Points")}
+              </Button>
+            </div>
 
             <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
               <Button

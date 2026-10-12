@@ -1,9 +1,21 @@
-import { MapContainer, TileLayer, Marker, Circle, Polygon, Popup, useMap, useMapEvents } from "react-leaflet";
+import {
+    MapContainer,
+    TileLayer,
+    Marker,
+    Circle,
+    Polygon,
+    Polyline,
+    CircleMarker,
+    Tooltip,
+    Popup,
+    useMap,
+    useMapEvents,
+} from "react-leaflet";
 import { Input } from "@/components/ui/input";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import { useEffect, useState } from "react";
-import { Search, MapPin, Loader2 } from "lucide-react";
+import { Search, MapPin, Loader2, Undo2, Redo2, Trash2 } from "lucide-react";
 
 // نفس باليتة الألوان المستخدمة في صفحة ZoneMap الرئيسية
 // عشان كل منطقة تبقى واضحة بلونها بدل ما كلهم يبقوا رمادي موحد
@@ -20,7 +32,7 @@ L.Icon.Default.mergeOptions({
     shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
 });
 
-// 1. دالة الـ Geocode المساعدة (لجلب العنوان عند النقر أو السحب)[cite: 9]
+// 1. دالة الـ Geocode المساعدة (لجلب العنوان عند النقر أو السحب)
 export const tryGeocode = async (lat, lng, form) => {
     try {
         const response = await fetch(
@@ -54,32 +66,28 @@ export const tryGeocode = async (lat, lng, form) => {
     form.setValue("address", fallbackAddress, { shouldValidate: true, shouldDirty: true });
 };
 
-// 2. مكون تحريك الخريطة بسلاسة وبشكل واضح (FlyTo)[cite: 11]
+// 2. مكون تحريك الخريطة بسلاسة وبشكل واضح (FlyTo)
 const RecenterMap = ({ coords }) => {
     const map = useMap();
     useEffect(() => {
         if (coords?.lat && coords?.lng) {
             // استخدام flyTo بدل setView لحركة واضحة وجميلة
-            map.flyTo([coords.lat, coords.lng], 15, { duration: 1.5 });
+            // ومانرجعش الزوم لورا لو المستخدم مقرّب أكتر من 15
+            map.flyTo([coords.lat, coords.lng], Math.max(map.getZoom(), 15), { duration: 1.5 });
         }
     }, [coords, map]);
     return null;
 };
 
-// 3. مكون التقاط النقر على الخريطة (والعكس)[cite: 10]
-const MapEventsHandler = ({ form, setLocationState, isEnabled }) => {
+// 3. مكون التقاط النقر على الخريطة
+// بقى بياخد دالة onMapClick جاهزة من المكون الأب (MapComponent)
+// عشان نفس الدالة تتحكم في الـ history (undo / redo)
+const MapEventsHandler = ({ onMapClick, isEnabled }) => {
     useMapEvents({
-        click: async (e) => {
+        click: (e) => {
             if (!isEnabled) return;
             const { lat, lng } = e.latlng;
-            
-            // تحديث الدبوس والإحداثيات
-            setLocationState({ lat, lng });
-            form.setValue("lat", String(lat), { shouldDirty: true, shouldValidate: true });
-            form.setValue("lng", String(lng), { shouldDirty: true, shouldValidate: true });
-            
-            // "والعكس": جلب العنوان وتحديث الحقل
-            await tryGeocode(lat, lng, form);
+            onMapClick(lat, lng);
         }
     });
     return null;
@@ -87,19 +95,46 @@ const MapEventsHandler = ({ form, setLocationState, isEnabled }) => {
 
 const MapComponent = ({
     selectedLocation,
-    setLocationState, // 💡 نستقبلها من ZoneAdd للربط المباشر
+    setLocationState, // نستقبلها من الصفحة الأب للربط المباشر (لازم نفس الاسم ده)
     form,
     isMapClickEnabled = true,
-    radiusKm, 
+    radiusKm,
     backgroundZones = [],
+
+    // ---- جديد: وضع الرسم ----
+    // "marker"  = دبوس واحد (الوضع الافتراضي، زي صفحة الفروع)
+    // "polygon" = رسم نقاط متعددة (زي صفحة المناطق)
+    drawMode = "marker",
+    initialPoints = [],          // نقاط مبدئية في حالة التعديل: [{ lat, lng }, ...]
+    onPointsChange,              // اختياري: بتتنادى بالنقاط كل ما تتغير
+    polygonFieldName,            // اختياري: اسم حقل في الفورم تتخزن فيه النقاط (مثلا "customCoordinates")
 }) => {
     const watchedAddress = form.watch("address");
-    
+
     const [searchQuery, setSearchQuery] = useState("");
     const [suggestions, setSuggestions] = useState([]);
     const [isSearching, setIsSearching] = useState(false);
 
+    const isPolygonMode = drawMode === "polygon";
     const radiusInMeters = (parseFloat(radiusKm) || 0) * 1000;
+
+    // ---------- history الخاص بالدبوس الواحد (marker) ----------
+    const [locationHistory, setLocationHistory] = useState([]); // المواقع السابقة
+    const [locationRedo, setLocationRedo] = useState([]);       // المواقع اللي اتعمللها undo
+
+    // ---------- النقاط الخاصة برسم المضلع (polygon) ----------
+    const [points, setPoints] = useState(initialPoints);
+    const [pointsRedo, setPointsRedo] = useState([]);
+
+    // مزامنة النقاط مع الصفحة الأب / الفورم كل ما تتغير
+    useEffect(() => {
+        if (!isPolygonMode) return;
+        if (onPointsChange) onPointsChange(points);
+        if (polygonFieldName) {
+            form.setValue(polygonFieldName, points, { shouldDirty: true, shouldValidate: true });
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [points, isPolygonMode]);
 
     useEffect(() => {
         if (searchQuery.trim().length < 3) {
@@ -127,45 +162,145 @@ const MapComponent = ({
         return () => clearTimeout(delayDebounceFn);
     }, [searchQuery]);
 
+    // ---------- دالة موحدة لتغيير موقع الدبوس (مع تسجيل history) ----------
+    const applyLocation = (loc, { recordHistory = true } = {}) => {
+        if (recordHistory && selectedLocation?.lat && selectedLocation?.lng) {
+            setLocationHistory((prev) => [
+                ...prev,
+                { lat: selectedLocation.lat, lng: selectedLocation.lng },
+            ]);
+            setLocationRedo([]); // أي حركة جديدة بتلغي الـ redo
+        }
+
+        if (setLocationState) {
+            setLocationState(loc);
+        }
+        form.setValue("lat", String(loc.lat), { shouldDirty: true, shouldValidate: true });
+        form.setValue("lng", String(loc.lng), { shouldDirty: true, shouldValidate: true });
+    };
+
+    // ---------- النقر على الخريطة ----------
+    const handleMapClick = async (lat, lng) => {
+        if (isPolygonMode) {
+            // وضع الرسم: نضيف نقطة جديدة
+            setPoints((prev) => [...prev, { lat, lng }]);
+            setPointsRedo([]);
+            return;
+        }
+
+        // وضع الدبوس: نحرك الدبوس ونجيب العنوان
+        applyLocation({ lat, lng });
+        await tryGeocode(lat, lng, form);
+    };
+
     // عند النقر على نتيجة من قائمة البحث (الليست)
     const handleSelectSuggestion = (place) => {
         const lat = parseFloat(place.lat);
         const lng = parseFloat(place.lon);
         const displayName = place.display_name;
 
-        // 1. تحديث مكان الخريطة (هتتحرك بشكل واضح بسبب FlyTo)[cite: 6]
-        if (setLocationState) {
-            setLocationState({ lat, lng });
-        }
-        
-        // 2. تحديث الفورم بالبيانات والعنوان
-        form.setValue("lat", String(lat), { shouldDirty: true, shouldValidate: true });
-        form.setValue("lng", String(lng), { shouldDirty: true, shouldValidate: true });
+        // 1. تحديث مكان الخريطة (هتتحرك بشكل واضح بسبب FlyTo)
+        applyLocation({ lat, lng });
+
+        // 2. تحديث العنوان في الفورم
         form.setValue("address", displayName, { shouldDirty: true, shouldValidate: true });
-        
+
         setSuggestions([]);
         setSearchQuery("");
     };
 
-    // عند سحب الدبوس يدويًا (والعكس)
+    // عند سحب الدبوس يدويًا
     const onMarkerDragEnd = async (e) => {
         const { lat, lng } = e.target.getLatLng();
-        
-        if (setLocationState) {
-            setLocationState({ lat, lng });
-        }
-        form.setValue("lat", String(lat), { shouldDirty: true, shouldValidate: true });
-        form.setValue("lng", String(lng), { shouldDirty: true, shouldValidate: true });
-        
+        applyLocation({ lat, lng });
+
         // جلب اسم المنطقة
         await tryGeocode(lat, lng, form);
     };
+
+    // ---------- Undo / Redo / Clear ----------
+    const canUndo = isPolygonMode ? points.length > 0 : locationHistory.length > 0;
+    const canRedo = isPolygonMode ? pointsRedo.length > 0 : locationRedo.length > 0;
+
+    const handleUndo = async () => {
+        if (!canUndo) return;
+
+        if (isPolygonMode) {
+            // نشيل آخر نقطة بس
+            const lastPoint = points[points.length - 1];
+            setPoints((prev) => prev.slice(0, -1));
+            setPointsRedo((prev) => [...prev, lastPoint]);
+            return;
+        }
+
+        // وضع الدبوس: نرجّع الدبوس لآخر مكان كان فيه
+        const previousLocation = locationHistory[locationHistory.length - 1];
+        setLocationHistory((prev) => prev.slice(0, -1));
+        setLocationRedo((prev) => [
+            ...prev,
+            { lat: selectedLocation.lat, lng: selectedLocation.lng },
+        ]);
+        applyLocation(previousLocation, { recordHistory: false });
+        await tryGeocode(previousLocation.lat, previousLocation.lng, form);
+    };
+
+    const handleRedo = async () => {
+        if (!canRedo) return;
+
+        if (isPolygonMode) {
+            const restoredPoint = pointsRedo[pointsRedo.length - 1];
+            setPointsRedo((prev) => prev.slice(0, -1));
+            setPoints((prev) => [...prev, restoredPoint]);
+            return;
+        }
+
+        const nextLocation = locationRedo[locationRedo.length - 1];
+        setLocationRedo((prev) => prev.slice(0, -1));
+        setLocationHistory((prev) => [
+            ...prev,
+            { lat: selectedLocation.lat, lng: selectedLocation.lng },
+        ]);
+        applyLocation(nextLocation, { recordHistory: false });
+        await tryGeocode(nextLocation.lat, nextLocation.lng, form);
+    };
+
+    // مسح كل النقاط (بيظهر في وضع الرسم فقط)
+    const handleClearPoints = () => {
+        setPoints([]);
+        setPointsRedo([]);
+    };
+
+    // اختصارات الكيبورد: Ctrl+Z = Undo ، Ctrl+Shift+Z أو Ctrl+Y = Redo
+    useEffect(() => {
+        const onKeyDown = (e) => {
+            const tag = e.target?.tagName;
+            // لو المستخدم بيكتب في حقل نصي نسيب Ctrl+Z العادي بتاع النص يشتغل
+            if (tag === "INPUT" || tag === "TEXTAREA" || e.target?.isContentEditable) return;
+
+            const ctrl = e.ctrlKey || e.metaKey;
+            if (!ctrl) return;
+
+            const key = e.key.toLowerCase();
+            if (key === "z" && !e.shiftKey) {
+                e.preventDefault();
+                handleUndo();
+            } else if ((key === "z" && e.shiftKey) || key === "y") {
+                e.preventDefault();
+                handleRedo();
+            }
+        };
+
+        window.addEventListener("keydown", onKeyDown);
+        return () => window.removeEventListener("keydown", onKeyDown);
+    });
+
+    const polygonPositions = points.map((p) => [p.lat, p.lng]);
 
     return (
         <div className="relative rounded-2xl overflow-hidden shadow-lg h-[460px] flex flex-col bg-white">
             {/* صندوق البحث العائم */}
             <div className="absolute top-4 left-4 right-4 z-[1000] max-w-md mx-auto">
-                 <div className="relative shadow-md rounded-xl bg-white border border-slate-200 overflow-visible">
+                <div className="relative shadow-md rounded-xl bg-white border border-slate-200 overflow-visible">
                     <div className="flex items-center px-3 py-1">
                         <Search className="text-slate-400 h-5 w-5 shrink-0" />
                         <input
@@ -201,6 +336,50 @@ const MapComponent = ({
 
             {/* الخريطة */}
             <div className="w-full h-[380px] relative z-10">
+                {/* أزرار Undo / Redo / Clear */}
+                <div className="absolute bottom-3 right-3 z-[1000] flex items-center gap-2">
+                    {isPolygonMode && (
+                        <span className="px-2 py-1 rounded-lg bg-white/90 shadow text-xs font-semibold text-slate-600">
+                            {points.length} نقطة
+                        </span>
+                    )}
+
+                    <button
+                        type="button"
+                        onClick={handleUndo}
+                        disabled={!canUndo}
+                        title="تراجع (Ctrl+Z)"
+                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-white shadow border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                        <Undo2 className="h-4 w-4" />
+                        تراجع
+                    </button>
+
+                    <button
+                        type="button"
+                        onClick={handleRedo}
+                        disabled={!canRedo}
+                        title="إعادة (Ctrl+Shift+Z)"
+                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-white shadow border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                        <Redo2 className="h-4 w-4" />
+                        إعادة
+                    </button>
+
+                    {isPolygonMode && (
+                        <button
+                            type="button"
+                            onClick={handleClearPoints}
+                            disabled={points.length === 0}
+                            title="مسح كل النقاط"
+                            className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-red-500 shadow text-xs font-semibold text-white hover:bg-red-600 disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                            <Trash2 className="h-4 w-4" />
+                            مسح الكل
+                        </button>
+                    )}
+                </div>
+
                 {selectedLocation.lat && selectedLocation.lng ? (
                     <MapContainer
                         center={selectedLocation}
@@ -210,22 +389,24 @@ const MapComponent = ({
                         style={{ minHeight: "100%" }}
                     >
                         <RecenterMap coords={selectedLocation} />
-                        
+
                         <TileLayer
                             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
                             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                         />
-                        
+
                         {/* الخلفيات - كل منطقة بلونها الخاص عشان تبقى كل الرسومات ظاهرة ومميزة عن بعض */}
                         {backgroundZones.map((zone, bgIndex) => {
                             let coords = [];
                             let rawCoords = zone.customCoordinates || zone.zone?.defaultCoordinates;
-                            
+
                             if (typeof rawCoords === "string") {
                                 try { rawCoords = JSON.parse(rawCoords); } catch (e) { rawCoords = []; }
                             }
                             if (Array.isArray(rawCoords)) {
-                                coords = rawCoords.map((pt) => [parseFloat(pt.lat), parseFloat(pt.lng)]).filter((pt) => !isNaN(pt[0]) && !isNaN(pt[1]));
+                                coords = rawCoords
+                                    .map((pt) => [parseFloat(pt.lat), parseFloat(pt.lng)])
+                                    .filter((pt) => !isNaN(pt[0]) && !isNaN(pt[1]));
                             }
 
                             const zoneColor = ZONE_COLORS[bgIndex % ZONE_COLORS.length];
@@ -265,29 +446,64 @@ const MapComponent = ({
                             return null;
                         })}
 
-                        <Marker
-                            position={selectedLocation}
-                            draggable={true}
-                            eventHandlers={{ dragend: onMarkerDragEnd }}
-                        >
-                            <Popup>
-                                <div className="text-right text-xs font-bold">📍 المنطقة الحالية</div>
-                            </Popup>
-                        </Marker>
-                        
-                        <MapEventsHandler 
-                            form={form} 
-                            setLocationState={setLocationState} 
-                            isEnabled={isMapClickEnabled} 
-                        />
+                        {/* ===== وضع الدبوس الواحد ===== */}
+                        {!isPolygonMode && (
+                            <Marker
+                                position={selectedLocation}
+                                draggable={true}
+                                eventHandlers={{ dragend: onMarkerDragEnd }}
+                            >
+                                <Popup>
+                                    <div className="text-right text-xs font-bold">📍 المنطقة الحالية</div>
+                                </Popup>
+                            </Marker>
+                        )}
 
-                        {radiusInMeters > 0 && (
+                        {!isPolygonMode && radiusInMeters > 0 && (
                             <Circle
                                 center={selectedLocation}
                                 pathOptions={{ fillColor: 'blue', color: 'blue' }}
                                 radius={radiusInMeters}
                             />
                         )}
+
+                        {/* ===== وضع رسم النقاط (Polygon) ===== */}
+                        {isPolygonMode && points.length === 2 && (
+                            <Polyline
+                                positions={polygonPositions}
+                                pathOptions={{ color: "#3B82F6", weight: 3, dashArray: "6 6" }}
+                            />
+                        )}
+
+                        {isPolygonMode && points.length >= 3 && (
+                            <Polygon
+                                positions={polygonPositions}
+                                pathOptions={{ color: "#3B82F6", fillColor: "#3B82F6", fillOpacity: 0.25, weight: 3 }}
+                            />
+                        )}
+
+                        {isPolygonMode && points.map((pt, index) => (
+                            <CircleMarker
+                                key={`pt-${index}-${pt.lat}-${pt.lng}`}
+                                center={[pt.lat, pt.lng]}
+                                radius={index === points.length - 1 ? 8 : 6}
+                                pathOptions={{
+                                    color: "#ffffff",
+                                    weight: 2,
+                                    fillColor: index === points.length - 1 ? "#EF4444" : "#3B82F6",
+                                    fillOpacity: 1,
+                                }}
+                            >
+                                <Tooltip direction="top" offset={[0, -6]}>
+                                    {index + 1}
+                                </Tooltip>
+                            </CircleMarker>
+                        ))}
+
+                        <MapEventsHandler
+                            onMapClick={handleMapClick}
+                            isEnabled={isMapClickEnabled}
+                        />
                     </MapContainer>
                 ) : (
                     <div className="flex items-center justify-center w-full h-full bg-gray-200 text-gray-500">

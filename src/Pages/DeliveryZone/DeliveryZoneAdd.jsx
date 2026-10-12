@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import AddPage from '@/components/AddPage';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
+import { Undo2, Redo2 } from "lucide-react";
 import InteractiveZoneMap from './InteractiveZoneMap';
 
 // 💡 دالة مساعدة لضمان تحويل الإحداثيات دائماً إلى Array
@@ -179,6 +180,68 @@ const DeliveryZoneAdd = () => {
             setCoordinates([coordinates[0]]);
         }
     };
+
+    // ============ 💡 Undo / Redo للنقاط ============
+    // النقاط اللي اتعملها Undo بتتخزن هنا عشان نقدر نرجّعها بـ Redo
+    const [redoStack, setRedoStack] = useState([]);
+    // علامة بتقول إن التغيير الجاي في coordinates سببه Undo/Redo (مش نقطة جديدة)
+    const skipRedoResetRef = useRef(false);
+
+    // أي تغيير في النقاط غير Undo/Redo (نقطة جديدة، سحب، Clear، تغيير المنطقة...) بيفضّي الـ Redo
+    useEffect(() => {
+        if (skipRedoResetRef.current) {
+            skipRedoResetRef.current = false;
+            return;
+        }
+        setRedoStack([]);
+    }, [coordinates]);
+
+    // Undo = يشيل آخر نقطة بس
+    const handleUndoPoint = () => {
+        if (coordinates.length === 0) return;
+        const lastPoint = coordinates[coordinates.length - 1];
+        skipRedoResetRef.current = true;
+        setCoordinates(coordinates.slice(0, -1));
+        setRedoStack([...redoStack, lastPoint]);
+    };
+
+    // Redo = يرجّع آخر نقطة اتشالت
+    const handleRedoPoint = () => {
+        if (redoStack.length === 0) return;
+        const restoredPoint = redoStack[redoStack.length - 1];
+        skipRedoResetRef.current = true;
+        setRedoStack(redoStack.slice(0, -1));
+        setCoordinates([...coordinates, restoredPoint]);
+    };
+
+    // Clear = يمسح كل النقاط
+    const handleClearPoints = () => {
+        setCoordinates([]);
+    };
+
+    // اختصارات الكيبورد: Ctrl+Z = Undo ، Ctrl+Shift+Z أو Ctrl+Y = Redo
+    useEffect(() => {
+        const onKeyDown = (e) => {
+            const tag = e.target?.tagName;
+            // لو بتكتبي في حقل (رسوم التوصيل مثلا) سيبي Ctrl+Z العادي بتاع النص
+            if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || e.target?.isContentEditable) return;
+
+            const ctrl = e.ctrlKey || e.metaKey;
+            if (!ctrl) return;
+
+            const key = e.key.toLowerCase();
+            if (key === 'z' && !e.shiftKey) {
+                e.preventDefault();
+                handleUndoPoint();
+            } else if ((key === 'z' && e.shiftKey) || key === 'y') {
+                e.preventDefault();
+                handleRedoPoint();
+            }
+        };
+
+        window.addEventListener('keydown', onKeyDown);
+        return () => window.removeEventListener('keydown', onKeyDown);
+    }, [coordinates, redoStack]);
 
     const fields = [
         {
@@ -356,14 +419,43 @@ const DeliveryZoneAdd = () => {
                                 <Label className="text-base font-semibold">
                                     {isAr ? 'الخريطة التفاعلية' : 'Interactive Map Coverage'}
                                 </Label>
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => setCoordinates([])}
-                                >
-                                    {isAr ? 'مسح النقاط' : 'Clear Points'}
-                                </Button>
+                                <div className="flex items-center gap-2">
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        className="gap-1.5"
+                                        onClick={handleUndoPoint}
+                                        disabled={coordinates.length === 0}
+                                        title="Ctrl+Z"
+                                    >
+                                        <Undo2 className="h-3.5 w-3.5" />
+                                        {isAr ? 'تراجع' : 'Undo'}
+                                    </Button>
+
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        className="gap-1.5"
+                                        onClick={handleRedoPoint}
+                                        disabled={redoStack.length === 0}
+                                        title="Ctrl+Shift+Z"
+                                    >
+                                        <Redo2 className="h-3.5 w-3.5" />
+                                        {isAr ? 'إعادة' : 'Redo'}
+                                    </Button>
+
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={handleClearPoints}
+                                        disabled={coordinates.length === 0}
+                                    >
+                                        {isAr ? 'مسح النقاط' : 'Clear Points'}
+                                    </Button>
+                                </div>
                             </div>
 
                             <InteractiveZoneMap

@@ -106,6 +106,9 @@ import CollectDeliveryCash from "./Pages/DeliveryAccount/CollectDeliveryCash";
 import VisaRepo from "./Pages/VisaRepo/VisaRepo";
 import WalletTransactions from "./Pages/Wallet/WalletTransactions";
 import WalletPage from "./Pages/Wallet/WalletPage";
+import FirstOrderDiscountAdd from "./Pages/FirstOrderDiscounts/FirstOrderDiscountsAdd";
+import FirstOrderDiscounts from "./Pages/FirstOrderDiscounts/FirstOrderDiscounts";
+import DeliveryManReport from "./Pages/DeliveryManReport/DeliveryManReport";
 const router = createBrowserRouter([
   {
     path: "/login",
@@ -699,6 +702,26 @@ const router = createBrowserRouter([
         path: "visa-repo",
         element: <VisaRepo />
       },
+      {
+        path: "first-order-discounts",
+        element: <FirstOrderDiscounts />
+      },
+      {
+        path: "first-order-discounts/add",
+        element: <FirstOrderDiscountAdd />
+      },
+      {
+        path: "first-order-discounts/edit/:id",
+        element: <FirstOrderDiscountAdd />
+      },
+      {
+        path: "delivery-man-report",
+        element: <DeliveryManReport />
+      }
+
+
+
+
 
 
 

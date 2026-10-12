@@ -30,6 +30,8 @@ const SettingPageAdd = () => {
 
     const defaultInitialData = {
         foodManagement: false,
+        isBusy: false,
+        cashEnabled: true,
         productView: "normal",
         scheduledDelivery: false,
         reviewsSection: false,
@@ -96,6 +98,8 @@ const SettingPageAdd = () => {
         return {
             id: rawData.settings?.id || rawData.id,
             foodManagement: rawData.settings?.foodManagement ?? false,
+            isBusy: rawData.settings?.isBusy ?? false,
+            cashEnabled: rawData.settings?.cashEnabled ?? true,
             productView: rawData.settings?.productView || "normal",
             scheduledDelivery: rawData.settings?.scheduledDelivery ?? false,
             reviewsSection: rawData.settings?.reviewsSection ?? false,
@@ -143,6 +147,8 @@ const SettingPageAdd = () => {
         return {
             settings: {
                 foodManagement: data.foodManagement ?? false,
+                isBusy: data.isBusy ?? false,
+                cashEnabled: data.cashEnabled ?? true,
                 productView: data.productView || "normal",
                 scheduledDelivery: data.scheduledDelivery ?? false,
                 reviewsSection: data.reviewsSection ?? false,
@@ -185,22 +191,24 @@ const SettingPageAdd = () => {
     if (id && isFetching) return <LoadingSpinner />;
 
     const switchItems = [
-        { name: "foodManagement", label: t('foodManagementLabel') },
-        { name: "scheduledDelivery", label: t('scheduledDeliveryLabel') },
-        { name: "reviewsSection", label: t('reviewsSectionLabel') },
-        { name: "posSection", label: t('posSectionLabel') },
-        { name: "selfDelivery", label: t('selfDeliveryLabel') },
-        { name: "homeDelivery", label: t('homeDeliveryLabel') },
-        { name: "takeaway", label: t('takeawayLabel') },
-        { name: "orderSubscription", label: t('orderSubscriptionLabel') },
-        { name: "instantOrder", label: t('instantOrderLabel') },
-        { name: "halalTagStatus", label: t('halalTagStatusLabel') },
-        { name: "dineIn", label: t('dineInLabel') },
-        { name: "canEditOrder", label: t('canEditOrderLabel') },
-        { name: "isAlwaysOpen", label: t('isAlwaysOpenLabel') },
-        { name: "isSameTimeEveryDay", label: t('sameTimeEveryDayLabel') },
+        { name: "foodManagement", label: t('foodManagementLabel', { defaultValue: 'Food Management' }) },
+        { name: "isBusy", label: t('isBusy', { defaultValue: 'Is Busy' }) },
+        { name: "cashEnabled", label: t('cashEnabled', { defaultValue: 'Cash Enabled' }) },
+        { name: "scheduledDelivery", label: t('scheduledDeliveryLabel', { defaultValue: 'Scheduled Delivery' }) },
+        { name: "reviewsSection", label: t('reviewsSectionLabel', { defaultValue: 'Reviews Section' }) },
+        { name: "posSection", label: t('posSectionLabel', { defaultValue: 'POS Section' }) },
+        { name: "selfDelivery", label: t('selfDeliveryLabel', { defaultValue: 'Self Delivery' }) },
+        { name: "homeDelivery", label: t('homeDeliveryLabel', { defaultValue: 'Home Delivery' }) },
+        { name: "takeaway", label: t('takeawayLabel', { defaultValue: 'Takeaway' }) },
+        { name: "orderSubscription", label: t('orderSubscriptionLabel', { defaultValue: 'Order Subscription' }) },
+        { name: "instantOrder", label: t('instantOrderLabel', { defaultValue: 'Instant Order' }) },
+        { name: "halalTagStatus", label: t('halalTagStatusLabel', { defaultValue: 'Halal Tag Status' }) },
+        { name: "dineIn", label: t('dineInLabel', { defaultValue: 'Dine In' }) },
+        { name: "canEditOrder", label: t('canEditOrderLabel', { defaultValue: 'Can Edit Order' }) },
+        { name: "isAlwaysOpen", label: t('isAlwaysOpenLabel', { defaultValue: 'Is Always Open' }) },
+        { name: "isSameTimeEveryDay", label: t('sameTimeEveryDayLabel', { defaultValue: 'Same Time Every Day' }) },
         { name: "isTemporarilyClosed", label: t('isTemporarilyClosedLabel', { defaultValue: 'Temporarily Closed' }) },
-        { name: "repeatNotification", label: t('repeatNotificationLabel') },
+        { name: "repeatNotification", label: t('repeatNotificationLabel', { defaultValue: 'Repeat Notification' }) },
     ];
 
     return (
