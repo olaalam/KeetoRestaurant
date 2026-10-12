@@ -145,6 +145,11 @@ export default function OrderDetails() {
   const [isDurationDialogOpen, setIsDurationDialogOpen] = useState(false);
   const [preparationDuration, setPreparationDuration] = useState("");
 
+  // States for Transfer Branch feature
+  const [isTransferBranchOpen, setIsTransferBranchOpen] = useState(false);
+  const [selectedBranchId, setSelectedBranchId] = useState("");
+  const [transferNote, setTransferNote] = useState("");
+
   useEffect(() => {
     return () => {
       if (pdfUrl) {
@@ -183,6 +188,16 @@ export default function OrderDetails() {
       return res.data?.data?.data || res.data?.data || [];
     },
     enabled: isAssignDialogOpen || order?.status === "preparing",
+  });
+
+  // Query for fetching branches from select-branches API
+  const { data: transferBranches = [], isLoading: isTransferBranchesLoading } = useQuery({
+    queryKey: ["transferBranchesSelect"],
+    queryFn: async () => {
+      const res = await api.get("/api/restaurant/order/select-branches");
+      return res.data?.data?.data?.branches || res.data?.data?.branches || res.data?.branches || [];
+    },
+    enabled: isTransferBranchOpen,
   });
 
   const { data: ordersList = [] } = useQuery({
@@ -249,6 +264,33 @@ export default function OrderDetails() {
     },
   });
 
+  // Mutation for transfer-branch API
+  const transferBranchMutation = useMutation({
+    mutationFn: async ({ branchId, note }) => {
+      const res = await api.put(`/api/restaurant/order/${orderId}/transfer-branch`, {
+        branchId,
+        note,
+      });
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["order", orderId] });
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+      toast.success(t("branchTransferredSuccess") || "تم تحويل الفرع بنجاح");
+      setIsTransferBranchOpen(false);
+      setSelectedBranchId("");
+      setTransferNote("");
+    },
+    onError: (error) => {
+
+      toast.error(
+       error?.response?.data?.error?.message ||
+        t("branchTransferError") ||
+        "فشل في تحويل الفرع"
+      );
+    },
+  });
+
   const assignDeliveryMutation = useMutation({
     mutationFn: async (deliveryManId) => {
       const res = await api.put(
@@ -307,7 +349,6 @@ export default function OrderDetails() {
     }
   };
 
-  // Front-end only: marks the order as assigned and closes the dialog, no API call
   const handleAssignOrder = () => {
     if (!selectedDeliveryMan) {
       toast.error(
@@ -320,7 +361,6 @@ export default function OrderDetails() {
     setDeliverySearchQuery("");
   };
 
-  // Does both actions (assign + out for delivery) directly, backend call happens here
   const handleOutForDelivery = () => {
     if (!selectedDeliveryMan) {
       toast.error(
@@ -703,31 +743,30 @@ export default function OrderDetails() {
                   </span>
                 </div>
 
-<div
-  className={`flex items-center gap-2.5 text-sm ${
-    (order.status === "cancelled" || order.status === "refund" || order.cancelReason || order.cancel_reason || order.customer?.isGuest)
-      ? ""
-      : "sm:col-span-2"
-  }`}
->
-  <Receipt className="w-4 h-4 text-gray-400 shrink-0" />
-  <span className="text-gray-500 font-medium shrink-0">
-    {t("orderNote") || "ملاحظات الطلب"}:
-  </span>
-  <div className="px-3.5 py-1.5 rounded-xl border-2 border-primary bg-primary/5 font-bold text-gray-900 text-base sm:text-lg">
-    {order.note && order.note.trim() !== "" ? order.note : "-"}
-  </div>
-</div>
+                <div
+                  className={`flex items-center gap-2.5 text-sm ${
+                    (order.status === "cancelled" || order.status === "refund" || order.cancelReason || order.cancel_reason || order.customer?.isGuest)
+                      ? ""
+                      : "sm:col-span-2"
+                  }`}
+                >
+                  <Receipt className="w-4 h-4 text-gray-400 shrink-0" />
+                  <span className="text-gray-500 font-medium shrink-0">
+                    {t("orderNote") || "ملاحظات الطلب"}:
+                  </span>
+                  <div className="px-3.5 py-1.5 rounded-xl border-2 border-primary bg-primary/5 font-bold text-gray-900 text-base sm:text-lg">
+                    {order.note && order.note.trim() !== "" ? order.note : "-"}
+                  </div>
+                </div>
 
-{order.customer?.isGuest && (
-  <div className="flex items-center gap-2.5 text-sm">
-    <span className="inline-flex items-center gap-1.5 rounded-lg border border-amber-300 bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-700">
-      <User className="w-3.5 h-3.5 shrink-0" />
-      {t("notregistered")}
-    </span>
-  </div>
-)}
-
+                {order.customer?.isGuest && (
+                  <div className="flex items-center gap-2.5 text-sm">
+                    <span className="inline-flex items-center gap-1.5 rounded-lg border border-amber-300 bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-700">
+                      <User className="w-3.5 h-3.5 shrink-0" />
+                      {t("notregistered")}
+                    </span>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -954,6 +993,19 @@ export default function OrderDetails() {
         </div>
 
         <div className="space-y-6 xl:col-span-1">
+          {/* Transfer to Another Branch Button */}
+          <Button
+            onClick={() => {
+              setSelectedBranchId("");
+              setTransferNote("");
+              setIsTransferBranchOpen(true);
+            }}
+            className="w-full rounded-2xl h-12 font-bold text-sm bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition-all flex items-center justify-center gap-2"
+          >
+            <Store className="w-5 h-5 shrink-0" />
+            <span>{t("transferToAnotherBranch") || "Transfer to Another Branch"}</span>
+          </Button>
+
           {/* Customer Details Card */}
           <Card className="rounded-2xl border border-gray-100 shadow-sm bg-white p-6">
             <div className="flex items-center gap-2 mb-4">
@@ -1349,6 +1401,118 @@ export default function OrderDetails() {
         </div>
       </div>
 
+      {/* Transfer Branch Dialog */}
+      <Dialog
+        open={isTransferBranchOpen}
+        onOpenChange={(open) => {
+          setIsTransferBranchOpen(open);
+          if (!open) {
+            setSelectedBranchId("");
+            setTransferNote("");
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-md rounded-2xl bg-white p-6 shadow-xl">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-bold text-gray-900 flex items-center gap-2">
+              <Store className="w-5 h-5 text-emerald-600" />
+              {t("transferOrderToBranch") || "Transfer Order to Branch"}
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="py-4 space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-semibold text-gray-700 block">
+                {t("selectBranch") || "اختر الفرع"}
+              </label>
+              {isTransferBranchesLoading ? (
+                <div className="flex justify-center py-6">
+                  <Loader2 className="w-6 h-6 animate-spin text-emerald-600" />
+                </div>
+              ) : (
+                <div className="max-h-[220px] overflow-y-auto space-y-2 pr-1 border rounded-xl p-2 bg-gray-50/50">
+                  {transferBranches.length > 0 ? (
+                    transferBranches.map((branch) => {
+                      const isSelected = selectedBranchId === branch.id;
+                      const branchName = document.documentElement.dir === "rtl" && branch.nameAr
+                        ? branch.nameAr
+                        : branch.name;
+                      return (
+                        <div
+                          key={branch.id}
+                          onClick={() => setSelectedBranchId(branch.id)}
+                          className={`p-3 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${
+                            isSelected
+                              ? "border-2 border-emerald-600 bg-emerald-50 shadow-2xs"
+                              : "border-gray-200 hover:border-gray-300 bg-white"
+                          }`}
+                        >
+                          <span className={`text-sm font-bold ${isSelected ? "text-emerald-700" : "text-gray-900"}`}>
+                            {branchName}
+                          </span>
+                          <input
+                            type="radio"
+                            name="transferBranch"
+                            checked={isSelected}
+                            onChange={() => setSelectedBranchId(branch.id)}
+                            className="accent-emerald-600"
+                          />
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <div className="py-6 text-sm text-center text-gray-500 font-medium">
+                      {t("noResultsFound") || "لا توجد فروع متاحة"}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-semibold text-gray-700 block">
+                {t("transferNote") || "ملاحظة التحويل"}
+              </label>
+              <textarea
+                value={transferNote}
+                onChange={(e) => setTransferNote(e.target.value)}
+                rows={3}
+                placeholder="أدخل ملاحظة التحويل..."
+                className="w-full p-3 bg-white border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/60 font-medium resize-none"
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4 border-t">
+            <Button
+              variant="outline"
+              className="rounded-xl px-4 h-10 font-semibold"
+              onClick={() => {
+                setIsTransferBranchOpen(false);
+                setSelectedBranchId("");
+              }}
+            >
+              {t("cancel") || "إلغاء"}
+            </Button>
+            <Button
+              className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-5 h-10 font-semibold shadow-sm"
+              disabled={transferBranchMutation.isPending || !selectedBranchId}
+              onClick={() => {
+                transferBranchMutation.mutate({
+                  branchId: selectedBranchId,
+                  note: transferNote,
+                });
+              }}
+            >
+              {transferBranchMutation.isPending && (
+                <Loader2 className="w-4 h-4 animate-spin ml-2 rtl:mr-2 rtl:ml-0" />
+              )}
+              {t("transferOrder") || "Transfer Order"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Duration Dialog */}
       <Dialog
         open={isDurationDialogOpen}
@@ -1620,7 +1784,7 @@ export default function OrderDetails() {
 
       {/* Reason Dialog */}
       <ReasonDialog
-        isOpen={dialogConfig.open}
+        isOpen={dialogConfig?.open || dialogConfig.open}
         onClose={() => setDialogConfig({ open: false, type: null })}
         onConfirm={(data) =>
           updateStatusMutation.mutate({

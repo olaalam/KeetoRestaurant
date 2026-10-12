@@ -262,7 +262,7 @@ const translations = {
     "date": "Date",
     "ordersList": "Payments Log",
     firstOrderDiscount: "First Order Discount",
-    deliveryManReport:"Delivery Man Report",
+    deliveryManReport: "Delivery Man Report",
 
     // FoodAdd labels & errors
     foodNameLabel: "Food Name",
@@ -399,6 +399,7 @@ const translations = {
     "errorLoadingDashboard": "Error loading dashboard",
     "Analytics Dashboard": "Analytics Dashboard",
     "Sales & Order Performance Overview": "Sales & Order Performance Overview",
+    transferToAnotherBranch:"Transfer To Another Branch",
     "Filters": "Filters",
     "All Branches": "All Branches",
     "Last 30 Days": "Last 30 Days",
@@ -443,7 +444,7 @@ const translations = {
     "Total Earnings": "Total Earnings",
     "Pending Withdraw": "Pending Withdraw",
     tobecollected: "To be collected",
-    totalVisaCommission:"Total Visa Commission",
+    totalVisaCommission: "Total Visa Commission",
 
     // WalletR page
     restaurantWallet: "Restaurant Wallet",
@@ -623,6 +624,9 @@ const translations = {
     "cancelled": "Cancelled",
     "rejected": "Rejected",
     "refund": "refund",
+    transferOrderToBranch: "Transfer Order To Branch",
+    transferNote: "Transfer Note",
+    transferOrder: "Transfer Order",
 
     "orderStatusUpdatedSuccessfully": "Order status updated successfully",
     "failedToUpdateStatus": "Failed to update status",
@@ -1018,8 +1022,8 @@ const translations = {
     "thursday": "Thursday",
     "friday": "Friday",
     "saturday": "Saturday",
-    totalOrdersCash:"Total Cash Orders",
-    totalOrdersVisa:"Total Visa Orders",
+    totalOrdersCash: "Total Cash Orders",
+    totalOrdersVisa: "Total Visa Orders",
     isBusy: "Is Busy",
     cashEnabled: "Cash Enabled",
     //modules 
@@ -1728,6 +1732,8 @@ const translations = {
     selectStockType: "اختر نوع المخزون",
     selectStatusPlaceholder: "اختر الحالة",
     foodItem: "عنصر الطعام",
+    transferOrder: "تحويل الطلب",
+    transferToAnotherBranch: "تحويل إلى فرع آخر",
 
     // Variations
     productVariationsTitle2: "خيارات المنتج",
@@ -2045,8 +2051,10 @@ const translations = {
     orderTime: "وقت الطلب",
     orderNote: "ملاحظات الطلب",
     deliveryTypeTitle: "التوصيل",
-    totalOrdersCash:"طلبات الكاش",
-    totalOrdersVisa:"طلبات الفيزا",
+    totalOrdersCash: "طلبات الكاش",
+    totalOrdersVisa: "طلبات الفيزا",
+    transferNote: "ملاحظة التحويل",
+    transferOrderToBranch: "تحويل الطلب إلى فرع",
 
     // Order Items Section
     orderItemsTitle: "مكونات الطلب",
