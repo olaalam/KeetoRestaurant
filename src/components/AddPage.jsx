@@ -28,7 +28,7 @@ const AddPage = ({
     bypassIdInEdit = false,
 }) => {
     // التحقق مما إذا كانت الصفحة في حالة تعديل
-    const isEdit = method === 'PUT' || !!initialData?.id || !!initialData;
+const isEdit = method === 'PUT' || !!initialData?.id;
     const navigate = useNavigate();
     const location = useLocation();
     const formMethods = useForm({

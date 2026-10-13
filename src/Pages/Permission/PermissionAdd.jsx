@@ -38,10 +38,19 @@ export default function PermissionAdd() {
     },
   });
 
-  const availableModules = schema?.modules?.length ? schema.modules : PERMISSION_MODULES;
-  const availableActions = schema?.actions?.length
+  const schemaModules = schema?.modules?.length ? schema.modules : PERMISSION_MODULES;
+  const availableModules = schemaModules.some((module) => norm(module) === norm("financialAccount"))
+    ? schemaModules
+    : [...schemaModules, "financialAccount"];
+  const schemaActions = schema?.actions?.length
     ? schema.actions.map((action) => (typeof action === "string" ? action : action.action))
-    : PERMISSION_ACTIONS;
+    : [];
+  const availableActions = [
+    ...schemaActions,
+    ...PERMISSION_ACTIONS.filter(
+      (action) => !schemaActions.some((schemaAction) => norm(schemaAction) === norm(action)),
+    ),
+  ];
 
   // ================= Permission Map =================
   const permissionMap = useMemo(() => {
@@ -81,7 +90,7 @@ export default function PermissionAdd() {
       title={t("roleLabel")}
       apiUrl="/api/restaurant/roles"
       queryKey="roles"
-      initialData={formattedInitialData}
+       initialData={role ? formattedInitialData : undefined}
       onSuccessAction={(res) => {
         const targetId = res?.data?.data?.id || res?.data?.id || res?.id || role?.id;
         navigate("/permissions", { state: { highlightedId: targetId } });
