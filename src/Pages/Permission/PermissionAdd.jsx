@@ -58,7 +58,7 @@ export default function PermissionAdd() {
     role?.permissions?.forEach((p) => {
       map[norm(p.module)] = p.actions.map((a) => norm(typeof a === "string" ? a : a.action));
     });
-    return map;
+    return map
   }, [role]);
 
   // تجهيز البيانات الأولية للـ role بحيث تكون متوافقة تماماً مع الفورم
