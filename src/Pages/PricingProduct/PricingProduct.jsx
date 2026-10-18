@@ -507,7 +507,7 @@ const savePriceModal = async () => {
                 isOnline ? "text-emerald-700 dark:text-emerald-400" : "text-rose-700 dark:text-rose-400"
               )}
             >
-              {isOnline ? t("restaurantIsOnline") : t("restaurantIsOffline")}
+              {isOnline ? t("Online") : t("Offline")}
             </span>
             <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">
               {isOnline ? t("restaurantAcceptsOrders") : t("restaurantClosedTemporarily")}

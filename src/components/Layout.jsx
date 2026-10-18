@@ -7,6 +7,8 @@ import useSidebarStore from "@/store/useSidebarStore";
 import useAuthStore from "@/store/useAuthStore";
 import { LogOut, ChevronLeft, ChevronRight, UserCircle2, Bell, ShoppingBag, XCircle, Sun, Moon, Tag } from "lucide-react";
 import useThemeStore from "@/store/useThemeStore";
+import { Switch } from "@/components/ui/switch";
+import { toast } from 'sonner';
 
 import {
   DropdownMenu,
@@ -23,6 +25,7 @@ import LanguageSwitcher from "./LanguageSwitcher";
 import { useTranslation } from "@/hooks/useTranslation";
 import { getModules } from "@/config/modules";
 import { filterModulesByPermissions, getPermissionKey, hasPermission } from "@/lib/permissions";
+import { cn } from "@/lib/utils";
 
 export default function Layout() {
   const storedModule = useSidebarStore((state) => state.activeModule);
@@ -30,6 +33,37 @@ export default function Layout() {
   const { setLogout, user } = useAuthStore((state) => state);
   const { t, isRTL } = useTranslation();
   const { theme, setTheme } = useThemeStore();
+
+  // ---- Restaurant Online / Offline Status ----
+  const { data: settingsRes, refetch: refetchSettings } = useGet(
+    "restaurant-settings",
+    "/api/restaurant/restaurantsetting"
+  );
+
+  const isOnline = !settingsRes?.data?.settings?.isTemporarilyClosed;
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+
+  const handleStatusToggle = async (checked) => {
+    setIsUpdatingStatus(true);
+    try {
+      await api.put("/api/restaurant/restaurantsetting", {
+        settings: {
+          isTemporarilyClosed: !checked,
+        },
+      });
+      toast.success(
+        checked
+          ? t("restaurantIsNowOnline🟢") || "المطعم الآن متصل أونلاين 🟢"
+          : t("restaurantIsNowOffline🔴") || "المطعم الآن مغلق أوفلاين 🔴"
+      );
+      refetchSettings();
+    } catch (error) {
+      console.error("Error updating restaurant status:", error);
+      toast.error(t("failedToUpdateStatus") || "فشل في تغيير حالة المطعم");
+    } finally {
+      setIsUpdatingStatus(false);
+    }
+  };
 
   // نجيب الـ module بالترجمة الحالية
   const allModules = getModules(t);
@@ -419,6 +453,46 @@ export default function Layout() {
 
               {/* Right Section: Actions & Profile */}
               <div className="flex items-center justify-end min-w-0 gap-1 sm:gap-1.5 lg:gap-2">
+
+                {/* STORE ONLINE / OFFLINE SWITCH */}
+                <div
+                  className={cn(
+                    "flex items-center gap-2 px-3 py-1 rounded-full border transition-all duration-300 shadow-sm shrink-0",
+                    isOnline
+                      ? "bg-emerald-50/70 border-emerald-200/80 dark:bg-emerald-950/20 dark:border-emerald-800/40"
+                      : "bg-rose-50/70 border-rose-200/80 dark:bg-rose-950/20 dark:border-rose-800/40"
+                  )}
+                >
+                  <span className="relative flex h-2.5 w-2.5 rounded-full">
+                    <span
+                      className={cn(
+                        "inline-flex h-full w-full rounded-full",
+                        isOnline ? "bg-emerald-500" : "bg-rose-500"
+                      )}
+                    />
+                    {isOnline && (
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                    )}
+                  </span>
+
+                  <span
+                    className={cn(
+                      "hidden md:inline text-xs font-bold leading-none",
+                      isOnline ? "text-emerald-700 dark:text-emerald-400" : "text-rose-700 dark:text-rose-400"
+                    )}
+                  >
+                    {isOnline ? t("Online") : t("Offline")}
+                  </span>
+
+                  <div className="flex items-center justify-center shrink-0">
+                    <Switch
+                      checked={isOnline}
+                      disabled={isUpdatingStatus}
+                      onCheckedChange={handleStatusToggle}
+                      className="data-[state=checked]:bg-emerald-500 data-[state=unchecked]:bg-rose-400"
+                    />
+                  </div>
+                </div>
 
                 {/* Product Pricing Button */}
                 <button
