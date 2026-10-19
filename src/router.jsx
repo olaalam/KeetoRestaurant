@@ -109,6 +109,9 @@ import WalletPage from "./Pages/Wallet/WalletPage";
 import FirstOrderDiscountAdd from "./Pages/FirstOrderDiscounts/FirstOrderDiscountsAdd";
 import FirstOrderDiscounts from "./Pages/FirstOrderDiscounts/FirstOrderDiscounts";
 import DeliveryManReport from "./Pages/DeliveryManReport/DeliveryManReport";
+import FoodReportPage from "./Pages/FoodReport/FoodReport";
+import Videos from "./Pages/Videos/Videos";
+import VideoDetails from "./Pages/Videos/VideoDetails";
 const router = createBrowserRouter([
   {
     path: "/login",
@@ -645,7 +648,7 @@ const router = createBrowserRouter([
         path: "free-delivery/add",
         element: <FreeDeliveryAdd />
       },
-            {
+      {
         path: "free-delivery/edit/:id",
         element: <FreeDeliveryAdd />
       },
@@ -717,7 +720,19 @@ const router = createBrowserRouter([
       {
         path: "delivery-man-report",
         element: <DeliveryManReport />
-      }
+      },
+      {
+        path: "food-report",
+        element: <FoodReportPage />
+      },
+            {
+        path: "videos",
+        element: <Videos />
+      },
+      {
+        path: "/videos/:id",
+        element: <VideoDetails />
+      },
 
 
 

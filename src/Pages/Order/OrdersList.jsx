@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import api from "@/api/axios";
 import GenericDataTable from "@/components/GenericDataTable";
@@ -7,6 +7,13 @@ import { User, Phone, Eye, Printer, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/hooks/useTranslation";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
 import useDateRangeStore from "../../store/Usedaterangestore";
 import useAuthStore from "@/store/useAuthStore";
@@ -21,17 +28,30 @@ export default function OrdersList({ status }) {
   const { startDate, endDate, setStartDate, setEndDate, clearDateRange } =
     useDateRangeStore();
 
+  // حالات الفلاتر الجديدة
+  const [hasDiscount, setHasDiscount] = useState("all");
+  const [isPointsRedeemed, setIsPointsRedeemed] = useState("all");
+
   const { data: orders = [], isLoading } = useQuery({
-    queryKey: ["orders", status, startDate, endDate],
+    queryKey: ["orders", status, startDate, endDate, hasDiscount, isPointsRedeemed],
     queryFn: async () => {
       const params = {};
       if (startDate) params.start_date = startDate;
       if (endDate) params.end_date = endDate;
+      if (hasDiscount && hasDiscount !== "all") params.hasDiscount = hasDiscount;
+      if (isPointsRedeemed && isPointsRedeemed !== "all")
+        params.isPointsRedeemed = isPointsRedeemed;
 
       const res = await api.get(`/api/restaurant/order/${status}`, { params });
       return res.data.data.data;
     },
   });
+
+  const handleClearFilters = () => {
+    clearDateRange();
+    setHasDiscount("all");
+    setIsPointsRedeemed("all");
+  };
 
   const handleDownloadInvoice = async (orderId, orderNumber) => {
     try {
@@ -77,7 +97,6 @@ export default function OrdersList({ status }) {
       accessorKey: "customerName",
       header: t("customerInfo"),
       cell: ({ row }) => {
-        // دالة نسخ رقم الهاتف
         const handleCopyPhone = (e) => {
           e.stopPropagation();
           if (row.original.customerPhone) {
@@ -117,10 +136,11 @@ export default function OrdersList({ status }) {
       header: t("orderType"),
       cell: ({ row }) => (
         <span
-          className={`px-2 py-1 rounded-full text-xs capitalize ${row.original.orderType === "delivery"
+          className={`px-2 py-1 rounded-full text-xs capitalize ${
+            row.original.orderType === "delivery"
               ? "bg-purple-100 text-purple-700"
               : "bg-blue-100 text-blue-700"
-            }`}
+          }`}
         >
           {t(row.original.orderType)}
         </span>
@@ -140,10 +160,11 @@ export default function OrdersList({ status }) {
       header: t("status"),
       cell: ({ row }) => (
         <span
-          className={`px-2 py-1 rounded-full text-xs capitalize ${row.original.status === "pending"
+          className={`px-2 py-1 rounded-full text-xs capitalize ${
+            row.original.status === "pending"
               ? "bg-yellow-100 text-yellow-700"
               : "bg-green-100 text-green-700"
-            }`}
+          }`}
         >
           {t(row.original.status)}
         </span>
@@ -202,28 +223,78 @@ export default function OrdersList({ status }) {
 
   return (
     <div className="container mx-auto py-2">
-      <div className="flex flex-wrap items-center gap-4 mb-6 bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
-        <label className="text-sm font-bold text-slate-700">
-          {t("startDate") || "Start Date"}:
-        </label>
-        <Input
-          type="date"
-          value={startDate}
+      {/* شريط الفلاتر المحدث */}
+      <div className="flex flex-wrap items-center gap-4 mb-6 bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm">
+        
+        {/* Start Date */}
+        <div className="flex items-center gap-2">
+          <label className="text-sm font-bold text-slate-700 dark:text-slate-300">
+            {t("startDate") || "Start Date"}:
+          </label>
+          <Input
+            type="date"
+            value={startDate}
+            disabled={!canFilterOrders}
+            onChange={(e) => setStartDate(e.target.value)}
+            className="w-40 h-10"
+          />
+        </div>
+
+        {/* End Date */}
+        <div className="flex items-center gap-2">
+          <label className="text-sm font-bold text-slate-700 dark:text-slate-300">
+            {t("endDate") || "End Date"}:
+          </label>
+          <Input
+            type="date"
+            value={endDate}
+            disabled={!canFilterOrders}
+            onChange={(e) => setEndDate(e.target.value)}
+            className="w-40 h-10"
+          />
+        </div>
+
+        {/* Has Discount Filter */}
+        <div className="flex items-center gap-2">
+          <label className="text-sm font-bold text-slate-700 dark:text-slate-300">
+            {t("hasDiscount") || "Has Discount"}:
+          </label>
+          <Select value={hasDiscount} onValueChange={setHasDiscount}>
+            <SelectTrigger className="w-[130px] h-10">
+              <SelectValue placeholder={t("all") || "All"} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t("all") || "All"}</SelectItem>
+              <SelectItem value="true">{t("yes") || "Yes"}</SelectItem>
+              <SelectItem value="false">{t("no") || "No"}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Is Points Redeemed Filter */}
+        <div className="flex items-center gap-2">
+          <label className="text-sm font-bold text-slate-700 dark:text-slate-300">
+            {t("isPointsRedeemed") || "Points Redeemed"}:
+          </label>
+          <Select value={isPointsRedeemed} onValueChange={setIsPointsRedeemed}>
+            <SelectTrigger className="w-[130px] h-10">
+              <SelectValue placeholder={t("all") || "All"} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t("all") || "All"}</SelectItem>
+              <SelectItem value="true">{t("yes") || "Yes"}</SelectItem>
+              <SelectItem value="false">{t("no") || "No"}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Clear Filter Button */}
+        <Button
+          variant="outline"
+          onClick={handleClearFilters}
           disabled={!canFilterOrders}
-          onChange={(e) => setStartDate(e.target.value)}
-          className="w-48 h-10"
-        />
-        <label className="text-sm font-bold text-slate-700">
-          {t("endDate") || "End Date"}:
-        </label>
-        <Input
-          type="date"
-          value={endDate}
-          disabled={!canFilterOrders}
-          onChange={(e) => setEndDate(e.target.value)}
-          className="w-48 h-10"
-        />
-        <Button variant="outline" onClick={clearDateRange} disabled={!canFilterOrders} className="h-10">
+          className="h-10"
+        >
           {t("clearFilter") || "Clear Filter"}
         </Button>
       </div>

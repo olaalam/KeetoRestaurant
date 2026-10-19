@@ -35,6 +35,8 @@ export default function Order() {
   const [orderSource, setOrderSource] = useState("all");
   const [cityId, setCityId] = useState("all");
   const [branchId, setBranchId] = useState("all");
+  const [hasDiscount, setHasDiscount] = useState("all");
+  const [isPointsRedeemed, setIsPointsRedeemed] = useState("all");
 
   const { startDate, endDate, setStartDate, setEndDate, clearDateRange } =
     useDateRangeStore();
@@ -44,16 +46,14 @@ export default function Order() {
   const user = useAuthStore((state) => state.user);
   const canFilterOrders = hasPermission(user, "order", "filter");
 
-// استبدل الـ useEffect الحالي بهذا الكود:
-useEffect(() => {
-  if (!startDate && schedules && schedules.length > 0) {
-    const now = new Date();
-    const formattedToday = now.toISOString().split("T")[0];
-    setStartDate(formattedToday);
-    // ترك الـ endDate فارغاً بحيث لا يكون له قيمة افتراضية
-    setEndDate("");
-  }
-}, [schedules, startDate, setStartDate, setEndDate]);
+  useEffect(() => {
+    if (!startDate && schedules && schedules.length > 0) {
+      const now = new Date();
+      const formattedToday = now.toISOString().split("T")[0];
+      setStartDate(formattedToday);
+      setEndDate("");
+    }
+  }, [schedules, startDate, setStartDate, setEndDate]);
 
   const orderStatuses = [
     "pending",
@@ -74,9 +74,18 @@ useEffect(() => {
     },
   });
 
-  // جلب الطلبات
+  // جلب الطلبات مع إضافة الفلاتر الجديدة
   const { data: orders = [], isLoading } = useQuery({
-    queryKey: ["orders", startDate, endDate, orderSource, cityId, branchId],
+    queryKey: [
+      "orders",
+      startDate,
+      endDate,
+      orderSource,
+      cityId,
+      branchId,
+      hasDiscount,
+      isPointsRedeemed,
+    ],
     queryFn: async () => {
       const params = {};
       if (startDate) params.start_date = startDate;
@@ -84,13 +93,16 @@ useEffect(() => {
       if (orderSource && orderSource !== "all") params.orderSource = orderSource;
       if (cityId && cityId !== "all") params.cityId = cityId;
       if (branchId && branchId !== "all") params.branchId = branchId;
+      if (hasDiscount && hasDiscount !== "all") params.hasDiscount = hasDiscount;
+      if (isPointsRedeemed && isPointsRedeemed !== "all")
+        params.isPointsRedeemed = isPointsRedeemed;
 
       const res = await api.get(`/api/restaurant/order`, { params });
       return res.data.data.data;
     },
   });
 
-const updateStatusMutation = useMutation({
+  const updateStatusMutation = useMutation({
     mutationFn: async ({ orderId, status, cancelReasonId, customReason }) => {
       const formattedStatus = status.replace(/_/g, "-");
       const payload = { orderId, status: formattedStatus };
@@ -130,6 +142,8 @@ const updateStatusMutation = useMutation({
     setOrderSource("all");
     setCityId("all");
     setBranchId("all");
+    setHasDiscount("all");
+    setIsPointsRedeemed("all");
   };
 
   const getItemName = (item) => {
@@ -374,7 +388,7 @@ const updateStatusMutation = useMutation({
               <SelectValue placeholder={t("allSources") || "All Sources"} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">{t("all") }</SelectItem>
+              <SelectItem value="all">{t("all")}</SelectItem>
               {selectOptions?.sources?.map((src) => (
                 <SelectItem key={src.id} value={src.value}>
                   {getItemName(src)}
@@ -424,6 +438,40 @@ const updateStatusMutation = useMutation({
           </Select>
         </div>
 
+        {/* Has Discount Filter */}
+        <div className="flex items-center gap-2">
+          <label className="text-sm font-bold text-slate-700 dark:text-slate-300">
+            {t("hasDiscount") || "Has Discount"}:
+          </label>
+          <Select value={hasDiscount} onValueChange={setHasDiscount}>
+            <SelectTrigger className="w-[140px] h-10">
+              <SelectValue placeholder={t("all") || "All"} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t("all") || "All"}</SelectItem>
+              <SelectItem value="true">{t("yes") || "Yes"}</SelectItem>
+              <SelectItem value="false">{t("no") || "No"}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Is Points Redeemed Filter */}
+        <div className="flex items-center gap-2">
+          <label className="text-sm font-bold text-slate-700 dark:text-slate-300">
+            {t("isPointsRedeemed") || "Points Redeemed"}:
+          </label>
+          <Select value={isPointsRedeemed} onValueChange={setIsPointsRedeemed}>
+            <SelectTrigger className="w-[140px] h-10">
+              <SelectValue placeholder={t("all") || "All"} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t("all") || "All"}</SelectItem>
+              <SelectItem value="true">{t("yes") || "Yes"}</SelectItem>
+              <SelectItem value="false">{t("no") || "No"}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
         {/* Clear Filter Button */}
         <Button variant="outline" onClick={handleClearFilters} className="h-10">
           {t("clearFilter")}
@@ -439,7 +487,7 @@ const updateStatusMutation = useMutation({
         actions={false}
       />
 
-<ReasonDialog
+      <ReasonDialog
         isOpen={dialogConfig.open}
         onClose={() =>
           setDialogConfig({ open: false, type: null, orderId: null })

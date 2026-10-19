@@ -15,7 +15,7 @@ import {
     Scatter,
     ZAxis
 } from 'recharts';
-import { DollarSign, ShoppingCart, TrendingUp, Star, Filter, Calendar } from 'lucide-react';
+import { DollarSign, ShoppingCart, TrendingUp, Star, Filter, Calendar, User } from 'lucide-react';
 import { useGet } from '@/hooks/useGet';
 import { useTranslation } from '@/hooks/useTranslation';
 
@@ -152,37 +152,62 @@ const filteredGeoData = geographicMap
                 </div>
             </div>
 
-{/* البطاقات العلوية */}
-<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-    
-    {/* كارت Total Revenue */}
-    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-start gap-4">
-        <div className="p-3 bg-yellow-50 rounded-xl text-yellow-500"><DollarSign size={24} /></div>
-        <div>
-            <p className="text-sm text-gray-500 font-medium mb-1">{t("Total Revenue")}</p>
-            <h3 className="text-3xl font-bold text-gray-900">{parseFloat(cards.totalRevenue || 0).toLocaleString()} EGP</h3>
-        </div>
-    </div>
+            {/* البطاقات العلوية */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                
+                {/* كارت Total Revenue */}
+                <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 flex items-start gap-4">
+                    <div className="p-3 bg-yellow-50 dark:bg-yellow-950/40 rounded-xl text-yellow-500">
+                        <DollarSign size={24} />
+                    </div>
+                    <div>
+                        <p className="text-sm text-gray-500 font-medium mb-1">{t("Total Revenue")}</p>
+                        <h3 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+                            {parseFloat(cards.totalRevenue || 0).toLocaleString()} EGP
+                        </h3>
+                    </div>
+                </div>
 
-    {/* كارت Total Orders */}
-    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-start gap-4">
-        <div className="p-3 bg-gray-100 rounded-xl text-gray-600"><ShoppingCart size={24} /></div>
-        <div>
-            <p className="text-sm text-gray-500 font-medium mb-1">{t("Total Orders")}</p>
-            <h3 className="text-3xl font-bold text-gray-900">{cards.numberOfOrders || 0}</h3>
-        </div>
-    </div>
+                {/* كارت Total Orders */}
+                <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 flex items-start gap-4">
+                    <div className="p-3 bg-gray-100 dark:bg-slate-800 rounded-xl text-gray-600 dark:text-gray-300">
+                        <ShoppingCart size={24} />
+                    </div>
+                    <div>
+                        <p className="text-sm text-gray-500 font-medium mb-1">{t("Total Orders")}</p>
+                        <h3 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+                            {cards.numberOfOrders || 0}
+                        </h3>
+                    </div>
+                </div>
 
-    {/* كارت Avg. Order Value */}
-    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-start gap-4">
-        <div className="p-3 bg-orange-50 rounded-xl text-orange-500"><TrendingUp size={24} /></div>
-        <div>
-            <p className="text-sm text-gray-500 font-medium mb-1">{t("Avg. Order Value")}</p>
-            <h3 className="text-3xl font-bold text-gray-900">{parseFloat(cards.averageOrderValue || 0).toFixed(2)} EGP</h3>
-        </div>
-    </div>
+                {/* كارت Avg. Order Value */}
+                <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 flex items-start gap-4">
+                    <div className="p-3 bg-orange-50 dark:bg-orange-950/40 rounded-xl text-orange-500">
+                        <TrendingUp size={24} />
+                    </div>
+                    <div>
+                        <p className="text-sm text-gray-500 font-medium mb-1">{t("Avg. Order Value")}</p>
+                        <h3 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+                            {parseFloat(cards.averageOrderValue || 0).toFixed(2)} EGP
+                        </h3>
+                    </div>
+                </div>
 
-</div>
+                {/* كارت Total Users */}
+                <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 flex items-start gap-4">
+                    <div className="p-3 bg-blue-50 dark:bg-blue-950/40 rounded-xl text-blue-500">
+                        <User size={24} />
+                    </div>
+                    <div>
+                        <p className="text-sm text-gray-500 font-medium mb-1">{t("Total Users")}</p>
+                        <h3 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+                            {cards.totalUsers || 0}
+                        </h3>
+                    </div>
+                </div>
+
+            </div>
 
             {/* صفحة المخططات الرئيسية - عمودين */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
@@ -287,32 +312,33 @@ const filteredGeoData = geographicMap
                     </div>
                 </div>
 
-{/* 7. Order Source */}
-<div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-    <h4 className="text-base font-semibold text-gray-800 mb-6">{t("Order Source")}</h4>
-    <div className="h-72" dir="ltr">
-        <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-                <Pie 
-                    data={filteredAppVsWebsite} 
-                    cx="50%" 
-                    cy="50%" 
-                    outerRadius={90} 
-                    dataKey="orders" 
-                    nameKey="platform" 
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} 
-                    labelLine={false}
-                >
-                    {filteredAppVsWebsite.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={index % 2 === 0 ? BRAND_YELLOW : BRAND_NAVY} />
-                    ))}
-                </Pie>
-                <Tooltip content={<CustomTooltip />} />
-            </PieChart>
-        </ResponsiveContainer>
-    </div>
-</div>
-                {/* 8. Customer Ratings (بدون شرائط لعدم وجود بيانات لها) */}
+                {/* 7. Order Source */}
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                    <h4 className="text-base font-semibold text-gray-800 mb-6">{t("Order Source")}</h4>
+                    <div className="h-72" dir="ltr">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                                <Pie 
+                                    data={filteredAppVsWebsite} 
+                                    cx="50%" 
+                                    cy="50%" 
+                                    outerRadius={90} 
+                                    dataKey="orders" 
+                                    nameKey="platform" 
+                                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} 
+                                    labelLine={false}
+                                >
+                                    {filteredAppVsWebsite.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={index % 2 === 0 ? BRAND_YELLOW : BRAND_NAVY} />
+                                    ))}
+                                </Pie>
+                                <Tooltip content={<CustomTooltip />} />
+                            </PieChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
+
+                {/* 8. Customer Ratings */}
                 <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center justify-center">
                     <h4 className="text-base font-semibold text-gray-800 mb-6 self-start w-full">{t("Customer Ratings")}</h4>
                     <div className="flex flex-col items-center justify-center flex-1">
@@ -331,22 +357,22 @@ const filteredGeoData = geographicMap
             {/* المخططات العريضة (Full Width) */}
             <div className="grid grid-cols-1 gap-6 mb-8">
                 
-{/* 9. Geographic Revenue Map */}
-<div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-    <h4 className="text-base font-semibold text-gray-800 mb-6">{t("Geographic Revenue Map — Zones by Revenue")}</h4>
-    <div className="h-[400px]" dir="ltr">
-        <ResponsiveContainer width="100%" height="100%">
-            <ScatterChart margin={{ top: 20, right: 40, bottom: 20, left: 40 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" />
-                <XAxis dataKey="zone" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748B' }} />
-                <YAxis dataKey="revenue" type="number" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748B' }} orientation={isRTL ? "right" : "left"} />
-                <ZAxis dataKey="revenue" type="number" range={[500, 3000]} name="Revenue" />
-                <Tooltip cursor={{ strokeDasharray: '3 3' }} content={<CustomTooltip />} />
-                <Scatter data={filteredGeoData} fill={BRAND_YELLOW} opacity={0.8} />
-            </ScatterChart>
-        </ResponsiveContainer>
-    </div>
-</div>
+                {/* 9. Geographic Revenue Map */}
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                    <h4 className="text-base font-semibold text-gray-800 mb-6">{t("Geographic Revenue Map — Zones by Revenue")}</h4>
+                    <div className="h-[400px]" dir="ltr">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <ScatterChart margin={{ top: 20, right: 40, bottom: 20, left: 40 }}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" />
+                                <XAxis dataKey="zone" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748B' }} />
+                                <YAxis dataKey="revenue" type="number" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748B' }} orientation={isRTL ? "right" : "left"} />
+                                <ZAxis dataKey="revenue" type="number" range={[500, 3000]} name="Revenue" />
+                                <Tooltip cursor={{ strokeDasharray: '3 3' }} content={<CustomTooltip />} />
+                                <Scatter data={filteredGeoData} fill={BRAND_YELLOW} opacity={0.8} />
+                            </ScatterChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
 
                 {/* 10. Market Basket Analysis */}
                 <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">

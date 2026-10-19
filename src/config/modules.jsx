@@ -118,6 +118,7 @@ export const getModules = (t, orderCounts = {}) => {
         { title: t("upselling"), url: "/upselling", icon: ShoppingBag },
         { title: t("bundle"), url: "/bundle", icon: ShoppingBag },
         {title: t("firstOrderDiscount"), url: "/first-order-discounts", icon: ShoppingBag},
+        {title: t("helpVideo"), url: "/videos", icon: ShoppingBag},
 
       ],
     },
@@ -166,6 +167,8 @@ export const getModules = (t, orderCounts = {}) => {
         { title: t("paymentMethods"), url: "/payment-method-report", icon: KeetoIcon, permissionKey: "report" },
         { title: t("visarepo"), url: "/visa-repo", icon: KeetoIcon, permissionKey: "report" },
         { title: t("deliveryManReport"), url: "/delivery-man-report", icon: KeetoIcon, permissionKey: "report" },
+        { title: t("foodReport"), url: "/food-report", icon: KeetoIcon, permissionKey: "report" }
+
       ],
     },
 

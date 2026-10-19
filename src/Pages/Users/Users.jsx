@@ -3,13 +3,13 @@ import { useGet } from '@/hooks/useGet';
 import GenericDataTable from '@/components/GenericDataTable';
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
+import { Input } from "@/components/ui/input";
 import { useQueryClient } from '@tanstack/react-query';
 import api from '@/api/axios';
 import UsersAdd from './UsersAdd';
 import { useTranslation } from '@/hooks/useTranslation';
-import { Mail, Phone, Copy, Check, ArrowUpDown } from 'lucide-react';
+import { Mail, Phone, Copy, Check, ArrowUpDown, Filter } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-
 
 // مكون خاص بعرض بيانات الاتصال بارتفاع ومسافات متساوية تماماً لكل الصفوف
 const UserContactCell = ({ email, phone }) => {
@@ -56,7 +56,6 @@ const UserContactCell = ({ email, phone }) => {
                         </button>
                     </div>
                 ) : (
-                    /* Placeholder يضمن بقاء المسافات وارتفاع الصف متطابقاً في حالة عدم وجود رقم */
                     <div className="inline-flex items-center gap-1 text-xs text-slate-300 px-2 py-0.5 font-mono">
                         <Phone className="w-3 h-3 text-slate-300 shrink-0" />
                         <span>--</span>
@@ -69,12 +68,21 @@ const UserContactCell = ({ email, phone }) => {
 
 export default function Users() {
     const [editingUser, setEditingUser] = useState(null);
+    const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 15 });
+    const [totalSpendingFilter, setTotalSpendingFilter] = useState('');
+
     const queryClient = useQueryClient();
     const { t } = useTranslation();
     const navigate = useNavigate();
-    const { data, isLoading } = useGet('restaurant-users', '/api/restaurant/restaurant-users');
 
-    const rawList = data?.data?.data || [];
+    // جلب البيانات مع إرسال بارامترات الـ Pagination والفلترة للـ API
+    const { data, isLoading } = useGet('restaurant-users', '/api/restaurant/restaurant-users', {
+        page: pagination.pageIndex + 1,
+        limit: pagination.pageSize,
+        ...(totalSpendingFilter ? { totalSpending: totalSpendingFilter } : {}),
+    });
+
+    const rawList = data?.data?.data || data?.data || [];
     const formattedData = rawList.map(item => ({
         id: item.id,
         userId: item.userId,
@@ -83,6 +91,7 @@ export default function Users() {
         phone: item.phone,
         points: item.points ?? 0,
         totalOrders: item.totalOrders ?? 0,
+        totalSpending: item.totalSpendings ?? item.spending ?? 0,
         status: item.status || item.userStatus || 'active',
         photo: item.photo,
         restaurantName: item.restaurant?.name,
@@ -101,7 +110,7 @@ export default function Users() {
     const columns = [
         {
             accessorKey: 'photo',
-            header: t('photoHeader'),
+            header: t('photoHeader', { defaultValue: 'Photo' }),
             cell: ({ row }) => {
                 const photo = row.getValue('photo');
                 return (
@@ -117,7 +126,7 @@ export default function Users() {
         },
         {
             accessorKey: 'name',
-            header: t('nameHeader'),
+            header: t('nameHeader', { defaultValue: 'Name' }),
             cell: ({ row }) => (
                 <button
                     onClick={() => navigate(`/users/${row.original.userId}`)}
@@ -129,9 +138,8 @@ export default function Users() {
         },
         {
             accessorKey: 'email',
-            // تجميع الإيميل ورقم الهاتف ليتعرف عليهما البحث في الجدول
             accessorFn: (row) => `${row.email || ''} ${row.phone || ''}`,
-            header: t('emailHeader'),
+            header: t('emailHeader', { defaultValue: 'Email / Phone' }),
             cell: ({ row }) => (
                 <UserContactCell
                     email={row.original.email}
@@ -139,7 +147,7 @@ export default function Users() {
                 />
             ),
         },
-{
+        {
             accessorKey: 'totalOrders',
             header: ({ column }) => {
                 return (
@@ -156,6 +164,26 @@ export default function Users() {
             cell: ({ row }) => (
                 <span className="font-semibold text-slate-700">
                     {row.original.totalOrders ?? 0}
+                </span>
+            ),
+        },
+        {
+            accessorKey: 'totalSpending',
+            header: ({ column }) => {
+                return (
+                    <button
+                        type="button"
+                        onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+                        className="flex items-center gap-1.5 hover:text-slate-900 transition-colors bg-transparent border-none cursor-pointer p-0 font-medium"
+                    >
+                        {t('totalSpending', { defaultValue: 'Total Spending' })}
+                        <ArrowUpDown className="w-3.5 h-3.5 text-slate-400" />
+                    </button>
+                );
+            },
+            cell: ({ row }) => (
+                <span className="font-semibold text-emerald-600">
+                    {parseFloat(row.original.totalSpending ?? 0).toLocaleString()} ج.م
                 </span>
             ),
         },
@@ -181,7 +209,7 @@ export default function Users() {
         },
         {
             accessorKey: 'status',
-            header: t('statusHeader'),
+            header: t('statusHeader', { defaultValue: 'Status' }),
             cell: ({ row }) => {
                 const status = row.getValue('status');
                 const isActive = status === 'active';
@@ -193,7 +221,7 @@ export default function Users() {
                             onCheckedChange={() => handleStatusToggle(row.original.id, status)}
                         />
                         <span className={`text-xs font-semibold px-2 py-0.5 rounded ${isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
-                            {isActive ? t('activeStatus') : t('blockedStatus')}
+                            {isActive ? t('activeStatus', { defaultValue: 'Active' }) : t('blockedStatus', { defaultValue: 'Blocked' })}
                         </span>
                     </div>
                 );
@@ -202,9 +230,27 @@ export default function Users() {
     ];
 
     return (
-        <div className="p-6 w-full">
+        <div className="p-6 w-full space-y-4">
+            {/* قسم فلترة إجمالي الإنفاق */}
+            <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-100 shadow-sm flex flex-wrap items-center gap-4">
+                <div className="flex items-center gap-2 text-slate-700 font-semibold text-sm">
+                    <Filter className="w-4 h-4 text-primary" />
+                    <span>{t('filterBySpending', { defaultValue: 'Filter by Total Spending' })}:</span>
+                </div>
+                <Input
+                    type="number"
+                    placeholder={t('enterSpending', { defaultValue: 'Enter minimum spending...' })}
+                    value={totalSpendingFilter}
+                    onChange={(e) => {
+                        setTotalSpendingFilter(e.target.value);
+                        setPagination(prev => ({ ...prev, pageIndex: 0 })); // العودة للصفحة الأولى عند تغيير الفلتر
+                    }}
+                    className="w-64 h-9 text-xs rounded-xl"
+                />
+            </div>
+
             <GenericDataTable
-                title={t('restaurantUsersTitle')}
+                title={t('restaurantUsersTitle', { defaultValue: 'Restaurant Users' })}
                 columns={columns}
                 data={formattedData}
                 isLoading={isLoading}
@@ -212,6 +258,8 @@ export default function Users() {
                 editApiUrl="/api/restaurant/restaurant-users"
                 deleteApiUrl="/api/restaurant/restaurant-users"
                 onEdit={(user) => setEditingUser(user)}
+                pagination={pagination}
+                setPagination={setPagination}
             />
 
             <Dialog open={!!editingUser} onOpenChange={() => setEditingUser(null)}>

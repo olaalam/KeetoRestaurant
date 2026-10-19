@@ -166,6 +166,24 @@ const translations = {
     limited: "Limited",
     percentage: "Percentage",
     fixedAmount: "Fixed Amount",
+    foodReport: "Food Report",
+    "image": "Image",
+  "foodName": "Food Name",
+  "category": "Category",
+  "basePrice": "Base Price",
+  "totalSoldQuantity": "Sold Quantity",
+  "totalRevenue": "Total Revenue",
+  "totalOrdersCount": "Total Orders",
+  "foodsWithSalesCount": "Sold Foods",
+  "searchAndFilterFilters": "Search & Report Filters",
+  "startDate": "Start Date",
+  "endDate": "End Date",
+  "sortBySales": "Sort By Sales",
+  "selectSorting": "Select Sorting",
+  "highestSelling": "Highest Selling (Desc)",
+  "lowestSelling": "Lowest Selling (Asc)",
+  "reset": "Reset",
+  "foodReportTitle": "Food Report",
 
     // Common actions
     save: "Save",
@@ -709,6 +727,7 @@ const translations = {
     unknown: "Unknown",
     notSpecified: "Not Specified",
     phoneCopied: "Phone number copied successfully",
+    helpVideo: "Help Video",
 
     // Delivery Man Section
     deliveryMan: "Delivery Man",
@@ -721,6 +740,8 @@ const translations = {
     searchDeliveryMan: "Search by name or phone...",
     noResultsFound: "No matching results found",
     productPricing: "Product Pricing",
+    totalSpending: "Total Spending",
+    filterBySpending: "Filter by spending",
 
     // Preparation Duration Section
     orderDuration: "Preparation Duration",
@@ -2228,6 +2249,7 @@ const translations = {
     "ordersCount": "عدد الطلبات",
     "totalAmount": "الإجمالي",
     orderDelay: "تأخير الطلب",
+    helpVideo: "فيديو المساعدة",
 
     "additionalFinancialMetrics": "المقاييس المالية الإضافية",
     "subtotal": "المجموع الفرعي",
@@ -2931,6 +2953,7 @@ const translations = {
     "edit": "تعديل",
     "noDataAvailable": "لا توجد بيانات متاحة",
     tobecollected: "يجب تحصيلها",
+    foodReport:"تقرير الأصناف",
 
     "orderDelayAlertsTitle": "تنبيهات تأخير الطلبات",
     "alertNameCol": "اسم التنبيه",
@@ -2959,6 +2982,25 @@ const translations = {
     totalVisaCommission: "إجمالي عمولة الفيزا",
     commissionFromVisaPayments: "العمولة من مدفوعات الفيزا",
     visaCommission: "عمولة الفيزا",
+    "image": "الصورة",
+  "foodName": "اسم الصنف",
+  "category": "التصنيف",
+  "basePrice": "السعر الأساسي",
+  "totalSoldQuantity": "الكمية المباعة",
+  "totalRevenue": "إجمالي الإيرادات",
+  "totalOrdersCount": "إجمالي الطلبات",
+  "foodsWithSalesCount": "الأصناف المباعة",
+  "searchAndFilterFilters": "فلاتر البحث والتقرير",
+  "startDate": "من تاريخ",
+  "endDate": "إلى تاريخ",
+  "sortBySales": "الترتيب حسب المبيعات",
+  "selectSorting": "اختر الترتيب",
+  "highestSelling": "الأعلى مبيعاً (تنازلي)",
+  "lowestSelling": "الأقل مبيعاً (تصاعدي)",
+  "reset": "إعادة ضبط",
+  "foodReportTitle": "تقرير الأطعمة",
+  filterBySpending: "تصفية حسب الإنفاق",
+  totalSpending: "إجمالي الإنفاق",
 
 
 
