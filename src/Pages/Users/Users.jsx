@@ -4,14 +4,14 @@ import GenericDataTable from '@/components/GenericDataTable';
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { useQueryClient } from '@tanstack/react-query';
 import api from '@/api/axios';
 import UsersAdd from './UsersAdd';
 import { useTranslation } from '@/hooks/useTranslation';
-import { Mail, Phone, Copy, Check, ArrowUpDown, Filter } from 'lucide-react';
+import { Mail, Phone, Copy, Check, ArrowUpDown, Filter, RotateCcw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-// مكون خاص بعرض بيانات الاتصال بارتفاع ومسافات متساوية تماماً لكل الصفوف
 const UserContactCell = ({ email, phone }) => {
     const [copied, setCopied] = useState(false);
 
@@ -25,18 +25,16 @@ const UserContactCell = ({ email, phone }) => {
 
     return (
         <div className="flex flex-col justify-center min-h-[48px] gap-1 py-1 text-left dir-ltr">
-            {/* Symmetrical Email Row */}
             <div className="flex items-center gap-1.5 h-5">
                 <Mail className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                <span 
-                    className="font-medium text-slate-800 text-sm truncate max-w-[200px]" 
+                <span
+                    className="font-medium text-slate-800 text-sm truncate max-w-[200px]"
                     title={email}
                 >
                     {email || '-'}
                 </span>
             </div>
 
-            {/* Symmetrical Phone Row (Reserved height whether phone exists or not) */}
             <div className="flex items-center h-5">
                 {phone ? (
                     <div className="inline-flex items-center gap-1.5 text-xs text-slate-600 bg-slate-100/80 border border-slate-200/80 px-2 py-0.5 rounded-md font-mono">
@@ -70,19 +68,25 @@ export default function Users() {
     const [editingUser, setEditingUser] = useState(null);
     const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 15 });
     const [totalSpendingFilter, setTotalSpendingFilter] = useState('');
+    const [startDate, setStartDate] = useState('');
+    const [endDate, setEndDate] = useState('');
 
     const queryClient = useQueryClient();
     const { t } = useTranslation();
     const navigate = useNavigate();
 
-    // جلب البيانات مع إرسال بارامترات الـ Pagination والفلترة للـ API
     const { data, isLoading } = useGet('restaurant-users', '/api/restaurant/restaurant-users', {
         page: pagination.pageIndex + 1,
         limit: pagination.pageSize,
         ...(totalSpendingFilter ? { totalSpending: totalSpendingFilter } : {}),
+        ...(startDate ? { startDate } : {}),
+        ...(endDate ? { endDate } : {}),
     });
 
     const rawList = data?.data?.data || data?.data || [];
+
+    const totalPages = data?.data?.pagination?.totalPages || data?.data?.totalPages || 1;
+
     const formattedData = rawList.map(item => ({
         id: item.id,
         userId: item.userId,
@@ -105,6 +109,13 @@ export default function Users() {
         } catch (error) {
             console.error('Failed to update status:', error);
         }
+    };
+
+    const handleClearFilters = () => {
+        setTotalSpendingFilter('');
+        setStartDate('');
+        setEndDate('');
+        setPagination(prev => ({ ...prev, pageIndex: 0 }));
     };
 
     const columns = [
@@ -231,22 +242,61 @@ export default function Users() {
 
     return (
         <div className="p-6 w-full space-y-4">
-            {/* قسم فلترة إجمالي الإنفاق */}
-            <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-100 shadow-sm flex flex-wrap items-center gap-4">
-                <div className="flex items-center gap-2 text-slate-700 font-semibold text-sm">
-                    <Filter className="w-4 h-4 text-primary" />
-                    <span>{t('filterBySpending', { defaultValue: 'Filter by Total Spending' })}:</span>
+            <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-100 shadow-sm flex flex-wrap items-center justify-between gap-4">
+                <div className="flex flex-wrap items-center gap-3">
+                    <div className="flex items-center gap-1.5">
+                        <span className="text-xs font-semibold text-slate-600">{t('startDate', { defaultValue: 'From' })}:</span>
+                        <Input
+                            type="date"
+                            value={startDate}
+                            onChange={(e) => {
+                                setStartDate(e.target.value);
+                                setPagination(prev => ({ ...prev, pageIndex: 0 }));
+                            }}
+                            className="w-36 h-9 text-xs rounded-xl"
+                        />
+                    </div>
+
+                    <div className="flex items-center gap-1.5">
+                        <span className="text-xs font-semibold text-slate-600">{t('endDate', { defaultValue: 'To' })}:</span>
+                        <Input
+                            type="date"
+                            value={endDate}
+                            onChange={(e) => {
+                                setEndDate(e.target.value);
+                                setPagination(prev => ({ ...prev, pageIndex: 0 }));
+                            }}
+                            className="w-36 h-9 text-xs rounded-xl"
+                        />
+                    </div>
                 </div>
-                <Input
-                    type="number"
-                    placeholder={t('enterSpending', { defaultValue: 'Enter minimum spending...' })}
-                    value={totalSpendingFilter}
-                    onChange={(e) => {
-                        setTotalSpendingFilter(e.target.value);
-                        setPagination(prev => ({ ...prev, pageIndex: 0 })); // العودة للصفحة الأولى عند تغيير الفلتر
-                    }}
-                    className="w-64 h-9 text-xs rounded-xl"
-                />
+
+                <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1 text-slate-700 font-semibold text-xs">
+                        <Filter className="w-3.5 h-3.5 text-primary" />
+                        <span>{t('filterBySpending', { defaultValue: 'Min Spending' })}:</span>
+                    </div>
+                    <Input
+                        type="number"
+                        placeholder={t('enterSpending', { defaultValue: 'Amount...' })}
+                        value={totalSpendingFilter}
+                        onChange={(e) => {
+                            setTotalSpendingFilter(e.target.value);
+                            setPagination(prev => ({ ...prev, pageIndex: 0 }));
+                        }}
+                        className="w-28 h-9 text-xs rounded-xl"
+                    />
+                </div>
+
+                <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleClearFilters}
+                    className="h-9 px-3 rounded-xl gap-1 text-slate-500 hover:text-slate-700"
+                >
+                    <RotateCcw className="h-4 w-4" />
+                    <span className="text-xs">{t('reset', { defaultValue: 'Reset' })}</span>
+                </Button>
             </div>
 
             <GenericDataTable
@@ -260,6 +310,7 @@ export default function Users() {
                 onEdit={(user) => setEditingUser(user)}
                 pagination={pagination}
                 setPagination={setPagination}
+                pageCount={totalPages}
             />
 
             <Dialog open={!!editingUser} onOpenChange={() => setEditingUser(null)}>

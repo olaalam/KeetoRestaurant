@@ -71,6 +71,13 @@ const FirstOrderDiscountAdd = () => {
             initialData={initialData}
             transformPayload={(data) => ({
                 ...data,
+                // 💡 تحويل القيم العددية إلى Numbers صريحة بدلاً من Strings
+                firstOrderCount: data.firstOrderCount !== undefined && data.firstOrderCount !== '' ? Number(data.firstOrderCount) : null,
+                discountValue: data.discountValue !== undefined && data.discountValue !== '' ? Number(data.discountValue) : null,
+                maxDiscountAmount: data.maxDiscountAmount !== undefined && data.maxDiscountAmount !== '' ? Number(data.maxDiscountAmount) : null,
+                maxUsage: data.maxUsage !== undefined && data.maxUsage !== '' ? Number(data.maxUsage) : null,
+                maxUsagePerUser: data.maxUsagePerUser !== undefined && data.maxUsagePerUser !== '' ? Number(data.maxUsagePerUser) : null,
+
                 // تحويل التواريخ لصيغة ISO المطلوبة لتجنب خطأ الـ Validation
                 startDate: data.startDate ? new Date(data.startDate).toISOString() : null,
                 endDate: data.endDate ? new Date(data.endDate).toISOString() : null,

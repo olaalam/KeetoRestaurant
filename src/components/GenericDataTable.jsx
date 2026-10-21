@@ -5,7 +5,7 @@ import {
   getCoreRowModel,
   getPaginationRowModel,
   getFilteredRowModel,
-  getSortedRowModel, // <-- إضافة هذه
+  getSortedRowModel,
   flexRender,
 } from "@tanstack/react-table";
 import {
@@ -85,6 +85,8 @@ export default function GenericDataTable({
   setPagination: setControlledPagination,
   requireInactiveReason = false,
   deleteWithoutId = false,
+  pageCount: controlledPageCount,
+  statusWithoutId = false,
 }) {
   const [globalFilter, setGlobalFilter] = useState("");
   const [sorting, setSorting] = useState([]);
@@ -113,6 +115,7 @@ export default function GenericDataTable({
   useEffect(() => {
     setPagination((prev) => ({ ...prev, pageIndex: 0 }));
   }, [globalFilter, setPagination]);
+
   const sortedData = useMemo(() => {
     if (!Array.isArray(data)) return [];
     return [...data].sort((a, b) => {
@@ -121,7 +124,6 @@ export default function GenericDataTable({
       return bTime - aTime;
     });
   }, [data]);
-
 
   // الانتقال التلقائي لصفحة العنصر المُراد تمييزه أو الصفحة السابقة عند توفر البيانات
   useEffect(() => {
@@ -138,27 +140,36 @@ export default function GenericDataTable({
     }
   }, [activeHighlightedId, sortedData, pagination.pageSize, setPagination, location.state?.pageIndex]);
 
-  const updateStatusMutation = useMutation({
+const updateStatusMutation = useMutation({
     mutationFn: async ({ id, newStatus, keyName, reason }) => {
-      const isBundle = editApiUrl.includes("bundles");
-      const isDiscount = editApiUrl.includes("discounts");
+        const isBundle = editApiUrl?.includes("bundles");
+        const isDiscount = editApiUrl?.includes("discounts");
+        const isFreeDelivery = editApiUrl?.includes("free-delivery");
 
-      const url = (isBundle || isDiscount)
-        ? `${editApiUrl}/${id}/toggle-status`
-        : `${editApiUrl}/${id}`;
+        // 💡 التحقق من عدم إرسال الـ id في الـ URL إذا كان statusWithoutId مفعلاً أو لـ free-delivery بدون id
+        const shouldIncludeId = !statusWithoutId && !(isFreeDelivery && deleteWithoutId);
 
-      const requestBody = {};
-      requestBody[keyName] = newStatus;
+        let url = editApiUrl;
+        if (isBundle || isDiscount) {
+            url = `${editApiUrl}/${id}/toggle-status`;
+        } else if (shouldIncludeId && id) {
+            url = `${editApiUrl}/${id}`;
+        }
 
-      if (reason) {
-        requestBody.inactiveReason = reason;
-      }
+        const requestBody = {};
+        requestBody[keyName] = newStatus;
 
-      // استخدام PATCH مع الـ Bundles كما طلبت
-      if (isBundle) {
-        return await api.patch(url, requestBody);
-      }
-      return await api.put(url, requestBody);
+        if (reason) {
+            requestBody.inactiveReason = reason;
+        }
+
+        if (isBundle ) {
+            return await api.patch(url, requestBody);
+        }
+                if (isFreeDelivery) {
+            return await api.post(url, requestBody);
+        }
+        return await api.put(url, requestBody);
     },
     onSuccess: () => {
       if (queryKey) {
@@ -186,7 +197,6 @@ export default function GenericDataTable({
       reason: inactiveReason
     });
   };
-
 
   const tableColumns = useMemo(() => {
     const baseColumns = [
@@ -221,8 +231,6 @@ export default function GenericDataTable({
           ...col,
           cell: ({ row }) => {
             const currentStatus = row.getValue(col.accessorKey);
-
-            // 1. العرض (View): فحص الحالة إذا كانت "active" أو true
             const isActive = currentStatus === "active" || currentStatus === true || currentStatus === 1;
             const isBlocked = currentStatus === "blocked";
             const rowId = row.original.id || row.original.menuItemId;
@@ -233,7 +241,6 @@ export default function GenericDataTable({
                   checked={isActive}
                   disabled={updateStatusMutation.isPending}
                   onCheckedChange={(checked) => {
-                    // 2. الـ Payload: إرسال القيمة كـ boolean (true / false) مباشرة
                     const newStatus = checked ? "active" : "inactive";
                     if (!checked && requireInactiveReason) {
                       setInactiveDialog({
@@ -315,7 +322,7 @@ export default function GenericDataTable({
     }
 
     return baseColumns;
-  }, [columns, onEdit, deleteApiUrl, actions, editApiUrl, updateStatusMutation.isPending, t, requireInactiveReason]);
+  }, [columns, onEdit, deleteApiUrl, actions, editApiUrl, updateStatusMutation.isPending, t, requireInactiveReason, deleteWithoutId, pagination.pageIndex]);
 
   const table = useReactTable({
     data: sortedData,
@@ -323,16 +330,18 @@ export default function GenericDataTable({
     state: {
       globalFilter,
       pagination,
-      sorting, // <-- 1. إضافة حالة الترتيب هنا
+      sorting,
     },
     onGlobalFilterChange: setGlobalFilter,
     onPaginationChange: setPagination,
-    onSortingChange: setSorting, // <-- 2. إضافة معالج تغيير الترتيب
+    onSortingChange: setSorting,
     autoResetPageIndex: false,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
-    getSortedRowModel: getSortedRowModel(), // <-- 3. إضافة الموديل الخاص بالترتيب
-    getPaginationRowModel: getPaginationRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getPaginationRowModel: controlledPageCount ? undefined : getPaginationRowModel(),
+    manualPagination: !!controlledPageCount,
+    pageCount: controlledPageCount ?? undefined,
     initialState: {
       pagination: {
         pageSize: getSavedPageSize(),
@@ -341,7 +350,7 @@ export default function GenericDataTable({
   });
 
   const currentPage = table.getState().pagination.pageIndex;
-  const totalPages = table.getPageCount();
+  const totalPages = controlledPageCount ?? table.getPageCount();
   const paginationRange = useMemo(() => getPaginationRange(currentPage, totalPages), [currentPage, totalPages]);
 
   return (
@@ -365,7 +374,6 @@ export default function GenericDataTable({
         </div>
 
         <div className="flex flex-wrap items-center gap-3 self-end sm:self-center w-full sm:w-auto">
-          {/* اختيار عدد الصفوف في الصفحة */}
           <div className="flex items-center gap-2">
             <Select
               value={String(pagination.pageSize)}
@@ -505,7 +513,7 @@ export default function GenericDataTable({
         </div>
       </div>
 
-      {/* PAGINATION (منطقة أزرار التنقل الذكية) */}
+      {/* PAGINATION */}
       {totalPages > 1 && (
         <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
           <div className="flex items-center gap-1.5 flex-wrap justify-center">

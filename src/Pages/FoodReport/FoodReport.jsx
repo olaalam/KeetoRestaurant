@@ -4,6 +4,7 @@ import { useGet } from "@/hooks/useGet";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -17,27 +18,40 @@ import { useTranslation } from "@/hooks/useTranslation";
 export default function FoodReportPage() {
   const { t, isRTL } = useTranslation();
 
+  // 💡 حالة الترقيم (Pagination State) للتحكم بالصفحات من الجدول
+  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 15 });
+
   // 1. Initial filter parameters matching the API structure
   const defaultParams = {
     startDate: "2026-09-26",
     endDate: "2026-10-19",
-    branchId: "",
     arrangedType: "desc",
-    sortBy: "totalsold",
-    status: "all_non_cancelled",
+    page: 1,
+    limit: 15,
+    onlySold: false,
   };
 
   const [filters, setFilters] = useState(defaultParams);
 
+  // تحديث الـ filters عندما يتغير الـ pagination (الصفحة أو حجمها)
+  const currentParams = {
+    ...filters,
+    page: pagination.pageIndex + 1,
+    limit: pagination.pageSize,
+  };
+
   // 2. Fetch data using useGet hook
   const { data, isLoading, isFetching } = useGet(
-    ["foodReport", filters],
+    ["foodReport", currentParams],
     "/api/restaurant/report/food",
-    filters
+    currentParams
   );
 
   const summary = data?.data?.summary;
   const foodList = data?.data?.foods || [];
+  
+  // استخراج إجمالي عدد الصفحات من الـ API (إذا كان متوفراً في الاستجابة)
+  const totalPages = data?.data?.pagination?.totalPages || data?.totalPages || 1;
 
   // 3. Define table columns with multi-language support
   const columns = [
@@ -103,10 +117,12 @@ export default function FoodReportPage() {
 
   const handleFilterChange = (key, value) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
+    setPagination((prev) => ({ ...prev, pageIndex: 0 })); // العودة للأولى عند تغيير الفلتر
   };
 
   const handleReset = () => {
     setFilters(defaultParams);
+    setPagination({ pageIndex: 0, pageSize: 15 });
   };
 
   return (
@@ -208,12 +224,23 @@ export default function FoodReportPage() {
             </Select>
           </div>
 
-          <div className="flex justify-end gap-2">
+          {/* 💡 فلتر onlySold الجديد */}
+          <div className="flex items-center justify-between p-2.5 border rounded-xl bg-slate-50 dark:bg-slate-800/50 h-10">
+            <Label className="text-xs font-semibold text-slate-600 dark:text-slate-300 cursor-pointer">
+              {t("onlySold") || "Only Sold Items"}
+            </Label>
+            <Switch
+              checked={filters.onlySold}
+              onCheckedChange={(checked) => handleFilterChange("onlySold", checked)}
+            />
+          </div>
+
+          <div className="flex justify-end gap-2 lg:col-span-4">
             <Button
               variant="outline"
               size="sm"
               onClick={handleReset}
-              className="h-10 px-4 rounded-xl gap-1 text-slate-500 hover:text-slate-700 w-full"
+              className="h-10 px-4 rounded-xl gap-1 text-slate-500 hover:text-slate-700"
             >
               <RotateCcw className="h-4 w-4" />
               <span className="text-xs">{t("reset") || "Reset"}</span>
@@ -222,7 +249,7 @@ export default function FoodReportPage() {
         </div>
       </div>
 
-      {/* Data Table */}
+      {/* Data Table with Server-side Pagination */}
       <GenericDataTable
         title={t("foodReportTitle") || "Food Report"}
         columns={columns}
@@ -230,6 +257,9 @@ export default function FoodReportPage() {
         isLoading={isLoading || isFetching}
         queryKey="foodReport"
         actions={false}
+        pagination={pagination}
+        setPagination={setPagination}
+        pageCount={totalPages}
       />
     </div>
   );
