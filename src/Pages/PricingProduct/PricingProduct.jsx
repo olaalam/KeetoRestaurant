@@ -1,8 +1,9 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo , useEffect } from "react";
 import { useGet } from "@/hooks/useGet";
 import { toast } from 'sonner';
 import api from '@/api/axios';
 import { useTranslation } from "@/hooks/useTranslation";
+import useAuthStore from "@/store/useAuthStore";
 import {
   Table,
   TableBody,
@@ -55,42 +56,82 @@ const getStoredBranchId = () => {
 
 export default function PricingProduct({ branchId: branchIdProp }) {
   const { t, isRTL } = useTranslation();
+  const { user } = useAuthStore((state) => state);
 
   const [search, setSearch] = useState("");
-  const currentBranchId = branchIdProp || getStoredBranchId();
+  const currentBranchId = branchIdProp || user?.branchId || getStoredBranchId();
 
-  // ---- Restaurant Online / Offline Status ----
+  // ---- Restaurant / Branch Online / Offline Status ----
   const { data: settingsRes, refetch: refetchSettings } = useGet(
     "restaurant-settings",
     "/api/restaurant/restaurantsetting"
   );
 
-  // قراءة الحالة مباشرة من الباك أند
+  const branchId = user?.branchId;
+  
+  // 💡 تحويل الحالة إلى Local State لضمان التفاعل الفوري
+  const [isOnline, setIsOnline] = useState(
+    branchId ? user?.status !== "inactive" : !settingsRes?.data?.settings?.isTemporarilyClosed
+  );
 
-const isOnline = !settingsRes?.data?.settings?.isTemporarilyClosed;
+  // تحديث الـ state لو البيانات اتغيرت من الـ server
+  useEffect(() => {
+    if (branchId) {
+      setIsOnline(user?.status !== "inactive");
+    } else if (settingsRes?.data?.settings) {
+      setIsOnline(!settingsRes.data.settings.isTemporarilyClosed);
+    }
+  }, [user?.status, settingsRes, branchId]);
 
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const [branchInactiveModalOpen, setBranchInactiveModalOpen] = useState(false);
+  const [inactiveReason, setInactiveReason] = useState("");
 
-  const handleStatusToggle = async (checked) => {
+  const handleStatusToggle = (checked) => {
+    if (branchId && !checked) {
+      setInactiveReason("");
+      setBranchInactiveModalOpen(true);
+      return;
+    }
+    executeStatusUpdate(checked, undefined);
+  };
+
+  const executeStatusUpdate = async (checked, reason) => {
     setIsUpdatingStatus(true);
+    setIsOnline(checked); // 💡 تحديث الواجهة فوراً قبل انتظار الـ API
+
     try {
-      await api.put("/api/restaurant/restaurantsetting", {
-        settings: {
-          // بنبعت عكس حالة السويتش: لو السويتش مفتوح (true) يبقى الإغلاق المؤقت (false)
-          isTemporarilyClosed: !checked,
-        },
-      });
+      if (branchId) {
+        // 1. تحديث الحالة للفرع بـ PUT
+        await api.put(`/api/restaurant/branches/${branchId}`, {
+          status: checked ? "active" : "inactive",
+          inactiveReason: checked ? undefined : (reason || "11"),
+        });
+
+        // 2. جلب بيانات الفروع المحدثة
+        await api.get("/api/restaurant/branches");
+      } else {
+        // 3. استخدام API المطعم الأساسي لو مش فرع
+        await api.put(`/api/restaurant/restaurantsetting`, {
+          settings: {
+            isTemporarilyClosed: !checked,
+          },
+        });
+      }
+
       toast.success(
         checked
-          ? t("restaurantIsNowOnline🟢") 
-          : t("restaurantIsNowOffline🔴") 
+          ? t("restaurantIsNowOnline🟢") || "المطعم الآن متصل أونلاين 🟢"
+          : t("restaurantIsNowOffline🔴") || "المطعم الآن مغلق أوفلاين 🔴"
       );
       refetchSettings();
     } catch (error) {
-      console.error("Error updating restaurant status:", error);
+      console.error("Error updating status:", error);
+      setIsOnline(!checked); // 💡 العودة للحالة القديمة في حال حدوث خطأ
       toast.error(t("failedToUpdateStatus") || "فشل في تغيير حالة المطعم");
     } finally {
       setIsUpdatingStatus(false);
+      setBranchInactiveModalOpen(false);
     }
   };
 
@@ -149,7 +190,6 @@ const isOnline = !settingsRes?.data?.settings?.isTemporarilyClosed;
   const branchIdsParam = isAllBranches ? "all" : selectedBranchIds.join(",");
   const modulesParam = isAllModules ? "all" : selectedModules.join(",");
 
-  // ---- fetch subcategories for the left sidebar filter ----
   const { data: subCategoriesRes } = useGet(
     "pricing-subcategories",
     "/api/restaurant/subcategories"
@@ -234,7 +274,6 @@ const isOnline = !settingsRes?.data?.settings?.isTemporarilyClosed;
     }
   };
 
-  // ---- Price & Variants Modal Logic ----
   const openPriceModal = (item) => {
     setPriceModalItem(item);
 
@@ -303,7 +342,7 @@ const isOnline = !settingsRes?.data?.settings?.isTemporarilyClosed;
     }));
   };
 
-const savePriceModal = async () => {
+  const savePriceModal = async () => {
     if (!priceModalItem) return;
     setIsSaving(true);
 
@@ -317,7 +356,7 @@ const savePriceModal = async () => {
       branchId: branchToSend,
       serviceModule: serviceModuleToSend,
       price: Number(mainItemEdit.price),
-      branchPriceStatus: mainItemEdit.status ? "active" : "inactive" 
+      branchPriceStatus: mainItemEdit.status ? "active" : "inactive"
     };
 
     promises.push(api.post("/api/restaurant/pricing/product-channel", mainPayload));
@@ -332,7 +371,6 @@ const savePriceModal = async () => {
               branchId: branchToSend,
               serviceModule: serviceModuleToSend,
               price: Number(editedOpt.price),
-              // تم تغيير المفتاح هنا من status إلى branchPriceStatus
               branchPriceStatus: editedOpt.status ? "active" : "inactive"
             };
             promises.push(api.post("/api/restaurant/pricing/variant-channel", varPayload));
@@ -353,6 +391,7 @@ const savePriceModal = async () => {
       setIsSaving(false);
     }
   };
+
   const toggleOutOfStock = async (foodId, currentStockStatus) => {
     try {
       if (isAllBranches && isAllModules) {
@@ -465,7 +504,6 @@ const savePriceModal = async () => {
 
   return (
     <div className="space-y-6 w-full">
-      {/* HEADER WITH ONLINE / OFFLINE TOGGLE */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-800">
         <div className="space-y-1">
           <h2 className="text-2xl font-bold text-slate-800 tracking-tight dark:text-slate-100">
@@ -476,7 +514,6 @@ const savePriceModal = async () => {
           </p>
         </div>
 
-        {/* STORE ONLINE / OFFLINE CARD */}
         <div
           className={cn(
             "flex items-center gap-3 px-4 py-2.5 rounded-2xl border transition-all duration-300 shadow-sm",
@@ -485,7 +522,6 @@ const savePriceModal = async () => {
               : "bg-rose-50/70 border-rose-200/80 dark:bg-rose-950/20 dark:border-rose-800/40"
           )}
         >
-          {/* Animated Status Indicator */}
           <div className="relative flex items-center justify-center">
             <span
               className={cn(
@@ -499,7 +535,6 @@ const savePriceModal = async () => {
             </span>
           </div>
 
-          {/* Text Labels */}
           <div className="flex flex-col min-w-[110px]">
             <span
               className={cn(
@@ -514,7 +549,6 @@ const savePriceModal = async () => {
             </span>
           </div>
 
-          {/* Switch Control */}
           <Switch
             checked={isOnline}
             disabled={isUpdatingStatus}
@@ -526,7 +560,6 @@ const savePriceModal = async () => {
         </div>
       </div>
 
-      {/* BRANCHES ROW (multi-select) */}
       {!currentBranchId && (
         <div className="flex flex-wrap items-center gap-2">
           <Button
@@ -565,7 +598,6 @@ const savePriceModal = async () => {
         </div>
       )}
 
-      {/* TABS (Modules Multi-select) + SEARCH */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex flex-wrap items-center gap-2">
           {TABS.map((tab) => {
@@ -609,9 +641,7 @@ const savePriceModal = async () => {
         </div>
       </div>
 
-      {/* SIDEBAR (subcategories) + TABLE */}
       <div className="flex flex-col md:flex-row gap-4 items-start">
-        {/* SUBCATEGORY SIDEBAR */}
         <div className="w-full md:w-64 shrink-0 rounded-2xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-sm overflow-hidden">
           <div className="p-2 space-y-1 max-h-[560px] overflow-y-auto">
             <button
@@ -648,7 +678,6 @@ const savePriceModal = async () => {
           </div>
         </div>
 
-        {/* TABLE */}
         <div className="flex-1 w-full rounded-2xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <Table>
@@ -674,13 +703,6 @@ const savePriceModal = async () => {
                         disabled={!selectedSubCategoryId || isSubCategoryActionDisabled}
                         onCheckedChange={(checked) => toggleSubCategoryOutOfStock(checked)}
                         className="data-[state=checked]:bg-gray-300 data-[state=unchecked]:bg-yellow-400"
-                        title={
-                          !selectedSubCategoryId
-                            ? (t("selectSubCategoryFirst") || "اختر قسم فرعي أولاً")
-                            : isSubCategoryActionDisabled
-                            ? (t("selectSpecificBranchFirst") || "اختر فرع محدد أولاً")
-                            : (t("markSubCategoryOutOfStock") || "تعطيل كل منتجات القسم الفرعي")
-                        }
                       />
                     </div>
                   </TableHead>
@@ -691,13 +713,6 @@ const savePriceModal = async () => {
                         checked={subCategoryOffValue}
                         disabled={!selectedSubCategoryId || isSubCategoryActionDisabled}
                         onCheckedChange={(checked) => toggleSubCategoryStatusHeader(checked)}
-                        title={
-                          !selectedSubCategoryId
-                            ? (t("selectSubCategoryFirst") || "اختر قسم فرعي أولاً")
-                            : isSubCategoryActionDisabled
-                            ? (t("selectSpecificBranchFirst") || "اختر فرع محدد أولاً")
-                            : (t("toggleSubCategoryStatus") || "تفعيل/تعطيل القسم الفرعي بالكامل")
-                        }
                       />
                     </div>
                   </TableHead>
@@ -737,7 +752,6 @@ const savePriceModal = async () => {
                             <button
                               onClick={() => openPriceModal(item)}
                               className="h-7 w-7 inline-flex items-center justify-center rounded-lg text-slate-400 hover:text-primary hover:bg-primary/5 transition-all"
-                              title={t("update") || "Update"}
                             >
                               <Pencil className="h-3.5 w-3.5" />
                             </button>
@@ -751,61 +765,56 @@ const savePriceModal = async () => {
                             <button
                               onClick={() => openPointsModal(item)}
                               className="h-7 w-7 inline-flex items-center justify-center rounded-lg text-slate-400 hover:text-primary hover:bg-primary/5 transition-all"
-                              title={t("update") || "Update"}
                             >
                               <Pencil className="h-3.5 w-3.5" />
                             </button>
                           </div>
                         </TableCell>
-{/* عمود الـ Out of Stock */}
-<TableCell className="py-4 px-6 text-center">
-  <div className="flex items-center justify-center gap-2">
-    <Switch
-      checked={getIsOutOfStockForChannel(item)}
-      onCheckedChange={(checked) => {
-        toggleOutOfStock(item.id, checked);
-      }}
-      className="data-[state=checked]:bg-gray-300 data-[state=unchecked]:bg-yellow-400"
-    />
-    <span
-      className={cn(
-        "text-xs font-semibold min-w-[80px] text-start transition-colors",
-        getIsOutOfStockForChannel(item) ? "text-rose-500" : "text-emerald-500"
-      )}
-    >
-      {getIsOutOfStockForChannel(item)
-        ? t("outOfStock") || "Out of Stock"
-        : t("available") || "Available"}
-    </span>
-  </div>
-</TableCell>
 
-{/* عمود الـ Off / On */}
-<TableCell className="py-4 px-6 text-center">
-  <div className="flex items-center justify-center gap-2 min-w-[90px]">
-    {/* لو المنتج شغال (مفتوح)، هنظهر كلمة On على الشمال */}
-    {!getIsFoodOff(item) && (
-      <span className="text-xs font-semibold text-emerald-500">
-        {t("on") || "On"}
-      </span>
-    )}
+                        <TableCell className="py-4 px-6 text-center">
+                          <div className="flex items-center justify-center gap-2">
+                            <Switch
+                              checked={getIsOutOfStockForChannel(item)}
+                              onCheckedChange={(checked) => {
+                                toggleOutOfStock(item.id, checked);
+                              }}
+                              className="data-[state=checked]:bg-gray-300 data-[state=unchecked]:bg-yellow-400"
+                            />
+                            <span
+                              className={cn(
+                                "text-xs font-semibold min-w-[80px] text-start transition-colors",
+                                getIsOutOfStockForChannel(item) ? "text-rose-500" : "text-emerald-500"
+                              )}
+                            >
+                              {getIsOutOfStockForChannel(item)
+                                ? t("outOfStock") || "Out of Stock"
+                                : t("available") || "Available"}
+                            </span>
+                          </div>
+                        </TableCell>
 
-    <Switch
-      checked={!getIsFoodOff(item)}
-      onCheckedChange={(checked) => {
-        toggleFoodStatus(item.id, checked);
-      }}
-    />
+                        <TableCell className="py-4 px-6 text-center">
+                          <div className="flex items-center justify-center gap-2 min-w-[90px]">
+                            {!getIsFoodOff(item) && (
+                              <span className="text-xs font-semibold text-emerald-500">
+                                {t("on") || "On"}
+                              </span>
+                            )}
 
-    {/* لو المنتج مقفول، هنظهر كلمة Off على اليمين */}
-    {getIsFoodOff(item) && (
-      <span className="text-xs font-semibold text-rose-500">
-        {t("off") || "Off"}
-      </span>
-    )}
-  </div>
-</TableCell>
+                            <Switch
+                              checked={!getIsFoodOff(item)}
+                              onCheckedChange={(checked) => {
+                                toggleFoodStatus(item.id, checked);
+                              }}
+                            />
 
+                            {getIsFoodOff(item) && (
+                              <span className="text-xs font-semibold text-rose-500">
+                                {t("off") || "Off"}
+                              </span>
+                            )}
+                          </div>
+                        </TableCell>
                       </TableRow>
                     );
                   })
@@ -825,7 +834,6 @@ const savePriceModal = async () => {
         </div>
       </div>
 
-      {/* PRICE & VARIANTS EDIT MODAL */}
       <Dialog open={!!priceModalItem} onOpenChange={(open) => !open && closePriceModal()}>
         <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto">
           <DialogHeader>
@@ -834,7 +842,6 @@ const savePriceModal = async () => {
 
           {priceModalItem && (
             <div className="space-y-6 mt-2">
-              {/* Main Product Edit */}
               <div className="p-4 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800">
                 <h3 className="font-semibold text-slate-800 dark:text-slate-200 mb-3">
                   {priceModalItem.name || priceModalItem.nameAr}
@@ -864,7 +871,6 @@ const savePriceModal = async () => {
                 </div>
               </div>
 
-              {/* Variations Edit */}
               {priceModalItem.variations && priceModalItem.variations.length > 0 && (
                 <div className="space-y-4">
                   <h4 className="font-semibold text-slate-700 dark:text-slate-300 border-b pb-2">
@@ -918,7 +924,6 @@ const savePriceModal = async () => {
         </DialogContent>
       </Dialog>
 
-      {/* POINTS EDIT MODAL */}
       <Dialog open={!!pointsModalItem} onOpenChange={(open) => !open && closePointsModal()}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
@@ -949,6 +954,37 @@ const savePriceModal = async () => {
             <Button onClick={savePointsModal} disabled={isSavingPoints}>
               {isSavingPoints ? <LoadingSpinner className="h-4 w-4 mr-2" /> : null}
               {t("save") || "Save"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog سبب قفل الفرع */}
+      <Dialog open={branchInactiveModalOpen} onOpenChange={setBranchInactiveModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t("enterInactiveReason") || "ادخل سبب قفل الفرع"}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+              {t("inactiveReason") || "سبب الإغلاق"}:
+            </label>
+            <Input
+              value={inactiveReason}
+              onChange={(e) => setInactiveReason(e.target.value)}
+              placeholder={t("enterReasonPlaceholder") || "اكتب سبب إغلاق الفرع هنا..."}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBranchInactiveModalOpen(false)}>
+              {t("cancel") || "إلغاء"}
+            </Button>
+            <Button 
+              onClick={() => executeStatusUpdate(false, inactiveReason)}
+              disabled={!inactiveReason.trim()}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              {t("confirmAndClose") || "تأكيد الإغلاق"}
             </Button>
           </DialogFooter>
         </DialogContent>
