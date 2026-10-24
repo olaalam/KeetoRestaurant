@@ -3,6 +3,7 @@ import api from '@/api/axios';
 import { useQuery } from '@tanstack/react-query';
 
 export const useGet = (key, url, params = {}, options = {}) => {
+    const isDisabled = params === null;
     return useQuery({
         queryKey: Array.isArray(key) ? [...key, params] : [key, params],
         queryFn: async () => {
@@ -10,7 +11,7 @@ export const useGet = (key, url, params = {}, options = {}) => {
             const { data } = await api.get(url, { params });
             return data;
         },
-        enabled: !!url && (options.enabled ?? true),
+        enabled: !!url && !isDisabled && (options.enabled ?? true),
         ...options,
     });
 };

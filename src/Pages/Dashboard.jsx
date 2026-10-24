@@ -27,6 +27,23 @@ const BRAND_YELLOW = '#F5A623';
 const BRAND_NAVY = '#1C1B2E';
 const COLORS = [BRAND_YELLOW, BRAND_NAVY, '#E2574C', '#4A90E2', '#2CA01C', '#8E44AD'];
 
+// helper: convert preset dateRange to startDate/endDate
+function presetToDates(preset) {
+    const today = new Date();
+    const pad = (n) => String(n).padStart(2, '0');
+    const fmt = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    const endDate = fmt(today);
+    if (preset === '7days') {
+        const start = new Date(today);
+        start.setDate(today.getDate() - 6);
+        return { startDate: fmt(start), endDate };
+    }
+    // default: 30days
+    const start = new Date(today);
+    start.setDate(today.getDate() - 29);
+    return { startDate: fmt(start), endDate };
+}
+
 export default function Dashboard() {
     const { t, isRTL } = useTranslation();
     const [branch, setBranch] = useState('all');
@@ -36,19 +53,28 @@ export default function Dashboard() {
     const [customStartDate, setCustomStartDate] = useState('');
     const [customEndDate, setCustomEndDate] = useState('');
     const [isCustomOpen, setIsCustomOpen] = useState(false);
+    // applied custom dates — only set when user clicks Apply
+    const [appliedStart, setAppliedStart] = useState('');
+    const [appliedEnd, setAppliedEnd] = useState('');
 
-    // جلب البيانات بناءً على التاريخ المخصص أو الجاهز
+    // حساب التواريخ الفعلية للـ query
+    const resolvedDates = dateRange === 'custom'
+        ? { startDate: appliedStart, endDate: appliedEnd }
+        : presetToDates(dateRange);
+
+    // بناء queryParams: branch لا يُرسل لو "all"، dateRange لا يُرسل أبداً
     const queryParams = {
-        branch,
-        ...(dateRange === 'custom' 
-            ? { startDate: customStartDate, endDate: customEndDate }
-            : { dateRange })
+        ...(branch !== 'all' && { branchId: branch }),
+        ...resolvedDates,
     };
 
+    // تعطيل الجلب لو custom بدون تواريخ مطبقة
+    const isReadyToFetch = dateRange !== 'custom' || (appliedStart && appliedEnd);
+
     const { data: response, isLoading, isError } = useGet(
-        ['restaurantReport', branch, dateRange, customStartDate, customEndDate],
+        ['restaurantReport', branch, dateRange, appliedStart, appliedEnd],
         '/api/restaurant/report/dashboard',
-        queryParams
+        isReadyToFetch ? queryParams : null
     );
 
     const isInitialLoading = isLoading && !response;
@@ -134,8 +160,10 @@ export default function Dashboard() {
     // دالة إغلاق النافذة المنبثقة وتطبيق التاريخ
     const handleApplyCustomRange = () => {
         if (customStartDate && customEndDate) {
+            setAppliedStart(customStartDate);
+            setAppliedEnd(customEndDate);
             setDateRange('custom');
-            setIsCustomOpen(false); // إغلاق الـ Dialog تلقائياً
+            setIsCustomOpen(false);
         }
     };
 
