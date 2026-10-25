@@ -87,6 +87,7 @@ export default function GenericDataTable({
   deleteWithoutId = false,
   pageCount: controlledPageCount,
   statusWithoutId = false,
+  hideSearch = false, // <-- خاصية إخفاء البحث المحلي
 }) {
   const [globalFilter, setGlobalFilter] = useState("");
   const [sorting, setSorting] = useState([]);
@@ -140,13 +141,12 @@ export default function GenericDataTable({
     }
   }, [activeHighlightedId, sortedData, pagination.pageSize, setPagination, location.state?.pageIndex]);
 
-const updateStatusMutation = useMutation({
+  const updateStatusMutation = useMutation({
     mutationFn: async ({ id, newStatus, keyName, reason }) => {
         const isBundle = editApiUrl?.includes("bundles");
         const isDiscount = editApiUrl?.includes("discounts");
         const isFreeDelivery = editApiUrl?.includes("free-delivery");
 
-        // 💡 التحقق من عدم إرسال الـ id في الـ URL إذا كان statusWithoutId مفعلاً أو لـ free-delivery بدون id
         const shouldIncludeId = !statusWithoutId && !(isFreeDelivery && deleteWithoutId);
 
         let url = editApiUrl;
@@ -163,10 +163,10 @@ const updateStatusMutation = useMutation({
             requestBody.inactiveReason = reason;
         }
 
-        if (isBundle ) {
+        if (isBundle) {
             return await api.patch(url, requestBody);
         }
-                if (isFreeDelivery) {
+        if (isFreeDelivery) {
             return await api.post(url, requestBody);
         }
         return await api.put(url, requestBody);
@@ -399,21 +399,24 @@ const updateStatusMutation = useMutation({
             </Select>
           </div>
 
-          <div className="relative w-full sm:w-64">
-            <Search className={cn(
-              "absolute top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400",
-              isRTL ? "right-3" : "left-3"
-            )} />
-            <Input
-              placeholder={t("searchPlaceholder")}
-              value={globalFilter ?? ""}
-              onChange={(e) => setGlobalFilter(e.target.value)}
-              className={cn(
-                "h-10 rounded-xl border-slate-200 bg-white shadow-sm focus-visible:ring-primary transition-all text-sm",
-                isRTL ? "pr-9 pl-4" : "pl-9 pr-4"
-              )}
-            />
-          </div>
+          {/* إخفاء مربع البحث المحلي بناءً على الخاصية hideSearch */}
+          {!hideSearch && (
+            <div className="relative w-full sm:w-64">
+              <Search className={cn(
+                "absolute top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400",
+                isRTL ? "right-3" : "left-3"
+              )} />
+              <Input
+                placeholder={t("searchPlaceholder")}
+                value={globalFilter ?? ""}
+                onChange={(e) => setGlobalFilter(e.target.value)}
+                className={cn(
+                  "h-10 rounded-xl border-slate-200 bg-white shadow-sm focus-visible:ring-primary transition-all text-sm",
+                  isRTL ? "pr-9 pl-4" : "pl-9 pr-4"
+                )}
+              />
+            </div>
+          )}
 
           {onAdd && (
             <Button

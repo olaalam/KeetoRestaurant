@@ -5,7 +5,7 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import api from "@/api/axios";
-import { Pencil, MapPin, DollarSign, ShoppingBag, Layers, CheckCircle2, X, Save, Trash2, Loader2, Search, Undo2, Redo2 } from "lucide-react";
+import { Pencil, MapPin, DollarSign, ShoppingBag, Layers, CheckCircle2, X, Save, Trash2, Loader2, Search, Undo2, Redo2, Filter, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -64,7 +64,6 @@ const RecenterMap = ({ center, zoom }) => {
   const map = useMap();
   useEffect(() => {
     if (center && center[0] && center[1]) {
-      // Using flyTo instead of setView for a clear and smooth animation highlighting the selected zone
       map.flyTo(center, zoom || 14, { duration: 1 });
     }
   }, [center, zoom, map]);
@@ -89,14 +88,11 @@ const MapResizeHandler = () => {
   return null;
 };
 
-// 💡 Same logic as MapClickHandler in InteractiveZoneMap.jsx, but applied to the main map 
-// so other zones remain visible in their colors during editing
 const EditMapClickHandler = ({ enabled, coverageType, setCoordinates, onNewPoint }) => {
   useMapEvents({
     click(e) {
       if (!enabled) return;
       const newPoint = { lat: e.latlng.lat, lng: e.latlng.lng };
-      // أي نقطة جديدة بتلغي الـ redo
       if (onNewPoint) onNewPoint();
       if (coverageType === "RADIUS") {
         setCoordinates([newPoint]);
@@ -117,17 +113,17 @@ export default function ZoneMap() {
 
   // 💡 List search by name (Arabic/English), City, or Branch
   const [searchQuery, setSearchQuery] = useState("");
+  
+  // 💡 فلتر الفرع المختار والبحث داخله
+  const [selectedBranchId, setSelectedBranchId] = useState("all");
+  const [branchDropdownOpen, setBranchDropdownOpen] = useState(false);
+  const [branchSearchText, setBranchSearchText] = useState("");
 
-  // 💡 Reference for each drawn shape (Polygon/Marker) on the map to open its Popup programmatically 
-  // when selected from the list (not just when clicking on the map itself)
   const zoneLayerRefs = useRef({});
-
-  // 💡 Reference for each card in the list to scroll to it reliably (instead of getElementById)
   const cardRefs = useRef({});
 
   // ============ 💡 Inline Edit Mode ============
-  // Instead of navigating to another page, "Edit" opens a form in place of the list on the same map
-  const [editingZone, setEditingZone] = useState(null); // null = Normal list view
+  const [editingZone, setEditingZone] = useState(null);
   const [editCityId, setEditCityId] = useState("");
   const [editZoneId, setEditZoneId] = useState("");
   const [editBranchId, setEditBranchId] = useState("");
@@ -136,11 +132,10 @@ export default function ZoneMap() {
   const [editMinOrderAmount, setEditMinOrderAmount] = useState("0.00");
   const [editCustomRadiusKm, setEditCustomRadiusKm] = useState("5.00");
   const [editCoordinates, setEditCoordinates] = useState([]);
-  // 💡 النقاط اللي اتعملها Undo (عشان نقدر نرجّعها بـ Redo)
   const [redoStack, setRedoStack] = useState([]);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Fetch City/Zone/Branch lists for the edit form - same endpoint used in DeliveryZoneAdd.jsx
+  // Fetch City/Zone/Branch lists for the edit form
   const { data: selectionData = { zones: [], cities: [], branches: [] } } = useQuery({
     queryKey: ["DeliveryZonesSelect"],
     queryFn: async () => {
@@ -152,7 +147,18 @@ export default function ZoneMap() {
         branches: responseData.branchesselect || responseData.branches || [],
       };
     },
-    enabled: !!editingZone, // Fetch only when opening edit mode
+    enabled: !!editingZone,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // 💡 جلب قائمة الفروع النشطة (active) فقط للفلتر
+  const { data: activeBranches = [] } = useQuery({
+    queryKey: ["active-branches-filter"],
+    queryFn: async () => {
+      const res = await api.get("/api/restaurant/branches");
+      const list = res.data?.data?.data || res.data?.data || [];
+      return list.filter((b) => b.status === "active");
+    },
     staleTime: 5 * 60 * 1000,
   });
 
@@ -183,7 +189,6 @@ export default function ZoneMap() {
       let coords = [];
       let rawCoords = item.customCoordinates || item.zone?.defaultCoordinates;
 
-      // Parse JSON string if coordinates are stringified
       if (typeof rawCoords === "string") {
         try {
           rawCoords = JSON.parse(rawCoords);
@@ -198,7 +203,6 @@ export default function ZoneMap() {
           .filter((pt) => !isNaN(pt[0]) && !isNaN(pt[1]));
       }
 
-      // Calculate the center point to focus the map
       let center = [31.2001, 29.9187];
       if (coords.length > 0) {
         const avgLat = coords.reduce((sum, c) => sum + c[0], 0) / coords.length;
@@ -218,13 +222,20 @@ export default function ZoneMap() {
     });
   }, [zonesList]);
 
-  // 💡 Filter the list by search - searches zone name (Arabic/English), city, and branch
-  // Note: Filtering applies to the list only; the map displays all zones
+  // 💡 Filter the list by search and branch selection
   const filteredListZones = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
-    if (!q) return parsedZones;
 
     return parsedZones.filter((zone) => {
+      if (selectedBranchId !== "all") {
+        const zoneBranchId = zone.branch?.id || zone.branchId;
+        if (String(zoneBranchId) !== String(selectedBranchId)) {
+          return false;
+        }
+      }
+
+      if (!q) return true;
+
       const haystack = [
         zone.zone?.name,
         zone.zone?.nameAr,
@@ -241,16 +252,13 @@ export default function ZoneMap() {
 
       return haystack.includes(q);
     });
-  }, [parsedZones, searchQuery]);
+  }, [parsedZones, searchQuery, selectedBranchId]);
 
-  // Focus on the zone when clicked in the list
   const handleSelectZone = (zone) => {
     setSelectedZoneId(zone.id);
     setMapCenter(zone.center);
   };
 
-  // 💡 Start inline edit mode - populate all form fields with zone data from the list
-  // (no extra API call needed, data is already in zonesList)
   const handleStartEdit = (zone) => {
     setSelectedZoneId(zone.id);
     setMapCenter(zone.center);
@@ -277,7 +285,6 @@ export default function ZoneMap() {
     setRedoStack([]);
   };
 
-  // When selecting a different "Zone" from the dropdown, fetch its default data (fees/coords) like the original form
   const handleEditZoneChange = (zoneId) => {
     setEditZoneId(zoneId);
     const zone = selectionData.zones.find((z) => String(z.id) === String(zoneId));
@@ -302,8 +309,6 @@ export default function ZoneMap() {
     }
   };
 
-  // ============ 💡 Undo / Redo / Clear للنقاط ============
-  // Undo = يشيل آخر نقطة بس (مش كل النقاط)
   const handleUndoPoint = () => {
     if (editCoordinates.length === 0) return;
     const lastPoint = editCoordinates[editCoordinates.length - 1];
@@ -311,7 +316,6 @@ export default function ZoneMap() {
     setRedoStack([...redoStack, lastPoint]);
   };
 
-  // Redo = يرجّع آخر نقطة اتشالت
   const handleRedoPoint = () => {
     if (redoStack.length === 0) return;
     const restoredPoint = redoStack[redoStack.length - 1];
@@ -319,19 +323,16 @@ export default function ZoneMap() {
     setEditCoordinates([...editCoordinates, restoredPoint]);
   };
 
-  // Clear = يمسح كل النقاط
   const handleClearPoints = () => {
     setEditCoordinates([]);
     setRedoStack([]);
   };
 
-  // اختصارات الكيبورد وقت التعديل: Ctrl+Z = Undo ، Ctrl+Shift+Z أو Ctrl+Y = Redo
   useEffect(() => {
     if (!editingZone) return;
 
     const onKeyDown = (e) => {
       const tag = e.target?.tagName;
-      // لو بتكتبي في حقل (رسوم التوصيل مثلا) سيبي Ctrl+Z العادي بتاع النص
       if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || e.target?.isContentEditable) return;
 
       const ctrl = e.ctrlKey || e.metaKey;
@@ -351,7 +352,6 @@ export default function ZoneMap() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [editingZone, editCoordinates, redoStack]);
 
-  // 💡 Save - exactly the same payload built by transformPayload in DeliveryZoneAdd.jsx
   const handleSaveEdit = async () => {
     if (!editingZone) return;
     setIsSaving(true);
@@ -372,23 +372,18 @@ export default function ZoneMap() {
 
       await api.put(`/api/restaurant/restaurant-zone-delivery-fees/${editingZone.id}`, payload);
 
-      // ⚠️ Ensure "delivery-zones" is the same key used by useGet above
       queryClient.invalidateQueries({ queryKey: ["delivery-zones"] });
-      queryClient.invalidateQueries({ queryKey: ["DeliveryZone"] }); // Also invalidate DeliveryZone.jsx list if open
+      queryClient.invalidateQueries({ queryKey: ["DeliveryZone"] });
 
       setEditingZone(null);
     } catch (err) {
       console.error("Failed to save changes:", err);
-      // ⚠️️ Replace with your project's toast component if preferred over alert
       alert(t("Something went wrong while saving"));
     } finally {
       setIsSaving(false);
     }
   };
 
-  // 💡 Auto-scrolling happens here in useEffect, not inside handleSelectZone,
-  // to work consistently when clicking a row or a map shape.
-  // Using requestAnimationFrame instead of random timeouts to ensure DOM readiness.
   useEffect(() => {
     if (selectedZoneId == null) return;
     const raf = requestAnimationFrame(() => {
@@ -402,8 +397,6 @@ export default function ZoneMap() {
     return () => cancelAnimationFrame(raf);
   }, [selectedZoneId]);
 
-  // 💡 When selectedZoneId changes (whether from row click or map shape click),
-  // open its Popup on the map to clearly highlight its location
   useEffect(() => {
     if (selectedZoneId == null) return;
     const timer = setTimeout(() => {
@@ -411,7 +404,7 @@ export default function ZoneMap() {
       if (layer && layer.openPopup) {
         layer.openPopup();
       }
-    }, 350); // After flyTo finishes roughly
+    }, 350);
     return () => clearTimeout(timer);
   }, [selectedZoneId]);
 
@@ -441,8 +434,6 @@ export default function ZoneMap() {
           />
 
           {parsedZones.map((zone) => {
-            // 💡 If this zone is currently being edited, don't draw its static shape;
-            // draw an interactive overlay below instead
             if (editingZone && String(zone.id) === String(editingZone.id)) return null;
 
             const isSelected = selectedZoneId === zone.id;
@@ -452,7 +443,6 @@ export default function ZoneMap() {
 
             return (
               <React.Fragment key={zone.id}>
-                {/* Draw Polygon */}
                 {zone.coverageType === "POLYGON" && zone.parsedCoords.length >= 3 && (
                   <Polygon
                     ref={(el) => { zoneLayerRefs.current[zone.id] = el; }}
@@ -478,7 +468,6 @@ export default function ZoneMap() {
                   </Polygon>
                 )}
 
-                {/* Draw Radius Circle */}
                 {zone.coverageType === "RADIUS" && zone.center && (
                   <>
                     <Circle
@@ -516,7 +505,6 @@ export default function ZoneMap() {
             );
           })}
 
-          {/* ============ 💡 Live Edit Overlay - Draws on the same map with other zones ============ */}
           {editingZone && (
             <>
               <EditMapClickHandler
@@ -589,7 +577,6 @@ export default function ZoneMap() {
       {/* Zones List - Right Side */}
       <div className="w-full lg:w-96 flex flex-col gap-3 overflow-y-auto pr-1 pt-3">
         {editingZone ? (
-          // ============ 💡 Inline Edit Form - Replaces the list ============
           <div className="flex flex-col gap-4">
             <div className="flex items-center justify-between pb-2 border-b border-slate-100">
               <div className="flex items-center gap-2">
@@ -781,7 +768,7 @@ export default function ZoneMap() {
             <h2 className="text-lg font-bold text-slate-800">{t("Delivery Zones")}</h2>
           </div>
           <Badge variant="secondary" className="rounded-lg font-semibold">
-            {searchQuery ? `${filteredListZones.length} ${t("of")} ${parsedZones.length}` : `${parsedZones.length} ${t("Zone(s)")}`}
+            {(searchQuery || selectedBranchId !== "all") ? `${filteredListZones.length} ${t("of")} ${parsedZones.length}` : `${parsedZones.length} ${t("Zone(s)")}`}
           </Badge>
         </div>
 
@@ -806,9 +793,120 @@ export default function ZoneMap() {
           )}
         </div>
 
+        {/* 💡 Searchable Branch Dropdown (Active only) */}
+        <div className="relative">
+          <div
+            onClick={() => setBranchDropdownOpen(!branchDropdownOpen)}
+            className="w-full h-10 px-3 text-sm border border-slate-200 rounded-xl bg-white flex items-center justify-between cursor-pointer shadow-sm hover:border-slate-300 transition-colors"
+          >
+            <div className="flex items-center gap-2 truncate">
+              <Filter className="h-4 w-4 text-slate-400 shrink-0" />
+              <span className="truncate text-slate-700 font-medium">
+                {selectedBranchId === "all"
+                  ? t("All Branches (Active)")
+                  : (() => {
+                      const b = activeBranches.find((item) => String(item.id) === String(selectedBranchId));
+                      return b ? (isRTL ? b.nameAr || b.name : b.name) : t("Select Branch");
+                    })()}
+              </span>
+            </div>
+            <div className="flex items-center gap-1">
+              {selectedBranchId !== "all" && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedBranchId("all");
+                    setBranchSearchText("");
+                  }}
+                  className="p-1 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-600"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
+              <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform duration-200 ${branchDropdownOpen ? "rotate-180" : ""}`} />
+            </div>
+          </div>
+
+          {branchDropdownOpen && (
+            <>
+              <div
+                className="fixed inset-0 z-20"
+                onClick={() => setBranchDropdownOpen(false)}
+              />
+              <div className="absolute top-full left-0 right-0 mt-1 z-30 bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden animate-in fade-in-50 zoom-in-95 duration-150">
+                <div className="p-2 border-b border-slate-100">
+                  <div className="relative">
+                    <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                    <Input
+                      type="text"
+                      placeholder={t("Search branch...")}
+                      value={branchSearchText}
+                      onChange={(e) => setBranchSearchText(e.target.value)}
+                      className="h-8 pr-8 text-xs bg-slate-50 border-slate-200 rounded-lg"
+                      autoFocus
+                    />
+                  </div>
+                </div>
+                <div className="max-h-48 overflow-y-auto p-1">
+                  <div
+                    onClick={() => {
+                      setSelectedBranchId("all");
+                      setBranchDropdownOpen(false);
+                      setBranchSearchText("");
+                    }}
+                    className={`px-3 py-2 text-xs rounded-lg cursor-pointer transition-colors ${
+                      selectedBranchId === "all"
+                        ? "bg-primary/10 text-primary font-bold"
+                        : "hover:bg-slate-50 text-slate-700"
+                    }`}
+                  >
+                    {t("All Branches (Active)")}
+                  </div>
+                  {activeBranches
+                    .filter((b) => {
+                      const name = (isRTL ? b.nameAr || b.name : b.name) || "";
+                      return name.toLowerCase().includes(branchSearchText.toLowerCase());
+                    })
+                    .map((branch) => {
+                      const branchName = isRTL ? branch.nameAr || branch.name : branch.name;
+                      const isSelected = String(branch.id) === String(selectedBranchId);
+                      return (
+                        <div
+                          key={branch.id}
+                          onClick={() => {
+                            setSelectedBranchId(branch.id);
+                            setBranchDropdownOpen(false);
+                            setBranchSearchText("");
+                          }}
+                          className={`px-3 py-2 text-xs rounded-lg cursor-pointer transition-colors flex items-center justify-between ${
+                            isSelected
+                              ? "bg-primary/10 text-primary font-bold"
+                              : "hover:bg-slate-50 text-slate-700"
+                          }`}
+                        >
+                          <span>{branchName}</span>
+                          {isSelected && <CheckCircle2 className="h-3.5 w-3.5 text-primary" />}
+                        </div>
+                      );
+                    })}
+                  {activeBranches.filter((b) => {
+                    const name = (isRTL ? b.nameAr || b.name : b.name) || "";
+                    return name.toLowerCase().includes(branchSearchText.toLowerCase());
+                  }).length === 0 && (
+                    <div className="py-4 text-center text-xs text-slate-400">
+                      {t("No branches found")}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+
         {filteredListZones.length === 0 && (
           <div className="text-center text-sm text-slate-400 py-8">
-            {t("No matching results for")} "{searchQuery}"
+            {t("No matching results")}
           </div>
         )}
 
@@ -834,13 +932,12 @@ export default function ZoneMap() {
                 isSelected
                   ? {
                       borderColor: zone.color,
-                      backgroundColor: `${zone.color}14`, // Same zone color with slight opacity for background
+                      backgroundColor: `${zone.color}14`,
                       boxShadow: `0 0 0 3px ${zone.color}33, 0 8px 16px -4px ${zone.color}55`,
                     }
                   : undefined
               }
             >
-              {/* "Currently Selected" badge clear above the card */}
               {isSelected && (
                 <div
                   className="absolute -top-2.5 right-4 flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold text-white shadow-sm"
@@ -851,7 +948,6 @@ export default function ZoneMap() {
                 </div>
               )}
 
-              {/* Color indicator bar */}
               <div
                 className="absolute top-0 right-0 left-0 h-1 rounded-t-xl"
                 style={{ backgroundColor: zone.color }}
@@ -873,7 +969,6 @@ export default function ZoneMap() {
                   </div>
                 </div>
 
-                {/* Edit button */}
                 <Button
                   size="sm"
                   variant="outline"
@@ -888,7 +983,6 @@ export default function ZoneMap() {
                 </Button>
               </div>
 
-              {/* Zone Details */}
               <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-50 text-xs">
                 <div className="flex items-center gap-1.5 text-slate-600">
                   <DollarSign className="h-3.5 w-3.5 text-emerald-500 shrink-0" />

@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/api/axios";
 import GenericDataTable from "@/components/GenericDataTable";
 import { useNavigate } from "react-router-dom";
-import { User, Phone, Eye, Copy, SlidersHorizontal, X } from "lucide-react";
+import { User, Phone, Eye, Copy, SlidersHorizontal, X, Search } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -32,8 +32,10 @@ export default function Order() {
     orderId: null,
   });
 
-  // حالات الفلاتر
+  // حالات الفلاتر الجديدة والقديمة
   const [orderSource, setOrderSource] = useState("all");
+  const [orderType, setOrderType]     = useState("all"); // فلتر نوع الطلب الجديد
+  const [searchQuery, setSearchQuery] = useState("");    // فلتر البحث الجديد
   const [cityId, setCityId]           = useState("all");
   const [branchId, setBranchId]       = useState("all");
   const [zoneId, setZoneId]           = useState("all");
@@ -116,7 +118,7 @@ export default function Order() {
     queryKey: [
       "orders",
       startDate, endDate, singleDate,
-      orderSource, cityId, branchId, zoneId,
+      orderSource, orderType, searchQuery, cityId, branchId, zoneId,
       paymentMethod, discountType, couponId, couponCode, discountId, firstOrderDiscountId,
       hasDiscount, isPointsRedeemed,
     ],
@@ -126,6 +128,8 @@ export default function Order() {
       if (endDate)     params.endDate     = endDate;
       if (singleDate)  params.date        = singleDate;
       if (orderSource      !== "all") params.orderSource      = orderSource;
+      if (orderType        !== "all") params.orderType        = orderType;
+      if (searchQuery.trim() !== "")  params.search           = searchQuery.trim();
       if (cityId           !== "all") params.cityId           = cityId;
       if (branchId         !== "all") params.branchId         = branchId;
       if (zoneId           !== "all") params.zoneId           = zoneId;
@@ -176,6 +180,8 @@ export default function Order() {
     clearDateRange();
     setSingleDate("");
     setOrderSource("all");
+    setOrderType("all");
+    setSearchQuery("");
     setCityId("all");
     setBranchId("all");
     setZoneId("all");
@@ -197,8 +203,9 @@ export default function Order() {
   };
 
   const hasActiveFilters =
-    orderSource !== "all" || cityId !== "all" || branchId !== "all" ||
-    zoneId !== "all" || paymentMethod !== "all" || discountType.length > 0 ||
+    orderSource !== "all" || orderType !== "all" || searchQuery.trim() !== "" ||
+    cityId !== "all" || branchId !== "all" || zoneId !== "all" || 
+    paymentMethod !== "all" || discountType.length > 0 ||
     couponId !== "all" || couponCode || discountId !== "all" ||
     firstOrderDiscountId !== "all" ||
     hasDiscount !== "all" || isPointsRedeemed !== "all" ||
@@ -386,7 +393,7 @@ export default function Order() {
 
   return (
     <div className="container mx-auto py-2">
-      {/* شريط الفلاتر - تم تعديل overflow-hidden إلى overflow-visible لمنع القص */}
+      {/* شريط الفلاتر */}
       <div className="mb-6 bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-visible">
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 dark:border-slate-800">
@@ -412,6 +419,40 @@ export default function Order() {
 
         {/* Filter Controls */}
         <div className="flex flex-wrap items-end gap-4 p-4">
+
+          {/* Search By Name / Phone / Email */}
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+              {t("search") || "Search (Name / Phone / Email)"}
+            </label>
+            <div className="relative">
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+              <Input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder={t("searchPlaceholder") || "Name, Phone, Email..."}
+                className="w-[220px] h-9 text-sm pl-9"
+              />
+            </div>
+          </div>
+
+          {/* Order Type Filter (delivery / takeaway) */}
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+              {t("orderType") || "Order Type"}
+            </label>
+            <Select value={orderType} onValueChange={setOrderType}>
+              <SelectTrigger className="w-[150px] h-9 text-sm">
+                <SelectValue placeholder={t("all") || "All"} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t("all") || "All"}</SelectItem>
+                <SelectItem value="delivery">{t("delivery") || "Delivery"}</SelectItem>
+                <SelectItem value="takeaway">{t("takeaway") || "Takeaway"}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
           {/* Start Date */}
           <div className="flex flex-col gap-1">
@@ -535,7 +576,7 @@ export default function Order() {
             </Select>
           </div>
 
-          {/* Payment Method (Cash / Visa only) */}
+          {/* Payment Method */}
           <div className="flex flex-col gap-1">
             <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
               {t("paymentMethod") || "Payment"}
@@ -557,7 +598,7 @@ export default function Order() {
             </Select>
           </div>
 
-          {/* Discount Type (Multi-selection without Points Redemption) */}
+          {/* Discount Type */}
           <div className="flex flex-col gap-1 relative">
             <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
               {t("discountType") || "Discount Type"}
@@ -635,86 +676,6 @@ export default function Order() {
             </div>
           </div>
 
-          {/* Coupon — يظهر إذا تم اختيار coupon */}
-          {discountType.includes("coupon") && (
-            <>
-              <div className="flex flex-col gap-1">
-                <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
-                  {t("coupon") || "Coupon"}
-                </label>
-                <Select value={couponId} onValueChange={setCouponId}>
-                  <SelectTrigger className="w-[160px] h-9 text-sm">
-                    <SelectValue placeholder={t("all") || "All"} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">{t("all") || "All"}</SelectItem>
-                    {selectOptions?.coupons?.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>
-                        {c.code} — {getItemName(c)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex flex-col gap-1">
-                <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
-                  {t("couponCode") || "Coupon Code"}
-                </label>
-                <Input
-                  type="text"
-                  value={couponCode}
-                  onChange={(e) => setCouponCode(e.target.value)}
-                  placeholder="e.g. SUMMER2026"
-                  className="w-36 h-9 text-sm"
-                />
-              </div>
-            </>
-          )}
-
-          {/* Discount Id — يظهر إذا تم اختيار discount_id */}
-          {discountType.includes("discount_id") && (
-            <div className="flex flex-col gap-1">
-              <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
-                {t("discount") || "Discount"}
-              </label>
-              <Select value={discountId} onValueChange={setDiscountId}>
-                <SelectTrigger className="w-[160px] h-9 text-sm">
-                  <SelectValue placeholder={t("all") || "All"} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t("all") || "All"}</SelectItem>
-                  {selectOptions?.discounts?.map((d) => (
-                    <SelectItem key={d.id} value={d.id}>
-                      {getItemName(d)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-
-          {/* First Order Discount — يظهر إذا تم اختيار first_order_discount */}
-          {discountType.includes("first_order_discount") && (
-            <div className="flex flex-col gap-1">
-              <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
-                {t("firstOrderDiscount") || "1st Order Discount"}
-              </label>
-              <Select value={firstOrderDiscountId} onValueChange={setFirstOrderDiscountId}>
-                <SelectTrigger className="w-[180px] h-9 text-sm">
-                  <SelectValue placeholder={t("all") || "All"} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t("all") || "All"}</SelectItem>
-                  {selectOptions?.firstOrderDiscounts?.map((f) => (
-                    <SelectItem key={f.id} value={f.id}>
-                      {getItemName(f)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-
           {/* Has Discount Switch */}
           <div className="flex flex-col gap-1.5 justify-center">
             <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
@@ -755,9 +716,10 @@ export default function Order() {
         columns={columns}
         data={orders}
         isLoading={isLoading}
-        queryKey={`orders-${status}`}
+        queryKey={`orders-${status} `}
         onEdit={false}
         actions={false}
+        hideSearch={true}
       />
 
       <ReasonDialog
