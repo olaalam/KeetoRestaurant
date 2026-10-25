@@ -16,6 +16,7 @@ import { useTranslation } from "@/hooks/useTranslation";
 import { Button } from "@/components/ui/button";
 import ReasonDialog from "./ReasonDialog";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import useDateRangeStore from "../../store/Usedaterangestore";
 import useAuthStore from "../../store/useAuthStore";
 import { hasPermission } from "@/lib/permissions";
@@ -37,7 +38,8 @@ export default function Order() {
   const [branchId, setBranchId]       = useState("all");
   const [zoneId, setZoneId]           = useState("all");
   const [paymentMethod, setPaymentMethod]   = useState("all");
-  const [discountType, setDiscountType]     = useState("all");
+  const [discountType, setDiscountType]     = useState([]); // Multi-select array
+  const [isDiscountDropdownOpen, setIsDiscountDropdownOpen] = useState(false);
   const [couponId, setCouponId]             = useState("all");
   const [couponCode, setCouponCode]         = useState("");
   const [discountId, setDiscountId]         = useState("all");
@@ -81,11 +83,21 @@ export default function Order() {
     },
   });
 
+  // استبعاد Points Redemption من أنواع الخصومات
+  const availableDiscountTypes = React.useMemo(() => {
+    if (!selectOptions?.discountTypes) return [];
+    return selectOptions.discountTypes.filter(
+      (dt) =>
+        !["points_redemption", "points"].includes(dt.value) &&
+        !dt.name?.toLowerCase().includes("point") &&
+        !dt.nameAr?.includes("نقاط")
+    );
+  }, [selectOptions]);
+
   // الفروع المفلترة حسب المدينة المختارة
   const filteredBranches = React.useMemo(() => {
     if (!selectOptions?.branches) return [];
     if (cityId === "all") return selectOptions.branches;
-    // نجيب الـ zones الخاصة بالمدينة المختارة
     const cityZoneIds = (selectOptions.zones || [])
       .filter((z) => z.cityId === cityId)
       .map((z) => z.id);
@@ -118,7 +130,7 @@ export default function Order() {
       if (branchId         !== "all") params.branchId         = branchId;
       if (zoneId           !== "all") params.zoneId           = zoneId;
       if (paymentMethod    !== "all") params.paymentMethod    = paymentMethod;
-      if (discountType     !== "all") params.discountType     = discountType;
+      if (discountType.length > 0)    params.discountType     = discountType.join(",");
       if (couponId         !== "all") params.couponId         = couponId;
       if (couponCode)                params.couponCode       = couponCode;
       if (discountId       !== "all") params.discountId       = discountId;
@@ -168,7 +180,7 @@ export default function Order() {
     setBranchId("all");
     setZoneId("all");
     setPaymentMethod("all");
-    setDiscountType("all");
+    setDiscountType([]);
     setCouponId("all");
     setCouponCode("");
     setDiscountId("all");
@@ -186,7 +198,7 @@ export default function Order() {
 
   const hasActiveFilters =
     orderSource !== "all" || cityId !== "all" || branchId !== "all" ||
-    zoneId !== "all" || paymentMethod !== "all" || discountType !== "all" ||
+    zoneId !== "all" || paymentMethod !== "all" || discountType.length > 0 ||
     couponId !== "all" || couponCode || discountId !== "all" ||
     firstOrderDiscountId !== "all" ||
     hasDiscount !== "all" || isPointsRedeemed !== "all" ||
@@ -374,8 +386,8 @@ export default function Order() {
 
   return (
     <div className="container mx-auto py-2">
-      {/* شريط الفلاتر */}
-      <div className="mb-6 bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
+      {/* شريط الفلاتر - تم تعديل overflow-hidden إلى overflow-visible لمنع القص */}
+      <div className="mb-6 bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-visible">
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 dark:border-slate-800">
           <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300 font-semibold text-sm">
@@ -523,7 +535,7 @@ export default function Order() {
             </Select>
           </div>
 
-          {/* Payment Method */}
+          {/* Payment Method (Cash / Visa only) */}
           <div className="flex flex-col gap-1">
             <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
               {t("paymentMethod") || "Payment"}
@@ -534,37 +546,97 @@ export default function Order() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">{t("all") || "All"}</SelectItem>
-                {selectOptions?.paymentMethods?.map((pm) => (
-                  <SelectItem key={pm.id} value={pm.value}>
-                    {getItemName(pm)}
-                  </SelectItem>
-                ))}
+                {selectOptions?.paymentMethods
+                  ?.filter((pm) => ["cash_on_delivery", "cash", "visa"].includes(pm.value))
+                  ?.map((pm) => (
+                    <SelectItem key={pm.id} value={pm.value}>
+                      {getItemName(pm)}
+                    </SelectItem>
+                  ))}
               </SelectContent>
             </Select>
           </div>
 
-          {/* Discount Type */}
-          <div className="flex flex-col gap-1">
+          {/* Discount Type (Multi-selection without Points Redemption) */}
+          <div className="flex flex-col gap-1 relative">
             <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
               {t("discountType") || "Discount Type"}
             </label>
-            <Select value={discountType} onValueChange={(v) => { setDiscountType(v); setCouponId("all"); setCouponCode(""); setDiscountId("all"); setFirstOrderDiscountId("all"); }}>
-              <SelectTrigger className="w-[170px] h-9 text-sm">
-                <SelectValue placeholder={t("all") || "All"} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t("all") || "All"}</SelectItem>
-                {selectOptions?.discountTypes?.map((dt) => (
-                  <SelectItem key={dt.id} value={dt.value}>
-                    {getItemName(dt)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setIsDiscountDropdownOpen(!isDiscountDropdownOpen)}
+                className="w-[180px] h-9 px-3 text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md flex items-center justify-between shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+              >
+                <span className="truncate">
+                  {discountType.length === 0
+                    ? (t("all") || "All")
+                    : discountType.length === 1
+                    ? getItemName(availableDiscountTypes.find((dt) => dt.value === discountType[0])) || discountType[0]
+                    : `${discountType.length} ${t("selected") || "selected"}`}
+                </span>
+                <span className="text-xs text-slate-400">▼</span>
+              </button>
+
+              {isDiscountDropdownOpen && (
+                <>
+                  <div
+                    className="fixed inset-0 z-40"
+                    onClick={() => setIsDiscountDropdownOpen(false)}
+                  />
+                  <div className="absolute z-50 top-full mt-1 left-0 w-[220px] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md shadow-xl p-2 max-h-60 overflow-y-auto">
+                    <div
+                      className="flex items-center gap-2 px-2 py-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded cursor-pointer text-sm"
+                      onClick={() => {
+                        setDiscountType([]);
+                        setCouponId("all");
+                        setCouponCode("");
+                        setDiscountId("all");
+                        setFirstOrderDiscountId("all");
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={discountType.length === 0}
+                        onChange={() => {}}
+                        className="rounded border-slate-300"
+                      />
+                      <span>{t("all") || "All"}</span>
+                    </div>
+                    {availableDiscountTypes.map((dt) => {
+                      const isSelected = discountType.includes(dt.value);
+                      return (
+                        <div
+                          key={dt.id}
+                          className="flex items-center gap-2 px-2 py-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded cursor-pointer text-sm"
+                          onClick={() => {
+                            let updated;
+                            if (isSelected) {
+                              updated = discountType.filter((v) => v !== dt.value);
+                            } else {
+                              updated = [...discountType, dt.value];
+                            }
+                            setDiscountType(updated);
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => {}}
+                            className="rounded border-slate-300"
+                          />
+                          <span className="truncate">{getItemName(dt)}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
+            </div>
           </div>
 
-          {/* Coupon — يظهر بس لو اختار coupon كـ discount type */}
-          {discountType === "coupon" && (
+          {/* Coupon — يظهر إذا تم اختيار coupon */}
+          {discountType.includes("coupon") && (
             <>
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
@@ -599,8 +671,8 @@ export default function Order() {
             </>
           )}
 
-          {/* Discount Id — يظهر لو اختار discount_id */}
-          {discountType === "discount_id" && (
+          {/* Discount Id — يظهر إذا تم اختيار discount_id */}
+          {discountType.includes("discount_id") && (
             <div className="flex flex-col gap-1">
               <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
                 {t("discount") || "Discount"}
@@ -621,8 +693,8 @@ export default function Order() {
             </div>
           )}
 
-          {/* First Order Discount — يظهر بس لو اختار first_order_discount */}
-          {discountType === "first_order_discount" && (
+          {/* First Order Discount — يظهر إذا تم اختيار first_order_discount */}
+          {discountType.includes("first_order_discount") && (
             <div className="flex flex-col gap-1">
               <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
                 {t("firstOrderDiscount") || "1st Order Discount"}
@@ -643,38 +715,36 @@ export default function Order() {
             </div>
           )}
 
-          {/* Has Discount */}
-          <div className="flex flex-col gap-1">
+          {/* Has Discount Switch */}
+          <div className="flex flex-col gap-1.5 justify-center">
             <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
               {t("hasDiscount") || "Has Discount"}
             </label>
-            <Select value={hasDiscount} onValueChange={setHasDiscount}>
-              <SelectTrigger className="w-[130px] h-9 text-sm">
-                <SelectValue placeholder={t("all") || "All"} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t("all") || "All"}</SelectItem>
-                <SelectItem value="true">{t("yes") || "Yes"}</SelectItem>
-                <SelectItem value="false">{t("no") || "No"}</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="flex items-center h-9 gap-2">
+              <Switch
+                checked={hasDiscount === "true"}
+                onCheckedChange={(checked) => setHasDiscount(checked ? "true" : "all")}
+              />
+              <span className="text-xs text-slate-600 dark:text-slate-400">
+                {hasDiscount === "true" ? (t("yes") || "Yes") : (t("all") || "All")}
+              </span>
+            </div>
           </div>
 
-          {/* Is Points Redeemed */}
-          <div className="flex flex-col gap-1">
+          {/* Is Points Redeemed Switch */}
+          <div className="flex flex-col gap-1.5 justify-center">
             <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
-              {t("isPointsRedeemed") || "Points Redeemed"}
+              {t("Points Redemption") || "Points Redeemed"}
             </label>
-            <Select value={isPointsRedeemed} onValueChange={setIsPointsRedeemed}>
-              <SelectTrigger className="w-[130px] h-9 text-sm">
-                <SelectValue placeholder={t("all") || "All"} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t("all") || "All"}</SelectItem>
-                <SelectItem value="true">{t("yes") || "Yes"}</SelectItem>
-                <SelectItem value="false">{t("no") || "No"}</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="flex items-center h-9 gap-2">
+              <Switch
+                checked={isPointsRedeemed === "true"}
+                onCheckedChange={(checked) => setIsPointsRedeemed(checked ? "true" : "all")}
+              />
+              <span className="text-xs text-slate-600 dark:text-slate-400">
+                {isPointsRedeemed === "true" ? (t("yes") || "Yes") : (t("all") || "All")}
+              </span>
+            </div>
           </div>
 
         </div>
@@ -685,7 +755,8 @@ export default function Order() {
         columns={columns}
         data={orders}
         isLoading={isLoading}
-        queryKey="orders"
+        queryKey={`orders-${status}`}
+        onEdit={false}
         actions={false}
       />
 

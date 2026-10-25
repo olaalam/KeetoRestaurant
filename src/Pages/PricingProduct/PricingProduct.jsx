@@ -69,12 +69,10 @@ export default function PricingProduct({ branchId: branchIdProp }) {
 
   const branchId = user?.branchId;
   
-  // 💡 تحويل الحالة إلى Local State لضمان التفاعل الفوري
   const [isOnline, setIsOnline] = useState(
     branchId ? user?.status !== "inactive" : !settingsRes?.data?.settings?.isTemporarilyClosed
   );
 
-  // تحديث الـ state لو البيانات اتغيرت من الـ server
   useEffect(() => {
     if (branchId) {
       setIsOnline(user?.status !== "inactive");
@@ -98,20 +96,17 @@ export default function PricingProduct({ branchId: branchIdProp }) {
 
   const executeStatusUpdate = async (checked, reason) => {
     setIsUpdatingStatus(true);
-    setIsOnline(checked); // 💡 تحديث الواجهة فوراً قبل انتظار الـ API
+    setIsOnline(checked);
 
     try {
       if (branchId) {
-        // 1. تحديث الحالة للفرع بـ PUT
         await api.put(`/api/restaurant/branches/${branchId}`, {
           status: checked ? "active" : "inactive",
           inactiveReason: checked ? undefined : (reason || "11"),
         });
 
-        // 2. جلب بيانات الفروع المحدثة
         await api.get("/api/restaurant/branches");
       } else {
-        // 3. استخدام API المطعم الأساسي لو مش فرع
         await api.put(`/api/restaurant/restaurantsetting`, {
           settings: {
             isTemporarilyClosed: !checked,
@@ -127,7 +122,7 @@ export default function PricingProduct({ branchId: branchIdProp }) {
       refetchSettings();
     } catch (error) {
       console.error("Error updating status:", error);
-      setIsOnline(!checked); // 💡 العودة للحالة القديمة في حال حدوث خطأ
+      setIsOnline(!checked);
       toast.error(t("failedToUpdateStatus") || "فشل في تغيير حالة المطعم");
     } finally {
       setIsUpdatingStatus(false);
@@ -135,28 +130,22 @@ export default function PricingProduct({ branchId: branchIdProp }) {
     }
   };
 
-  // ---- multi-select branches state ----
   const [selectedBranchIds, setSelectedBranchIds] = useState(
     currentBranchId ? [currentBranchId] : ["all"]
   );
 
-  // ---- multi-select modules state (default: all) ----
   const [selectedModules, setSelectedModules] = useState(["all"]);
-
   const [selectedSubCategoryId, setSelectedSubCategoryId] = useState(null);
 
-  // ---- price edit modal state ----
   const [priceModalItem, setPriceModalItem] = useState(null);
   const [mainItemEdit, setMainItemEdit] = useState({ price: "", status: true });
   const [variantsEdit, setVariantsEdit] = useState({});
   const [isSaving, setIsSaving] = useState(false);
 
-  // ---- points edit modal state ----
   const [pointsModalItem, setPointsModalItem] = useState(null);
   const [pointsEditValue, setPointsEditValue] = useState("");
   const [isSavingPoints, setIsSavingPoints] = useState(false);
 
-  // ---- fetch branches + service modules for tabs/select ----
   const { data: selectRes } = useGet("pricing-select", "/api/restaurant/pricing/select");
 
   const branches = selectRes?.data?.data?.activeBranches || [];
@@ -232,7 +221,7 @@ export default function PricingProduct({ branchId: branchIdProp }) {
   const filteredItems = useMemo(() => {
     if (!search) return items;
     const lower = search.toLowerCase();
-    return items.filter((item) => (item.name || item.nameAr || "").toLowerCase().includes(lower));
+    return items.filter((item) => (item.nameAr || item.name || "").toLowerCase().includes(lower));
   }, [items, search]);
 
   const getDisplayPrice = (item) => {
@@ -257,23 +246,6 @@ export default function PricingProduct({ branchId: branchIdProp }) {
     return null;
   };
 
-  const getItemPriceForChannel = (item) => {
-    if (isAllBranches && isAllModules) {
-      return Number(getDisplayPrice(item) || 0);
-    } else {
-      if (item.channelPricing && item.channelPricing.length > 0) {
-        const matchingCp = item.channelPricing.find((cp) =>
-          (selectedBranchIds.includes("all") || selectedBranchIds.includes(cp.branchId)) &&
-          (selectedModules.includes("all") || selectedModules.includes(cp.serviceModule))
-        );
-        if (matchingCp && matchingCp.price) {
-          return Number(matchingCp.price);
-        }
-      }
-      return Number(getDisplayPrice(item) || 0);
-    }
-  };
-
   const openPriceModal = (item) => {
     setPriceModalItem(item);
 
@@ -296,6 +268,23 @@ export default function PricingProduct({ branchId: branchIdProp }) {
       });
     }
     setVariantsEdit(vEdit);
+  };
+
+  const getItemPriceForChannel = (item) => {
+    if (isAllBranches && isAllModules) {
+      return Number(getDisplayPrice(item) || 0);
+    } else {
+      if (item.channelPricing && item.channelPricing.length > 0) {
+        const matchingCp = item.channelPricing.find((cp) =>
+          (selectedBranchIds.includes("all") || selectedBranchIds.includes(cp.branchId)) &&
+          (selectedModules.includes("all") || selectedModules.includes(cp.serviceModule))
+        );
+        if (matchingCp && matchingCp.price) {
+          return Number(matchingCp.price);
+        }
+      }
+      return Number(getDisplayPrice(item) || 0);
+    }
   };
 
   const closePriceModal = () => {
@@ -659,6 +648,8 @@ export default function PricingProduct({ branchId: branchIdProp }) {
 
             {subCategories.map((sc) => {
               const isActive = selectedSubCategoryId === sc.id;
+              // عرض الاسم بالعربي لو متاح ومع اللغة العربية
+              const subCategoryName = isRTL ? (sc.nameAr || sc.name) : (sc.name || sc.nameAr);
               return (
                 <button
                   key={sc.id}
@@ -670,7 +661,7 @@ export default function PricingProduct({ branchId: branchIdProp }) {
                       : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 border border-transparent"
                   )}
                 >
-                  <span className="truncate">{sc.name}</span>
+                  <span className="truncate">{subCategoryName}</span>
                   <ChevronRight className={cn("h-4 w-4 shrink-0", isRTL && "rotate-180")} />
                 </button>
               );
@@ -731,7 +722,8 @@ export default function PricingProduct({ branchId: branchIdProp }) {
                 ) : filteredItems.length ? (
                   filteredItems.map((item, index) => {
                     const rowId = item.id;
-                    const name = item.name || item.nameAr || "-";
+                    // اختيار الاسم بناءً على اللغة (العربية أولاً لو متاح)
+                    const name = isRTL ? (item.nameAr || item.name || "-") : (item.name || item.nameAr || "-");
 
                     return (
                       <TableRow
@@ -844,7 +836,7 @@ export default function PricingProduct({ branchId: branchIdProp }) {
             <div className="space-y-6 mt-2">
               <div className="p-4 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800">
                 <h3 className="font-semibold text-slate-800 dark:text-slate-200 mb-3">
-                  {priceModalItem.name || priceModalItem.nameAr}
+                  {isRTL ? (priceModalItem.nameAr || priceModalItem.name) : (priceModalItem.name || priceModalItem.nameAr)}
                   <span className="text-xs font-normal text-slate-500 block">({t("mainProduct") || "المنتج الأساسي"})</span>
                 </h3>
                 <div className="flex items-center gap-4">
@@ -933,7 +925,7 @@ export default function PricingProduct({ branchId: branchIdProp }) {
           {pointsModalItem && (
             <div className="space-y-1.5 mt-2">
               <h3 className="font-semibold text-slate-800 dark:text-slate-200 mb-2">
-                {pointsModalItem.name || pointsModalItem.nameAr}
+                {isRTL ? (pointsModalItem.nameAr || pointsModalItem.name) : (pointsModalItem.name || pointsModalItem.nameAr)}
               </h3>
               <label className="text-xs font-medium text-slate-500">
                 {t("points") || "Points"}
