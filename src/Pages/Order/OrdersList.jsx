@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import api from "@/api/axios";
 import GenericDataTable from "@/components/GenericDataTable";
 import { useNavigate } from "react-router-dom";
-import { User, Phone, Eye, Printer, Copy, SlidersHorizontal, X, Search } from "lucide-react";
+import { User, Phone, Eye, Printer, Copy, SlidersHorizontal, X, Search, FileSpreadsheet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/hooks/useTranslation";
 import { Input } from "@/components/ui/input";
@@ -19,6 +19,8 @@ import { toast } from "sonner";
 import useDateRangeStore from "../../store/Usedaterangestore";
 import useAuthStore from "@/store/useAuthStore";
 import { hasPermission } from "@/lib/permissions";
+import OrdersSummaryCards from "./OrdersSummaryCards";
+import { exportOrdersToExcel } from "./Exportorderstoexcel";
 
 export default function OrdersList({ status }) {
   const navigate = useNavigate();
@@ -46,6 +48,9 @@ export default function OrdersList({ status }) {
   const [firstOrderDiscountId, setFirstOrderDiscountId] = useState("all");
   const [hasDiscount, setHasDiscount]         = useState("all");
   const [isPointsRedeemed, setIsPointsRedeemed] = useState("all");
+  const [startTime, setStartTime] = useState("");
+  const [endTime, setEndTime]     = useState("");
+  const [isExporting, setIsExporting] = useState(false);
 
   // جلب خيارات الفلاتر
   const { data: selectOptions } = useQuery({
@@ -81,18 +86,20 @@ export default function OrdersList({ status }) {
     return selectOptions.zones.filter((z) => z.cityId === cityId);
   }, [selectOptions, cityId]);
 
-  const { data: orders = [], isLoading } = useQuery({
+  const { data: ordersData, isLoading } = useQuery({
     queryKey: [
       "orders", status,
-      startDate, endDate,
+      startDate, endDate, startTime, endTime,
       orderSource, orderType, searchQuery, cityId, branchId, zoneId,
       paymentMethod, discountType, couponId, couponCode, discountId, firstOrderDiscountId,
       hasDiscount, isPointsRedeemed,
     ],
     queryFn: async () => {
       const params = {};
-      if (startDate)   params.startDate   = startDate;
-      if (endDate)     params.endDate     = endDate;
+      // التاريخ والوقت بيتبعتوا سوا في نفس الـ param: 2026-09-27T15:44
+      const withTime = (date, time) => (date && time ? `${date}T${time}` : date);
+      if (startDate)   params.startDate   = withTime(startDate, startTime);
+      if (endDate)     params.endDate     = withTime(endDate, endTime);
       if (orderSource      !== "all") params.orderSource      = orderSource;
       if (orderType        !== "all") params.orderType        = orderType;
       if (searchQuery.trim() !== "")  params.search           = searchQuery.trim();
@@ -109,12 +116,41 @@ export default function OrdersList({ status }) {
       if (isPointsRedeemed !== "all") params.isPointsRedeemed = isPointsRedeemed;
 
       const res = await api.get(`/api/restaurant/order/${status}`, { params });
-      return res.data.data.data;
+      const payload = res.data?.data ?? {};
+      return { orders: payload.data ?? [], summary: payload.summary ?? null };
     },
   });
 
+  const orders = ordersData?.orders ?? [];
+  // لو الـ backend مبعتش summary نحسبها من الداتا
+  const summary = ordersData?.summary ?? {
+    totalOrders: orders.length,
+    totalAmount: orders.reduce((sum, o) => sum + Number(o.totalAmount || 0), 0),
+  };
+
+  const handleExportExcel = async () => {
+    if (!orders.length) return;
+    try {
+      setIsExporting(true);
+      await exportOrdersToExcel({
+        orders,
+        summary,
+        t,
+        rtl: language === "ar",
+        fileName: `orders-${status}-${startDate || "all"}.xlsx`,
+      });
+    } catch (error) {
+      console.error("Error exporting orders:", error);
+      toast.error(t("failedToExport") || "Failed to export Excel file");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   const handleClearFilters = () => {
     clearDateRange();
+    setStartTime("");
+    setEndTime("");
     setOrderSource("all");
     setOrderType("all");
     setSearchQuery("");
@@ -145,7 +181,7 @@ export default function OrdersList({ status }) {
     couponId !== "all" || couponCode || discountId !== "all" ||
     firstOrderDiscountId !== "all" ||
     hasDiscount !== "all" || isPointsRedeemed !== "all" ||
-    startDate || endDate;
+    startDate || endDate || startTime || endTime;
 
   const handleDownloadInvoice = async (orderId, orderNumber) => {
     try {
@@ -342,6 +378,17 @@ export default function OrdersList({ status }) {
               type="button"
               variant="outline"
               size="sm"
+              onClick={handleExportExcel}
+              disabled={isExporting || isLoading || orders.length === 0}
+              className="flex items-center gap-1.5 h-8 text-xs font-medium text-emerald-700 border-emerald-200 hover:bg-emerald-50 dark:text-emerald-400 dark:border-emerald-900 dark:hover:bg-emerald-950"
+            >
+              <FileSpreadsheet size={14} />
+              {isExporting ? (t("exporting") || "Exporting...") : (t("downloadExcel") || "Download Excel")}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
               onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
               className="flex items-center gap-1.5 h-8 text-xs font-medium"
             >
@@ -376,11 +423,15 @@ export default function OrdersList({ status }) {
               {t("startDate") || "Start Date"}
             </label>
             <Input
-              type="date"
-              value={startDate}
+              type="datetime-local"
+              value={startDate ? `${startDate}T${startTime || "00:00"}` : ""}
               disabled={!canFilterOrders}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="w-38 h-9 text-sm cursor-pointer"
+              onChange={(e) => {
+                const [d, tm] = e.target.value.split("T");
+                setStartDate(d || "");
+                setStartTime(d ? tm || "" : "");
+              }}
+              className="w-[210px] h-9 text-sm cursor-pointer"
             />
           </div>
 
@@ -390,13 +441,19 @@ export default function OrdersList({ status }) {
               {t("endDate") || "End Date"}
             </label>
             <Input
-              type="date"
-              value={endDate}
+              type="datetime-local"
+              value={endDate ? `${endDate}T${endTime || "23:59"}` : ""}
               disabled={!canFilterOrders}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="w-38 h-9 text-sm cursor-pointer"
+              onChange={(e) => {
+                const [d, tm] = e.target.value.split("T");
+                setEndDate(d || "");
+                // أول اختيار من الـ calendar بيجي 00:00 فنخليه 23:59 عشان اليوم يتحسب كله
+                setEndTime(!d ? "" : !endDate && tm === "00:00" ? "23:59" : tm || "");
+              }}
+              className="w-[210px] h-9 text-sm cursor-pointer"
             />
           </div>
+
         </div>
 
         {/* Advanced Filters (Collapsible) */}
@@ -633,6 +690,8 @@ export default function OrdersList({ status }) {
           </div>
         )}
       </div>
+
+      <OrdersSummaryCards summary={summary} isLoading={isLoading} />
 
       <GenericDataTable
         title={tableTitle}

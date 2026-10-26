@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/api/axios";
 import GenericDataTable from "@/components/GenericDataTable";
 import { useNavigate } from "react-router-dom";
-import { User, Phone, Eye, Copy, SlidersHorizontal, X, Search } from "lucide-react";
+import { User, Phone, Eye, Copy, SlidersHorizontal, X, Search, FileSpreadsheet } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -20,6 +20,8 @@ import { Switch } from "@/components/ui/switch";
 import useDateRangeStore from "../../store/Usedaterangestore";
 import useAuthStore from "../../store/useAuthStore";
 import { hasPermission } from "@/lib/permissions";
+import OrdersSummaryCards from "./OrdersSummaryCards";
+import { exportOrdersToExcel } from "./Exportorderstoexcel";
 
 export default function Order() {
   const navigate = useNavigate();
@@ -49,6 +51,9 @@ export default function Order() {
   const [firstOrderDiscountId, setFirstOrderDiscountId] = useState("all");
   const [hasDiscount, setHasDiscount]       = useState("all");
   const [isPointsRedeemed, setIsPointsRedeemed] = useState("all");
+  const [startTime, setStartTime] = useState("");
+  const [endTime, setEndTime]     = useState("");
+  const [isExporting, setIsExporting] = useState(false);
 
   const { startDate, endDate, setStartDate, setEndDate, clearDateRange } =
     useDateRangeStore();
@@ -110,18 +115,20 @@ export default function Order() {
     return selectOptions.zones.filter((z) => z.cityId === cityId);
   }, [selectOptions, cityId]);
 
-  const { data: orders = [], isLoading } = useQuery({
+  const { data: ordersData, isLoading } = useQuery({
     queryKey: [
       "orders",
-      startDate, endDate,
+      startDate, endDate, startTime, endTime,
       orderSource, orderType, searchQuery, cityId, branchId, zoneId,
       paymentMethod, discountType, couponId, couponCode, discountId, firstOrderDiscountId,
       hasDiscount, isPointsRedeemed,
     ],
     queryFn: async () => {
       const params = {};
-      if (startDate)   params.startDate   = startDate;
-      if (endDate)     params.endDate     = endDate;
+      // التاريخ والوقت بيتبعتوا سوا في نفس الـ param: 2026-09-27T15:44
+      const withTime = (date, time) => (date && time ? `${date}T${time}` : date);
+      if (startDate)   params.startDate   = withTime(startDate, startTime);
+      if (endDate)     params.endDate     = withTime(endDate, endTime);
       if (orderSource      !== "all") params.orderSource      = orderSource;
       if (orderType        !== "all") params.orderType        = orderType;
       if (searchQuery.trim() !== "")  params.search           = searchQuery.trim();
@@ -138,7 +145,8 @@ export default function Order() {
       if (isPointsRedeemed !== "all") params.isPointsRedeemed = isPointsRedeemed;
 
       const res = await api.get(`/api/restaurant/order`, { params });
-      return res.data.data.data;
+      const payload = res.data?.data ?? {};
+      return { orders: payload.data ?? [], summary: payload.summary ?? null };
     },
   });
 
@@ -171,8 +179,36 @@ export default function Order() {
     }
   };
 
+  const orders = ordersData?.orders ?? [];
+  // لو الـ backend مبعتش summary نحسبها من الداتا
+  const summary = ordersData?.summary ?? {
+    totalOrders: orders.length,
+    totalAmount: orders.reduce((sum, o) => sum + Number(o.totalAmount || 0), 0),
+  };
+
+  const handleExportExcel = async () => {
+    if (!orders.length) return;
+    try {
+      setIsExporting(true);
+      await exportOrdersToExcel({
+        orders,
+        summary,
+        t,
+        rtl: language === "ar",
+        fileName: `orders-${startDate || "all"}.xlsx`,
+      });
+    } catch (error) {
+      console.error("Error exporting orders:", error);
+      toast.error(t("failedToExport") || "Failed to export Excel file");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   const handleClearFilters = () => {
     clearDateRange();
+    setStartTime("");
+    setEndTime("");
     setOrderSource("all");
     setOrderType("all");
     setSearchQuery("");
@@ -203,7 +239,7 @@ export default function Order() {
     couponId !== "all" || couponCode || discountId !== "all" ||
     firstOrderDiscountId !== "all" ||
     hasDiscount !== "all" || isPointsRedeemed !== "all" ||
-    startDate || endDate;
+    startDate || endDate || startTime || endTime;
 
   const columns = [
     {
@@ -426,6 +462,17 @@ export default function Order() {
               type="button"
               variant="outline"
               size="sm"
+              onClick={handleExportExcel}
+              disabled={isExporting || isLoading || orders.length === 0}
+              className="flex items-center gap-1.5 h-8 text-xs font-medium text-emerald-700 border-emerald-200 hover:bg-emerald-50 dark:text-emerald-400 dark:border-emerald-900 dark:hover:bg-emerald-950"
+            >
+              <FileSpreadsheet size={14} />
+              {isExporting ? (t("exporting") || "Exporting...") : (t("downloadExcel") || "Download Excel")}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
               onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
               className="flex items-center gap-1.5 h-8 text-xs font-medium"
             >
@@ -460,11 +507,15 @@ export default function Order() {
               {t("startDate") || "Start Date"}
             </label>
             <Input
-              type="date"
-              value={startDate}
+              type="datetime-local"
+              value={startDate ? `${startDate}T${startTime || "00:00"}` : ""}
               disabled={!canFilterOrders}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="w-38 h-9 text-sm cursor-pointer dark:[color-scheme:dark] [&::-webkit-calendar-picker-indicator]:dark:invert"
+              onChange={(e) => {
+                const [d, tm] = e.target.value.split("T");
+                setStartDate(d || "");
+                setStartTime(d ? tm || "" : "");
+              }}
+              className="w-[210px] h-9 text-sm cursor-pointer dark:[color-scheme:dark] [&::-webkit-calendar-picker-indicator]:dark:invert"
             />
           </div>
 
@@ -474,13 +525,19 @@ export default function Order() {
               {t("endDate") || "End Date"}
             </label>
             <Input
-              type="date"
-              value={endDate}
+              type="datetime-local"
+              value={endDate ? `${endDate}T${endTime || "23:59"}` : ""}
               disabled={!canFilterOrders}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="w-38 h-9 text-sm cursor-pointer dark:[color-scheme:dark] [&::-webkit-calendar-picker-indicator]:dark:invert"
+              onChange={(e) => {
+                const [d, tm] = e.target.value.split("T");
+                setEndDate(d || "");
+                // أول اختيار من الـ calendar بيجي 00:00 فنخليه 23:59 عشان اليوم يتحسب كله
+                setEndTime(!d ? "" : !endDate && tm === "00:00" ? "23:59" : tm || "");
+              }}
+              className="w-[210px] h-9 text-sm cursor-pointer dark:[color-scheme:dark] [&::-webkit-calendar-picker-indicator]:dark:invert"
             />
           </div>
+
         </div>
 
         {/* Advanced Filters (Collapsible) */}
@@ -717,6 +774,8 @@ export default function Order() {
           </div>
         )}
       </div>
+
+      <OrdersSummaryCards summary={summary} isLoading={isLoading} />
 
       <GenericDataTable
         title={t("ordersManagement")}
