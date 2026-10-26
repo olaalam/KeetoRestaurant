@@ -32,15 +32,16 @@ export default function Order() {
     orderId: null,
   });
 
-  // حالات الفلاتر الجديدة والقديمة
+  // حالات الفلاتر
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [orderSource, setOrderSource] = useState("all");
-  const [orderType, setOrderType]     = useState("all"); // فلتر نوع الطلب الجديد
-  const [searchQuery, setSearchQuery] = useState("");    // فلتر البحث الجديد
+  const [orderType, setOrderType]     = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
   const [cityId, setCityId]           = useState("all");
   const [branchId, setBranchId]       = useState("all");
   const [zoneId, setZoneId]           = useState("all");
   const [paymentMethod, setPaymentMethod]   = useState("all");
-  const [discountType, setDiscountType]     = useState([]); // Multi-select array
+  const [discountType, setDiscountType]     = useState([]);
   const [isDiscountDropdownOpen, setIsDiscountDropdownOpen] = useState(false);
   const [couponId, setCouponId]             = useState("all");
   const [couponCode, setCouponCode]         = useState("");
@@ -48,7 +49,6 @@ export default function Order() {
   const [firstOrderDiscountId, setFirstOrderDiscountId] = useState("all");
   const [hasDiscount, setHasDiscount]       = useState("all");
   const [isPointsRedeemed, setIsPointsRedeemed] = useState("all");
-  const [singleDate, setSingleDate]         = useState("");
 
   const { startDate, endDate, setStartDate, setEndDate, clearDateRange } =
     useDateRangeStore();
@@ -85,7 +85,6 @@ export default function Order() {
     },
   });
 
-  // استبعاد Points Redemption من أنواع الخصومات
   const availableDiscountTypes = React.useMemo(() => {
     if (!selectOptions?.discountTypes) return [];
     return selectOptions.discountTypes.filter(
@@ -96,7 +95,6 @@ export default function Order() {
     );
   }, [selectOptions]);
 
-  // الفروع المفلترة حسب المدينة المختارة
   const filteredBranches = React.useMemo(() => {
     if (!selectOptions?.branches) return [];
     if (cityId === "all") return selectOptions.branches;
@@ -106,18 +104,16 @@ export default function Order() {
     return selectOptions.branches.filter((b) => cityZoneIds.includes(b.zoneId));
   }, [selectOptions, cityId]);
 
-  // الزون المفلترة حسب المدينة المختارة
   const filteredZones = React.useMemo(() => {
     if (!selectOptions?.zones) return [];
     if (cityId === "all") return selectOptions.zones;
     return selectOptions.zones.filter((z) => z.cityId === cityId);
   }, [selectOptions, cityId]);
 
-  // جلب الطلبات مع كل الفلاتر
   const { data: orders = [], isLoading } = useQuery({
     queryKey: [
       "orders",
-      startDate, endDate, singleDate,
+      startDate, endDate,
       orderSource, orderType, searchQuery, cityId, branchId, zoneId,
       paymentMethod, discountType, couponId, couponCode, discountId, firstOrderDiscountId,
       hasDiscount, isPointsRedeemed,
@@ -126,7 +122,6 @@ export default function Order() {
       const params = {};
       if (startDate)   params.startDate   = startDate;
       if (endDate)     params.endDate     = endDate;
-      if (singleDate)  params.date        = singleDate;
       if (orderSource      !== "all") params.orderSource      = orderSource;
       if (orderType        !== "all") params.orderType        = orderType;
       if (searchQuery.trim() !== "")  params.search           = searchQuery.trim();
@@ -178,7 +173,6 @@ export default function Order() {
 
   const handleClearFilters = () => {
     clearDateRange();
-    setSingleDate("");
     setOrderSource("all");
     setOrderType("all");
     setSearchQuery("");
@@ -209,7 +203,7 @@ export default function Order() {
     couponId !== "all" || couponCode || discountId !== "all" ||
     firstOrderDiscountId !== "all" ||
     hasDiscount !== "all" || isPointsRedeemed !== "all" ||
-    startDate || endDate || singleDate;
+    startDate || endDate;
 
   const columns = [
     {
@@ -312,6 +306,18 @@ export default function Order() {
       ),
     },
     {
+      accessorKey: "paymentMethod",
+      header: t("paymentMethod"),
+      cell: ({ row }) => {
+        const pm = row.original.paymentMethodName;
+        return (
+          <span className="px-2 py-1 rounded-full text-xs bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 capitalize">
+            {t(pm) || pm || "-"}
+          </span>
+        );
+      },
+    },
+    {
       accessorKey: "orderSource",
       header: t("orderSource"),
       cell: ({ row }) => (
@@ -406,20 +412,31 @@ export default function Order() {
               </span>
             )}
           </div>
-          {hasActiveFilters && (
-            <button
-              onClick={handleClearFilters}
-              className="flex items-center gap-1 text-xs text-slate-500 hover:text-red-500 transition-colors"
+          <div className="flex items-center gap-3">
+            {hasActiveFilters && (
+              <button
+                onClick={handleClearFilters}
+                className="flex items-center gap-1 text-xs text-slate-500 hover:text-red-500 transition-colors"
+              >
+                <X size={13} />
+                {t("clearFilter") || "Clear All"}
+              </button>
+            )}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+              className="flex items-center gap-1.5 h-8 text-xs font-medium"
             >
-              <X size={13} />
-              {t("clearFilter") || "Clear All"}
-            </button>
-          )}
+              <SlidersHorizontal size={14} />
+              {t("advancedFilter") || "Advanced Filter"}
+            </Button>
+          </div>
         </div>
 
-        {/* Filter Controls */}
+        {/* Main Filters (Search, Start Date, End Date) */}
         <div className="flex flex-wrap items-end gap-4 p-4">
-
           {/* Search By Name / Phone / Email */}
           <div className="flex flex-col gap-1">
             <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
@@ -435,23 +452,6 @@ export default function Order() {
                 className="w-[220px] h-9 text-sm pl-9"
               />
             </div>
-          </div>
-
-          {/* Order Type Filter (delivery / takeaway) */}
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
-              {t("orderType") || "Order Type"}
-            </label>
-            <Select value={orderType} onValueChange={setOrderType}>
-              <SelectTrigger className="w-[150px] h-9 text-sm">
-                <SelectValue placeholder={t("all") || "All"} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t("all") || "All"}</SelectItem>
-                <SelectItem value="delivery">{t("delivery") || "Delivery"}</SelectItem>
-                <SelectItem value="takeaway">{t("takeaway") || "Takeaway"}</SelectItem>
-              </SelectContent>
-            </Select>
           </div>
 
           {/* Start Date */}
@@ -481,234 +481,241 @@ export default function Order() {
               className="w-38 h-9 text-sm cursor-pointer dark:[color-scheme:dark] [&::-webkit-calendar-picker-indicator]:dark:invert"
             />
           </div>
+        </div>
 
-          {/* Single Date */}
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
-              {t("date") || "Date"}
-            </label>
-            <Input
-              type="date"
-              value={singleDate}
-              disabled={!canFilterOrders}
-              onChange={(e) => setSingleDate(e.target.value)}
-              className="w-38 h-9 text-sm cursor-pointer dark:[color-scheme:dark] [&::-webkit-calendar-picker-indicator]:dark:invert"
-            />
-          </div>
+        {/* Advanced Filters (Collapsible) */}
+        {showAdvancedFilters && (
+          <div className="flex flex-wrap items-end gap-4 p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
+            {/* Order Type */}
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+                {t("orderType") || "Order Type"}
+              </label>
+              <Select value={orderType} onValueChange={setOrderType}>
+                <SelectTrigger className="w-[150px] h-9 text-sm">
+                  <SelectValue placeholder={t("all") || "All"} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t("all") || "All"}</SelectItem>
+                  <SelectItem value="delivery">{t("delivery") || "Delivery"}</SelectItem>
+                  <SelectItem value="takeaway">{t("takeaway") || "Takeaway"}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-          {/* Source */}
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
-              {t("orderSource") || "Source"}
-            </label>
-            <Select value={orderSource} onValueChange={setOrderSource}>
-              <SelectTrigger className="w-[160px] h-9 text-sm">
-                <SelectValue placeholder={t("all") || "All"} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t("all") || "All"}</SelectItem>
-                {selectOptions?.sources?.map((src) => (
-                  <SelectItem key={src.id} value={src.value}>
-                    {getItemName(src)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* City */}
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
-              {t("city") || "City"}
-            </label>
-            <Select value={cityId} onValueChange={(v) => { setCityId(v); setBranchId("all"); setZoneId("all"); }}>
-              <SelectTrigger className="w-[150px] h-9 text-sm">
-                <SelectValue placeholder={t("all") || "All"} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t("all") || "All"}</SelectItem>
-                {selectOptions?.cities?.map((city) => (
-                  <SelectItem key={city.id} value={city.id}>
-                    {getItemName(city)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Zone */}
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
-              {t("zone") || "Zone"}
-            </label>
-            <Select value={zoneId} onValueChange={setZoneId}>
-              <SelectTrigger className="w-[150px] h-9 text-sm">
-                <SelectValue placeholder={t("all") || "All"} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t("all") || "All"}</SelectItem>
-                {filteredZones.map((zone) => (
-                  <SelectItem key={zone.id} value={zone.id}>
-                    {getItemName(zone)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Branch */}
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
-              {t("branch") || "Branch"}
-            </label>
-            <Select value={branchId} onValueChange={setBranchId}>
-              <SelectTrigger className="w-[160px] h-9 text-sm">
-                <SelectValue placeholder={t("all") || "All"} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t("all") || "All"}</SelectItem>
-                {filteredBranches.map((branch) => (
-                  <SelectItem key={branch.id} value={branch.id}>
-                    {getItemName(branch)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Payment Method */}
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
-              {t("paymentMethod") || "Payment"}
-            </label>
-            <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-              <SelectTrigger className="w-[160px] h-9 text-sm">
-                <SelectValue placeholder={t("all") || "All"} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t("all") || "All"}</SelectItem>
-                {selectOptions?.paymentMethods
-                  ?.filter((pm) => ["cash_on_delivery", "cash", "visa"].includes(pm.value))
-                  ?.map((pm) => (
-                    <SelectItem key={pm.id} value={pm.value}>
-                      {getItemName(pm)}
+            {/* Source */}
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+                {t("orderSource") || "Source"}
+              </label>
+              <Select value={orderSource} onValueChange={setOrderSource}>
+                <SelectTrigger className="w-[160px] h-9 text-sm">
+                  <SelectValue placeholder={t("all") || "All"} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t("all") || "All"}</SelectItem>
+                  {selectOptions?.sources?.map((src) => (
+                    <SelectItem key={src.id} value={src.value}>
+                      {getItemName(src)}
                     </SelectItem>
                   ))}
-              </SelectContent>
-            </Select>
-          </div>
+                </SelectContent>
+              </Select>
+            </div>
 
-          {/* Discount Type */}
-          <div className="flex flex-col gap-1 relative">
-            <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
-              {t("discountType") || "Discount Type"}
-            </label>
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setIsDiscountDropdownOpen(!isDiscountDropdownOpen)}
-                className="w-[180px] h-9 px-3 text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md flex items-center justify-between shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
-              >
-                <span className="truncate">
-                  {discountType.length === 0
-                    ? (t("all") || "All")
-                    : discountType.length === 1
-                    ? getItemName(availableDiscountTypes.find((dt) => dt.value === discountType[0])) || discountType[0]
-                    : `${discountType.length} ${t("selected") || "selected"}`}
-                </span>
-                <span className="text-xs text-slate-400">▼</span>
-              </button>
+            {/* City */}
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+                {t("city") || "City"}
+              </label>
+              <Select value={cityId} onValueChange={(v) => { setCityId(v); setBranchId("all"); setZoneId("all"); }}>
+                <SelectTrigger className="w-[150px] h-9 text-sm">
+                  <SelectValue placeholder={t("all") || "All"} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t("all") || "All"}</SelectItem>
+                  {selectOptions?.cities?.map((city) => (
+                    <SelectItem key={city.id} value={city.id}>
+                      {getItemName(city)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-              {isDiscountDropdownOpen && (
-                <>
-                  <div
-                    className="fixed inset-0 z-40"
-                    onClick={() => setIsDiscountDropdownOpen(false)}
-                  />
-                  <div className="absolute z-50 top-full mt-1 left-0 w-[220px] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md shadow-xl p-2 max-h-60 overflow-y-auto">
+            {/* Zone */}
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+                {t("zone") || "Zone"}
+              </label>
+              <Select value={zoneId} onValueChange={setZoneId}>
+                <SelectTrigger className="w-[150px] h-9 text-sm">
+                  <SelectValue placeholder={t("all") || "All"} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t("all") || "All"}</SelectItem>
+                  {filteredZones.map((zone) => (
+                    <SelectItem key={zone.id} value={zone.id}>
+                      {getItemName(zone)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Branch */}
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+                {t("branch") || "Branch"}
+              </label>
+              <Select value={branchId} onValueChange={setBranchId}>
+                <SelectTrigger className="w-[160px] h-9 text-sm">
+                  <SelectValue placeholder={t("all") || "All"} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t("all") || "All"}</SelectItem>
+                  {filteredBranches.map((branch) => (
+                    <SelectItem key={branch.id} value={branch.id}>
+                      {getItemName(branch)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Payment Method */}
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+                {t("paymentMethod") || "Payment"}
+              </label>
+              <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                <SelectTrigger className="w-[160px] h-9 text-sm">
+                  <SelectValue placeholder={t("all") || "All"} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t("all") || "All"}</SelectItem>
+                  {selectOptions?.paymentMethods
+                    ?.filter((pm) => ["cash_on_delivery", "cash", "visa"].includes(pm.value))
+                    ?.map((pm) => (
+                      <SelectItem key={pm.id} value={pm.value}>
+                        {getItemName(pm)}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Discount Type */}
+            <div className="flex flex-col gap-1 relative">
+              <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+                {t("discountType") || "Discount Type"}
+              </label>
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setIsDiscountDropdownOpen(!isDiscountDropdownOpen)}
+                  className="w-[180px] h-9 px-3 text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md flex items-center justify-between shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+                >
+                  <span className="truncate">
+                    {discountType.length === 0
+                      ? (t("all") || "All")
+                      : discountType.length === 1
+                      ? getItemName(availableDiscountTypes.find((dt) => dt.value === discountType[0])) || discountType[0]
+                      : `${discountType.length} ${t("selected") || "selected"}`}
+                  </span>
+                  <span className="text-xs text-slate-400">▼</span>
+                </button>
+
+                {isDiscountDropdownOpen && (
+                  <>
                     <div
-                      className="flex items-center gap-2 px-2 py-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded cursor-pointer text-sm"
-                      onClick={() => {
-                        setDiscountType([]);
-                        setCouponId("all");
-                        setCouponCode("");
-                        setDiscountId("all");
-                        setFirstOrderDiscountId("all");
-                      }}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={discountType.length === 0}
-                        onChange={() => {}}
-                        className="rounded border-slate-300"
-                      />
-                      <span>{t("all") || "All"}</span>
+                      className="fixed inset-0 z-40"
+                      onClick={() => setIsDiscountDropdownOpen(false)}
+                    />
+                    <div className="absolute z-50 top-full mt-1 left-0 w-[220px] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md shadow-xl p-2 max-h-60 overflow-y-auto">
+                      <div
+                        className="flex items-center gap-2 px-2 py-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded cursor-pointer text-sm"
+                        onClick={() => {
+                          setDiscountType([]);
+                          setCouponId("all");
+                          setCouponCode("");
+                          setDiscountId("all");
+                          setFirstOrderDiscountId("all");
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={discountType.length === 0}
+                          onChange={() => {}}
+                          className="rounded border-slate-300"
+                        />
+                        <span>{t("all") || "All"}</span>
+                      </div>
+                      {availableDiscountTypes.map((dt) => {
+                        const isSelected = discountType.includes(dt.value);
+                        return (
+                          <div
+                            key={dt.id}
+                            className="flex items-center gap-2 px-2 py-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded cursor-pointer text-sm"
+                            onClick={() => {
+                              let updated;
+                              if (isSelected) {
+                                updated = discountType.filter((v) => v !== dt.value);
+                              } else {
+                                updated = [...discountType, dt.value];
+                              }
+                              setDiscountType(updated);
+                            }}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => {}}
+                              className="rounded border-slate-300"
+                            />
+                            <span className="truncate">{getItemName(dt)}</span>
+                          </div>
+                        );
+                      })}
                     </div>
-                    {availableDiscountTypes.map((dt) => {
-                      const isSelected = discountType.includes(dt.value);
-                      return (
-                        <div
-                          key={dt.id}
-                          className="flex items-center gap-2 px-2 py-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded cursor-pointer text-sm"
-                          onClick={() => {
-                            let updated;
-                            if (isSelected) {
-                              updated = discountType.filter((v) => v !== dt.value);
-                            } else {
-                              updated = [...discountType, dt.value];
-                            }
-                            setDiscountType(updated);
-                          }}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={isSelected}
-                            onChange={() => {}}
-                            className="rounded border-slate-300"
-                          />
-                          <span className="truncate">{getItemName(dt)}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </>
-              )}
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Has Discount Switch */}
+            <div className="flex flex-col gap-1.5 justify-center">
+              <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+                {t("hasDiscount") || "Has Discount"}
+              </label>
+              <div className="flex items-center h-9 gap-2">
+                <Switch
+                  checked={hasDiscount === "true"}
+                  onCheckedChange={(checked) => setHasDiscount(checked ? "true" : "all")}
+                />
+                <span className="text-xs text-slate-600 dark:text-slate-400">
+                  {hasDiscount === "true" ? (t("yes") || "Yes") : (t("all") || "All")}
+                </span>
+              </div>
+            </div>
+
+            {/* Is Points Redeemed Switch */}
+            <div className="flex flex-col gap-1.5 justify-center">
+              <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+                {t("Points Redemption") || "Points Redeemed"}
+              </label>
+              <div className="flex items-center h-9 gap-2">
+                <Switch
+                  checked={isPointsRedeemed === "true"}
+                  onCheckedChange={(checked) => setIsPointsRedeemed(checked ? "true" : "all")}
+                />
+                <span className="text-xs text-slate-600 dark:text-slate-400">
+                  {isPointsRedeemed === "true" ? (t("yes") || "Yes") : (t("all") || "All")}
+                </span>
+              </div>
             </div>
           </div>
-
-          {/* Has Discount Switch */}
-          <div className="flex flex-col gap-1.5 justify-center">
-            <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
-              {t("hasDiscount") || "Has Discount"}
-            </label>
-            <div className="flex items-center h-9 gap-2">
-              <Switch
-                checked={hasDiscount === "true"}
-                onCheckedChange={(checked) => setHasDiscount(checked ? "true" : "all")}
-              />
-              <span className="text-xs text-slate-600 dark:text-slate-400">
-                {hasDiscount === "true" ? (t("yes") || "Yes") : (t("all") || "All")}
-              </span>
-            </div>
-          </div>
-
-          {/* Is Points Redeemed Switch */}
-          <div className="flex flex-col gap-1.5 justify-center">
-            <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
-              {t("Points Redemption") || "Points Redeemed"}
-            </label>
-            <div className="flex items-center h-9 gap-2">
-              <Switch
-                checked={isPointsRedeemed === "true"}
-                onCheckedChange={(checked) => setIsPointsRedeemed(checked ? "true" : "all")}
-              />
-              <span className="text-xs text-slate-600 dark:text-slate-400">
-                {isPointsRedeemed === "true" ? (t("yes") || "Yes") : (t("all") || "All")}
-              </span>
-            </div>
-          </div>
-
-        </div>
+        )}
       </div>
 
       <GenericDataTable
