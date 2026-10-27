@@ -4,10 +4,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/api/axios';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { useTranslation } from "@/hooks/useTranslation";
-import { Plus, Trash2, Save, ArrowLeft, ImagePlus, X, ChevronDown, Check } from 'lucide-react'; 
+import { Plus, Trash2, Save, ArrowLeft, ImagePlus, X, ChevronDown, Check, Search } from 'lucide-react'; 
 
 const FoodMultiSelect = ({ foods, selectedIds, onChange }) => {
     const [isOpen, setIsOpen] = useState(false);
+    const [searchQuery, setSearchQuery] = useState(''); // أضفنا حالة للبحث
     const dropdownRef = useRef(null);
 
     useEffect(() => {
@@ -28,6 +29,11 @@ const FoodMultiSelect = ({ foods, selectedIds, onChange }) => {
             onChange([...selectedIds, stringId]);
         }
     };
+
+    // تصفية الأطعمة بناءً على نص البحث
+    const filteredFoods = foods.filter(food => 
+        food.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
 
     const selectedFoodNames = foods
         .filter(f => selectedIds.includes(String(f.id)))
@@ -54,30 +60,45 @@ const FoodMultiSelect = ({ foods, selectedIds, onChange }) => {
             </div>
 
             {isOpen && (
-                <div className="absolute z-20 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-60 overflow-y-auto p-2">
-                    {foods.length > 0 ? (
-                        foods.map(food => {
-                            const isChecked = selectedIds.includes(String(food.id));
-                            return (
-                                <div 
-                                    key={food.id}
-                                    onClick={() => handleToggleSelect(food.id)}
-                                    className={`flex items-center justify-between p-2 rounded-lg cursor-pointer transition-colors ${
-                                        isChecked ? 'bg-primary/10 text-primary font-medium' : 'hover:bg-gray-50 text-gray-700'
-                                    }`}
-                                >
-                                    <span className="text-sm">{food.name}</span>
-                                    <div className={`w-5 h-5 rounded border flex items-center justify-center transition-all ${
-                                        isChecked ? 'bg-primary border-primary text-white' : 'border-gray-300 bg-white'
-                                    }`}>
-                                        {isChecked && <Check className="w-3.5 h-3.5 stroke-[3]" />}
+                <div className="absolute z-20 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg p-2">
+                    {/* حقل البحث داخل القائمة */}
+                    <div className="relative mb-2 px-1">
+                        <Search className="absolute left-3 rtl:right-3 rtl:left-auto top-3 w-4 h-4 text-gray-400" />
+                        <input
+                            type="text"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            placeholder="Search food..."
+                            className="w-full pl-9 rtl:pr-9 rtl:pl-3 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-primary bg-gray-50"
+                            onClick={(e) => e.stopPropagation()} // لمنع إغلاق القائمة عند النقر على حقل البحث
+                        />
+                    </div>
+
+                    <div className="max-h-48 overflow-y-auto">
+                        {filteredFoods.length > 0 ? (
+                            filteredFoods.map(food => {
+                                const isChecked = selectedIds.includes(String(food.id));
+                                return (
+                                    <div 
+                                        key={food.id}
+                                        onClick={() => handleToggleSelect(food.id)}
+                                        className={`flex items-center justify-between p-2 rounded-lg cursor-pointer transition-colors ${
+                                            isChecked ? 'bg-primary/10 text-primary font-medium' : 'hover:bg-gray-50 text-gray-700'
+                                        }`}
+                                    >
+                                        <span className="text-sm">{food.name}</span>
+                                        <div className={`w-5 h-5 rounded border flex items-center justify-center transition-all ${
+                                            isChecked ? 'bg-primary border-primary text-white' : 'border-gray-300 bg-white'
+                                        }`}>
+                                            {isChecked && <Check className="w-3.5 h-3.5 stroke-[3]" />}
+                                        </div>
                                     </div>
-                                </div>
-                            );
-                        })
-                    ) : (
-                        <div className="p-3 text-center text-sm text-gray-400">No foods available</div>
-                    )}
+                                );
+                            })
+                        ) : (
+                            <div className="p-3 text-center text-sm text-gray-400">No foods found</div>
+                        )}
+                    </div>
                 </div>
             )}
         </div>
@@ -119,12 +140,11 @@ const DiscountAdd = () => {
             const { data } = await api.get(`/api/restaurant/discounts/${id}`);
             return data.data.data;
         },
-        // enabled: !!id && !state?.DiscountData,
     });
 
     const initialData = state?.DiscountData || DiscountData;
 
-useEffect(() => {
+    useEffect(() => {
         if (initialData) {
             setBasicData({
                 name: initialData.name || '',
@@ -142,9 +162,7 @@ useEffect(() => {
                 setImagePreview(initialData.logo);
             }
 
-            // فحص تفاصيل المنتجات بناءً على هيكل الـ Response
-// فحص تفاصيل المنتجات بناءً على هيكل الـ Response
-const existingDetails = initialData.groups || initialData.foodGroups || initialData.discountDetails;            
+            const existingDetails = initialData.groups || initialData.foodGroups || initialData.discountDetails;            
             if (existingDetails && existingDetails.length > 0) {
                 const formattedDetails = existingDetails.map(d => ({
                     ...d,
@@ -153,7 +171,6 @@ const existingDetails = initialData.groups || initialData.foodGroups || initialD
                 }));
                 setVariableData(formattedDetails);
             } else if (initialData.foodIds) {
-                // التعامل مع الـ Response الجديد المباشر (Flat Response)
                 setVariableData([
                     {
                         foodIds: (initialData.foodIds || []).map(String),
@@ -199,14 +216,14 @@ const existingDetails = initialData.groups || initialData.foodGroups || initialD
         setImagePreview(null);
     };
 
-const mutation = useMutation({
+    const mutation = useMutation({
         mutationFn: async () => {
             const payload = {
                 name: basicData.name,
                 nameAr: basicData.nameAr,
                 nameFr: basicData.nameFr,
                 minOrderAmount: basicData.minOrderAmount ? Number(basicData.minOrderAmount) : 0,
-                usageLimit: basicData.usageLimit ? Number(basicData.usageLimit) : 0, // تم تصحيح basicData.usageLimit هنا
+                usageLimit: basicData.usageLimit ? Number(basicData.usageLimit) : 0, 
                 startDate: basicData.startDate ? new Date(basicData.startDate).toISOString() : null,
                 endDate: basicData.endDate ? new Date(basicData.endDate).toISOString() : null,
                 isActive: basicData.isActive,
@@ -237,6 +254,7 @@ const mutation = useMutation({
             navigate(-1);
         }
     });
+    
     const handleSubmit = (e) => {
         e.preventDefault();
         mutation.mutate();
