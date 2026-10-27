@@ -15,7 +15,8 @@ const DeliveryManAdd = () => {
   const apiUrl = "/api/restaurant/delivery-men";
   const queryKey = "delivery-men";
 
-  const { data: deliveryManData, isLoading: isFetching } = useQuery({
+  // 1. جلب بيانات عامل التوصيل في حالة التعديل
+  const { data: deliveryManData, isLoading: isFetchingDeliveryMan } = useQuery({
     queryKey: ["delivery-man", id],
     queryFn: async () => {
       const { data } = await api.get(`${apiUrl}/${id}`);
@@ -24,14 +25,32 @@ const DeliveryManAdd = () => {
     enabled: !!id && !state?.deliveryManData,
   });
 
+  // 2. جلب قائمة الفروع من الـ API المذكور
+  const { data: branchesRes, isLoading: isFetchingBranches } = useQuery({
+    queryKey: ["restaurant-branches-select"],
+    queryFn: async () => {
+      const { data } = await api.get("/api/restaurant/branches");
+      return data?.data?.data || data?.data || data || [];
+    },
+  });
+
+  // تحويل الفروع لشكل خيارات (Options) تناسب حقل الـ select
+  const branchesList = Array.isArray(branchesRes) ? branchesRes : [];
+  const branchOptions = branchesList.map((branch) => ({
+    value: branch.id || branch._id,
+    label: branch.name || branch.nameAr || branch.branchName || String(branch.id || branch._id),
+  }));
+
   const rawData = state?.deliveryManData || deliveryManData;
 
-  // التأكد من أن القيمة المبدئية يتم تمريرها كـ Boolean صريح
+  // التأكد من أن القيم المبدئية يتم تمريرها بشكل صحيح
   const initialData = rawData ? {
     ...rawData,
+    branchId: rawData.branchId || rawData.branch_id || "",
     isActive: rawData.isActive === true || rawData.isActive === "true" || rawData.isActive === 1 || rawData.isActive === "1"
   } : {
-    isActive: true 
+    isActive: true,
+    branchId: ""
   };
 
   const deliveryManFields = [
@@ -50,6 +69,14 @@ const DeliveryManAdd = () => {
       label: t("email") || "البريد الإلكتروني",
       type: "email",
       required: true
+    },
+    // إضافة حقل اختيار الفرع (Branch Select)
+    {
+      name: "branchId",
+      label: t("branch") || "الفرع",
+      type: "select",
+      required: true,
+      options: branchOptions,
     },
     ...(!id
       ? [
@@ -79,7 +106,8 @@ const DeliveryManAdd = () => {
     }
   ];
 
-  if (id && isFetching) return <LoadingSpinner />;
+  if (id && isFetchingDeliveryMan) return <LoadingSpinner />;
+  if (isFetchingBranches) return <LoadingSpinner />;
 
   return (
     <div className="space-y-4 w-full">
@@ -91,16 +119,13 @@ const DeliveryManAdd = () => {
         fields={deliveryManFields}
         initialData={initialData}
         
-        // غيرنا هنا الاسم ليطابق الـ Prop في مكون AddPage
         transformPayload={(submitData) => {
-          // دالة مساعدة عشان نحدد القيمة كـ Boolean صريح
           const parseBoolean = (val) => val === 'true' || val === true || val === '1' || val === 1;
 
-          // بما إن مكون AddPage بيحول الصورة لـ base64 وبيبعت الداتا كـ JSON دايماً
-          // فإحنا مش محتاجين جزء الـ FormData خالص هنا وهنرجع الـ Object متعدل مباشرة
           return {
             ...submitData,
-            isActive: parseBoolean(submitData.isActive)
+            isActive: parseBoolean(submitData.isActive),
+            branchId: submitData.branchId ? String(submitData.branchId) : null,
           };
         }}
         
