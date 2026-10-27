@@ -9,7 +9,7 @@ import { LogOut, ChevronLeft, ChevronRight, UserCircle2, Bell, ShoppingBag, XCir
 import useThemeStore from "@/store/useThemeStore";
 import { Switch } from "@/components/ui/switch";
 import { toast } from 'sonner';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription , DialogFooter} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 
 
 import {
@@ -468,17 +468,17 @@ export default function Layout() {
                 </div>
 
                 <div className="flex items-center justify-end min-w-0 gap-1 sm:gap-1.5 lg:gap-2">
-
                   {/* STORE / BRANCH ONLINE / OFFLINE SWITCH */}
                   <div
                     className={cn(
-                      "flex items-center gap-2 px-3 py-1 rounded-full border transition-all duration-300 shadow-sm shrink-0",
+                      "flex items-center gap-2.5 px-3 py-1.5 rounded-full border transition-all duration-300 shadow-sm shrink-0",
                       isOnline
                         ? "bg-emerald-50/70 border-emerald-200/80 dark:bg-emerald-950/20 dark:border-emerald-800/40"
                         : "bg-rose-50/70 border-rose-200/80 dark:bg-rose-950/20 dark:border-rose-800/40"
                     )}
                   >
-                    <span className="relative flex h-2.5 w-2.5 rounded-full">
+                    {/* النقطة المضيئة */}
+                    <span className="relative flex h-2.5 w-2.5 shrink-0 rounded-full">
                       <span
                         className={cn(
                           "inline-flex h-full w-full rounded-full",
@@ -490,16 +490,18 @@ export default function Layout() {
                       )}
                     </span>
 
+                    {/* النص */}
                     <span
                       className={cn(
-                        "hidden md:inline text-xs font-bold leading-none",
+                        "text-xs font-bold leading-none whitespace-nowrap",
                         isOnline ? "text-emerald-700 dark:text-emerald-400" : "text-rose-700 dark:text-rose-400"
                       )}
                     >
-                      {isOnline ? t("Online") : t("Offline")}
+                      {isOnline ? (t("Online") || "Online") : (t("Offline") || "Offline")}
                     </span>
 
-                    <div className="flex items-center justify-center shrink-0">
+                    {/* زر الـ Switch مع تثبيت الاتجاه LTR لمنع التداخل */}
+                    <div className="flex items-center justify-center shrink-0 ms-1" dir="ltr">
                       <Switch
                         checked={isOnline}
                         disabled={isUpdatingStatus}

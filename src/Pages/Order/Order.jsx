@@ -62,15 +62,25 @@ export default function Order() {
   const user = useAuthStore((state) => state.user);
   const canFilterOrders = hasPermission(user, "order", "filter");
 
-  useEffect(() => {
-    if (!startDate && schedules && schedules.length > 0) {
+useEffect(() => {
+    // التحقق من أن الـ startTime فارغ وليست الـ startDate، لأن الـ startDate مخزنة مسبقاً في الـ Store
+    if (!startTime && schedules && schedules.length > 0) {
       const now = new Date();
-      const formattedToday = now.toISOString().split("T")[0];
+      const formattedToday = now.toISOString().split("T")[0]; // YYYY-MM-DD
+      
+      const currentDayOfWeek = now.getDay(); // 0 للأحد، 1 للإثنين...
+      const todaySchedule = schedules.find((s) => s.dayOfWeek === currentDayOfWeek);
+      
+      // جلب وقت الفتح من الجدول أو جعله "09:00" كقيمة افتراضية
+      const openTime = (todaySchedule && !todaySchedule.isOffDay && todaySchedule.openingTime) 
+        ? todaySchedule.openingTime 
+        : "09:00";
+
       setStartDate(formattedToday);
+      setStartTime(openTime); // ضبط وقت الفتح مباشرة ليعمل في الحقل
       setEndDate("");
     }
-  }, [schedules, startDate, setStartDate, setEndDate]);
-
+  }, [schedules, startTime, setStartDate, setEndDate, setStartTime]);
   const orderStatuses = [
     "pending",
     "accepted",
@@ -506,17 +516,17 @@ export default function Order() {
             <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
               {t("startDate") || "Start Date"}
             </label>
-            <Input
-              type="datetime-local"
-              value={startDate ? `${startDate}T${startTime || "00:00"}` : ""}
-              disabled={!canFilterOrders}
-              onChange={(e) => {
-                const [d, tm] = e.target.value.split("T");
-                setStartDate(d || "");
-                setStartTime(d ? tm || "" : "");
-              }}
-              className="w-[210px] h-9 text-sm cursor-pointer dark:[color-scheme:dark] [&::-webkit-calendar-picker-indicator]:dark:invert"
-            />
+<Input
+  type="datetime-local"
+  value={startDate && startTime ? `${startDate}T${startTime}` : startDate ? `${startDate}T00:00` : ""}
+  disabled={!canFilterOrders}
+  onChange={(e) => {
+    const [d, tm] = e.target.value.split("T");
+    setStartDate(d || "");
+    setStartTime(d ? tm || "" : "");
+  }}
+  className="w-[210px] h-9 text-sm cursor-pointer"
+/>
           </div>
 
           {/* End Date */}
