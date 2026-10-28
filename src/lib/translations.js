@@ -12,6 +12,7 @@ const translations = {
     logout: "Log out",
     backToHome: "Back to home",
     addDiscount: "Add Discount",
+    pushedNotification: "Pushed Notification",
 
     // Sidebar modules (from modules.jsx)
     dashboard: "Dashboard",
@@ -2238,6 +2239,7 @@ const translations = {
     "deliveredRevenue": "العوائد المستلمة",
     "appCommissionKeeto": "عمولة التطبيق (كيتو)",
     "totalOrdersCount": "إجمالي عدد الطلبات",
+    pushedNotification: "الإشعارات المرسلة",
 
     "branchName": "اسم الفرع",
     "totalOrders": "إجمالي الطلبات",

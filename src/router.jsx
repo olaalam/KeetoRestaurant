@@ -112,6 +112,8 @@ import DeliveryManReport from "./Pages/DeliveryManReport/DeliveryManReport";
 import FoodReportPage from "./Pages/FoodReport/FoodReport";
 import Videos from "./Pages/Videos/Videos";
 import VideoDetails from "./Pages/Videos/VideoDetails";
+import PushNotification from "./Pages/PushNotification/PushNotification";
+import PushNotificationAdd from "./Pages/PushNotification/PushNotificationAdd";
 const router = createBrowserRouter([
   {
     path: "/login",
@@ -733,7 +735,18 @@ const router = createBrowserRouter([
         path: "/videos/:id",
         element: <VideoDetails />
       },
-
+      {
+        path: "push-notification",
+        element: <PushNotification />
+      },
+      {
+        path: "push-notification/add",
+        element: <PushNotificationAdd />
+      },
+      {
+        path: "push-notification/edit/:id",
+        element: <PushNotificationAdd />
+      },
 
 
 
