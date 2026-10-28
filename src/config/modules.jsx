@@ -117,8 +117,9 @@ export const getModules = (t, orderCounts = {}) => {
         { title: t("galleryimage"), url: "/image", icon: ShoppingBag },
         { title: t("upselling"), url: "/upselling", icon: ShoppingBag },
         { title: t("bundle"), url: "/bundle", icon: ShoppingBag },
-        {title: t("firstOrderDiscount"), url: "/first-order-discounts", icon: ShoppingBag},
-        {title: t("helpVideo"), url: "/videos", icon: ShoppingBag},
+        { title: t("firstOrderDiscount"), url: "/first-order-discounts", icon: ShoppingBag },
+        { title: t("helpVideo"), url: "/videos", icon: ShoppingBag },
+        { title: t("pushedNotification") || "إشعار موجه", url: "/push-notification", icon: ShoppingBag },
 
       ],
     },
@@ -184,7 +185,7 @@ export const getModules = (t, orderCounts = {}) => {
         { title: t("policy"), url: "/policy", icon: ShoppingBag },
         { title: t("setting"), url: "/setting", icon: ShoppingBag },
         { title: t("delayOrder"), url: "/delay-order", icon: ShoppingBag },
-        { title: t("pushedNotification") || "إشعار موجه", url: "/push-notification", icon: ShoppingBag },
+
       ],
     },
 
