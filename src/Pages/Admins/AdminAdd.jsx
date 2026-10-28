@@ -80,6 +80,7 @@ const AdminAdd = () => {
   const adminFields = [
     { name: "name", label: t("name"), required: true },
     { name: "email", label: t("email"), type: "email", required: true },
+    {name:"password",label:t("password"),type:"password",required:!id},
     { name: "phoneNumber", label: t("phoneNumber"), required: true },
     ...(!id
       ? [
