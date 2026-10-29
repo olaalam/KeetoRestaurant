@@ -51,6 +51,7 @@ export default function Order() {
   const [firstOrderDiscountId, setFirstOrderDiscountId] = useState("all");
   const [hasDiscount, setHasDiscount]       = useState("all");
   const [isPointsRedeemed, setIsPointsRedeemed] = useState("all");
+  const [cancelReasonType, setCancelReasonType] = useState("all"); // <--- فلتر سبب الإلغاء الجديد
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime]     = useState("");
   const [isExporting, setIsExporting] = useState(false);
@@ -62,25 +63,22 @@ export default function Order() {
   const user = useAuthStore((state) => state.user);
   const canFilterOrders = hasPermission(user, "order", "filter");
 
-useEffect(() => {
-    // التحقق من أن الـ startTime فارغ وليست الـ startDate، لأن الـ startDate مخزنة مسبقاً في الـ Store
+  useEffect(() => {
     if (!startTime && schedules && schedules.length > 0) {
       const now = new Date();
-      const formattedToday = now.toISOString().split("T")[0]; // YYYY-MM-DD
-      
-      const currentDayOfWeek = now.getDay(); // 0 للأحد، 1 للإثنين...
+      const formattedToday = now.toISOString().split("T")[0];
+      const currentDayOfWeek = now.getDay();
       const todaySchedule = schedules.find((s) => s.dayOfWeek === currentDayOfWeek);
-      
-      // جلب وقت الفتح من الجدول أو جعله "09:00" كقيمة افتراضية
       const openTime = (todaySchedule && !todaySchedule.isOffDay && todaySchedule.openingTime) 
         ? todaySchedule.openingTime 
         : "09:00";
 
       setStartDate(formattedToday);
-      setStartTime(openTime); // ضبط وقت الفتح مباشرة ليعمل في الحقل
+      setStartTime(openTime);
       setEndDate("");
     }
   }, [schedules, startTime, setStartDate, setEndDate, setStartTime]);
+
   const orderStatuses = [
     "pending",
     "accepted",
@@ -91,7 +89,6 @@ useEffect(() => {
     "refund",
   ];
 
-  // جلب خيارات الفلاتر
   const { data: selectOptions } = useQuery({
     queryKey: ["order-select-data"],
     queryFn: async () => {
@@ -131,11 +128,10 @@ useEffect(() => {
       startDate, endDate, startTime, endTime,
       orderSource, orderType, searchQuery, cityId, branchId, zoneId,
       paymentMethod, discountType, couponId, couponCode, discountId, firstOrderDiscountId,
-      hasDiscount, isPointsRedeemed,
+      hasDiscount, isPointsRedeemed, cancelReasonType,
     ],
     queryFn: async () => {
       const params = {};
-      // التاريخ والوقت بيتبعتوا سوا في نفس الـ param: 2026-09-27T15:44
       const withTime = (date, time) => (date && time ? `${date}T${time}` : date);
       if (startDate)   params.startDate   = withTime(startDate, startTime);
       if (endDate)     params.endDate     = withTime(endDate, endTime);
@@ -153,6 +149,7 @@ useEffect(() => {
       if (firstOrderDiscountId !== "all") params.firstOrderDiscountId = firstOrderDiscountId;
       if (hasDiscount      !== "all") params.hasDiscount      = hasDiscount;
       if (isPointsRedeemed !== "all") params.isPointsRedeemed = isPointsRedeemed;
+      if (cancelReasonType !== "all") params.cancelReasonType = cancelReasonType;
 
       const res = await api.get(`/api/restaurant/order`, { params });
       const payload = res.data?.data ?? {};
@@ -190,7 +187,6 @@ useEffect(() => {
   };
 
   const orders = ordersData?.orders ?? [];
-  // لو الـ backend مبعتش summary نحسبها من الداتا
   const summary = ordersData?.summary ?? {
     totalOrders: orders.length,
     totalAmount: orders.reduce((sum, o) => sum + Number(o.totalAmount || 0), 0),
@@ -233,6 +229,7 @@ useEffect(() => {
     setFirstOrderDiscountId("all");
     setHasDiscount("all");
     setIsPointsRedeemed("all");
+    setCancelReasonType("all");
   };
 
   const getItemName = (item) => {
@@ -249,6 +246,7 @@ useEffect(() => {
     couponId !== "all" || couponCode || discountId !== "all" ||
     firstOrderDiscountId !== "all" ||
     hasDiscount !== "all" || isPointsRedeemed !== "all" ||
+    cancelReasonType !== "all" ||
     startDate || endDate || startTime || endTime;
 
   const columns = [
@@ -445,9 +443,7 @@ useEffect(() => {
 
   return (
     <div className="container mx-auto py-2">
-      {/* شريط الفلاتر */}
       <div className="mb-6 bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-visible">
-        {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 dark:border-slate-800">
           <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300 font-semibold text-sm">
             <SlidersHorizontal size={16} />
@@ -492,9 +488,7 @@ useEffect(() => {
           </div>
         </div>
 
-        {/* Main Filters (Search, Start Date, End Date) */}
         <div className="flex flex-wrap items-end gap-4 p-4">
-          {/* Search By Name / Phone / Email */}
           <div className="flex flex-col gap-1">
             <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
               {t("search") || "Search (Name / Phone / Email)"}
@@ -511,25 +505,23 @@ useEffect(() => {
             </div>
           </div>
 
-          {/* Start Date */}
           <div className="flex flex-col gap-1">
             <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
               {t("startDate") || "Start Date"}
             </label>
-<Input
-  type="datetime-local"
-  value={startDate && startTime ? `${startDate}T${startTime}` : startDate ? `${startDate}T00:00` : ""}
-  disabled={!canFilterOrders}
-  onChange={(e) => {
-    const [d, tm] = e.target.value.split("T");
-    setStartDate(d || "");
-    setStartTime(d ? tm || "" : "");
-  }}
-  className="w-[210px] h-9 text-sm cursor-pointer"
-/>
+            <Input
+              type="datetime-local"
+              value={startDate && startTime ? `${startDate}T${startTime}` : startDate ? `${startDate}T00:00` : ""}
+              disabled={!canFilterOrders}
+              onChange={(e) => {
+                const [d, tm] = e.target.value.split("T");
+                setStartDate(d || "");
+                setStartTime(d ? tm || "" : "");
+              }}
+              className="w-[210px] h-9 text-sm cursor-pointer"
+            />
           </div>
 
-          {/* End Date */}
           <div className="flex flex-col gap-1">
             <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
               {t("endDate") || "End Date"}
@@ -541,19 +533,15 @@ useEffect(() => {
               onChange={(e) => {
                 const [d, tm] = e.target.value.split("T");
                 setEndDate(d || "");
-                // أول اختيار من الـ calendar بيجي 00:00 فنخليه 23:59 عشان اليوم يتحسب كله
                 setEndTime(!d ? "" : !endDate && tm === "00:00" ? "23:59" : tm || "");
               }}
               className="w-[210px] h-9 text-sm cursor-pointer dark:[color-scheme:dark] [&::-webkit-calendar-picker-indicator]:dark:invert"
             />
           </div>
-
         </div>
 
-        {/* Advanced Filters (Collapsible) */}
         {showAdvancedFilters && (
           <div className="flex flex-wrap items-end gap-4 p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
-            {/* Order Type */}
             <div className="flex flex-col gap-1">
               <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
                 {t("orderType") || "Order Type"}
@@ -570,7 +558,6 @@ useEffect(() => {
               </Select>
             </div>
 
-            {/* Source */}
             <div className="flex flex-col gap-1">
               <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
                 {t("orderSource") || "Source"}
@@ -590,7 +577,6 @@ useEffect(() => {
               </Select>
             </div>
 
-            {/* City */}
             <div className="flex flex-col gap-1">
               <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
                 {t("city") || "City"}
@@ -610,7 +596,6 @@ useEffect(() => {
               </Select>
             </div>
 
-            {/* Zone */}
             <div className="flex flex-col gap-1">
               <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
                 {t("zone") || "Zone"}
@@ -630,7 +615,6 @@ useEffect(() => {
               </Select>
             </div>
 
-            {/* Branch */}
             <div className="flex flex-col gap-1">
               <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
                 {t("branch") || "Branch"}
@@ -650,7 +634,6 @@ useEffect(() => {
               </Select>
             </div>
 
-            {/* Payment Method */}
             <div className="flex flex-col gap-1">
               <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
                 {t("paymentMethod") || "Payment"}
@@ -672,7 +655,23 @@ useEffect(() => {
               </Select>
             </div>
 
-            {/* Discount Type */}
+            {/* Cancel Reason Type Filter */}
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+                {t("cancelReasonType") || "Cancel Reason Type"}
+              </label>
+              <Select value={cancelReasonType} onValueChange={setCancelReasonType}>
+                <SelectTrigger className="w-[160px] h-9 text-sm">
+                  <SelectValue placeholder={t("all") || "All"} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t("all") || "All"}</SelectItem>
+                  <SelectItem value="user">{t("user") || "User"}</SelectItem>
+                  <SelectItem value="restaurant">{t("restaurant") || "Restaurant"}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
             <div className="flex flex-col gap-1 relative">
               <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
                 {t("discountType") || "Discount Type"}
@@ -750,7 +749,6 @@ useEffect(() => {
               </div>
             </div>
 
-            {/* Has Discount Switch */}
             <div className="flex flex-col gap-1.5 justify-center">
               <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
                 {t("hasDiscount") || "Has Discount"}
@@ -766,7 +764,6 @@ useEffect(() => {
               </div>
             </div>
 
-            {/* Is Points Redeemed Switch */}
             <div className="flex flex-col gap-1.5 justify-center">
               <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
                 {t("Points Redemption") || "Points Redeemed"}
@@ -792,7 +789,7 @@ useEffect(() => {
         columns={columns}
         data={orders}
         isLoading={isLoading}
-        queryKey={`orders-${status} `}
+        queryKey={`orders-${status}`}
         onEdit={false}
         actions={false}
         hideSearch={true}

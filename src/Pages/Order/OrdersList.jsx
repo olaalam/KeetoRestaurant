@@ -48,6 +48,7 @@ export default function OrdersList({ status }) {
   const [firstOrderDiscountId, setFirstOrderDiscountId] = useState("all");
   const [hasDiscount, setHasDiscount]         = useState("all");
   const [isPointsRedeemed, setIsPointsRedeemed] = useState("all");
+  const [cancelReasonType, setCancelReasonType] = useState("all"); // <--- فلتر سبب الإلغاء الجديد
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime]     = useState("");
   const [isExporting, setIsExporting] = useState(false);
@@ -92,11 +93,10 @@ export default function OrdersList({ status }) {
       startDate, endDate, startTime, endTime,
       orderSource, orderType, searchQuery, cityId, branchId, zoneId,
       paymentMethod, discountType, couponId, couponCode, discountId, firstOrderDiscountId,
-      hasDiscount, isPointsRedeemed,
+      hasDiscount, isPointsRedeemed, cancelReasonType,
     ],
     queryFn: async () => {
       const params = {};
-      // التاريخ والوقت بيتبعتوا سوا في نفس الـ param: 2026-09-27T15:44
       const withTime = (date, time) => (date && time ? `${date}T${time}` : date);
       if (startDate)   params.startDate   = withTime(startDate, startTime);
       if (endDate)     params.endDate     = withTime(endDate, endTime);
@@ -114,6 +114,7 @@ export default function OrdersList({ status }) {
       if (firstOrderDiscountId !== "all") params.firstOrderDiscountId = firstOrderDiscountId;
       if (hasDiscount      !== "all") params.hasDiscount      = hasDiscount;
       if (isPointsRedeemed !== "all") params.isPointsRedeemed = isPointsRedeemed;
+      if (cancelReasonType !== "all") params.cancelReasonType = cancelReasonType;
 
       const res = await api.get(`/api/restaurant/order/${status}`, { params });
       const payload = res.data?.data ?? {};
@@ -122,7 +123,6 @@ export default function OrdersList({ status }) {
   });
 
   const orders = ordersData?.orders ?? [];
-  // لو الـ backend مبعتش summary نحسبها من الداتا
   const summary = ordersData?.summary ?? {
     totalOrders: orders.length,
     totalAmount: orders.reduce((sum, o) => sum + Number(o.totalAmount || 0), 0),
@@ -165,6 +165,7 @@ export default function OrdersList({ status }) {
     setFirstOrderDiscountId("all");
     setHasDiscount("all");
     setIsPointsRedeemed("all");
+    setCancelReasonType("all");
   };
 
   const getItemName = (item) => {
@@ -181,6 +182,7 @@ export default function OrdersList({ status }) {
     couponId !== "all" || couponCode || discountId !== "all" ||
     firstOrderDiscountId !== "all" ||
     hasDiscount !== "all" || isPointsRedeemed !== "all" ||
+    cancelReasonType !== "all" ||
     startDate || endDate || startTime || endTime;
 
   const handleDownloadInvoice = async (orderId, orderNumber) => {
@@ -351,9 +353,7 @@ export default function OrdersList({ status }) {
 
   return (
     <div className="container mx-auto py-2">
-      {/* شريط الفلاتر */}
       <div className="mb-6 bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-visible">
-        {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 dark:border-slate-800">
           <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300 font-semibold text-sm">
             <SlidersHorizontal size={16} />
@@ -398,9 +398,7 @@ export default function OrdersList({ status }) {
           </div>
         </div>
 
-        {/* Main Filters (Search, Start Date, End Date) */}
         <div className="flex flex-wrap items-end gap-4 p-4">
-          {/* Search By Name / Phone / Email */}
           <div className="flex flex-col gap-1">
             <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
               {t("search") || "Search (Name / Phone / Email)"}
@@ -417,7 +415,6 @@ export default function OrdersList({ status }) {
             </div>
           </div>
 
-          {/* Start Date */}
           <div className="flex flex-col gap-1">
             <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
               {t("startDate") || "Start Date"}
@@ -435,7 +432,6 @@ export default function OrdersList({ status }) {
             />
           </div>
 
-          {/* End Date */}
           <div className="flex flex-col gap-1">
             <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
               {t("endDate") || "End Date"}
@@ -447,19 +443,15 @@ export default function OrdersList({ status }) {
               onChange={(e) => {
                 const [d, tm] = e.target.value.split("T");
                 setEndDate(d || "");
-                // أول اختيار من الـ calendar بيجي 00:00 فنخليه 23:59 عشان اليوم يتحسب كله
                 setEndTime(!d ? "" : !endDate && tm === "00:00" ? "23:59" : tm || "");
               }}
               className="w-[210px] h-9 text-sm cursor-pointer"
             />
           </div>
-
         </div>
 
-        {/* Advanced Filters (Collapsible) */}
         {showAdvancedFilters && (
           <div className="flex flex-wrap items-end gap-4 p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
-            {/* Order Type */}
             <div className="flex flex-col gap-1">
               <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
                 {t("orderType") || "Order Type"}
@@ -476,7 +468,6 @@ export default function OrdersList({ status }) {
               </Select>
             </div>
 
-            {/* Source */}
             <div className="flex flex-col gap-1">
               <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
                 {t("orderSource") || "Source"}
@@ -496,7 +487,6 @@ export default function OrdersList({ status }) {
               </Select>
             </div>
 
-            {/* City */}
             <div className="flex flex-col gap-1">
               <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
                 {t("city") || "City"}
@@ -516,7 +506,6 @@ export default function OrdersList({ status }) {
               </Select>
             </div>
 
-            {/* Zone */}
             <div className="flex flex-col gap-1">
               <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
                 {t("zone") || "Zone"}
@@ -536,7 +525,6 @@ export default function OrdersList({ status }) {
               </Select>
             </div>
 
-            {/* Branch */}
             <div className="flex flex-col gap-1">
               <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
                 {t("branch") || "Branch"}
@@ -556,7 +544,6 @@ export default function OrdersList({ status }) {
               </Select>
             </div>
 
-            {/* Payment Method */}
             <div className="flex flex-col gap-1">
               <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
                 {t("paymentMethod") || "Payment"}
@@ -578,7 +565,23 @@ export default function OrdersList({ status }) {
               </Select>
             </div>
 
-            {/* Discount Type */}
+            {/* Cancel Reason Type Filter */}
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+                {t("cancelReasonType") || "Cancel Reason Type"}
+              </label>
+              <Select value={cancelReasonType} onValueChange={setCancelReasonType}>
+                <SelectTrigger className="w-[160px] h-9 text-sm">
+                  <SelectValue placeholder={t("all") || "All"} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t("all") || "All"}</SelectItem>
+                  <SelectItem value="user">{t("user") || "User"}</SelectItem>
+                  <SelectItem value="restaurant">{t("restaurant") || "Restaurant"}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
             <div className="flex flex-col gap-1 relative">
               <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
                 {t("discountType") || "Discount Type"}
@@ -656,7 +659,6 @@ export default function OrdersList({ status }) {
               </div>
             </div>
 
-            {/* Has Discount Switch */}
             <div className="flex flex-col gap-1.5 justify-center">
               <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
                 {t("hasDiscount") || "Has Discount"}
@@ -672,7 +674,6 @@ export default function OrdersList({ status }) {
               </div>
             </div>
 
-            {/* Is Points Redeemed Switch */}
             <div className="flex flex-col gap-1.5 justify-center">
               <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
                 {t("Points Redemption") || "Points Redeemed"}

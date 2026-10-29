@@ -286,20 +286,6 @@ const savedSize = localStorage.getItem("tablePageSize");
         {
             accessorKey: 'price',
             header: t('price'),
-            cell: ({ row }) => (
-                <div
-                    className="flex items-center gap-2 font-medium text-green-600 cursor-pointer hover:bg-slate-50 p-1.5 rounded-md transition-colors w-fit"
-                    onClick={() => {
-                        setFoodToUpdatePrice(row.original);
-                        setNewPrice(row.original.price);
-                        setPriceDialogOpen(true);
-                    }}
-                    title={t('editPrice') || 'تعديل السعر'}
-                >
-                    <span>{row.original.price} EGP</span>
-                    <Pencil className="h-3 w-3 text-gray-400 hover:text-green-600" />
-                </div>
-            )
         },
         {
             accessorKey: 'points',

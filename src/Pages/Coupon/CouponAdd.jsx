@@ -1,3 +1,4 @@
+// CouponAdd.jsx
 import React, { useState, useEffect } from 'react';
 import { useParams, useLocation } from 'react-router-dom';
 import AddPage from '@/components/AddPage';
@@ -22,27 +23,44 @@ const CouponAdd = () => {
 
     const initialData = state?.CouponData || CouponData;
 
-    // حالة لتتبع نوع استخدام المستخدم (fixed أو unlimited)
+    // جلب قائمة الأطعمة من الـ API مع تصحيح مسار الـ Response (res.data.data.data)
+    const { data: foodsResponse } = useQuery({
+        queryKey: ['restaurant-foods-list'],
+        queryFn: async () => {
+            const res = await api.get('/api/restaurant/food');
+            return res.data?.data?.data || res.data?.data || [];
+        }
+    });
+
+    // تحويل الأطعمة إلى خيارات تناسب الـ multi-select
+    const foodOptions = React.useMemo(() => {
+        if (!foodsResponse || !Array.isArray(foodsResponse)) return [];
+        return foodsResponse.map(food => ({
+            value: String(food.id),
+            label: food.name || food.nameAr || food.title || `Food #${food.id}`
+        }));
+    }, [foodsResponse]);
+
     const [userUsageType, setUserUsageType] = useState('fixed');
-    
-    // حالة لتتبع نوع حد الاستخدام العام للكوبون
     const [usageLimitType, setUsageLimitType] = useState('fixed');
 
-    // تعيين القيم عند جلب بيانات التعديل
     useEffect(() => {
         if (initialData) {
             if (initialData.userUsageType) {
                 setUserUsageType(initialData.userUsageType);
             }
-            
-            // تعيين حالة usageLimitType عند التعديل
             if (initialData.usageLimitType) {
                 setUsageLimitType(initialData.usageLimitType);
             } else if (initialData.usageLimit === null || initialData.usageLimit === undefined) {
-                // إذا لم يكن هناك حد استخدام مخزن، نعتبره غير محدود
                 setUsageLimitType('unlimited');
             } else {
                 setUsageLimitType('fixed');
+            }
+
+            // معالجة الـ foodsId أو foods القادمة من الـ API لتتوافق مع الـ multi-select
+            const rawFoods = initialData.foodsId || initialData.foods;
+            if (rawFoods && Array.isArray(rawFoods)) {
+                initialData.foodsId = rawFoods.map(f => typeof f === 'object' && f !== null ? String(f.id) : String(f));
             }
         }
     }, [initialData]);
@@ -66,7 +84,15 @@ const CouponAdd = () => {
         { name: 'maxDiscount', label: t('maxDiscount') || 'Max Discount', type: 'number', required: false },
         { name: 'minOrderAmount', label: t('minOrderAmount') || 'Min Order Amount', type: 'number', required: false },
         
-        // حقل نوع حد الاستخدام العام (الجديد)
+        // حقل اختيار الأطعمة المتعدد (Multi-select) بالاسم المطلوبة foodsId
+        {
+            name: 'foodsId',
+            label: t('foods') || 'الأطعمة المشمولة',
+            type: 'multi-select',
+            required: false,
+            options: foodOptions
+        },
+
         {
             name: 'usageLimitType',
             label: t('usageLimitType') || 'Usage Limit Type',
@@ -82,12 +108,10 @@ const CouponAdd = () => {
             }
         },
 
-        // إظهار حقل usageLimit فقط إذا كان usageLimitType هو fixed
         ...(usageLimitType === 'fixed' ? [
             { name: 'usageLimit', label: t('usageLimit') || 'Usage Limit', type: 'number', required: false }
         ] : []),
 
-        // نوع استخدام الكوبون للمستخدم
         {
             name: 'userUsageType',
             label: t('userUsageType') || 'User Usage Type',
@@ -103,7 +127,6 @@ const CouponAdd = () => {
             }
         },
 
-        // إظهار حقل perUserLimit فقط إذا كان userUsageType هو fixed
         ...(userUsageType === 'fixed' ? [
             {
                 name: 'perUserLimit',
@@ -114,7 +137,6 @@ const CouponAdd = () => {
             }
         ] : []),
 
-        // تفعيل أو تعطيل الكوبون باستخدام Switch
         {
             name: 'isActive',
             label: t('isActive') || 'Is Active',
@@ -132,38 +154,32 @@ const CouponAdd = () => {
     return (
         <AddPage
             title="Coupon"
-            apiUrl="/api/restaurant/Coupons"
-            queryKey="Coupons"
+            apiUrl="/api/restaurant/coupons"
+            queryKey="coupons"
             fields={CouponFields}
             initialData={initialData}
-            transformData={(data) => {
+            transformPayload={(data) => {
                 let formattedData = { ...data };
 
-                // معالجة المطاعم
-                if (formattedData.restaurantIds && formattedData.restaurantIds.trim() !== '') {
-                     if (typeof formattedData.restaurantIds === 'string') {
-                         formattedData.restaurantIds = formattedData.restaurantIds.split(',').map(id => id.trim());
-                     }
+                // التأكد من إرسال foodsId كأرقام أو نصوص صحيحة حسب متطلبات الباك إند
+                if (formattedData.foodsId && Array.isArray(formattedData.foodsId)) {
+                    formattedData.foodsId = formattedData.foodsId.map(id => String(id));
                 } else {
-                     formattedData.restaurantId = [];
-                     delete formattedData.restaurantIds;
+                    formattedData.foodsId = [];
                 }
 
-                // معالجة حد الاستخدام العام للكوبون
                 if (formattedData.usageLimitType === 'unlimited') {
                     delete formattedData.usageLimit;
                 } else {
                     formattedData.usageLimit = Number(formattedData.usageLimit) || null;
                 }
 
-                // معالجة حد الاستخدام للمستخدم
                 if (formattedData.userUsageType === 'fixed') {
                     formattedData.perUserLimit = Number(formattedData.perUserLimit) || 2; 
                 } else {
                     delete formattedData.perUserLimit;
                 }
 
-                // التأكد من أن isActive يتم إرسالها كـ Boolean
                 formattedData.isActive = !!formattedData.isActive;
 
                 return formattedData;

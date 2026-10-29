@@ -385,6 +385,7 @@ const translations = {
     roleNameLabel: "Role Name",
     selectAllPermissions: "Select All Permissions",
     loadingPermissions: "Loading permissions structure...",
+    usersCount:"Users Count",
     //dashboard
 
     "loadingDashboard": "Loading dashboard data...",
@@ -2775,6 +2776,7 @@ const translations = {
     "Pending Withdraw": "مسحوبات قيد الانتظار",
     city: "المدينة",
     clearFilter: "مسح الفلاتر",
+    usersCount:" عدد المستخدمين",
     all: "الكل",
     "branch": "الفرع",
     "selectBranch": "اختر الفرع...",
