@@ -19,7 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import useDateRangeStore from "../../store/Usedaterangestore";
 import useAuthStore from "../../store/useAuthStore";
-import { hasPermission } from "@/lib/permissions";
+import { hasExplicitPermission, hasPermission } from "@/lib/permissions";
 import OrdersSummaryCards from "./OrdersSummaryCards";
 import { exportOrdersToExcel } from "./Exportorderstoexcel";
 
@@ -62,6 +62,7 @@ export default function Order() {
   const schedules = useAuthStore((state) => state.schedules);
   const user = useAuthStore((state) => state.user);
   const canFilterOrders = hasPermission(user, "order", "filter");
+  const canUseAdvancedFilters = hasExplicitPermission(user, "order", "advanced_filter");
 
   useEffect(() => {
     if (!startTime && schedules && schedules.length > 0) {
@@ -475,16 +476,18 @@ export default function Order() {
               <FileSpreadsheet size={14} />
               {isExporting ? (t("exporting") || "Exporting...") : (t("downloadExcel") || "Download Excel")}
             </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-              className="flex items-center gap-1.5 h-8 text-xs font-medium"
-            >
-              <SlidersHorizontal size={14} />
-              {t("advancedFilter") || "Advanced Filter"}
-            </Button>
+            {canUseAdvancedFilters && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+                className="flex items-center gap-1.5 h-8 text-xs font-medium"
+              >
+                <SlidersHorizontal size={14} />
+                {t("advancedFilter") || "Advanced Filter"}
+              </Button>
+            )}
           </div>
         </div>
 
@@ -540,7 +543,7 @@ export default function Order() {
           </div>
         </div>
 
-        {showAdvancedFilters && (
+        {canUseAdvancedFilters && showAdvancedFilters && (
           <div className="flex flex-wrap items-end gap-4 p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
             <div className="flex flex-col gap-1">
               <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">

@@ -27,18 +27,32 @@ const AddPage = ({
     transformPayload,
     bypassIdInEdit = false,
 }) => {
-    // التحقق مما إذا كانت الصفحة في حالة تعديل
-const isEdit = method === 'PUT' || !!initialData?.id;
+    const isEdit = method === 'PUT' || !!initialData?.id;
     const navigate = useNavigate();
     const location = useLocation();
     const formMethods = useForm({
         defaultValues: initialData || {}
     });
-    const { control, handleSubmit, register, reset, formState: { errors } } = formMethods;
+    const { control, handleSubmit, register, reset, watch, setValue, formState: { errors } } = formMethods;
     const postMutation = usePost(apiUrl, 'post', queryKey);
     const updateMutation = useUpdate(apiUrl, queryKey);
     const { t } = useTranslation();
     const [openCombobox, setOpenCombobox] = useState({});
+
+    // حالة محلية للكميات داخل الـ AddPage
+    const [foodQuantities, setFoodQuantities] = useState({});
+
+    useEffect(() => {
+        if (initialData?.foods && Array.isArray(initialData.foods)) {
+            const qtyMap = {};
+            initialData.foods.forEach(f => {
+                if (typeof f === 'object' && f !== null) {
+                    qtyMap[String(f.foodId || f.id)] = f.quantity || 1;
+                }
+            });
+            setFoodQuantities(qtyMap);
+        }
+    }, [initialData]);
 
     const handleCancel = () => {
         const editMatch = location.pathname.match(/^(\/.*?)\/edit\/([^/]+)$/);
@@ -108,20 +122,24 @@ const isEdit = method === 'PUT' || !!initialData?.id;
     }, [initialDataString, reset]);
 
     const onSubmit = (data) => {
+        if (data.selectedFoods && Array.isArray(data.selectedFoods)) {
+            data.selectedFoodsWithQuantities = data.selectedFoods.map(foodId => ({
+                foodId,
+                quantity: foodQuantities[foodId] || 1,
+                variations: []
+            }));
+        }
+
         const payloadToSend = transformPayload ? transformPayload(data) : data;
 
-        // 1. إذا كان التعديل يُطلب صراحة بـ POST
         if (isEdit && method?.toUpperCase() === 'POST') {
             postMutation.mutate(payloadToSend, {
                 onSuccess: (res) => {
                     onSuccessAction?.(res);
                 }
             });
-        } 
-        // 2. إذا كان التعديل بـ PUT (السلوك الافتراضي لباقي الصفحات)
-        else if (isEdit) {
+        } else if (isEdit) {
             const customUrl = bypassIdInEdit ? apiUrl : null;
-
             updateMutation.mutate(
                 {
                     id: initialData?.id || data?.id,
@@ -134,9 +152,7 @@ const isEdit = method === 'PUT' || !!initialData?.id;
                     }
                 }
             );
-        } 
-        // 3. الإضافة العادية بـ POST
-        else {
+        } else {
             postMutation.mutate(payloadToSend, {
                 onSuccess: (res) => {
                     onSuccessAction?.(res);
@@ -332,31 +348,88 @@ const isEdit = method === 'PUT' || !!initialData?.id;
                                                         </PopoverContent>
                                                     </Popover>
 
-                                                    {safeValue.length > 0 && (
-                                                        <div className="flex flex-wrap gap-1.5 p-2 border rounded-md bg-muted/30 max-h-32 overflow-y-auto">
-                                                            {safeValue.map((val) => {
-                                                                const option = fieldItem.options?.find(o => String(o.value) === String(val));
-                                                                return (
-                                                                    <span
-                                                                        key={val}
-                                                                        className="inline-flex items-center gap-1 bg-primary text-primary-foreground text-xs font-medium px-2 py-1 rounded-sm shadow-sm"
-                                                                    >
-                                                                        {option ? option.label : val}
-                                                                        <button
-                                                                            type="button"
-                                                                            onClick={() => {
-                                                                                const filtered = safeValue.filter(v => v !== val);
-                                                                                formOnChange(filtered);
-                                                                                if (fieldItem.onChange) fieldItem.onChange(filtered);
-                                                                            }}
-                                                                            className="hover:bg-primary-foreground/20 rounded-full w-3 h-3 inline-flex items-center justify-center text-[10px] font-bold"
-                                                                        >
-                                                                            ×
-                                                                        </button>
-                                                                    </span>
-                                                                );
-                                                            })}
+                                                    {/* إذا كان الحقل هو selectedFoods، استبدل الـ Tags التقليدية بصندوق العدادات والكميات */}
+                                                    {fieldItem.name === 'selectedFoods' && !fieldItem.hideSelectedValues && safeValue.length > 0 ? (
+                                                        <div className="mt-2 space-y-2 border p-3 rounded-md bg-muted/20">
+                                                            <div className="space-y-2">
+                                                                {safeValue.map((val) => {
+                                                                    const option = fieldItem.options?.find(o => String(o.value) === String(val));
+                                                                    const currentQty = foodQuantities[val] || 1;
+
+                                                                    const updateQty = (delta) => {
+                                                                        const newQty = Math.max(1, currentQty + delta);
+                                                                        setFoodQuantities(prev => ({ ...prev, [val]: newQty }));
+                                                                    };
+
+                                                                    return (
+                                                                        <div key={val} className="flex items-center justify-between bg-white p-2 border rounded shadow-sm">
+                                                                            <span className="text-sm font-medium">{option ? option.label : val}</span>
+                                                                            <div className="flex items-center gap-2">
+                                                                                <div className="flex items-center border rounded bg-gray-100">
+                                                                                    <button
+                                                                                        type="button"
+                                                                                        onClick={() => updateQty(-1)}
+                                                                                        className="w-7 h-7 flex items-center justify-center bg-white hover:bg-gray-200 text-xs font-bold border-r"
+                                                                                    >
+                                                                                        -
+                                                                                    </button>
+                                                                                    <span className="w-8 text-center text-xs font-semibold">
+                                                                                        {currentQty}
+                                                                                    </span>
+                                                                                    <button
+                                                                                        type="button"
+                                                                                        onClick={() => updateQty(1)}
+                                                                                        className="w-7 h-7 flex items-center justify-center bg-white hover:bg-gray-200 text-xs font-bold border-l"
+                                                                                    >
+                                                                                        +
+                                                                                    </button>
+                                                                                </div>
+                                                                                <button
+                                                                                    type="button"
+                                                                                    onClick={() => {
+                                                                                        const filtered = safeValue.filter(v => v !== val);
+                                                                                        formOnChange(filtered);
+                                                                                        if (fieldItem.onChange) fieldItem.onChange(filtered);
+                                                                                    }}
+                                                                                    className="text-red-500 hover:text-red-700 text-xs font-bold px-1.5 py-1"
+                                                                                    title="حذف"
+                                                                                >
+                                                                                    ✕
+                                                                                </button>
+                                                                            </div>
+                                                                        </div>
+                                                                    );
+                                                                })}
+                                                            </div>
                                                         </div>
+                                                    ) : (
+                                                        /* العرض العادي للباقي مثل الـ branches */
+                                                        !fieldItem.hideSelectedValues && safeValue.length > 0 && (
+                                                            <div className="flex flex-wrap gap-1.5 p-2 border rounded-md bg-muted/30 max-h-32 overflow-y-auto">
+                                                                {safeValue.map((val) => {
+                                                                    const option = fieldItem.options?.find(o => String(o.value) === String(val));
+                                                                    return (
+                                                                        <span
+                                                                            key={val}
+                                                                            className="inline-flex items-center gap-1 bg-primary text-primary-foreground text-xs font-medium px-2 py-1 rounded-sm shadow-sm"
+                                                                        >
+                                                                            {option ? option.label : val}
+                                                                            <button
+                                                                                type="button"
+                                                                                onClick={() => {
+                                                                                    const filtered = safeValue.filter(v => v !== val);
+                                                                                    formOnChange(filtered);
+                                                                                    if (fieldItem.onChange) fieldItem.onChange(filtered);
+                                                                                }}
+                                                                                className="hover:bg-primary-foreground/20 rounded-full w-3 h-3 inline-flex items-center justify-center text-[10px] font-bold"
+                                                                            >
+                                                                                ×
+                                                                            </button>
+                                                                        </span>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        )
                                                     )}
                                                 </div>
                                             );

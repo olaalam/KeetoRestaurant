@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import api from '@/api/axios';
 import { useTranslation } from "@/hooks/useTranslation";
 import useAuthStore from "@/store/useAuthStore";
+import { hasExplicitPermission } from "@/lib/permissions";
 import {
   Table,
   TableBody,
@@ -57,6 +58,9 @@ const getStoredBranchId = () => {
 export default function PricingProduct({ branchId: branchIdProp }) {
   const { t, isRTL } = useTranslation();
   const { user } = useAuthStore((state) => state);
+  const canManageStoreStatus =
+    hasExplicitPermission(user, "restaurantsetting", "open") &&
+    hasExplicitPermission(user, "restaurantsetting", "close");
 
   const [search, setSearch] = useState("");
   const currentBranchId = branchIdProp || user?.branchId || getStoredBranchId();
@@ -86,6 +90,8 @@ export default function PricingProduct({ branchId: branchIdProp }) {
   const [inactiveReason, setInactiveReason] = useState("");
 
   const handleStatusToggle = (checked) => {
+    if (!hasExplicitPermission(user, "restaurantsetting", checked ? "open" : "close")) return;
+
     if (branchId && !checked) {
       setInactiveReason("");
       setBranchInactiveModalOpen(true);
@@ -538,14 +544,16 @@ export default function PricingProduct({ branchId: branchIdProp }) {
             </span>
           </div>
 
-          <Switch
-            checked={isOnline}
-            disabled={isUpdatingStatus}
-            onCheckedChange={handleStatusToggle}
-            className={cn(
-              "data-[state=checked]:bg-emerald-500 data-[state=unchecked]:bg-rose-400"
-            )}
-          />
+          {canManageStoreStatus && (
+            <Switch
+              checked={isOnline}
+              disabled={isUpdatingStatus}
+              onCheckedChange={handleStatusToggle}
+              className={cn(
+                "data-[state=checked]:bg-emerald-500 data-[state=unchecked]:bg-rose-400"
+              )}
+            />
+          )}
         </div>
       </div>
 

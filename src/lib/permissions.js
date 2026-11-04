@@ -1,8 +1,6 @@
 const normalizePermissionValue = (value) =>
   String(value || "").trim().toLowerCase().replace(/[\s_-]+/g, "");
 
-export const PERMISSION_ACTIONS = ["View", "Add", "Edit", "Delete", "Status", "filter"];
-
 export const PERMISSION_MODULES = [
   "restrauntadmins",
   "role_restaurant",
@@ -100,13 +98,32 @@ export const hasPermission = (user, module, action = "View") => {
     (item) => normalizePermissionValue(item?.module) === targetModule,
   );
 
-  if (!permission || !Array.isArray(permission.actions)) return false;
-
   const targetAction = normalizePermissionValue(action);
-  return permission.actions.some((item) => {
-    const value = typeof item === "string" ? item : item?.action;
-    return normalizePermissionValue(value) === targetAction;
-  });
+  if (permission && Array.isArray(permission.actions)) {
+    return permission.actions.some((item) => {
+      const value = typeof item === "string" ? item : item?.action;
+      return normalizePermissionValue(value) === targetAction;
+    });
+  }
+
+  // Some permission responses expose the selected actions as a flat list.
+  const isFlatPermissionList = permissions.every(
+    (item) => !item?.module && !Array.isArray(item?.actions),
+  );
+  if (isFlatPermissionList && ["open", "close", "advancedfilter"].includes(targetAction)) {
+    return permissions.some(
+      (item) => normalizePermissionValue(item?.action) === targetAction,
+    );
+  }
+
+  return false;
+};
+
+export const hasExplicitPermission = (user, module, action) => {
+  const permissions = getUserPermissions(user);
+  if (!Array.isArray(permissions)) return true;
+  if (permissions.length === 0) return false;
+  return hasPermission(user, module, action);
 };
 
 export const canViewModule = (user, module) =>

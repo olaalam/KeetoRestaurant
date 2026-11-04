@@ -8,7 +8,7 @@ import { Loader2, Search } from "lucide-react";
 import { useTranslation } from "@/hooks/useTranslation";
 import api from "@/api/axios";
 import { useNavigate, useParams } from "react-router-dom";
-import { PERMISSION_ACTIONS, PERMISSION_MODULES } from "@/lib/permissions";
+import { PERMISSION_MODULES } from "@/lib/permissions";
 
 export default function PermissionAdd() {
   const { t } = useTranslation();
@@ -42,15 +42,19 @@ export default function PermissionAdd() {
   const availableModules = schemaModules.some((module) => norm(module) === norm("financialAccount"))
     ? schemaModules
     : [...schemaModules, "financialAccount"];
-  const schemaActions = schema?.actions?.length
-    ? schema.actions.map((action) => (typeof action === "string" ? action : action.action))
-    : [];
-  const availableActions = [
-    ...schemaActions,
-    ...PERMISSION_ACTIONS.filter(
-      (action) => !schemaActions.some((schemaAction) => norm(schemaAction) === norm(action)),
-    ),
-  ];
+  const availableActions = [...new Set(
+    (Array.isArray(schema?.permissions) ? schema.permissions : [])
+      .flatMap((permission) => {
+        if (Array.isArray(permission?.actions)) {
+          return permission.actions
+            .map((action) => (typeof action === "string" ? action : action?.action))
+            .filter(Boolean);
+        }
+
+        const action = typeof permission === "string" ? permission : permission?.action;
+        return action ? [action] : [];
+      }),
+  )];
 
   // ================= Permission Map =================
   const permissionMap = useMemo(() => {

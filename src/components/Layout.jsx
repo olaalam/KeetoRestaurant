@@ -26,7 +26,12 @@ import api from "@/api/axios";
 import LanguageSwitcher from "./LanguageSwitcher";
 import { useTranslation } from "@/hooks/useTranslation";
 import { getModules } from "@/config/modules";
-import { filterModulesByPermissions, getPermissionKey, hasPermission } from "@/lib/permissions";
+import {
+  filterModulesByPermissions,
+  getPermissionKey,
+  hasExplicitPermission,
+  hasPermission,
+} from "@/lib/permissions";
 import { cn } from "@/lib/utils";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
@@ -64,6 +69,8 @@ export default function Layout() {
   const [inactiveReason, setInactiveReason] = useState("");
 
   const handleStatusToggle = (checked) => {
+    if (!hasExplicitPermission(user, "restaurantsetting", checked ? "open" : "close")) return;
+
     // لو فرع وتم إغلاقه (checked === false)، نفتح الـ Dialog لطلب سبب القفل أولاً
     if (branchId && !checked) {
       setInactiveReason("");
@@ -130,6 +137,9 @@ export default function Layout() {
   const routePermissionKey = getPermissionKey(routeItem) ||
     getPermissionKey(routeItem?.subItems?.find((subItem) => location.pathname.startsWith(subItem.url)));
   const canAccessRoute = !routePermissionKey || hasPermission(user, routePermissionKey, "View");
+  const canManageStoreStatus =
+    hasExplicitPermission(user, "restaurantsetting", "open") &&
+    hasExplicitPermission(user, "restaurantsetting", "close");
 
   // ---- Notification Sound ----
   const audioRef = useRef(null);
@@ -501,14 +511,16 @@ export default function Layout() {
                     </span>
 
                     {/* زر الـ Switch مع تثبيت الاتجاه LTR لمنع التداخل */}
-                    <div className="flex items-center justify-center shrink-0 ms-1" dir="ltr">
-                      <Switch
-                        checked={isOnline}
-                        disabled={isUpdatingStatus}
-                        onCheckedChange={handleStatusToggle}
-                        className="data-[state=checked]:bg-emerald-500 data-[state=unchecked]:bg-rose-400"
-                      />
-                    </div>
+                    {canManageStoreStatus && (
+                      <div className="flex items-center justify-center shrink-0 ms-1" dir="ltr">
+                        <Switch
+                          checked={isOnline}
+                          disabled={isUpdatingStatus}
+                          onCheckedChange={handleStatusToggle}
+                          className="data-[state=checked]:bg-emerald-500 data-[state=unchecked]:bg-rose-400"
+                        />
+                      </div>
+                    )}
                   </div>
 
                   <button
