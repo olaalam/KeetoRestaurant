@@ -31,6 +31,14 @@ const BundlesAdd = () => {
         }
     });
 
+    const { data: addonsData, isLoading: isAddonsLoading } = useQuery({
+        queryKey: ['bundle-addons-select'],
+        queryFn: async () => {
+            const res = await api.get('/api/restaurant/addons');
+            return res.data?.data?.data ?? res.data?.data ?? [];
+        }
+    });
+
     const { data: BundleData, isLoading: isFetching } = useQuery({
         queryKey: ['Bundle', id],
         queryFn: async () => {
@@ -85,10 +93,20 @@ const BundlesAdd = () => {
             preparedBranches = initialData.branches.map(b => typeof b === 'object' ? String(b.id) : String(b));
         }
 
+        let preparedAddons = [];
+        if (initialData.addonIds && Array.isArray(initialData.addonIds)) {
+            preparedAddons = initialData.addonIds.map(a => typeof a === 'object' ? String(a.id || a.addonsId) : String(a));
+        } else if (initialData.addons && Array.isArray(initialData.addons)) {
+            preparedAddons = initialData.addons.map(a => typeof a === 'object' ? String(a.id || a.addonsId) : String(a));
+        } else if (initialData.foods && Array.isArray(initialData.foods) && initialData.foods[0]?.addonIds) {
+            preparedAddons = initialData.foods[0].addonIds.map(a => typeof a === 'object' ? String(a.id || a.addonsId) : String(a));
+        }
+
         initialData = {
             ...initialData,
             selectedFoods: preparedFoods,
-            branchIds: preparedBranches
+            branchIds: preparedBranches,
+            addonIds: preparedAddons
         };
     }
 
@@ -131,6 +149,16 @@ const BundlesAdd = () => {
                 label: b.name || b.nameAr || b.title
             }))
         },
+        {
+            name: 'addonIds',
+            label: t('addons') || 'Addons',
+            required: false,
+            type: 'multi-select',
+            options: (addonsData || []).map(a => ({
+                value: String(a.id),
+                label: a.name || a.nameAr || a.title
+            }))
+        },
         { name: 'startDate', label: t('startDate') || 'Start Date', type: 'date', required: true },
         { name: 'endDate', label: t('endDate') || 'End Date', type: 'date', required: true },
     ];
@@ -141,10 +169,13 @@ const BundlesAdd = () => {
     const handleTransformPayload = (data) => {
         const payload = { ...data };
         
+        const globalAddons = payload.addonIds ? payload.addonIds.map(String) : [];
+
         if (payload.selectedFoods && Array.isArray(payload.selectedFoods)) {
             payload.foods = payload.selectedFoods.map(foodId => ({
                 foodId,
                 quantity: getFoodSelection(foodId).quantity,
+                addonIds: globalAddons,
                 variations: Object.entries(getFoodSelection(foodId).variations)
                     .flatMap(([variationId, optionIds]) => optionIds.map(optionId => ({
                         variationId,
@@ -155,10 +186,13 @@ const BundlesAdd = () => {
             delete payload.selectedFoodsWithQuantities;
         }
 
+        delete payload.addonIds;
+        delete payload['addonIds[]'];
+
         return payload;
     };
 
-    if ((id && isFetching) || isFoodsLoading || isBranchesLoading) {
+    if ((id && isFetching) || isFoodsLoading || isBranchesLoading || isAddonsLoading) {
         return <LoadingSpinner />;
     }
 

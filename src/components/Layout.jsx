@@ -5,12 +5,11 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AppSidebar } from "./AppSidebar";
 import useSidebarStore from "@/store/useSidebarStore";
 import useAuthStore from "@/store/useAuthStore";
-import { LogOut, ChevronLeft, ChevronRight, UserCircle2, Bell, ShoppingBag, XCircle, Sun, Moon, Tag } from "lucide-react";
+import { LogOut, ChevronLeft, ChevronRight, UserCircle2, Bell, ShoppingBag, XCircle, Sun, Moon, Tag, Menu } from "lucide-react";
 import useThemeStore from "@/store/useThemeStore";
 import { Switch } from "@/components/ui/switch";
 import { toast } from 'sonner';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 
 import {
   DropdownMenu,
@@ -50,12 +49,10 @@ export default function Layout() {
   );
   const branchId = user?.branchId;
 
-  // 💡 تحويل الحالة إلى Local State لضمان التفاعل الفوري
   const [isOnline, setIsOnline] = useState(
     branchId ? user?.status !== "inactive" : !settingsRes?.data?.settings?.isTemporarilyClosed
   );
 
-  // تحديث الـ state لو البيانات اتغيرت من الـ server
   useEffect(() => {
     if (branchId) {
       setIsOnline(user?.status !== "inactive");
@@ -71,19 +68,17 @@ export default function Layout() {
   const handleStatusToggle = (checked) => {
     if (!hasExplicitPermission(user, "restaurantsetting", checked ? "open" : "close")) return;
 
-    // لو فرع وتم إغلاقه (checked === false)، نفتح الـ Dialog لطلب سبب القفل أولاً
     if (branchId && !checked) {
       setInactiveReason("");
       setBranchInactiveModalOpen(true);
       return;
     }
-    // لو مطعم رئيسي أو يتم فتح الفرع أونلاين
     executeStatusUpdate(checked, undefined);
   };
 
   const executeStatusUpdate = async (checked, reason) => {
     setIsUpdatingStatus(true);
-    setIsOnline(checked); // تحديث الواجهة فوراً
+    setIsOnline(checked);
 
     try {
       if (branchId) {
@@ -108,14 +103,14 @@ export default function Layout() {
       refetchSettings();
     } catch (error) {
       console.error("Error updating status:", error);
-      setIsOnline(!checked); // العودة للحالة القديمة عند الخطأ
+      setIsOnline(!checked);
       toast.error(t("failedToUpdateStatus") || "فشل في تغيير حالة المطعم");
     } finally {
       setIsUpdatingStatus(false);
       setBranchInactiveModalOpen(false);
     }
   };
-  // نجيب الـ module بالترجمة الحالية
+
   const allModules = getModules(t);
   const translatedModules = filterModulesByPermissions(user, allModules);
   const activeModule = storedModule
@@ -441,7 +436,8 @@ export default function Layout() {
             <header className="flex-none sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
               <div className="flex items-center justify-between gap-2 px-2 sm:px-4 py-2 w-full">
 
-                <div className="flex min-w-0 items-center gap-2 sm:gap-4 justify-start">
+                {/* Left Section: Logo & Brand */}
+                <div className="flex items-center gap-2 sm:gap-4">
                   <button
                     onClick={() => navigate("/")}
                     className="flex items-center gap-1.5 sm:gap-2 lg:gap-3 transition-opacity hover:opacity-90 focus:outline-none shrink-0"
@@ -449,11 +445,11 @@ export default function Layout() {
                     {(user?.restaurantLogo || user?.restaurant?.restaurantLogo) && (
                       <>
                         <img
-                          className="hidden sm:block h-6 md:h-8 lg:h-9 w-auto max-w-[56px] md:max-w-[90px] lg:max-w-[110px] object-contain rounded-md"
+                          className="h-6 md:h-8 lg:h-9 w-auto max-w-[56px] md:max-w-[90px] lg:max-w-[110px] object-contain rounded-md"
                           src={user?.restaurantLogo || user?.restaurant?.restaurantLogo}
                           alt={restaurantName || "Restaurant Logo"}
                         />
-                        <div className="hidden sm:block h-5 w-px bg-slate-300 dark:bg-slate-700" />
+                        <div className="h-5 w-px bg-slate-300 dark:bg-slate-700" />
                       </>
                     )}
                     <img
@@ -464,7 +460,7 @@ export default function Layout() {
                   </button>
 
                   {!activeModule && (
-                    <div className="flex items-center gap-2 truncate border-s border-slate-200 dark:border-slate-700 ps-2 sm:ps-3">
+                    <div className="hidden md:flex items-center gap-2 truncate border-s border-slate-200 dark:border-slate-700 ps-2 sm:ps-3">
                       <div className="flex flex-col truncate">
                         <span className="font-bold text-xs sm:text-base tracking-tight text-slate-800 dark:text-slate-100 truncate">
                           {t("home")}
@@ -477,125 +473,201 @@ export default function Layout() {
                   )}
                 </div>
 
-                <div className="flex items-center justify-end min-w-0 gap-1 sm:gap-1.5 lg:gap-2">
-                  {/* STORE / BRANCH ONLINE / OFFLINE SWITCH */}
-                  <div
-                    className={cn(
-                      "flex items-center gap-2.5 px-3 py-1.5 rounded-full border transition-all duration-300 shadow-sm shrink-0",
-                      isOnline
-                        ? "bg-emerald-50/70 border-emerald-200/80 dark:bg-emerald-950/20 dark:border-emerald-800/40"
-                        : "bg-rose-50/70 border-rose-200/80 dark:bg-rose-950/20 dark:border-rose-800/40"
-                    )}
-                  >
-                    {/* النقطة المضيئة */}
-                    <span className="relative flex h-2.5 w-2.5 shrink-0 rounded-full">
-                      <span
-                        className={cn(
-                          "inline-flex h-full w-full rounded-full",
-                          isOnline ? "bg-emerald-500" : "bg-rose-500"
-                        )}
-                      />
-                      {isOnline && (
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                      )}
-                    </span>
-
-                    {/* النص */}
-                    <span
+                {/* Right Section: Desktop & Mobile Layout */}
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  
+                  {/* --- DESKTOP VIEW (Visible on sm and above) --- */}
+                  <div className="hidden sm:flex items-center gap-2">
+                    {/* STORE / BRANCH ONLINE / OFFLINE SWITCH */}
+                    <div
                       className={cn(
-                        "text-xs font-bold leading-none whitespace-nowrap",
-                        isOnline ? "text-emerald-700 dark:text-emerald-400" : "text-rose-700 dark:text-rose-400"
+                        "flex items-center gap-2.5 px-3 py-1.5 rounded-full border transition-all duration-300 shadow-sm shrink-0",
+                        isOnline
+                          ? "bg-emerald-50/70 border-emerald-200/80 dark:bg-emerald-950/20 dark:border-emerald-800/40"
+                          : "bg-rose-50/70 border-rose-200/80 dark:bg-rose-950/20 dark:border-rose-800/40"
                       )}
                     >
-                      {isOnline ? (t("Online") || "Online") : (t("Offline") || "Offline")}
-                    </span>
-
-                    {/* زر الـ Switch مع تثبيت الاتجاه LTR لمنع التداخل */}
-                    {canManageStoreStatus && (
-                      <div className="flex items-center justify-center shrink-0 ms-1" dir="ltr">
-                        <Switch
-                          checked={isOnline}
-                          disabled={isUpdatingStatus}
-                          onCheckedChange={handleStatusToggle}
-                          className="data-[state=checked]:bg-emerald-500 data-[state=unchecked]:bg-rose-400"
+                      <span className="relative flex h-2.5 w-2.5 shrink-0 rounded-full">
+                        <span
+                          className={cn(
+                            "inline-flex h-full w-full rounded-full",
+                            isOnline ? "bg-emerald-500" : "bg-rose-500"
+                          )}
                         />
-                      </div>
-                    )}
+                        {isOnline && (
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                        )}
+                      </span>
+
+                      <span
+                        className={cn(
+                          "text-xs font-bold leading-none whitespace-nowrap",
+                          isOnline ? "text-emerald-700 dark:text-emerald-400" : "text-rose-700 dark:text-rose-400"
+                        )}
+                      >
+                        {isOnline ? (t("Online") || "Online") : (t("Offline") || "Offline")}
+                      </span>
+
+                      {canManageStoreStatus && (
+                        <div className="flex items-center justify-center shrink-0 ms-1" dir="ltr">
+                          <Switch
+                            checked={isOnline}
+                            disabled={isUpdatingStatus}
+                            onCheckedChange={handleStatusToggle}
+                            className="data-[state=checked]:bg-emerald-500 data-[state=unchecked]:bg-rose-400"
+                          />
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Product Pricing Navlink */}
+                    <button
+                      onClick={() => {
+                        const pricingModule = translatedModules.find(
+                          (m) =>
+                            m.key === "product-pricing" ||
+                            m.key === "productPricing" ||
+                            m.key === "pricing" ||
+                            m.path === "/product-pricing" ||
+                            m.path === "/pricing" ||
+                            (m.name && m.name.toLowerCase().includes("pricing"))
+                        );
+                        if (pricingModule) setActiveModule(pricingModule);
+                        navigate("/pricing-product");
+                      }}
+                      className="flex shrink-0 items-center justify-center gap-1.5 rounded-full bg-primary/10 px-3.5 py-1.5 text-primary shadow-sm transition-all duration-200 hover:bg-primary hover:text-white active:scale-95"
+                      title={t("productPricing") || "Product Pricing"}
+                    >
+                      <Tag className="w-4 h-4 shrink-0" />
+                      <span className="text-sm font-medium whitespace-nowrap">
+                        {t("productPricing") || "Product Pricing"}
+                      </span>
+                    </button>
+
+                    {/* Orders Navlink */}
+                    <button
+                      onClick={() => {
+                        const ordersModule = translatedModules.find(
+                          (m) =>
+                            m.key === "orders" ||
+                            m.key === "orders-management" ||
+                            m.path === "/orders" ||
+                            (m.name && m.name.toLowerCase().includes("order"))
+                        );
+                        if (ordersModule) setActiveModule(ordersModule);
+                        navigate("/orders");
+                      }}
+                      className="flex shrink-0 items-center justify-center gap-1.5 rounded-full bg-primary/10 px-3.5 py-1.5 text-primary shadow-sm transition-all duration-200 hover:bg-primary hover:text-white active:scale-95"
+                      title={t("orders") || "Orders"}
+                    >
+                      <ShoppingBag className="w-4 h-4 shrink-0" />
+                      <span className="text-sm font-medium whitespace-nowrap">
+                        {t("orders") || "Orders"}
+                      </span>
+                    </button>
+
+                    <div className="shrink-0 scale-95 origin-center">
+                      <LanguageSwitcher />
+                    </div>
+
+                    <button
+                      onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                      className="shrink-0 rounded-full p-2 text-slate-600 hover:text-primary hover:bg-accent dark:text-slate-300 dark:hover:text-primary transition-colors cursor-pointer"
+                      title={theme === "dark" ? (t("lightMode") || "Light Mode") : (t("darkMode") || "Dark Mode")}
+                    >
+                      {theme === "dark" ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+                    </button>
                   </div>
 
-                  <button
-                    onClick={() => {
-                      const pricingModule = translatedModules.find(
-                        (m) =>
-                          m.key === "product-pricing" ||
-                          m.key === "productPricing" ||
-                          m.key === "pricing" ||
-                          m.path === "/product-pricing" ||
-                          m.path === "/pricing" ||
-                          (m.name && m.name.toLowerCase().includes("pricing"))
-                      );
+                  {/* --- MOBILE TOGGLE MENU (3 lines / Hamburger Menu - Visible only on mobile < sm) --- */}
+                  <div className="flex sm:hidden items-center">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button
+                          className="flex items-center justify-center rounded-lg p-2 text-slate-700 hover:bg-accent dark:text-slate-200 transition-colors"
+                          title="Menu"
+                        >
+                          <Menu className="w-6 h-6" />
+                        </button>
+                      </DropdownMenuTrigger>
 
-                      if (pricingModule) {
-                        setActiveModule(pricingModule);
-                      }
-                      navigate("/pricing-product");
-                    }}
-                    className="flex shrink-0 items-center justify-center gap-1.5 rounded-full bg-primary/10 p-1.5 sm:p-2 xl:px-3.5 xl:py-1.5 text-primary shadow-sm transition-all duration-200 hover:bg-primary hover:text-white active:scale-95"
-                    title={t("productPricing") || "Product Pricing"}
-                  >
-                    <Tag className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-                    <span className="hidden xl:inline text-xs sm:text-sm font-medium whitespace-nowrap">
-                      {t("productPricing") || "Product Pricing"}
-                    </span>
-                  </button>
+                      <DropdownMenuContent align="end" className="w-64 rounded-xl p-3 shadow-xl z-[100] space-y-3">
+                        {/* 1. Online / Offline Status Switch inside Mobile Menu */}
+                        <div className="flex items-center justify-between p-2 rounded-lg bg-slate-50 dark:bg-slate-900 border">
+                          <div className="flex items-center gap-2">
+                            <span className={cn("h-2.5 w-2.5 rounded-full", isOnline ? "bg-emerald-500" : "bg-rose-500")} />
+                            <span className="text-xs font-bold">
+                              {isOnline ? (t("Online") || "Online") : (t("Offline") || "Offline")}
+                            </span>
+                          </div>
+                          {canManageStoreStatus && (
+                            <div dir="ltr">
+                              <Switch
+                                checked={isOnline}
+                                disabled={isUpdatingStatus}
+                                onCheckedChange={handleStatusToggle}
+                              />
+                            </div>
+                          )}
+                        </div>
 
-                  <button
-                    onClick={() => {
-                      const ordersModule = translatedModules.find(
-                        (m) =>
-                          m.key === "orders" ||
-                          m.key === "orders-management" ||
-                          m.path === "/orders" ||
-                          (m.name && m.name.toLowerCase().includes("order"))
-                      );
+                        {/* 2. Product Pricing Link */}
+                        <DropdownMenuItem
+                          onClick={() => {
+                            const pricingModule = translatedModules.find(
+                              (m) => m.key === "product-pricing" || m.key === "productPricing" || m.key === "pricing" || m.path === "/product-pricing"
+                            );
+                            if (pricingModule) setActiveModule(pricingModule);
+                            navigate("/pricing-product");
+                          }}
+                          className="cursor-pointer flex items-center gap-2 font-medium"
+                        >
+                          <Tag className="w-4 h-4 text-primary" />
+                          <span>{t("productPricing") || "Product Pricing"}</span>
+                        </DropdownMenuItem>
 
-                      if (ordersModule) {
-                        setActiveModule(ordersModule);
-                      }
-                      navigate("/orders");
-                    }}
-                    className="flex shrink-0 items-center justify-center gap-1.5 rounded-full bg-primary/10 p-1.5 sm:p-2 xl:px-3.5 xl:py-1.5 text-primary shadow-sm transition-all duration-200 hover:bg-primary hover:text-white active:scale-95"
-                    title={t("orders") || "Orders"}
-                  >
-                    <ShoppingBag className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-                    <span className="hidden xl:inline text-xs sm:text-sm font-medium whitespace-nowrap">
-                      {t("orders") || "Orders"}
-                    </span>
-                  </button>
+                        {/* 3. Orders Link */}
+                        <DropdownMenuItem
+                          onClick={() => {
+                            const ordersModule = translatedModules.find(
+                              (m) => m.key === "orders" || m.key === "orders-management" || m.path === "/orders"
+                            );
+                            if (ordersModule) setActiveModule(ordersModule);
+                            navigate("/orders");
+                          }}
+                          className="cursor-pointer flex items-center gap-2 font-medium"
+                        >
+                          <ShoppingBag className="w-4 h-4 text-primary" />
+                          <span>{t("orders") || "Orders"}</span>
+                        </DropdownMenuItem>
 
-                  <div className="hidden md:block shrink-0 scale-90 sm:scale-100 origin-center">
-                    <LanguageSwitcher />
+                        <div className="border-t pt-2 flex items-center justify-between">
+                          <span className="text-xs text-muted-foreground">{t("language") || "Language"}</span>
+                          <LanguageSwitcher />
+                        </div>
+
+                        <div className="flex items-center justify-between pt-1">
+                          <span className="text-xs text-muted-foreground">{t("theme") || "Theme"}</span>
+                          <button
+                            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                            className="flex items-center gap-1.5 text-xs font-medium px-2 py-1 rounded-md bg-accent"
+                          >
+                            {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                            <span>{theme === "dark" ? t("lightMode") : t("darkMode")}</span>
+                          </button>
+                        </div>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
 
-                  <button
-                    onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                    className="shrink-0 rounded-full p-1 sm:p-2 text-slate-600 hover:text-primary hover:bg-accent dark:text-slate-300 dark:hover:text-primary transition-colors cursor-pointer"
-                    title={theme === "dark" ? (t("lightMode") || "Light Mode") : (t("darkMode") || "Dark Mode")}
-                  >
-                    {theme === "dark" ? (
-                      <Sun className="w-4 h-4 sm:w-5 sm:h-5" />
-                    ) : (
-                      <Moon className="w-4 h-4 sm:w-5 sm:h-5" />
-                    )}
-                  </button>
-
+                  {/* Notifications Dropdown (Always visible) */}
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <button className="relative shrink-0 rounded-full p-1 sm:p-2 hover:bg-accent transition-colors">
-                        <Bell className="w-4 h-4 sm:w-5 sm:h-5 text-slate-600 hover:text-primary transition-colors" />
+                      <button className="relative shrink-0 rounded-full p-2 hover:bg-accent transition-colors">
+                        <Bell className="w-5 h-5 text-slate-600 hover:text-primary transition-colors" />
 
                         {totalItems > 0 && (
-                          <span className="absolute top-0 right-0 sm:top-1 sm:right-1 flex h-3.5 w-3.5 sm:h-4 sm:w-4 items-center justify-center rounded-full bg-red-500 text-[9px] sm:text-[10px] font-bold text-white shadow-sm border border-white dark:border-slate-900">
+                          <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow-sm border border-white dark:border-slate-900">
                             {totalItems > 99 ? '99+' : totalItems}
                           </span>
                         )}
@@ -646,8 +718,7 @@ export default function Layout() {
                                   handleMarkAsRead(notification.id);
                                 }
                               }}
-                              className={`p-3 sm:p-4 border-b last:border-b-0 flex flex-col gap-1 transition-colors cursor-pointer ${notification.isRead ? 'bg-white hover:bg-slate-50' : 'bg-blue-50/50 hover:bg-blue-50'
-                                }`}
+                              className={`p-3 sm:p-4 border-b last:border-b-0 flex flex-col gap-1 transition-colors cursor-pointer ${notification.isRead ? 'bg-white hover:bg-slate-50' : 'bg-blue-50/50 hover:bg-blue-50'}`}
                             >
                               <div className="flex justify-between items-start gap-2">
                                 <h4 className={`text-xs sm:text-sm leading-tight ${notification.isRead ? 'font-medium text-slate-700' : 'font-bold text-slate-900'}`}>
@@ -684,10 +755,11 @@ export default function Layout() {
                     </DropdownMenuContent>
                   </DropdownMenu>
 
+                  {/* Profile Dropdown */}
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <button className="shrink-0 rounded-full p-0.5 hover:bg-accent transition-colors">
-                        <UserCircle2 className="w-6 h-6 sm:w-8 sm:h-8 text-slate-600 hover:text-primary transition-colors" />
+                      <button className="shrink-0 rounded-full p-1 hover:bg-accent transition-colors">
+                        <UserCircle2 className="w-7 h-7 sm:w-8 sm:h-8 text-slate-600 hover:text-primary transition-colors" />
                       </button>
                     </DropdownMenuTrigger>
 
@@ -709,6 +781,7 @@ export default function Layout() {
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
+
                 </div>
 
               </div>
@@ -761,7 +834,7 @@ export default function Layout() {
             </label>
             <Input
               value={inactiveReason}
-              onChange={(e) => setInactiveReason(e.target.value)}
+              onChange={(e) => setHeaderReason(e.target.value)}
               placeholder={t("enterReasonPlaceholder") || "اكتب سبب إغلاق الفرع هنا..."}
             />
           </div>
@@ -779,10 +852,6 @@ export default function Layout() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
     </>
-
-
   );
-
 }
