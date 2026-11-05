@@ -122,7 +122,7 @@ export const hasPermission = (user, module, action = "View") => {
 export const hasExplicitPermission = (user, module, action) => {
   const permissions = getUserPermissions(user);
   if (!Array.isArray(permissions)) return true;
-  if (permissions.length === 0) return false;
+  if (permissions.length === 0) return true;
   return hasPermission(user, module, action);
 };
 

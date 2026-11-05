@@ -63,7 +63,6 @@ const FoodAdd = () => {
         price: raw.price ? Number(raw.price) : "",
         points: raw.points != null ? Number(raw.points) : "",
         discount_type: raw.discount_type || "none",
-        // لو مفيش خصم بنخيلها فاضية مش 0
         discount_value: raw.discount_value ? Number(raw.discount_value) : "",
         Maximum_Purchase: raw.Maximum_Purchase ? Number(raw.Maximum_Purchase) : 5,
         stock_type: raw.stock_type || "unlimited",
@@ -88,6 +87,7 @@ const FoodAdd = () => {
                 optionNameAr: o.optionNameAr || "",
                 optionNameFr: o.optionNameFr || "",
                 additionalPrice: o.additionalPrice ? Number(o.additionalPrice) : 0,
+                status: o.status !== undefined ? Boolean(o.status) : true,
               })) || [],
           })) || [],
 
@@ -110,7 +110,6 @@ const FoodAdd = () => {
   const transformBeforeSubmit = (formData) => {
     const { addonsId: addonsArr, branches, price, discount_type, discount_value, ...rest } = formData;
 
-    // فحص ما إذا كان هناك خصم حقيقي مفعل أم لا
     const hasDiscount = discount_type && discount_type !== "none" && Number(discount_value) > 0;
 
     let formattedBranches = undefined;
@@ -144,7 +143,6 @@ const FoodAdd = () => {
     return {
       ...rest,
       price,
-      // في حالة عدم وجود خصم، يُرسل discount_type كـ "none" و discount_value كـ null
       discount_type: hasDiscount ? discount_type : "none",
       discount_value: hasDiscount ? Number(discount_value) : null,
       ...(formattedBranches ? { branches: formattedBranches } : {}),
@@ -199,7 +197,6 @@ const FoodAdd = () => {
             );
             if (erroredTab) setActiveTab(erroredTab);
           }
-          // eslint-disable-next-line react-hooks/exhaustive-deps
         }, [submitCount, errors]);
 
         return (
@@ -597,7 +594,7 @@ const VariationsSection = ({ control, register, setValue, watch }) => {
               selectionType: "single",
               min: 1,
               max: 1,
-              options: [{ optionName: "", optionNameAr: "", optionNameFr: "", additionalPrice: 0 }],
+              options: [{ optionName: "", optionNameAr: "", optionNameFr: "", additionalPrice: 0, status: true }],
             })
           }
           className="bg-orange-500 hover:bg-orange-600"
@@ -727,6 +724,20 @@ const OptionsSection = ({ nestIndex, control, register }) => {
               className="bg-white"
             />
           </div>
+
+          {/* مفتاح الحالة (Status Switch) للخيار */}
+          <div className="flex flex-col items-center justify-center space-y-1 pb-1">
+            <Label className="text-xs">{t("statusLabel") || "Status"}</Label>
+            <Controller
+              name={`variations.${nestIndex}.options.${k}.status`}
+              control={control}
+              defaultValue={true}
+              render={({ field }) => (
+                <Switch checked={!!field.value} onCheckedChange={field.onChange} />
+              )}
+            />
+          </div>
+
           <Button
             type="button"
             variant="destructive"
@@ -743,7 +754,7 @@ const OptionsSection = ({ nestIndex, control, register }) => {
         type="button"
         variant="outline"
         size="sm"
-        onClick={() => append({ optionName: "", optionNameAr: "", optionNameFr: "", additionalPrice: 0 })}
+        onClick={() => append({ optionName: "", optionNameAr: "", optionNameFr: "", additionalPrice: 0, status: true })}
         className="mt-2 text-primary border-primary"
       >
         {t("addOptionBtn")}
@@ -756,13 +767,11 @@ const AddonsSection = ({ control, selectOptions }) => {
   const { fields, append, remove } = useFieldArray({ control, name: "addonsId" });
   const { t } = useTranslation();
 
-  // مراقبة جميع الـ Addons المختارة في القائمة
   const watchedAddons = useWatch({
     control,
     name: "addonsId",
   });
 
-  // تجميع الـ IDs للـ Addons المحددة حالياً
   const selectedIds = watchedAddons?.map((item) => String(item?.addonsId)).filter(Boolean) || [];
 
   return (
@@ -795,7 +804,6 @@ const AddonsSection = ({ control, selectOptions }) => {
                 control={control}
                 rules={{ required: t("pleaseSelectAddon") }}
                 render={({ field, fieldState }) => {
-                  // تصفية القائمة لكل صف: استبعاد أي Addon اختير في صف آخر
                   const filteredOptions =
                     selectOptions?.addons
                       ?.filter((a) => {
