@@ -12,11 +12,10 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { useGet } from "@/hooks/useGet"; // Hook to fetch data
+import { useGet } from "@/hooks/useGet"; 
 import { useTranslation } from "@/hooks/useTranslation";
 import LoadingSpinner from "@/components/LoadingSpinner";
 
-// 💡 Same function used in DeliveryZoneAdd.jsx to ensure coordinates are always converted to an Array
 const parseCoordinatesToArray = (raw) => {
   if (!raw) return [];
   let parsed = raw;
@@ -45,7 +44,6 @@ const parseCoordinatesToArray = (raw) => {
   return [];
 };
 
-// Fix Leaflet default icons
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
@@ -53,13 +51,11 @@ L.Icon.Default.mergeOptions({
   shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
 });
 
-// Custom colors for map zones
 const ZONE_COLORS = [
   "#3B82F6", "#10B981", "#F59E0B", "#EF4444", 
   "#8B5CF6", "#EC4899", "#06B6D4", "#84CC16"
 ];
 
-// Component to re-center the map when a zone is selected
 const RecenterMap = ({ center, zoom }) => {
   const map = useMap();
   useEffect(() => {
@@ -109,12 +105,9 @@ export default function ZoneMap() {
   const { t, isRTL } = useTranslation();
   const queryClient = useQueryClient();
   const [selectedZoneId, setSelectedZoneId] = useState(null);
-  const [mapCenter, setMapCenter] = useState([31.2001, 29.9187]); // Default: Alexandria
+  const [mapCenter, setMapCenter] = useState([31.2001, 29.9187]); 
 
-  // 💡 List search by name (Arabic/English), City, or Branch
   const [searchQuery, setSearchQuery] = useState("");
-  
-  // 💡 فلتر الفرع المختار والبحث داخله
   const [selectedBranchId, setSelectedBranchId] = useState("all");
   const [branchDropdownOpen, setBranchDropdownOpen] = useState(false);
   const [branchSearchText, setBranchSearchText] = useState("");
@@ -122,7 +115,6 @@ export default function ZoneMap() {
   const zoneLayerRefs = useRef({});
   const cardRefs = useRef({});
 
-  // ============ 💡 Inline Edit Mode ============
   const [editingZone, setEditingZone] = useState(null);
   const [editCityId, setEditCityId] = useState("");
   const [editZoneId, setEditZoneId] = useState("");
@@ -135,7 +127,6 @@ export default function ZoneMap() {
   const [redoStack, setRedoStack] = useState([]);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Fetch City/Zone/Branch lists for the edit form
   const { data: selectionData = { zones: [], cities: [], branches: [] } } = useQuery({
     queryKey: ["DeliveryZonesSelect"],
     queryFn: async () => {
@@ -151,7 +142,6 @@ export default function ZoneMap() {
     staleTime: 5 * 60 * 1000,
   });
 
-  // 💡 جلب قائمة الفروع النشطة (active) فقط للفلتر
   const { data: activeBranches = [] } = useQuery({
     queryKey: ["active-branches-filter"],
     queryFn: async () => {
@@ -175,7 +165,6 @@ export default function ZoneMap() {
     });
   }, [editCityId, selectionData.branches]);
 
-  // 1. Fetch delivery zones data from API
   const { data: apiResponse, isLoading, error } = useGet(
     "delivery-zones",
     "/api/restaurant/restaurant-zone-delivery-fees"
@@ -183,7 +172,6 @@ export default function ZoneMap() {
 
   const zonesList = useMemo(() => apiResponse?.data?.data || [], [apiResponse]);
 
-  // 2. Process coordinates and format them for Leaflet
   const parsedZones = useMemo(() => {
     return zonesList.map((item, index) => {
       let coords = [];
@@ -222,7 +210,6 @@ export default function ZoneMap() {
     });
   }, [zonesList]);
 
-  // 💡 Filter the list by search and branch selection
   const filteredListZones = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
 
@@ -433,7 +420,8 @@ export default function ZoneMap() {
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
 
-          {parsedZones.map((zone) => {
+          {/* 💡 استخدام filteredListZones هنا داخل MapContainer لترسم المناطق التابعة للفرع فقط */}
+          {filteredListZones.map((zone) => {
             if (editingZone && String(zone.id) === String(editingZone.id)) return null;
 
             const isSelected = selectedZoneId === zone.id;
@@ -762,243 +750,244 @@ export default function ZoneMap() {
           </div>
         ) : (
           <>
-        <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-          <div className="flex items-center gap-2">
-            <Layers className="h-5 w-5 text-primary" />
-            <h2 className="text-lg font-bold text-slate-800">{t("Delivery Zones")}</h2>
-          </div>
-          <Badge variant="secondary" className="rounded-lg font-semibold">
-            {(searchQuery || selectedBranchId !== "all") ? `${filteredListZones.length} ${t("of")} ${parsedZones.length}` : `${parsedZones.length} ${t("Zone(s)")}`}
-          </Badge>
-        </div>
-
-        {/* 💡 Name Search Box */}
-        <div className="relative">
-          <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-          <Input
-            type="text"
-            placeholder={t("Search for a zone by name...")}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pr-9 h-10 text-sm bg-white rounded-xl shadow-sm border-slate-200"
-          />
-          {searchQuery && (
-            <button
-              type="button"
-              onClick={() => setSearchQuery("")}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          )}
-        </div>
-
-        {/* 💡 Searchable Branch Dropdown (Active only) */}
-        <div className="relative">
-          <div
-            onClick={() => setBranchDropdownOpen(!branchDropdownOpen)}
-            className="w-full h-10 px-3 text-sm border border-slate-200 rounded-xl bg-white flex items-center justify-between cursor-pointer shadow-sm hover:border-slate-300 transition-colors"
-          >
-            <div className="flex items-center gap-2 truncate">
-              <Filter className="h-4 w-4 text-slate-400 shrink-0" />
-              <span className="truncate text-slate-700 font-medium">
-                {selectedBranchId === "all"
-                  ? t("All Branches (Active)")
-                  : (() => {
-                      const b = activeBranches.find((item) => String(item.id) === String(selectedBranchId));
-                      return b ? (isRTL ? b.nameAr || b.name : b.name) : t("Select Branch");
-                    })()}
-              </span>
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <Layers className="h-5 w-5 text-primary" />
+                <h2 className="text-lg font-bold text-slate-800">{t("Delivery Zones")}</h2>
+              </div>
+              <Badge variant="secondary" className="rounded-lg font-semibold">
+                {(searchQuery || selectedBranchId !== "all") ? `${filteredListZones.length} ${t("of")} ${parsedZones.length}` : `${parsedZones.length} ${t("Zone(s)")}`}
+              </Badge>
             </div>
-            <div className="flex items-center gap-1">
-              {selectedBranchId !== "all" && (
+
+            {/* Name Search Box */}
+            <div className="relative">
+              <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <Input
+                type="text"
+                placeholder={t("Search for a zone by name...")}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pr-9 h-10 text-sm bg-white rounded-xl shadow-sm border-slate-200"
+              />
+              {searchQuery && (
                 <button
                   type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setSelectedBranchId("all");
-                    setBranchSearchText("");
-                  }}
-                  className="p-1 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-600"
+                  onClick={() => setSearchQuery("")}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                 >
-                  <X className="h-3.5 w-3.5" />
+                  <X className="h-4 w-4" />
                 </button>
               )}
-              <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform duration-200 ${branchDropdownOpen ? "rotate-180" : ""}`} />
             </div>
-          </div>
 
-          {branchDropdownOpen && (
-            <>
+            {/* Searchable Branch Dropdown (Active only) */}
+            <div className="relative">
               <div
-                className="fixed inset-0 z-20"
-                onClick={() => setBranchDropdownOpen(false)}
-              />
-              <div className="absolute top-full left-0 right-0 mt-1 z-30 bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden animate-in fade-in-50 zoom-in-95 duration-150">
-                <div className="p-2 border-b border-slate-100">
-                  <div className="relative">
-                    <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
-                    <Input
-                      type="text"
-                      placeholder={t("Search branch...")}
-                      value={branchSearchText}
-                      onChange={(e) => setBranchSearchText(e.target.value)}
-                      className="h-8 pr-8 text-xs bg-slate-50 border-slate-200 rounded-lg"
-                      autoFocus
-                    />
-                  </div>
+                onClick={() => setBranchDropdownOpen(!branchDropdownOpen)}
+                className="w-full h-10 px-3 text-sm border border-slate-200 rounded-xl bg-white flex items-center justify-between cursor-pointer shadow-sm hover:border-slate-300 transition-colors"
+              >
+                <div className="flex items-center gap-2 truncate">
+                  <Filter className="h-4 w-4 text-slate-400 shrink-0" />
+                  <span className="truncate text-slate-700 font-medium">
+                    {selectedBranchId === "all"
+                      ? t("All Branches (Active)")
+                      : (() => {
+                          const b = activeBranches.find((item) => String(item.id) === String(selectedBranchId));
+                          return b ? (isRTL ? b.nameAr || b.name : b.name) : t("Select Branch");
+                        })()}
+                  </span>
                 </div>
-                <div className="max-h-48 overflow-y-auto p-1">
+                <div className="flex items-center gap-1">
+                  {selectedBranchId !== "all" && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedBranchId("all");
+                        setBranchSearchText("");
+                      }}
+                      className="p-1 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-600"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                  <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform duration-200 ${branchDropdownOpen ? "rotate-180" : ""}`} />
+                </div>
+              </div>
+
+              {branchDropdownOpen && (
+                <>
                   <div
-                    onClick={() => {
-                      setSelectedBranchId("all");
-                      setBranchDropdownOpen(false);
-                      setBranchSearchText("");
-                    }}
-                    className={`px-3 py-2 text-xs rounded-lg cursor-pointer transition-colors ${
-                      selectedBranchId === "all"
-                        ? "bg-primary/10 text-primary font-bold"
-                        : "hover:bg-slate-50 text-slate-700"
-                    }`}
-                  >
-                    {t("All Branches (Active)")}
-                  </div>
-                  {activeBranches
-                    .filter((b) => {
-                      const name = (isRTL ? b.nameAr || b.name : b.name) || "";
-                      return name.toLowerCase().includes(branchSearchText.toLowerCase());
-                    })
-                    .map((branch) => {
-                      const branchName = isRTL ? branch.nameAr || branch.name : branch.name;
-                      const isSelected = String(branch.id) === String(selectedBranchId);
-                      return (
-                        <div
-                          key={branch.id}
-                          onClick={() => {
-                            setSelectedBranchId(branch.id);
-                            setBranchDropdownOpen(false);
-                            setBranchSearchText("");
-                          }}
-                          className={`px-3 py-2 text-xs rounded-lg cursor-pointer transition-colors flex items-center justify-between ${
-                            isSelected
-                              ? "bg-primary/10 text-primary font-bold"
-                              : "hover:bg-slate-50 text-slate-700"
-                          }`}
-                        >
-                          <span>{branchName}</span>
-                          {isSelected && <CheckCircle2 className="h-3.5 w-3.5 text-primary" />}
+                    className="fixed inset-0 z-20"
+                    onClick={() => setBranchDropdownOpen(false)}
+                  />
+                  <div className="absolute top-full left-0 right-0 mt-1 z-30 bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden animate-in fade-in-50 zoom-in-95 duration-150">
+                    <div className="p-2 border-b border-slate-100">
+                      <div className="relative">
+                        <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                        <Input
+                          type="text"
+                          placeholder={t("Search branch...")}
+                          value={branchSearchText}
+                          onChange={(e) => setBranchSearchText(e.target.value)}
+                          className="h-8 pr-8 text-xs bg-slate-50 border-slate-200 rounded-lg"
+                          autoFocus
+                        />
+                      </div>
+                    </div>
+                    <div className="max-h-48 overflow-y-auto p-1">
+                      <div
+                        onClick={() => {
+                          setSelectedBranchId("all");
+                          setBranchDropdownOpen(false);
+                          setBranchSearchText("");
+                        }}
+                        className={`px-3 py-2 text-xs rounded-lg cursor-pointer transition-colors ${
+                          selectedBranchId === "all"
+                            ? "bg-primary/10 text-primary font-bold"
+                            : "hover:bg-slate-50 text-slate-700"
+                        }`}
+                      >
+                        {t("All Branches (Active)")}
+                      </div>
+                      {activeBranches
+                        .filter((b) => {
+                          const name = (isRTL ? b.nameAr || b.name : b.name) || "";
+                          return name.toLowerCase().includes(branchSearchText.toLowerCase());
+                        })
+                        .map((branch) => {
+                          const branchName = isRTL ? branch.nameAr || branch.name : branch.name;
+                          const isSelected = String(branch.id) === String(selectedBranchId);
+                          return (
+                            <div
+                              key={branch.id}
+                              onClick={() => {
+                                setSelectedBranchId(branch.id);
+                                setBranchDropdownOpen(false);
+                                setBranchSearchText("");
+                              }}
+                              className={`px-3 py-2 text-xs rounded-lg cursor-pointer transition-colors flex items-center justify-between ${
+                                isSelected
+                                  ? "bg-primary/10 text-primary font-bold"
+                                  : "hover:bg-slate-50 text-slate-700"
+                              }`}
+                            >
+                              <span>{branchName}</span>
+                              {isSelected && <CheckCircle2 className="h-3.5 w-3.5 text-primary" />}
+                            </div>
+                          );
+                        })}
+                      {activeBranches.filter((b) => {
+                        const name = (isRTL ? b.nameAr || b.name : b.name) || "";
+                        return name.toLowerCase().includes(branchSearchText.toLowerCase());
+                      }).length === 0 && (
+                        <div className="py-4 text-center text-xs text-slate-400">
+                          {t("No branches found")}
                         </div>
-                      );
-                    })}
-                  {activeBranches.filter((b) => {
-                    const name = (isRTL ? b.nameAr || b.name : b.name) || "";
-                    return name.toLowerCase().includes(branchSearchText.toLowerCase());
-                  }).length === 0 && (
-                    <div className="py-4 text-center text-xs text-slate-400">
-                      {t("No branches found")}
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {filteredListZones.length === 0 && (
+              <div className="text-center text-sm text-slate-400 py-8">
+                {t("No matching results")}
+              </div>
+            )}
+
+            {/* 💡 عرض كروت المناطق هنا في القائمة الجانبية بشكل صحيح */}
+            {filteredListZones.map((zone) => {
+              const zoneName = isRTL
+                ? zone.zone?.displayNameAr || zone.zone?.nameAr || t("Unnamed Zone")
+                : zone.zone?.displayName || zone.zone?.name || t("Unnamed Zone");
+
+              const isSelected = selectedZoneId === zone.id;
+
+              return (
+                <div
+                  key={zone.id}
+                  id={`zone-card-${zone.id}`}
+                  ref={(el) => { cardRefs.current[zone.id] = el; }}
+                  onClick={() => handleSelectZone(zone)}
+                  className={`group relative flex flex-col gap-3 p-4 rounded-xl border-2 transition-all duration-300 cursor-pointer ${
+                    isSelected
+                      ? "shadow-lg scale-[1.02]"
+                      : "bg-white border-slate-100 hover:border-slate-200 shadow-sm"
+                  }`}
+                  style={
+                    isSelected
+                      ? {
+                          borderColor: zone.color,
+                          backgroundColor: `${zone.color}14`,
+                          boxShadow: `0 0 0 3px ${zone.color}33, 0 8px 16px -4px ${zone.color}55`,
+                        }
+                      : undefined
+                  }
+                >
+                  {isSelected && (
+                    <div
+                      className="absolute -top-2.5 right-4 flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold text-white shadow-sm"
+                      style={{ backgroundColor: zone.color }}
+                    >
+                      <CheckCircle2 className="h-3 w-3" />
+                      {t("Currently Selected")}
                     </div>
                   )}
-                </div>
-              </div>
-            </>
-          )}
-        </div>
 
-        {filteredListZones.length === 0 && (
-          <div className="text-center text-sm text-slate-400 py-8">
-            {t("No matching results")}
-          </div>
-        )}
-
-        {filteredListZones.map((zone) => {
-          const zoneName = isRTL
-            ? zone.zone?.displayNameAr || zone.zone?.nameAr || t("Unnamed Zone")
-            : zone.zone?.displayName || zone.zone?.name || t("Unnamed Zone");
-
-          const isSelected = selectedZoneId === zone.id;
-
-          return (
-            <div
-              key={zone.id}
-              id={`zone-card-${zone.id}`}
-              ref={(el) => { cardRefs.current[zone.id] = el; }}
-              onClick={() => handleSelectZone(zone)}
-              className={`group relative flex flex-col gap-3 p-4 rounded-xl border-2 transition-all duration-300 cursor-pointer ${
-                isSelected
-                  ? "shadow-lg scale-[1.02]"
-                  : "bg-white border-slate-100 hover:border-slate-200 shadow-sm"
-              }`}
-              style={
-                isSelected
-                  ? {
-                      borderColor: zone.color,
-                      backgroundColor: `${zone.color}14`,
-                      boxShadow: `0 0 0 3px ${zone.color}33, 0 8px 16px -4px ${zone.color}55`,
-                    }
-                  : undefined
-              }
-            >
-              {isSelected && (
-                <div
-                  className="absolute -top-2.5 right-4 flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold text-white shadow-sm"
-                  style={{ backgroundColor: zone.color }}
-                >
-                  <CheckCircle2 className="h-3 w-3" />
-                  {t("Currently Selected")}
-                </div>
-              )}
-
-              <div
-                className="absolute top-0 right-0 left-0 h-1 rounded-t-xl"
-                style={{ backgroundColor: zone.color }}
-              />
-
-              <div className="flex items-start justify-between gap-2 mt-1">
-                <div className="flex items-center gap-2">
-                  <span
-                    className="h-3 w-3 rounded-full shrink-0"
+                  <div
+                    className="absolute top-0 right-0 left-0 h-1 rounded-t-xl"
                     style={{ backgroundColor: zone.color }}
                   />
-                  <div>
-                    <h3 className="font-bold text-slate-800 text-sm">{zoneName}</h3>
-                    <p className="text-xs text-slate-400 flex items-center gap-1 mt-0.5">
-                      <MapPin className="h-3 w-3" />
-                      {zone.city?.nameAr || zone.city?.name}
-                      {zone.branch?.name && ` - ${zone.branch.name}`}
-                    </p>
+
+                  <div className="flex items-start justify-between gap-2 mt-1">
+                    <div className="flex items-center gap-2">
+                      <span
+                        className="h-3 w-3 rounded-full shrink-0"
+                        style={{ backgroundColor: zone.color }}
+                      />
+                      <div>
+                        <h3 className="font-bold text-slate-800 text-sm">{zoneName}</h3>
+                        <p className="text-xs text-slate-400 flex items-center gap-1 mt-0.5">
+                          <MapPin className="h-3 w-3" />
+                          {zone.city?.nameAr || zone.city?.name}
+                          {zone.branch?.name && ` - ${zone.branch.name}`}
+                        </p>
+                      </div>
+                    </div>
+
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-8 px-2.5 text-xs gap-1.5 rounded-lg border-slate-200 hover:bg-slate-50 hover:text-blue-600 transition-colors"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleStartEdit(zone);
+                      }}
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                      <span>{t("Edit")}</span>
+                    </Button>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-50 text-xs">
+                    <div className="flex items-center gap-1.5 text-slate-600">
+                      <DollarSign className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                      <span>{t("Delivery Fee")}:</span>
+                      <span className="font-bold text-slate-800">{zone.deliveryFee} {t("EGP")}</span>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 text-slate-600">
+                      <ShoppingBag className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+                      <span>{t("Min. Order")}:</span>
+                      <span className="font-bold text-slate-800">{zone.minOrderAmount} {t("EGP")}</span>
+                    </div>
                   </div>
                 </div>
-
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="h-8 px-2.5 text-xs gap-1.5 rounded-lg border-slate-200 hover:bg-slate-50 hover:text-blue-600 transition-colors"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleStartEdit(zone);
-                  }}
-                >
-                  <Pencil className="h-3.5 w-3.5" />
-                  <span>{t("Edit")}</span>
-                </Button>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-50 text-xs">
-                <div className="flex items-center gap-1.5 text-slate-600">
-                  <DollarSign className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
-                  <span>{t("Delivery Fee")}:</span>
-                  <span className="font-bold text-slate-800">{zone.deliveryFee} {t("EGP")}</span>
-                </div>
-
-                <div className="flex items-center gap-1.5 text-slate-600">
-                  <ShoppingBag className="h-3.5 w-3.5 text-amber-500 shrink-0" />
-                  <span>{t("Min. Order")}:</span>
-                  <span className="font-bold text-slate-800">{zone.minOrderAmount} {t("EGP")}</span>
-                </div>
-              </div>
-            </div>
-          );
-        })}
+              );
+            })}
           </>
         )}
       </div>
