@@ -341,6 +341,20 @@ export default function Order() {
         );
       },
     },
+{
+      accessorKey: "discountAmount",
+      header: t("discount") || "Discount",
+      cell: ({ row }) => {
+        const discountAmount = row.original.discountAmount || row.original.discount?.discountAmount || "0.00";
+        return Number(discountAmount) > 0 ? (
+          <span className="font-semibold text-amber-600 dark:text-amber-400">
+            {discountAmount} {t("currency")}
+          </span>
+        ) : (
+          <span className="text-gray-400">-</span>
+        );
+      },
+    },
     {
       accessorKey: "totalAmount",
       header: t("totalAmount"),
