@@ -140,16 +140,17 @@ export default function OrdersList({ status }) {
     totalAmount: orders.reduce((sum, o) => sum + Number(o.totalAmount || 0), 0),
   };
 
-  const handleExportExcel = async () => {
+const handleExportExcel = async () => {
     if (!orders.length) return;
     try {
       setIsExporting(true);
       await exportOrdersToExcel({
         orders,
+        columns, // تمرير الأعمدة لضمان تطابق الأعمدة الظاهرة
         summary,
         t,
         rtl: language === "ar",
-        fileName: `orders-${status}-${startDate || "all"}.xlsx`,
+        fileName: `orders-${status || "all"}-${startDate || "all"}.xlsx`,
       });
     } catch (error) {
       console.error("Error exporting orders:", error);
@@ -158,7 +159,6 @@ export default function OrdersList({ status }) {
       setIsExporting(false);
     }
   };
-
   // دالة جلب وعرض تقرير الـ PDF في نفس الصفحة داخل Modal
   const handleReportPdf = async () => {
     try {

@@ -414,10 +414,10 @@ export default function PricingProduct({ branchId: branchIdProp }) {
       toast.error(t('selectSubCategoryFirst') || 'من فضلك اختر قسم فرعي أولاً');
       return;
     }
-    if (!branchId) {
-      toast.error(t('selectSpecificBranchFirst') || 'من فضلك اختر فرع محدد أولاً');
-      return;
-    }
+    // if (!branchId) {
+    //   toast.error(t('selectSpecificBranchFirst') || 'من فضلك اختر فرع محدد أولاً');
+    //   return;
+    // }
 
     try {
       await api.put(
@@ -432,19 +432,25 @@ export default function PricingProduct({ branchId: branchIdProp }) {
     }
   };
 
-  const toggleFoodStatus = async (foodId, checked) => {
-    const branchId = getBranchIdForSubCategoryAction();
-
-    if (!branchId) {
-      toast.error(t('selectSpecificBranchFirst') || 'من فضلك اختر فرع محدد أولاً');
-      return;
-    }
-
+const toggleFoodStatus = async (foodId, checked) => {
     try {
-      await api.put(
-        `/api/restaurant/food/${foodId}/branch/${branchId}/status`,
-        { status: checked ? "active" : "inactive" }
-      );
+      if (isAllBranches && isAllModules) {
+        // استخدام الـ Endpoint العام لو البرانش All والـ Modules All
+        await api.put(`/api/restaurant/food/status/${foodId}`, {
+          status: checked ? "active" : "inactive"
+        });
+      } else {
+        // لو في فرع محدد أو خدمة محددة مختارة
+        const branchId = getBranchIdForSubCategoryAction();
+        if (!branchId) {
+          toast.error(t('selectSpecificBranchFirst') || 'من فضلك اختر فرع محدد أولاً');
+          return;
+        }
+        await api.put(
+          `/api/restaurant/food/${foodId}/branch/${branchId}/status`,
+          { status: checked ? "active" : "inactive" }
+        );
+      }
       toast.success(t('statusUpdatedSuccessfully') || 'تم تحديث الحالة بنجاح');
       refetch();
     } catch (error) {
@@ -452,7 +458,6 @@ export default function PricingProduct({ branchId: branchIdProp }) {
       toast.error(t('failedToUpdateStatus') || 'فشل تحديث الحالة');
     }
   };
-
   const toggleSubCategoryOutOfStock = async (checked) => {
     const branchId = getBranchIdForSubCategoryAction();
 
@@ -460,10 +465,10 @@ export default function PricingProduct({ branchId: branchIdProp }) {
       toast.error(t('selectSubCategoryFirst') || 'من فضلك اختر قسم فرعي أولاً');
       return;
     }
-    if (!branchId) {
-      toast.error(t('selectSpecificBranchFirst') || 'من فضلك اختر فرع محدد أولاً');
-      return;
-    }
+    // if (!branchId) {
+    //   toast.error(t('selectSpecificBranchFirst') || 'من فضلك اختر فرع محدد أولاً');
+    //   return;
+    // }
 
     try {
       await api.put(

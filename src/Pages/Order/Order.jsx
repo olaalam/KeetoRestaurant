@@ -202,12 +202,13 @@ export default function Order() {
     totalAmount: orders.reduce((sum, o) => sum + Number(o.totalAmount || 0), 0),
   };
 
-  const handleExportExcel = async () => {
+const handleExportExcel = async () => {
     if (!orders.length) return;
     try {
       setIsExporting(true);
       await exportOrdersToExcel({
         orders,
+        columns,
         summary,
         t,
         rtl: language === "ar",
