@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import api from "@/api/axios";
 import GenericDataTable from "@/components/GenericDataTable";
 import { useNavigate } from "react-router-dom";
-import { User, Phone, Eye, Printer, Copy, SlidersHorizontal, X, Search, FileSpreadsheet } from "lucide-react";
+import { User, Phone, Eye, Printer, Copy, SlidersHorizontal, X, Search, FileSpreadsheet, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/hooks/useTranslation";
 import { Input } from "@/components/ui/input";
@@ -49,10 +49,15 @@ export default function OrdersList({ status }) {
   const [firstOrderDiscountId, setFirstOrderDiscountId] = useState("all");
   const [hasDiscount, setHasDiscount]         = useState("all");
   const [isPointsRedeemed, setIsPointsRedeemed] = useState("all");
-  const [cancelReasonType, setCancelReasonType] = useState("all"); // <--- فلتر سبب الإلغاء الجديد
+  const [cancelReasonType, setCancelReasonType] = useState("all");
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime]     = useState("");
   const [isExporting, setIsExporting] = useState(false);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+
+  // حالات Modal عرض الـ PDF في نفس الصفحة
+  const [pdfModalOpen, setPdfModalOpen] = useState(false);
+  const [pdfBlobUrl, setPdfBlobUrl] = useState(null);
 
   // جلب خيارات الفلاتر
   const { data: selectOptions } = useQuery({
@@ -88,6 +93,31 @@ export default function OrdersList({ status }) {
     return selectOptions.zones.filter((z) => z.cityId === cityId);
   }, [selectOptions, cityId]);
 
+  // دالة مساعدة لتجميع البارامترات والفلاتر الحالية
+  const getFilterParams = () => {
+    const params = {};
+    const withTime = (date, time) => (date && time ? `${date}T${time}` : date);
+    if (startDate)   params.startDate   = withTime(startDate, startTime);
+    if (endDate)     params.endDate     = withTime(endDate, endTime);
+    if (orderSource      !== "all") params.orderSource      = orderSource;
+    if (orderType        !== "all") params.orderType        = orderType;
+    if (searchQuery.trim() !== "")  params.search           = searchQuery.trim();
+    if (cityId           !== "all") params.cityId           = cityId;
+    if (branchId         !== "all") params.branchId         = branchId;
+    if (zoneId           !== "all") params.zoneId           = zoneId;
+    if (paymentMethod    !== "all") params.paymentMethod    = paymentMethod;
+    if (discountType.length > 0)    params.discountType     = discountType.join(",");
+    if (couponId         !== "all") params.couponId         = couponId;
+    if (couponCode)                params.couponCode       = couponCode;
+    if (discountId       !== "all") params.discountId       = discountId;
+    if (firstOrderDiscountId !== "all") params.firstOrderDiscountId = firstOrderDiscountId;
+    if (hasDiscount      !== "all") params.hasDiscount      = hasDiscount;
+    if (isPointsRedeemed !== "all") params.isPointsRedeemed = isPointsRedeemed;
+    if (cancelReasonType !== "all") params.cancelReasonType = cancelReasonType;
+    if (status)                    params.status           = status;
+    return params;
+  };
+
   const { data: ordersData, isLoading } = useQuery({
     queryKey: [
       "orders", status,
@@ -97,26 +127,7 @@ export default function OrdersList({ status }) {
       hasDiscount, isPointsRedeemed, cancelReasonType,
     ],
     queryFn: async () => {
-      const params = {};
-      const withTime = (date, time) => (date && time ? `${date}T${time}` : date);
-      if (startDate)   params.startDate   = withTime(startDate, startTime);
-      if (endDate)     params.endDate     = withTime(endDate, endTime);
-      if (orderSource      !== "all") params.orderSource      = orderSource;
-      if (orderType        !== "all") params.orderType        = orderType;
-      if (searchQuery.trim() !== "")  params.search           = searchQuery.trim();
-      if (cityId           !== "all") params.cityId           = cityId;
-      if (branchId         !== "all") params.branchId         = branchId;
-      if (zoneId           !== "all") params.zoneId           = zoneId;
-      if (paymentMethod    !== "all") params.paymentMethod    = paymentMethod;
-      if (discountType.length > 0)    params.discountType     = discountType.join(",");
-      if (couponId         !== "all") params.couponId         = couponId;
-      if (couponCode)                params.couponCode       = couponCode;
-      if (discountId       !== "all") params.discountId       = discountId;
-      if (firstOrderDiscountId !== "all") params.firstOrderDiscountId = firstOrderDiscountId;
-      if (hasDiscount      !== "all") params.hasDiscount      = hasDiscount;
-      if (isPointsRedeemed !== "all") params.isPointsRedeemed = isPointsRedeemed;
-      if (cancelReasonType !== "all") params.cancelReasonType = cancelReasonType;
-
+      const params = getFilterParams();
       const res = await api.get(`/api/restaurant/order/${status}`, { params });
       const payload = res.data?.data ?? {};
       return { orders: payload.data ?? [], summary: payload.summary ?? null };
@@ -145,6 +156,27 @@ export default function OrdersList({ status }) {
       toast.error(t("failedToExport") || "Failed to export Excel file");
     } finally {
       setIsExporting(false);
+    }
+  };
+
+  // دالة جلب وعرض تقرير الـ PDF في نفس الصفحة داخل Modal
+  const handleReportPdf = async () => {
+    try {
+      setIsGeneratingPdf(true);
+      const params = getFilterParams();
+      const response = await api.get(`/api/restaurant/order/report-pdf`, {
+        params,
+        responseType: "blob",
+      });
+      const blob = new Blob([response.data], { type: "application/pdf" });
+      const url = window.URL.createObjectURL(blob);
+      setPdfBlobUrl(url);
+      setPdfModalOpen(true);
+    } catch (error) {
+      console.error("Error generating report PDF:", error);
+      toast.error(t("failedToGenerateReport") || "فشل في إنشاء تقرير الـ PDF");
+    } finally {
+      setIsGeneratingPdf(false);
     }
   };
 
@@ -271,7 +303,7 @@ export default function OrdersList({ status }) {
         </span>
       ),
     },
-{
+    {
       accessorKey: "discountAmount",
       header: t("discount") || "Discount",
       cell: ({ row }) => {
@@ -389,6 +421,20 @@ export default function OrdersList({ status }) {
                 {t("clearFilter") || "Clear All"}
               </button>
             )}
+
+            {/* زر معاينة تقرير الـ PDF للفواتير في نفس الصفحة */}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleReportPdf}
+              disabled={isGeneratingPdf || isLoading || orders.length === 0}
+              className="flex items-center gap-1.5 h-8 text-xs font-medium text-blue-700 border-blue-200 hover:bg-blue-50 dark:text-blue-400 dark:border-blue-900 dark:hover:bg-blue-950"
+            >
+              <FileText size={14} />
+              {isGeneratingPdf ? (t("generating") || "جاري التقرير...") : (t("viewInvoicePdf") || "تقرير PDF الفواتير")}
+            </Button>
+
             <Button
               type="button"
               variant="outline"
@@ -400,6 +446,7 @@ export default function OrdersList({ status }) {
               <FileSpreadsheet size={14} />
               {isExporting ? (t("exporting") || "Exporting...") : (t("downloadExcel") || "Download Excel")}
             </Button>
+
             {canUseAdvancedFilters && (
               <Button
                 type="button"
@@ -721,6 +768,40 @@ export default function OrdersList({ status }) {
         actions={false}
         hideSearch={true}
       />
+
+      {/* Modal لعرض الـ PDF داخل نفس الصفحة */}
+      {pdfModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+          <div className="relative bg-white dark:bg-slate-900 rounded-xl shadow-2xl w-full max-w-5xl h-[90vh] flex flex-col overflow-hidden border border-slate-200 dark:border-slate-800">
+            <div className="flex items-center justify-between px-5 py-3 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900">
+              <h3 className="font-semibold text-slate-800 dark:text-slate-200 text-base">
+                {t("invoiceReportPdf") || "تقرير فواتير الطلبات"}
+              </h3>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800"
+                onClick={() => {
+                  setPdfModalOpen(false);
+                  if (pdfBlobUrl) window.URL.revokeObjectURL(pdfBlobUrl);
+                  setPdfBlobUrl(null);
+                }}
+              >
+                <X size={18} />
+              </Button>
+            </div>
+            <div className="flex-1 bg-slate-100 dark:bg-slate-950 p-2">
+              {pdfBlobUrl && (
+                <iframe
+                  src={pdfBlobUrl}
+                  title="Invoice Report PDF"
+                  className="w-full h-full rounded border border-slate-200 dark:border-slate-800 bg-white"
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

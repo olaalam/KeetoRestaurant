@@ -1,6 +1,8 @@
 import React from "react";
 import { ShoppingBag, Wallet } from "lucide-react";
 import { useTranslation } from "@/hooks/useTranslation";
+import useAuthStore from "@/store/useAuthStore";
+import { hasPermission } from "@/lib/permissions";
 
 const formatAmount = (value) =>
   Number(value || 0).toLocaleString(undefined, {
@@ -30,6 +32,8 @@ function StatCard({ icon: Icon, label, value, isLoading, iconClass }) {
 
 export default function OrdersSummaryCards({ summary, isLoading }) {
   const { t } = useTranslation();
+  const user = useAuthStore((state) => state.user);
+  const canViewTotalAmount = hasPermission(user, "order", "order_list_amount");
 
   return (
     <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -40,13 +44,15 @@ export default function OrdersSummaryCards({ summary, isLoading }) {
         isLoading={isLoading}
         iconClass="bg-blue-100 text-blue-600 dark:bg-blue-950 dark:text-blue-300"
       />
-      {/* <StatCard
-        icon={Wallet}
-        label={t("totalAmount") || "Total Amount"}
-        value={`${formatAmount(summary?.totalAmount)} ${t("currency") || ""}`}
-        isLoading={isLoading}
-        iconClass="bg-green-100 text-green-600 dark:bg-green-950 dark:text-green-300"
-      /> */}
+      {canViewTotalAmount && (
+        <StatCard
+          icon={Wallet}
+          label={t("totalAmount") || "Total Amount"}
+          value={`${formatAmount(summary?.totalAmount)} ${t("currency") || ""}`}
+          isLoading={isLoading}
+          iconClass="bg-green-100 text-green-600 dark:bg-green-950 dark:text-green-300"
+        />
+      )}
     </div>
   );
 }
