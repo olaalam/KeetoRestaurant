@@ -79,6 +79,7 @@ const URL_PERMISSION_KEYS = {
   "/policy": "policy",
   "/setting": "restaurantsetting",
   "/delivery-man": "delivery_man",
+  "/permissions": "role_restaurant",
 };
 
 export const getPermissionKey = (item) =>
