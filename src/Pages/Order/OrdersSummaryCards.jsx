@@ -52,7 +52,22 @@ export default function OrdersSummaryCards({ summary, isLoading }) {
           isLoading={isLoading}
           iconClass="bg-green-100 text-green-600 dark:bg-green-950 dark:text-green-300"
         />
+        
       )}
+            <StatCard
+        icon={ShoppingBag}
+        label={t("totalDiscount") || "Total Discount"}
+        value={Number(summary?.totalDiscount || 0).toLocaleString()}
+        isLoading={isLoading}
+        iconClass="bg-red-100 text-red-600 dark:bg-red-950 dark:text-red-300"
+      />
+            <StatCard
+        icon={ShoppingBag}
+        label={t("totalAfterDiscount") || "Total  After Discount"}
+        value={`${formatAmount(summary?.totalAmountAfterDiscount)} ${t("currency") || ""}`}
+        isLoading={isLoading}
+        iconClass="bg-purple-100 text-purple-600 dark:bg-purple-950 dark:text-purple-300"
+      />
     </div>
   );
 }

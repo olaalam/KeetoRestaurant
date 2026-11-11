@@ -185,6 +185,7 @@ export const getModules = (t, orderCounts = {}) => {
         { title: t("policy"), url: "/policy", icon: ShoppingBag },
         { title: t("setting"), url: "/setting", icon: ShoppingBag },
         { title: t("delayOrder"), url: "/delay-order", icon: ShoppingBag },
+        { title: t("orderSetting"), url: "/order-setting", icon: ShoppingBag },
 
       ],
     },

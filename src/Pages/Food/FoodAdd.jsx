@@ -393,7 +393,7 @@ const FoodAdd = () => {
                   <Label>{t("startTimeLabel")} *</Label>
                   <Input
                     type="time"
-                    {...register("startTime", { required: t("startTimeRequired") })}
+                    {...register("startTime", { required: false })}
                     className={errors.startTime ? "border-destructive" : ""}
                   />
                   {errors.startTime && (
@@ -405,7 +405,7 @@ const FoodAdd = () => {
                   <Label>{t("endTimeLabel")} *</Label>
                   <Input
                     type="time"
-                    {...register("endTime", { required: t("endTimeRequired") })}
+                    {...register("endTime", { required: false })}
                     className={errors.endTime ? "border-destructive" : ""}
                   />
                   {errors.endTime && (

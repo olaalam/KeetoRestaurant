@@ -8,18 +8,18 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Store } from "lucide-react";
+import { Store, Plus } from "lucide-react";
 import { toast } from 'sonner';
 
 export default function SubCategory() {
     const navigate = useNavigate();
     const { t } = useTranslation();
 
-    // حالات إدارة تحكم الفروع (Branches availability per subcategory)
+    // حالات إدارة تحكم الفروع
     const [branchControlOpen, setBranchControlOpen] = useState(false);
     const [selectedSubCategoryForBranch, setSelectedSubCategoryForBranch] = useState(null);
 
-    const { data: subcategories = [], isLoading } = useQuery({
+    const { data: subcategories = [], isLoading, refetch } = useQuery({
         queryKey: ['subcategories'],
         queryFn: async () => {
             const res = await api.get('/api/restaurant/subcategories');
@@ -37,14 +37,11 @@ export default function SubCategory() {
             const res = await api.get(
                 `/api/restaurant/subcategories/${selectedSubCategoryForBranch.id}/branches-availability`
             );
-
-            // المسار الدقيق بناءً على هيكل الـ JSON المرفق
             return res.data?.data?.data?.branches || res.data?.data?.branches || [];
         },
         enabled: branchControlOpen && !!selectedSubCategoryForBranch?.id,
     });
-    // تبديل حالة توفر القسم الفرعي في فرع معين
-    // 💡 مفترض إن الـ payload شكله { isAvailable: boolean } - عدّليه لو الـ API عندك بيستنى اسم مختلف
+
     const handleBranchAvailabilityToggle = async (branchId, currentIsAvailable) => {
         try {
             await api.put(
@@ -60,24 +57,85 @@ export default function SubCategory() {
     };
 
     const columns = [
-        {
+{
             accessorKey: 'image',
             header: t('image'),
             cell: ({ row }) => {
-                const imageUrl = row.original.image;
-                
-                // إذا لم توجد صورة، نعرض علامة شرطة (-)
-                if (!imageUrl) {
-                    return <span className="text-gray-400 text-sm flex justify-center">-</span>;
-                }
+                const item = row.original;
+                const imageUrl = item.image;
+                const fileInputRef = React.useRef(null);
+                const [uploading, setUploading] = useState(false);
 
-                // في حالة وجود صورة، نقوم برسم عنصر img
+                const handleImageChange = (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+
+                    // تحويل الصورة إلى Base64
+                    const reader = new FileReader();
+                    reader.readAsDataURL(file);
+                    
+                    reader.onload = async () => {
+                        const base64String = reader.result;
+
+                        try {
+                            setUploading(true);
+                            
+                            // إرسال الـ Base64 كـ JSON باستخدام api.put المباشر
+                            // (تأكد من تعديل الـ URL حسب الصفحة سواء Subcategories أو Foods)
+                            const endpoint = window.location.pathname.includes('sub-categories')
+                                ? `/api/restaurant/subcategories/${item.id}`
+                                : `/api/restaurant/food/${item.id}`;
+
+                            await api.put(endpoint, {
+                                image: base64String
+                            });
+                            
+                            toast.success(t('statusUpdatedSuccessfully') || 'تم تحديث الصورة بنجاح');
+                            refetch();
+                        } catch (error) {
+                            console.error("Error updating image:", error);
+                            toast.error(t('failedToUpdateStatus') || 'فشل تحديث الصورة');
+                        } finally {
+                            setUploading(false);
+                        }
+                    };
+
+                    reader.onerror = (error) => {
+                        console.error("Error reading file:", error);
+                        toast.error('فشل قراءة الملف');
+                    };
+                };
+
                 return (
-                    <div className="flex justify-center items-center">
-                        <img
-                            src={imageUrl}
-                            alt={row.original.name || "subcategory image"}
-                            className="w-12 h-12 object-cover rounded-md border border-slate-200 shadow-sm"
+                    <div className="relative group w-12 h-12 rounded-md overflow-hidden bg-gray-100 border shrink-0">
+                        {imageUrl ? (
+                            <img src={imageUrl} alt={item.name} className="w-full h-full object-cover" />
+                        ) : (
+                            <div className="flex items-center justify-center w-full h-full text-xs text-gray-400">
+                                {t('noImg')}
+                            </div>
+                        )}
+
+                        {/* زر الـ (+) يظهر عند المرور بالماوس */}
+                        <div 
+                            onClick={() => fileInputRef.current?.click()}
+                            className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer text-white"
+                            title={t('updateImage') || 'تعديل الصورة'}
+                        >
+                            {uploading ? (
+                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                            ) : (
+                                <Plus className="w-5 h-5 font-bold" />
+                            )}
+                        </div>
+
+                        {/* إدخال ملف مخفي */}
+                        <input 
+                            type="file" 
+                            ref={fileInputRef} 
+                            onChange={handleImageChange} 
+                            accept="image/*" 
+                            className="hidden" 
                         />
                     </div>
                 );
@@ -108,7 +166,7 @@ export default function SubCategory() {
             }
         },
         { accessorKey: 'order_level', header: t('orderLevelColumn') },
-        { accessorKey: 'status', header: t('status') }, // 💡 إضافة عمود الحالة هنا
+        { accessorKey: 'status', header: t('status') },
         {
             id: 'branchControl',
             header: t('branchControl') || 'فروع القسم الفرعي',
@@ -138,7 +196,7 @@ export default function SubCategory() {
                 isLoading={isLoading}
                 queryKey="subcategories"
                 deleteApiUrl="/api/restaurant/subcategories"
-                editApiUrl="/api/restaurant/subcategories" // 💡 مطلوب لتفعيل السويتش التلقائي لتحديث الحالة
+                editApiUrl="/api/restaurant/subcategories"
                 onAdd={() => navigate("/sub-categories/add")}
                 onEdit={(city) => navigate(`/sub-categories/edit/${city.id}`)}
             />

@@ -114,6 +114,8 @@ import Videos from "./Pages/Videos/Videos";
 import VideoDetails from "./Pages/Videos/VideoDetails";
 import PushNotification from "./Pages/PushNotification/PushNotification";
 import PushNotificationAdd from "./Pages/PushNotification/PushNotificationAdd";
+import OrderSetting from "./Pages/OrderSetting/OrderSetting";
+import OrderSettingAdd from "./Pages/OrderSetting/OrderSettingAdd";
 const router = createBrowserRouter([
   {
     path: "/login",
@@ -727,7 +729,7 @@ const router = createBrowserRouter([
         path: "food-report",
         element: <FoodReportPage />
       },
-            {
+      {
         path: "videos",
         element: <Videos />
       },
@@ -746,6 +748,14 @@ const router = createBrowserRouter([
       {
         path: "push-notification/edit/:id",
         element: <PushNotificationAdd />
+      },
+            {
+        path: "order-setting",
+        element: <OrderSetting/>,
+      },
+      {
+        path: "order-setting/edit/:id",
+        element: <OrderSettingAdd />,
       },
 
 

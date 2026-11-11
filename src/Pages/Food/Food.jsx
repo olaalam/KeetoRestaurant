@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import GenericDataTable from '@/components/GenericDataTable';
 import { useQuery } from '@tanstack/react-query';
@@ -6,7 +6,7 @@ import api from '@/api/axios';
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { ListTree, PlusCircle, CheckCircle2, Pencil, Store, Filter, X } from "lucide-react";
+import { ListTree, PlusCircle, CheckCircle2, Pencil, Store, Filter, X, Plus, Download, Upload, Loader2 } from "lucide-react";
 import { usePost } from '@/hooks/usePost';
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
@@ -52,13 +52,23 @@ const Foods = () => {
     const [branchControlOpen, setBranchControlOpen] = useState(false);
     const [selectedFoodForBranch, setSelectedFoodForBranch] = useState(null);
 
-const savedSize = localStorage.getItem("tablePageSize");
-  const initialPageSize = savedSize ? Number(savedSize) : 15;
+    // حالات الاستيراد / القالب
+    const importInputRef = useRef(null);
+    const [importFile, setImportFile] = useState(null);
+    const [importDialogOpen, setImportDialogOpen] = useState(false);
+    const [validationResult, setValidationResult] = useState(null);
+    const [isDownloadingTemplate, setIsDownloadingTemplate] = useState(false);
+    const [isValidating, setIsValidating] = useState(false);
+    const [isCommitting, setIsCommitting] = useState(false);
 
-  const [pagination, setPagination] = useState({
-    pageIndex: location.state?.pageIndex ?? location.state?.fromPage ?? 0,
-    pageSize: initialPageSize
-  });
+    const savedSize = localStorage.getItem("tablePageSize");
+    const initialPageSize = savedSize ? Number(savedSize) : 15;
+
+    const [pagination, setPagination] = useState({
+        pageIndex: location.state?.pageIndex ?? location.state?.fromPage ?? 0,
+        pageSize: initialPageSize
+    });
+
     const getActualLanguage = (i18n) => {
         try {
             const storedLangData = localStorage.getItem('keeto-language');
@@ -117,7 +127,6 @@ const savedSize = localStorage.getItem("tablePageSize");
         return subcategoriesList.filter(sub => String(sub.categoryId) === String(selectedCategory));
     }, [subcategoriesList, selectedCategory]);
 
-
     // 💡 الأقسام الفرعية المفلترة حسب نص البحث
     const filteredSubCategories = useMemo(() => {
         if (!subCategorySearch.trim()) return availableSubCategories;
@@ -126,7 +135,6 @@ const savedSize = localStorage.getItem("tablePageSize");
             return name.includes(subCategorySearch.toLowerCase());
         });
     }, [availableSubCategories, subCategorySearch, currentLang]);
-
 
     const handleClearFilter = () => {
         setSelectedCategory('all');
@@ -180,16 +188,111 @@ const savedSize = localStorage.getItem("tablePageSize");
         }
     };
 
+    // ===== تحميل القالب =====
+    const handleDownloadTemplate = async () => {
+        try {
+            setIsDownloadingTemplate(true);
+            const res = await api.get('/api/restaurant/import/template', {
+                responseType: 'blob',
+            });
+
+            // محاولة قراءة اسم الملف من الـ header
+            const disposition = res.headers?.['content-disposition'] || '';
+            const match = disposition.match(/filename="?([^"]+)"?/);
+            const fileName = match?.[1] || 'import-template.xlsx';
+
+            const url = window.URL.createObjectURL(new Blob([res.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = fileName;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error('Error downloading template:', error);
+            toast.error(t('failedToDownloadTemplate') || 'فشل تحميل القالب');
+        } finally {
+            setIsDownloadingTemplate(false);
+        }
+    };
+
+    // ===== اختيار الملف + فحصه (validate) =====
+    const handleImportFileSelected = async (e) => {
+        const file = e.target.files?.[0];
+        e.target.value = ''; // عشان نقدر نختار نفس الملف تاني
+        if (!file) return;
+
+        try {
+            setIsValidating(true);
+            setImportFile(file);
+            setValidationResult(null);
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            const res = await api.post('/api/restaurant/import/validate', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+            });
+
+            setValidationResult(res.data?.data ?? res.data);
+            setImportDialogOpen(true);
+        } catch (error) {
+            console.error('Error validating import file:', error);
+            toast.error(
+                error?.response?.data?.message || t('failedToValidateFile') || 'فشل فحص الملف'
+            );
+            setImportFile(null);
+        } finally {
+            setIsValidating(false);
+        }
+    };
+
+    // ===== تأكيد الاستيراد (commit) =====
+    const handleCommitImport = async () => {
+        if (!importFile) return;
+        try {
+            setIsCommitting(true);
+            const formData = new FormData();
+            formData.append('file', importFile);
+
+            await api.post('/api/restaurant/import/commit', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+            });
+
+            toast.success(t('importSuccess') || 'تم استيراد البيانات بنجاح');
+            setImportDialogOpen(false);
+            setImportFile(null);
+            setValidationResult(null);
+            refetch();
+        } catch (error) {
+            console.error('Error committing import:', error);
+            toast.error(
+                error?.response?.data?.message || t('importFailed') || 'فشل استيراد البيانات'
+            );
+        } finally {
+            setIsCommitting(false);
+        }
+    };
+
+    const closeImportDialog = () => {
+        setImportDialogOpen(false);
+        setImportFile(null);
+        setValidationResult(null);
+    };
+
+    // أخطاء الفحص (عدّل الأسماء حسب رد الـ API الفعلي)
+    const importErrors = validationResult?.errors || [];
+    const canCommit = !!validationResult && importErrors.length === 0;
+
     useEffect(() => {
         if (location.state?.highlightedId && foods.length) {
-            // فرز البيانات بنفس منطق GenericDataTable تماماً
             const sortedFoods = [...foods].sort((a, b) => {
                 const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
                 const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
                 return bTime - aTime;
             });
 
-            // البحث في المصفوفة المُرتبة وليست الخام
             const index = sortedFoods.findIndex(item => String(item.id) === String(location.state.highlightedId));
 
             if (index !== -1) {
@@ -256,14 +359,82 @@ const savedSize = localStorage.getItem("tablePageSize");
             accessorKey: 'image',
             header: t('image'),
             cell: ({ row }) => {
-                const imageUrl = row.original.image;
+                const item = row.original;
+                const imageUrl = item.image;
+                const fileInputRef = React.useRef(null);
+                const [uploading, setUploading] = useState(false);
+
+                const handleImageChange = (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+
+                    // تحويل الصورة إلى Base64
+                    const reader = new FileReader();
+                    reader.readAsDataURL(file);
+
+                    reader.onload = async () => {
+                        const base64String = reader.result;
+
+                        try {
+                            setUploading(true);
+
+                            // إرسال الـ Base64 كـ JSON باستخدام api.put المباشر
+                            // (تأكد من تعديل الـ URL حسب الصفحة سواء Subcategories أو Foods)
+                            const endpoint = window.location.pathname.includes('sub-categories')
+                                ? `/api/restaurant/subcategories/${item.id}`
+                                : `/api/restaurant/food/${item.id}`;
+
+                            await api.put(endpoint, {
+                                image: base64String
+                            });
+
+                            toast.success(t('statusUpdatedSuccessfully') || 'تم تحديث الصورة بنجاح');
+                            refetch();
+                        } catch (error) {
+                            console.error("Error updating image:", error);
+                            toast.error(t('failedToUpdateStatus') || 'فشل تحديث الصورة');
+                        } finally {
+                            setUploading(false);
+                        }
+                    };
+
+                    reader.onerror = (error) => {
+                        console.error("Error reading file:", error);
+                        toast.error('فشل قراءة الملف');
+                    };
+                };
+
                 return (
-                    <div className="w-12 h-12 rounded-md overflow-hidden bg-gray-100">
+                    <div className="relative group w-12 h-12 rounded-md overflow-hidden bg-gray-100 border shrink-0">
                         {imageUrl ? (
-                            <img src={imageUrl} alt={row.original.name} className="w-full h-full object-cover" />
+                            <img src={imageUrl} alt={item.name} className="w-full h-full object-cover" />
                         ) : (
-                            <div className="flex items-center justify-center w-full h-full text-xs text-gray-400">{t('noImg')}</div>
+                            <div className="flex items-center justify-center w-full h-full text-xs text-gray-400">
+                                {t('noImg')}
+                            </div>
                         )}
+
+                        {/* زر الـ (+) يظهر عند المرور بالماوس */}
+                        <div
+                            onClick={() => fileInputRef.current?.click()}
+                            className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer text-white"
+                            title={t('updateImage') || 'تعديل الصورة'}
+                        >
+                            {uploading ? (
+                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                            ) : (
+                                <Plus className="w-5 h-5 font-bold" />
+                            )}
+                        </div>
+
+                        {/* إدخال ملف مخفي */}
+                        <input
+                            type="file"
+                            ref={fileInputRef}
+                            onChange={handleImageChange}
+                            accept="image/*"
+                            className="hidden"
+                        />
                     </div>
                 );
             }
@@ -396,7 +567,6 @@ const savedSize = localStorage.getItem("tablePageSize");
 
     return (
         <div className="p-6">
-            {/* 💡 شريط الفلترة العلوية */}
             <div className="mb-4 flex flex-wrap items-center justify-between gap-4 bg-white p-4 rounded-xl border shadow-sm">
                 <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
                     <div className="flex items-center gap-2 shrink-0">
@@ -406,8 +576,6 @@ const savedSize = localStorage.getItem("tablePageSize");
                         </span>
                     </div>
 
-
-                    {/* فلتر الساب كاتيجوري الفرعي */}
                     <div className="w-full sm:w-56">
                         <Select value={selectedSubCategory} onValueChange={setSelectedSubCategory}>
                             <SelectTrigger className="w-full">
@@ -436,17 +604,57 @@ const savedSize = localStorage.getItem("tablePageSize");
                     </div>
                 </div>
 
-                {(selectedSubCategory !== 'all') && (
+                <div className="flex flex-wrap items-center gap-2">
+                    {(selectedSubCategory !== 'all') && (
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={handleClearFilter}
+                            className="text-xs text-red-500 hover:text-red-700 hover:bg-red-50 flex items-center gap-1"
+                        >
+                            <X className="h-3.5 w-3.5" />
+                            {t('clearFilter') || 'إلغاء الفلاتر'}
+                        </Button>
+                    )}
+
+                    {/* أزرار القالب والاستيراد */}
                     <Button
-                        variant="ghost"
+                        variant="outline"
                         size="sm"
-                        onClick={handleClearFilter}
-                        className="text-xs text-red-500 hover:text-red-700 hover:bg-red-50 flex items-center gap-1"
+                        onClick={handleDownloadTemplate}
+                        disabled={isDownloadingTemplate}
+                        className="flex items-center gap-2"
                     >
-                        <X className="h-3.5 w-3.5" />
-                        {t('clearFilter') || 'إلغاء الفلاتر'}
+                        {isDownloadingTemplate ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                            <Download className="h-4 w-4" />
+                        )}
+                        {t('downloadTemplate') || 'تحميل القالب'}
                     </Button>
-                )}
+
+                    <Button
+                        size="sm"
+                        onClick={() => importInputRef.current?.click()}
+                        disabled={isValidating}
+                        className="flex items-center gap-2"
+                    >
+                        {isValidating ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                            <Upload className="h-4 w-4" />
+                        )}
+                        {t('importFile') || 'استيراد ملف'}
+                    </Button>
+
+                    <input
+                        ref={importInputRef}
+                        type="file"
+                        accept=".xlsx,.xls,.csv"
+                        className="hidden"
+                        onChange={handleImportFileSelected}
+                    />
+                </div>
             </div>
 
             <GenericDataTable
@@ -487,50 +695,6 @@ const savedSize = localStorage.getItem("tablePageSize");
                 pagination={pagination}
                 setPagination={setPagination}
             />
-
-            {/* Quick Edit Price Dialog */}
-            <Dialog open={priceDialogOpen} onOpenChange={setPriceDialogOpen}>
-                <DialogContent className="max-w-sm">
-                    <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2">
-                            <Pencil className="h-5 w-5 text-primary" />
-                            {t('editPrice') || 'تعديل السعر'}
-                        </DialogTitle>
-                        <DialogDescription>
-                            {t('updatePriceFor') || 'تعديل سعر المنتج:'} {' '}
-                            <span className="font-bold text-slate-900">
-                                {(i18n?.language === 'ar' ? foodToUpdatePrice?.nameAr : foodToUpdatePrice?.name) || foodToUpdatePrice?.name}
-                            </span>
-                        </DialogDescription>
-                    </DialogHeader>
-
-                    <div className="space-y-2 my-4">
-                        <Label htmlFor="quick-price">{t('price') || 'السعر'} (EGP)</Label>
-                        <Input
-                            id="quick-price"
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            value={newPrice}
-                            onChange={(e) => setNewPrice(e.target.value)}
-                            placeholder="0.00"
-                            className="text-left font-medium"
-                        />
-                    </div>
-
-                    <div className="flex justify-end gap-3 border-t pt-4">
-                        <Button variant="outline" onClick={() => setPriceDialogOpen(false)}>
-                            {t('cancel')}
-                        </Button>
-                        <Button
-                            onClick={handleSavePrice}
-                            disabled={!newPrice}
-                        >
-                            {t('save') || 'حفظ'}
-                        </Button>
-                    </div>
-                </DialogContent>
-            </Dialog>
 
             {/* Branch Product Control Dialog */}
             <Dialog open={branchControlOpen} onOpenChange={setBranchControlOpen}>
@@ -678,6 +842,56 @@ const savedSize = localStorage.getItem("tablePageSize");
                             disabled={assignMutation.isPending}
                         >
                             {assignMutation.isPending ? t('savingSelection') : t('saveSelection')}
+                        </Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            {/* Import Validation Dialog */}
+            <Dialog open={importDialogOpen} onOpenChange={(open) => !open && closeImportDialog()}>
+                <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle className="text-xl font-bold">
+                            {t('importPreview') || 'نتيجة فحص الملف'}
+                        </DialogTitle>
+                        <DialogDescription>{importFile?.name}</DialogDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-3 mt-2">
+                        {importErrors.length > 0 ? (
+                            <>
+                                <p className="text-sm font-semibold text-red-600">
+                                    {t('importErrorsFound') || 'يوجد أخطاء لازم تتصلح قبل الاستيراد:'}
+                                </p>
+                                <ul className="space-y-2">
+                                    {importErrors.map((err, i) => (
+                                        <li key={i} className="text-sm p-2 rounded-md border border-red-200 bg-red-50 text-red-700">
+                                            {typeof err === 'string' ? err : JSON.stringify(err)}
+                                        </li>
+                                    ))}
+                                </ul>
+                            </>
+                        ) : (
+                            <p className="text-sm text-green-700 bg-green-50 border border-green-200 rounded-md p-3">
+                                {t('importValid') || 'الملف سليم وجاهز للاستيراد'}
+                            </p>
+                        )}
+
+                        {/* ملخص الفحص لو الـ API بيرجعه */}
+                        {validationResult?.summary && (
+                            <pre className="text-xs bg-slate-50 border rounded-md p-3 overflow-x-auto">
+                                {JSON.stringify(validationResult.summary, null, 2)}
+                            </pre>
+                        )}
+                    </div>
+
+                    <div className="flex justify-end gap-2 mt-4">
+                        <Button variant="outline" onClick={closeImportDialog} disabled={isCommitting}>
+                            {t('cancel') || 'إلغاء'}
+                        </Button>
+                        <Button onClick={handleCommitImport} disabled={!canCommit || isCommitting}>
+                            {isCommitting && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                            {t('confirmImport') || 'تأكيد الاستيراد'}
                         </Button>
                     </div>
                 </DialogContent>
