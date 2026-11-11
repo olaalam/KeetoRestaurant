@@ -344,6 +344,50 @@ const handleExportExcel = async () => {
         </span>
       ),
     },
+{
+      accessorKey: "cancelReason",
+      header: t("cancelReason") || "Cancel Reason",
+      cell: ({ row }) => {
+        const order = row.original;
+        if (order.status !== "cancelled" && !order.cancelReasonType && !order.cancelReason) {
+          return <span className="text-gray-400">-</span>;
+        }
+
+        const type = order.cancelReasonType;
+        const typeLabel = type ? (t(type) || type) : "";
+
+        let reasonText = "";
+        if (order.cancelReason) {
+          if (typeof order.cancelReason === "object") {
+            reasonText = language === "ar"
+              ? (order.cancelReason.nameAr || order.cancelReason.name || "")
+              : (order.cancelReason.name || order.cancelReason.nameAr || "");
+          } else {
+            reasonText = order.cancelReason;
+          }
+        }
+        if (order.customReason) {
+          reasonText = reasonText ? `${reasonText} - ${order.customReason}` : order.customReason;
+        }
+
+        return (
+          <div className="flex flex-col gap-1 py-1">
+            {type && (
+              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium w-fit ${
+                type === "user"
+                  ? "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300"
+                  : "bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-300"
+              }`}>
+                {typeLabel}
+              </span>
+            )}
+            <span className="text-xs text-gray-600 dark:text-gray-400 max-w-[220px] truncate" title={reasonText}>
+              {reasonText || "-"}
+            </span>
+          </div>
+        );
+      },
+    },
     {
       accessorKey: "rating",
       header: t("rating"),
