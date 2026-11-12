@@ -10,6 +10,7 @@ import { useTranslation } from "@/hooks/useTranslation";
 export default function Bundles() {
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 15 });
 
   const [dialogState, setDialogState] = useState({
     isOpen: false,
@@ -17,14 +18,27 @@ export default function Bundles() {
     type: null,
   });
 
-  const { data: bundles = [], isLoading } = useQuery({
-    queryKey: ["bundles"],
+  const { data, isLoading } = useQuery({
+    queryKey: ["bundles", pagination.pageIndex, pagination.pageSize],
     queryFn: async () => {
-      const res = await api.get("/api/restaurant/bundles");
-      const result = res.data?.data?.data ?? res.data?.data ?? [];
-      return Array.isArray(result) ? result : [];
+      const res = await api.get("/api/restaurant/bundles", {
+        params: {
+          page: pagination.pageIndex + 1,
+          limit: pagination.pageSize,
+        },
+      });
+      return res.data;
     },
   });
+
+  const responseData = data?.data;
+  const bundles = Array.isArray(responseData?.data)
+    ? responseData.data
+    : Array.isArray(responseData)
+      ? responseData
+      : [];
+  const totalPages =
+    responseData?.pagination?.totalPages ?? data?.pagination?.totalPages ?? 1;
 
   const openItemsDialog = (bundleId, type) => {
     setDialogState({ isOpen: true, bundleId, type });
@@ -113,6 +127,9 @@ export default function Bundles() {
         data={bundles}
         isLoading={isLoading}
         queryKey="bundles"
+        pagination={pagination}
+        setPagination={setPagination}
+        pageCount={totalPages}
         deleteApiUrl="/api/restaurant/bundles"
         editApiUrl="/api/restaurant/bundles"
         onAdd={() => navigate("/bundle/add")}

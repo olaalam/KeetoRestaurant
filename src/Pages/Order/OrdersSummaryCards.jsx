@@ -45,6 +45,7 @@ export default function OrdersSummaryCards({ summary, isLoading }) {
         iconClass="bg-blue-100 text-blue-600 dark:bg-blue-950 dark:text-blue-300"
       />
       {canViewTotalAmount && (
+        <>
         <StatCard
           icon={Wallet}
           label={t("totalAmount") || "Total Amount"}
@@ -52,9 +53,7 @@ export default function OrdersSummaryCards({ summary, isLoading }) {
           isLoading={isLoading}
           iconClass="bg-green-100 text-green-600 dark:bg-green-950 dark:text-green-300"
         />
-        
-      )}
-            <StatCard
+                    <StatCard
         icon={ShoppingBag}
         label={t("totalDiscount") || "Total Discount"}
         value={Number(summary?.totalDiscount || 0).toLocaleString()}
@@ -68,6 +67,10 @@ export default function OrdersSummaryCards({ summary, isLoading }) {
         isLoading={isLoading}
         iconClass="bg-purple-100 text-purple-600 dark:bg-purple-950 dark:text-purple-300"
       />
+      </>
+        
+      )}
+
     </div>
   );
 }
