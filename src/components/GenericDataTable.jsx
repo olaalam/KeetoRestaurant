@@ -134,10 +134,18 @@ export default function GenericDataTable({
       );
       if (index !== -1) {
         const targetPageIndex = Math.floor(index / pagination.pageSize);
-        setPagination((prev) => ({ ...prev, pageIndex: targetPageIndex }));
+        setPagination((prev) =>
+          prev.pageIndex === targetPageIndex
+            ? prev
+            : { ...prev, pageIndex: targetPageIndex },
+        );
       }
     } else if (location.state?.pageIndex !== undefined && sortedData.length) {
-      setPagination((prev) => ({ ...prev, pageIndex: location.state.pageIndex }));
+      setPagination((prev) =>
+        prev.pageIndex === location.state.pageIndex
+          ? prev
+          : { ...prev, pageIndex: location.state.pageIndex },
+      );
     }
   }, [activeHighlightedId, sortedData, pagination.pageSize, setPagination, location.state?.pageIndex]);
 

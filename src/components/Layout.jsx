@@ -225,7 +225,11 @@ export default function Layout() {
 
   useEffect(() => {
     if (!canViewNotifications) {
-      setNewOrderPopup({ open: false, count: 0, latestNotification: null });
+      setNewOrderPopup((current) =>
+        current.open || current.count !== 0 || current.latestNotification !== null
+          ? { open: false, count: 0, latestNotification: null }
+          : current,
+      );
       return;
     }
 

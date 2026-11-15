@@ -28,7 +28,7 @@ import { useQuery } from "@tanstack/react-query";
 import api from "@/api/axios";
 import useAuthStore from "@/store/useAuthStore";
 import useDateRangeStore from "../store/Usedaterangestore";
-import { filterModulesByPermissions } from "@/lib/permissions";
+import { filterModulesByPermissions, hasPermission } from "@/lib/permissions";
 
 export function AppSidebar({ side = "left" }) {
   const { open } = useSidebar();
@@ -39,6 +39,7 @@ export function AppSidebar({ side = "left" }) {
   const { user } = useAuthStore((state) => state);
   const restaurantName = user?.restaurantName || "Keeto";
   const branchName = user?.branchName || user?.branch?.name;
+  const canViewOrders = hasPermission(user, "order", "View");
 
   const { startDate, endDate } = useDateRangeStore();
 
@@ -53,7 +54,11 @@ export function AppSidebar({ side = "left" }) {
         const res = await api.get("/api/restaurant/order/numbers", { params });
         return res.data.data.data;
       },
-      refetchInterval: 30000,
+      retry: (failureCount, error) =>
+        error?.response?.status !== 403 && failureCount < 3,
+      refetchInterval: (query) =>
+        query.state.error?.response?.status === 403 ? false : 30000,
+      enabled: canViewOrders,
     },
   );
 
