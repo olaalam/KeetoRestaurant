@@ -6,7 +6,7 @@ import api from '@/api/axios';
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { ListTree, PlusCircle, CheckCircle2, Pencil, Store, Filter, X, Plus, Download, Upload, Loader2 } from "lucide-react";
+import { ListTree, PlusCircle, CheckCircle2, Pencil, Store, Filter, X, Plus, Download, Upload, Loader2, Percent } from "lucide-react";
 import { usePost } from '@/hooks/usePost';
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
@@ -22,6 +22,64 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+
+// ⚠️ عدّلي الـ endpoint ده حسب الـ API الفعلي بتاع الخصم الجماعي (Method: PUT)
+const BULK_DISCOUNT_URL = '/api/restaurant/food/discount';
+
+// قائمة checkboxes مع بحث وتحديد الكل (للمنتجات / الأقسام)
+const CheckList = ({ items, selected, onToggle, onSetAll, getLabel, searchPlaceholder, emptyText, isLoading, loadingText }) => {
+    const [search, setSearch] = useState('');
+
+    const visible = useMemo(() => {
+        const q = search.trim().toLowerCase();
+        if (!q) return items;
+        return items.filter((i) => getLabel(i).toLowerCase().includes(q));
+    }, [items, search, getLabel]);
+
+    const allVisibleSelected =
+        visible.length > 0 && visible.every((i) => selected.includes(String(i.id)));
+
+    return (
+        <div className="rounded-xl border bg-white">
+            <div className="flex items-center gap-2 border-b p-2">
+                <Input
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder={searchPlaceholder}
+                    className="h-8 text-xs"
+                />
+                <button
+                    type="button"
+                    className="shrink-0 text-xs font-semibold text-primary hover:underline"
+                    onClick={() => onSetAll(visible.map((i) => String(i.id)), !allVisibleSelected)}
+                >
+                    {allVisibleSelected ? 'إلغاء الكل' : 'تحديد الكل'}
+                </button>
+            </div>
+            <div className="max-h-52 overflow-y-auto p-1">
+                {isLoading ? (
+                    <p className="py-6 text-center text-sm text-muted-foreground">{loadingText}</p>
+                ) : visible.length === 0 ? (
+                    <p className="py-6 text-center text-sm text-muted-foreground">{emptyText}</p>
+                ) : (
+                    visible.map((item) => {
+                        const id = String(item.id);
+                        const checked = selected.includes(id);
+                        return (
+                            <label
+                                key={id}
+                                className={`flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-slate-50 ${checked ? 'bg-primary/5 font-medium' : ''}`}
+                            >
+                                <Checkbox checked={checked} onCheckedChange={() => onToggle(id)} />
+                                {getLabel(item)}
+                            </label>
+                        );
+                    })
+                )}
+            </div>
+        </div>
+    );
+};
 
 const Foods = () => {
     const navigate = useNavigate();
@@ -60,6 +118,16 @@ const Foods = () => {
     const [isDownloadingTemplate, setIsDownloadingTemplate] = useState(false);
     const [isValidating, setIsValidating] = useState(false);
     const [isCommitting, setIsCommitting] = useState(false);
+
+    // حالات الخصم الجماعي (Bulk Discount)
+    const [bulkOpen, setBulkOpen] = useState(false);
+    const [bulkType, setBulkType] = useState('percentage'); // percentage | amount
+    const [bulkValue, setBulkValue] = useState('');
+    const [bulkScope, setBulkScope] = useState('all'); // all | foods | categories
+    const [bulkFoodIds, setBulkFoodIds] = useState([]);
+    const [bulkCategoryIds, setBulkCategoryIds] = useState([]);
+    const [bulkSubCategoryIds, setBulkSubCategoryIds] = useState([]);
+    const [isApplyingBulk, setIsApplyingBulk] = useState(false);
 
     const savedSize = localStorage.getItem("tablePageSize");
     const initialPageSize = savedSize ? Number(savedSize) : 15;
@@ -279,6 +347,86 @@ const Foods = () => {
         setImportDialogOpen(false);
         setImportFile(null);
         setValidationResult(null);
+    };
+
+    // ===== الخصم الجماعي =====
+    // كل المنتجات (من غير فلتر) عشان نختار منها، بتتجاب بس لما الـ dialog يتفتح على "منتجات محددة"
+    const { data: allFoods = [], isLoading: isLoadingAllFoods } = useQuery({
+        queryKey: ['foods', 'bulk-discount-all'],
+        queryFn: async () => {
+            const res = await api.get('/api/restaurant/food');
+            return res.data.data.data;
+        },
+        enabled: bulkOpen && bulkScope === 'foods',
+    });
+
+    const categoriesList = selectData.categories || [];
+
+    const toggleIn = (setter) => (id) =>
+        setter((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+
+    const setAllIn = (setter) => (ids, select) =>
+        setter((prev) =>
+            select ? Array.from(new Set([...prev, ...ids])) : prev.filter((x) => !ids.includes(x))
+        );
+
+    const getItemLabel = (item) => getLocalizedName(item, currentLang);
+
+    const closeBulkDialog = () => {
+        setBulkOpen(false);
+        setBulkType('percentage');
+        setBulkValue('');
+        setBulkScope('all');
+        setBulkFoodIds([]);
+        setBulkCategoryIds([]);
+        setBulkSubCategoryIds([]);
+    };
+
+    const handleApplyBulkDiscount = async () => {
+        const value = Number(bulkValue);
+
+        if (!bulkValue || isNaN(value) || value <= 0) {
+            toast.error(t('invalidDiscountValue') || 'اكتبي قيمة خصم صحيحة');
+            return;
+        }
+        if (bulkType === 'percentage' && value > 100) {
+            toast.error(t('percentageMax') || 'النسبة المئوية لا يمكن أن تتعدى 100');
+            return;
+        }
+
+        const payload = { discountType: bulkType, discountValue: value };
+
+        if (bulkScope === 'foods') {
+            if (bulkFoodIds.length === 0) {
+                toast.error(t('selectAtLeastOneFood') || 'اختاري منتج واحد على الأقل');
+                return;
+            }
+            payload.foodIds = bulkFoodIds;
+        }
+
+        if (bulkScope === 'categories') {
+            if (bulkCategoryIds.length === 0 && bulkSubCategoryIds.length === 0) {
+                toast.error(t('selectAtLeastOneCategory') || 'اختاري قسم واحد على الأقل');
+                return;
+            }
+            if (bulkCategoryIds.length) payload.categoryIds = bulkCategoryIds;
+            if (bulkSubCategoryIds.length) payload.subCategoryIds = bulkSubCategoryIds;
+        }
+
+        try {
+            setIsApplyingBulk(true);
+            await api.put(BULK_DISCOUNT_URL, payload);
+            toast.success(t('bulkDiscountApplied') || 'تم تطبيق الخصم بنجاح');
+            closeBulkDialog();
+            refetch();
+        } catch (error) {
+            console.error('Error applying bulk discount:', error);
+            toast.error(
+                error?.response?.data?.message || t('bulkDiscountFailed') || 'فشل تطبيق الخصم'
+            );
+        } finally {
+            setIsApplyingBulk(false);
+        }
     };
 
     // أخطاء الفحص (عدّل الأسماء حسب رد الـ API الفعلي)
@@ -617,6 +765,17 @@ const Foods = () => {
                         </Button>
                     )}
 
+                    {/* زر الخصم الجماعي */}
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setBulkOpen(true)}
+                        className="flex items-center gap-2 border-primary text-primary hover:bg-primary/5"
+                    >
+                        <Percent className="h-4 w-4" />
+                        {t('bulkDiscount') || 'خصم جماعي'}
+                    </Button>
+
                     {/* أزرار القالب والاستيراد */}
                     <Button
                         variant="outline"
@@ -842,6 +1001,142 @@ const Foods = () => {
                             disabled={assignMutation.isPending}
                         >
                             {assignMutation.isPending ? t('savingSelection') : t('saveSelection')}
+                        </Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            {/* Bulk Discount Dialog */}
+            <Dialog open={bulkOpen} onOpenChange={(open) => !open && closeBulkDialog()}>
+                <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2 text-xl font-bold">
+                            <Percent className="h-5 w-5 text-primary" />
+                            {t('bulkDiscount') || 'خصم جماعي'}
+                        </DialogTitle>
+                        <DialogDescription>
+                            {t('bulkDiscountDesc') || 'طبّقي خصم على منتجات محددة أو أقسام أو كل المنتجات'}
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-4 mt-2">
+                        {/* نوع وقيمة الخصم */}
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-2">
+                                <Label>{t('discountType') || 'نوع الخصم'}</Label>
+                                <Select value={bulkType} onValueChange={setBulkType}>
+                                    <SelectTrigger>
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="percentage">{t('percentage') || 'نسبة مئوية (%)'}</SelectItem>
+                                        <SelectItem value="amount">{t('fixedAmount') || 'مبلغ ثابت'}</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="space-y-2">
+                                <Label>{t('discountValue') || 'قيمة الخصم'}</Label>
+                                <Input
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    value={bulkValue}
+                                    onChange={(e) => setBulkValue(e.target.value)}
+                                    placeholder={bulkType === 'percentage' ? '10' : '5'}
+                                />
+                            </div>
+                        </div>
+
+                        {/* نطاق التطبيق */}
+                        <div className="space-y-2">
+                            <Label>{t('applyTo') || 'تطبيق الخصم على'}</Label>
+                            <div className="grid grid-cols-3 gap-2">
+                                {[
+                                    { value: 'all', label: t('allFoods') || 'كل المنتجات' },
+                                    { value: 'foods', label: t('specificFoods') || 'منتجات محددة' },
+                                    { value: 'categories', label: t('categoriesScope') || 'أقسام' },
+                                ].map((opt) => (
+                                    <Button
+                                        key={opt.value}
+                                        type="button"
+                                        size="sm"
+                                        variant={bulkScope === opt.value ? 'default' : 'outline'}
+                                        onClick={() => setBulkScope(opt.value)}
+                                    >
+                                        {opt.label}
+                                    </Button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {bulkScope === 'all' && (
+                            <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-md p-3">
+                                {t('bulkAllWarning') || 'سيتم تطبيق الخصم على كل منتجات المطعم.'}
+                            </p>
+                        )}
+
+                        {bulkScope === 'foods' && (
+                            <div className="space-y-2">
+                                <Label>
+                                    {t('foods') || 'المنتجات'} ({bulkFoodIds.length})
+                                </Label>
+                                <CheckList
+                                    items={allFoods}
+                                    selected={bulkFoodIds}
+                                    onToggle={toggleIn(setBulkFoodIds)}
+                                    onSetAll={setAllIn(setBulkFoodIds)}
+                                    getLabel={getItemLabel}
+                                    searchPlaceholder={t('search') || 'بحث...'}
+                                    emptyText={t('noFoodsFound') || 'لا توجد منتجات'}
+                                    isLoading={isLoadingAllFoods}
+                                    loadingText={t('loading') || 'جاري التحميل...'}
+                                />
+                            </div>
+                        )}
+
+                        {bulkScope === 'categories' && (
+                            <>
+                                {categoriesList.length > 0 && (
+                                    <div className="space-y-2">
+                                        <Label>
+                                            {t('categories') || 'الأقسام'} ({bulkCategoryIds.length})
+                                        </Label>
+                                        <CheckList
+                                            items={categoriesList}
+                                            selected={bulkCategoryIds}
+                                            onToggle={toggleIn(setBulkCategoryIds)}
+                                            onSetAll={setAllIn(setBulkCategoryIds)}
+                                            getLabel={getItemLabel}
+                                            searchPlaceholder={t('search') || 'بحث...'}
+                                            emptyText={t('noCategoriesFound') || 'لا توجد أقسام'}
+                                        />
+                                    </div>
+                                )}
+                                <div className="space-y-2">
+                                    <Label>
+                                        {t('subcategories') || 'الأقسام الفرعية'} ({bulkSubCategoryIds.length})
+                                    </Label>
+                                    <CheckList
+                                        items={subcategoriesList}
+                                        selected={bulkSubCategoryIds}
+                                        onToggle={toggleIn(setBulkSubCategoryIds)}
+                                        onSetAll={setAllIn(setBulkSubCategoryIds)}
+                                        getLabel={getItemLabel}
+                                        searchPlaceholder={t('search') || 'بحث...'}
+                                        emptyText={t('noCategoriesFound') || 'لا توجد أقسام'}
+                                    />
+                                </div>
+                            </>
+                        )}
+                    </div>
+
+                    <div className="flex justify-end gap-2 border-t pt-4 mt-4">
+                        <Button variant="outline" onClick={closeBulkDialog} disabled={isApplyingBulk}>
+                            {t('cancel') || 'إلغاء'}
+                        </Button>
+                        <Button onClick={handleApplyBulkDiscount} disabled={isApplyingBulk}>
+                            {isApplyingBulk && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                            {t('applyDiscount') || 'تطبيق الخصم'}
                         </Button>
                     </div>
                 </DialogContent>
