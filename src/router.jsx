@@ -116,6 +116,8 @@ import PushNotification from "./Pages/PushNotification/PushNotification";
 import PushNotificationAdd from "./Pages/PushNotification/PushNotificationAdd";
 import OrderSetting from "./Pages/OrderSetting/OrderSetting";
 import OrderSettingAdd from "./Pages/OrderSetting/OrderSettingAdd";
+import WeightRequest from "./Pages/WeightRequest/WeightRequest";
+import WeightRequestAdd from "./Pages/WeightRequest/WeightRequestAdd";
 const router = createBrowserRouter([
   {
     path: "/login",
@@ -749,13 +751,21 @@ const router = createBrowserRouter([
         path: "push-notification/edit/:id",
         element: <PushNotificationAdd />
       },
-            {
+      {
         path: "order-setting",
-        element: <OrderSetting/>,
+        element: <OrderSetting />,
       },
       {
         path: "order-setting/edit/:id",
         element: <OrderSettingAdd />,
+      },
+      {
+        path: "weight-requests",
+        element: <WeightRequest />,
+      },
+      {
+        path: "weight-requests/edit/:id",
+        element: <WeightRequestAdd />,
       },
 
 

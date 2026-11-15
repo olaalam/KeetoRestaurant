@@ -50,6 +50,9 @@ const SettingPageAdd = () => {
         maxDeliveryTime: 45,
         minTakeAwayTime: 10,
         maxTakeAwayTime: 30,
+        weightMaxIncreasePercent: 10,
+        weightRestaurantTimeoutMin: 10,
+        weightCustomerTimeoutMin: 15,
         resetDailyOrderNumberTime: "00:00",
         isAlwaysOpen: false,
         isSameTimeEveryDay: false,
@@ -118,6 +121,9 @@ const SettingPageAdd = () => {
             maxDeliveryTime: rawData.settings?.maxDeliveryTime ?? 45,
             minTakeAwayTime: rawData.settings?.minTakeAwayTime ?? 10,
             maxTakeAwayTime: rawData.settings?.maxTakeAwayTime ?? 30,
+            weightMaxIncreasePercent: rawData.settings?.weightMaxIncreasePercent ?? 10,
+            weightRestaurantTimeoutMin: rawData.settings?.weightRestaurantTimeoutMin ?? 10,
+            weightCustomerTimeoutMin: rawData.settings?.weightCustomerTimeoutMin ?? 15,
             resetDailyOrderNumberTime: rawData.settings?.resetDailyOrderNumberTime ? rawData.settings.resetDailyOrderNumberTime.substring(0, 5) : "00:00",
             isAlwaysOpen: rawData.settings?.isAlwaysOpen ?? false,
             isSameTimeEveryDay: rawData.settings?.isSameTimeEveryDay ?? false,
@@ -167,6 +173,9 @@ const SettingPageAdd = () => {
                 maxDeliveryTime: Number(data.maxDeliveryTime) || 45,
                 minTakeAwayTime: Number(data.minTakeAwayTime) || 10,
                 maxTakeAwayTime: Number(data.maxTakeAwayTime) || 30,
+                weightMaxIncreasePercent: Number(data.weightMaxIncreasePercent) || 10,
+                weightRestaurantTimeoutMin: Number(data.weightRestaurantTimeoutMin) || 10,
+                weightCustomerTimeoutMin: Number(data.weightCustomerTimeoutMin) || 15,
                 resetDailyOrderNumberTime: data.resetDailyOrderNumberTime || "00:00",
                 isAlwaysOpen: data.isAlwaysOpen ?? false,
                 isSameTimeEveryDay: data.isSameTimeEveryDay ?? false,
@@ -342,6 +351,21 @@ const SettingPageAdd = () => {
                                 <div className="space-y-2">
                                     <Label className="text-gray-700 font-medium">{t('maxTakeAwayTimeLabel')}</Label>
                                     <Input type="number" {...register("maxTakeAwayTime", { valueAsNumber: true })} />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label className="text-gray-700 font-medium">{t('weightMaxIncreasePercentLabel', { defaultValue: 'Weight Max Increase %' })}</Label>
+                                    <Input type="number" {...register("weightMaxIncreasePercent", { valueAsNumber: true })} />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label className="text-gray-700 font-medium">{t('weightRestaurantTimeoutMinLabel', { defaultValue: 'Restaurant Timeout (min)' })}</Label>
+                                    <Input type="number" {...register("weightRestaurantTimeoutMin", { valueAsNumber: true })} />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label className="text-gray-700 font-medium">{t('weightCustomerTimeoutMinLabel', { defaultValue: 'Customer Timeout (min)' })}</Label>
+                                    <Input type="number" {...register("weightCustomerTimeoutMin", { valueAsNumber: true })} />
                                 </div>
                             </div>
                         </div>

@@ -68,6 +68,7 @@ const URL_PERMISSION_KEYS = {
   "/image": "image",
   "/order": "order",
   "/orders": "order",
+  "/push-notification": "notification",
   "/redeem-points": "pointsOrders",
   "/expense-categories": "expenseCategory",
   "/expense": "expense",

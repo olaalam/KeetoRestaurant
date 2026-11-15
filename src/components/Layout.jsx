@@ -41,6 +41,7 @@ export default function Layout() {
   const { setLogout, user } = useAuthStore((state) => state);
   const { t, isRTL } = useTranslation();
   const { theme, setTheme } = useThemeStore();
+  const canViewNotifications = hasPermission(user, "notification", "View");
 
   // ---- Restaurant / Branch Online / Offline Status ----
   const { data: settingsRes, refetch: refetchSettings } = useGet(
@@ -206,7 +207,8 @@ export default function Layout() {
       const { data } = await api.get('/api/restaurant/notifications');
       return data;
     },
-    refetchInterval: 30000,
+    enabled: canViewNotifications,
+    refetchInterval: canViewNotifications ? 30000 : false,
     refetchIntervalInBackground: true,
   });
 
@@ -222,6 +224,11 @@ export default function Layout() {
   });
 
   useEffect(() => {
+    if (!canViewNotifications) {
+      setNewOrderPopup({ open: false, count: 0, latestNotification: null });
+      return;
+    }
+
     if (isLoadingNotifications || !notifications || notifications.length === 0) return;
 
     const newestNotification = notifications.reduce((latest, current) => {
@@ -240,7 +247,7 @@ export default function Layout() {
       playNotificationSound(newestNotification);
       localStorage.setItem("lastSeenNotifId", newestId);
     }
-  }, [notifications, isLoadingNotifications, totalItems]);
+  }, [canViewNotifications, notifications, isLoadingNotifications, totalItems]);
 
   const { mutate: markAllAsRead, isPending: isMarkingAll } = useUpdate(
     '/api/restaurant/notifications/read-all',
@@ -367,7 +374,7 @@ export default function Layout() {
       <TooltipProvider delayDuration={0}>
         <SidebarProvider dir={isRTL ? "rtl" : "ltr"}>
           {activeModule && <AppSidebar side={isRTL ? "right" : "left"} />}
-          {newOrderPopup.open && (
+          {canViewNotifications && newOrderPopup.open && (
             <div data-notification-popup className="fixed inset-0 pointer-events-auto flex items-center justify-center bg-black/20 backdrop-blur-[2px] px-4 z-[999999999]">
               <div className={`w-full max-w-2xl rounded-2xl border ${isCancelled ? 'border-red-300 dark:border-red-500/50' : 'border-yellow-200 dark:border-yellow-500/30'} bg-white/95 dark:bg-slate-900/95 shadow-[0_20px_60px_rgba(15,23,42,0.18)] dark:shadow-none p-6 sm:p-7`}>
 
@@ -660,8 +667,7 @@ export default function Layout() {
                     </DropdownMenu>
                   </div>
 
-                  {/* Notifications Dropdown (Always visible) */}
-                  <DropdownMenu>
+                  {canViewNotifications && <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <button className="relative shrink-0 rounded-full p-2 hover:bg-accent transition-colors">
                         <Bell className="w-5 h-5 text-slate-600 hover:text-primary transition-colors" />
@@ -753,7 +759,7 @@ export default function Layout() {
                         )}
                       </div>
                     </DropdownMenuContent>
-                  </DropdownMenu>
+                  </DropdownMenu>}
 
                   {/* Profile Dropdown */}
                   <DropdownMenu>

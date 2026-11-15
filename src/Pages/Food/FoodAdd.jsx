@@ -61,6 +61,8 @@ const FoodAdd = () => {
         endTime: raw.endTime || raw.end_time || "",
         search_tags: raw.search_tags || "",
         price: raw.price ? Number(raw.price) : "",
+        sold_by: raw.sold_by || "unit",
+        weight_unit: raw.weight_unit || "kg",
         points: raw.points != null ? Number(raw.points) : "",
         discount_type: raw.discount_type || "none",
         discount_value: raw.discount_value ? Number(raw.discount_value) : "",
@@ -87,6 +89,7 @@ const FoodAdd = () => {
                 optionNameAr: o.optionNameAr || "",
                 optionNameFr: o.optionNameFr || "",
                 additionalPrice: o.additionalPrice ? Number(o.additionalPrice) : 0,
+                priceMode: o.priceMode || "fixed",
                 status: o.status !== undefined ? Boolean(o.status) : true,
               })) || [],
           })) || [],
@@ -108,7 +111,7 @@ const FoodAdd = () => {
   }
 
   const transformBeforeSubmit = (formData) => {
-    const { addonsId: addonsArr, branches, price, discount_type, discount_value, ...rest } = formData;
+    const { addonsId: addonsArr, branches, price, discount_type, discount_value, sold_by, weight_unit, ...rest } = formData;
 
     const hasDiscount = discount_type && discount_type !== "none" && Number(discount_value) > 0;
 
@@ -143,6 +146,8 @@ const FoodAdd = () => {
     return {
       ...rest,
       price,
+      sold_by: sold_by || "unit",
+      ...(sold_by === "weight" ? { weight_unit: weight_unit || "kg" } : {}),
       discount_type: hasDiscount ? discount_type : "none",
       discount_value: hasDiscount ? Number(discount_value) : null,
       ...(formattedBranches ? { branches: formattedBranches } : {}),
@@ -176,13 +181,14 @@ const FoodAdd = () => {
       {({ register, control, formState: { errors, submitCount }, setValue, watch }) => {
         const imagePreview = watch("image");
         const selectedCategoryId = watch("categoryid");
+        const soldByValue = watch("sold_by");
 
         const [activeTab, setActiveTab] = useState("basic");
 
         const fieldsByTab = {
           basic: ["name", "description", "categoryid"],
           details: ["startTime", "endTime"],
-          pricing: ["price"],
+          pricing: ["price", "sold_by"],
           variations: ["variations"],
           addon: ["addonsId"],
         };
@@ -446,6 +452,50 @@ const FoodAdd = () => {
                   )}
                 </div>
 
+                {/* Sold By */}
+                <div className="space-y-2">
+                  <Label>{t("soldBy") || "Sold By"} *</Label>
+                  <Controller
+                    name="sold_by"
+                    control={control}
+                    defaultValue="unit"
+                    render={({ field }) => (
+                      <SearchableSelect
+                        options={[
+                          { value: "unit", label: t("unit") || "By Unit (قطعة)" },
+                          { value: "weight", label: t("weight") || "By Weight (بالوزن)" },
+                        ]}
+                        value={field.value || "unit"}
+                        onChange={field.onChange}
+                        placeholder={t("selectSoldBy") || "Select Sold By"}
+                      />
+                    )}
+                  />
+                </div>
+
+                {/* Weight Unit (Conditional if sold_by === weight) */}
+                {soldByValue === "weight" && (
+                  <div className="space-y-2">
+                    <Label>{t("weightUnit") || "Weight Unit"} *</Label>
+                    <Controller
+                      name="weight_unit"
+                      control={control}
+                      defaultValue="kg"
+                      render={({ field }) => (
+                        <SearchableSelect
+                          options={[
+                            { value: "kg", label: "Kilogram (kg)" },
+                            { value: "gm", label: "Gram (gm)" },
+                          ]}
+                          value={field.value || "kg"}
+                          onChange={field.onChange}
+                          placeholder={t("selectWeightUnit") || "Select Weight Unit"}
+                        />
+                      )}
+                    />
+                  </div>
+                )}
+
                 <div className="space-y-2">
                   <Label>{t("branchesLabel") || "Branches"}</Label>
                   <Controller
@@ -594,7 +644,7 @@ const VariationsSection = ({ control, register, setValue, watch }) => {
               selectionType: "single",
               min: 1,
               max: 1,
-              options: [{ optionName: "", optionNameAr: "", optionNameFr: "", additionalPrice: 0, status: true }],
+              options: [{ optionName: "", optionNameAr: "", optionNameFr: "", additionalPrice: 0, priceMode: "fixed", status: true }],
             })
           }
           className="bg-orange-500 hover:bg-orange-600"
@@ -701,22 +751,23 @@ const OptionsSection = ({ nestIndex, control, register }) => {
       <Label className="text-primary font-bold">{t("optionsPricingLabel")}</Label>
 
       {fields.map((item, k) => (
-        <div key={item.id} className="flex items-end gap-4 bg-slate-50 p-3 rounded-lg">
+        <div key={item.id} className="flex flex-wrap items-end gap-3 bg-slate-50 p-3 rounded-lg">
           <input type="hidden" {...register(`variations.${nestIndex}.options.${k}.id`)} />
 
-          <div className="flex-1 space-y-1">
+          <div className="flex-1 min-w-[140px] space-y-1">
             <Label className="text-xs">{t("optionNameLabel")}</Label>
             <Input {...register(`variations.${nestIndex}.options.${k}.optionName`)} className="bg-white" />
           </div>
-          <div className="flex-1 space-y-1">
+          <div className="flex-1 min-w-[140px] space-y-1">
             <Label className="text-xs">{t("optionNameAr")}</Label>
             <Input {...register(`variations.${nestIndex}.options.${k}.optionNameAr`)} className="bg-white" />
           </div>
-          <div className="flex-1 space-y-1">
+          <div className="flex-1 min-w-[140px] space-y-1">
             <Label className="text-xs">{t("optionNameFr")}</Label>
             <Input {...register(`variations.${nestIndex}.options.${k}.optionNameFr`)} className="bg-white" />
           </div>
-          <div className="w-32 space-y-1">
+
+          <div className="w-28 space-y-1">
             <Label className="text-xs">{t("extraPriceLabel")}</Label>
             <Input
               type="number"
@@ -725,7 +776,28 @@ const OptionsSection = ({ nestIndex, control, register }) => {
             />
           </div>
 
-          {/* مفتاح الحالة (Status Switch) للخيار */}
+          {/* Price Mode Selection */}
+          <div className="w-36 space-y-1">
+            <Label className="text-xs">{t("priceMode") || "Price Mode"}</Label>
+            <Controller
+              name={`variations.${nestIndex}.options.${k}.priceMode`}
+              control={control}
+              defaultValue="fixed"
+              render={({ field }) => (
+                <SearchableSelect
+                  options={[
+                    { value: "fixed", label: t("fixed") || "Fixed (ثابت)" },
+                    { value: "per_weight", label: t("perWeight") || "Per Weight (حسب الوزن)" },
+                  ]}
+                  value={field.value || "fixed"}
+                  onChange={field.onChange}
+                  placeholder={t("selectPriceMode") || "Select Mode"}
+                />
+              )}
+            />
+          </div>
+
+          {/* Status Switch */}
           <div className="flex flex-col items-center justify-center space-y-1 pb-1">
             <Label className="text-xs">{t("statusLabel") || "Status"}</Label>
             <Controller
@@ -754,7 +826,7 @@ const OptionsSection = ({ nestIndex, control, register }) => {
         type="button"
         variant="outline"
         size="sm"
-        onClick={() => append({ optionName: "", optionNameAr: "", optionNameFr: "", additionalPrice: 0, status: true })}
+        onClick={() => append({ optionName: "", optionNameAr: "", optionNameFr: "", additionalPrice: 0, priceMode: "fixed", status: true })}
         className="mt-2 text-primary border-primary"
       >
         {t("addOptionBtn")}

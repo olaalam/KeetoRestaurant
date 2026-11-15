@@ -114,6 +114,21 @@ export default function Setting() {
             cell: ({ row }) => `${row.original.minTakeAwayTime ?? 0} - ${row.original.maxTakeAwayTime ?? 0} min`
         },
         {
+            accessorKey: "weightMaxIncreasePercent",
+            header: t("weightMaxIncreasePercent", { defaultValue: "Weight Max Increase %" }),
+            cell: ({ getValue }) => `${getValue() ?? 10}%`
+        },
+        {
+            accessorKey: "weightRestaurantTimeoutMin",
+            header: t("weightRestaurantTimeoutMin", { defaultValue: "Restaurant Timeout" }),
+            cell: ({ getValue }) => `${getValue() ?? 10} min`
+        },
+        {
+            accessorKey: "weightCustomerTimeoutMin",
+            header: t("weightCustomerTimeoutMin", { defaultValue: "Customer Timeout" }),
+            cell: ({ getValue }) => `${getValue() ?? 15} min`
+        },
+        {
             accessorKey: "resetDailyOrderNumberTime", 
             header: t("resetDailyOrderNumberTime", { defaultValue: "Reset Order Time" }),
             cell: ({ getValue }) => getValue() ? getValue().substring(0, 5) : '-'
