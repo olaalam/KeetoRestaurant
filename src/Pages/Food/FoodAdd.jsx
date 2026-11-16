@@ -63,6 +63,7 @@ const FoodAdd = () => {
         price: raw.price ? Number(raw.price) : "",
         sold_by: raw.sold_by || "unit",
         weight_unit: raw.weight_unit || "kg",
+        allow_custom_weight: Boolean(raw.allow_custom_weight),
         points: raw.points != null ? Number(raw.points) : "",
         discount_type: raw.discount_type || "none",
         discount_value: raw.discount_value ? Number(raw.discount_value) : "",
@@ -82,6 +83,7 @@ const FoodAdd = () => {
             selectionType: v.selectionType || "single",
             min: v.min ? Number(v.min) : 1,
             max: v.max ? Number(v.max) : 1,
+            isWeightGroup: Boolean(v.isWeightGroup),
             options:
               v.options?.map((o) => ({
                 id: o.id,
@@ -90,6 +92,7 @@ const FoodAdd = () => {
                 optionNameFr: o.optionNameFr || "",
                 additionalPrice: o.additionalPrice ? Number(o.additionalPrice) : 0,
                 priceMode: o.priceMode || "fixed",
+                weightValue: o.weightValue || "",
                 status: o.status !== undefined ? Boolean(o.status) : true,
               })) || [],
           })) || [],
@@ -111,7 +114,7 @@ const FoodAdd = () => {
   }
 
   const transformBeforeSubmit = (formData) => {
-    const { addonsId: addonsArr, branches, price, discount_type, discount_value, sold_by, weight_unit, ...rest } = formData;
+    const { addonsId: addonsArr, branches, price, discount_type, discount_value, sold_by, weight_unit, allow_custom_weight, ...rest } = formData;
 
     const hasDiscount = discount_type && discount_type !== "none" && Number(discount_value) > 0;
 
@@ -147,7 +150,12 @@ const FoodAdd = () => {
       ...rest,
       price,
       sold_by: sold_by || "unit",
-      ...(sold_by === "weight" ? { weight_unit: weight_unit || "kg" } : {}),
+      ...(sold_by === "weight"
+        ? {
+            weight_unit: weight_unit || "kg",
+            allow_custom_weight: Boolean(allow_custom_weight),
+          }
+        : { allow_custom_weight: false }),
       discount_type: hasDiscount ? discount_type : "none",
       discount_value: hasDiscount ? Number(discount_value) : null,
       ...(formattedBranches ? { branches: formattedBranches } : {}),
@@ -473,27 +481,44 @@ const FoodAdd = () => {
                   />
                 </div>
 
-                {/* Weight Unit (Conditional if sold_by === weight) */}
+                {/* Weight Unit & Allow Custom Weight (Conditional if sold_by === weight) */}
                 {soldByValue === "weight" && (
-                  <div className="space-y-2">
-                    <Label>{t("weightUnit") || "Weight Unit"} *</Label>
-                    <Controller
-                      name="weight_unit"
-                      control={control}
-                      defaultValue="kg"
-                      render={({ field }) => (
-                        <SearchableSelect
-                          options={[
-                            { value: "kg", label: "Kilogram (kg)" },
-                            { value: "gm", label: "Gram (gm)" },
-                          ]}
-                          value={field.value || "kg"}
-                          onChange={field.onChange}
-                          placeholder={t("selectWeightUnit") || "Select Weight Unit"}
-                        />
-                      )}
-                    />
-                  </div>
+                  <>
+                    <div className="space-y-2">
+                      <Label>{t("weightUnit") || "Weight Unit"} *</Label>
+                      <Controller
+                        name="weight_unit"
+                        control={control}
+                        defaultValue="kg"
+                        render={({ field }) => (
+                          <SearchableSelect
+                            options={[
+                              { value: "kg", label: "Kilogram (kg)" },
+                              { value: "gm", label: "Gram (gm)" },
+                            ]}
+                            value={field.value || "kg"}
+                            onChange={field.onChange}
+                            placeholder={t("selectWeightUnit") || "Select Weight Unit"}
+                          />
+                        )}
+                      />
+                    </div>
+
+                    <div className="space-y-2 flex items-center pt-8 gap-3 col-span-2 bg-slate-50 p-3 rounded-lg border">
+                      <Controller
+                        name="allow_custom_weight"
+                        control={control}
+                        defaultValue={false}
+                        render={({ field }) => (
+                          <Switch checked={!!field.value} onCheckedChange={field.onChange} />
+                        )}
+                      />
+                      <div>
+                        <Label className="font-semibold">{t("allowCustomWeight") || "السماح بوزن مخصص (Allow Custom Weight)"}</Label>
+                        <p className="text-xs text-muted-foreground">السماح للعميل بإدخال وزن مخصص أثناء الطلب</p>
+                      </div>
+                    </div>
+                  </>
                 )}
 
                 <div className="space-y-2">
@@ -644,7 +669,8 @@ const VariationsSection = ({ control, register, setValue, watch }) => {
               selectionType: "single",
               min: 1,
               max: 1,
-              options: [{ optionName: "", optionNameAr: "", optionNameFr: "", additionalPrice: 0, priceMode: "fixed", status: true }],
+              isWeightGroup: false,
+              options: [{ optionName: "", optionNameAr: "", optionNameFr: "", weightValue: "", additionalPrice: 0, priceMode: "fixed", status: true }],
             })
           }
           className="bg-orange-500 hover:bg-orange-600"
@@ -717,6 +743,18 @@ const VariationsSection = ({ control, register, setValue, watch }) => {
                 />
                 <Label>{t("requiredLabel")}</Label>
               </div>
+
+              {/* Is Weight Group Switch */}
+              <div className="flex items-center space-x-2 pt-8">
+                <Controller
+                  name={`variations.${index}.isWeightGroup`}
+                  control={control}
+                  render={({ field }) => (
+                    <Switch checked={!!field.value} onCheckedChange={field.onChange} />
+                  )}
+                />
+                <Label>{t("isWeightGroup") || "مجموعة أوزان (Is Weight Group)"}</Label>
+              </div>
             </div>
 
             {selectionType === "multiple" && (
@@ -765,6 +803,17 @@ const OptionsSection = ({ nestIndex, control, register }) => {
           <div className="flex-1 min-w-[140px] space-y-1">
             <Label className="text-xs">{t("optionNameFr")}</Label>
             <Input {...register(`variations.${nestIndex}.options.${k}.optionNameFr`)} className="bg-white" />
+          </div>
+
+          {/* Weight Value Input */}
+          <div className="w-28 space-y-1">
+            <Label className="text-xs">{t("weightValue") || "الوزن (كجم)"}</Label>
+            <Input
+              type="text"
+              {...register(`variations.${nestIndex}.options.${k}.weightValue`)}
+              placeholder="0.250"
+              className="bg-white"
+            />
           </div>
 
           <div className="w-28 space-y-1">
@@ -826,7 +875,7 @@ const OptionsSection = ({ nestIndex, control, register }) => {
         type="button"
         variant="outline"
         size="sm"
-        onClick={() => append({ optionName: "", optionNameAr: "", optionNameFr: "", additionalPrice: 0, priceMode: "fixed", status: true })}
+        onClick={() => append({ optionName: "", optionNameAr: "", optionNameFr: "", weightValue: "", additionalPrice: 0, priceMode: "fixed", status: true })}
         className="mt-2 text-primary border-primary"
       >
         {t("addOptionBtn")}
