@@ -1,10 +1,106 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '@/api/axios';
 import GenericDataTable from '@/components/GenericDataTable';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { MapPin, Building2 } from "lucide-react";
+import { MapPin, Building2, Pencil, Check, X, Loader2 } from "lucide-react";
 import { useTranslation } from "@/hooks/useTranslation";
+
+// 💡 مكون تعديل رسوم التوصيل مباشرة (Inline Editing)
+function EditableDeliveryFeeCell({ row, t }) {
+    const queryClient = useQueryClient();
+    const [isEditing, setIsEditing] = useState(false);
+    const currentFee = row.original.deliveryFee ?? 0;
+    const [fee, setFee] = useState(currentFee);
+    const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        setFee(row.original.deliveryFee ?? 0);
+    }, [row.original.deliveryFee]);
+
+    const handleSave = async (e) => {
+        if (e) e.stopPropagation();
+        if (fee === '' || isNaN(fee)) return;
+
+        setLoading(true);
+        try {
+            await api.put(`/api/restaurant/restaurant-zone-delivery-fees/${row.original.id}`, {
+                ...row.original,
+                deliveryFee: Number(fee)
+            });
+            await queryClient.invalidateQueries(['DeliveryZone']);
+            setIsEditing(false);
+        } catch (error) {
+            console.error("Error updating delivery fee:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleCancel = (e) => {
+        if (e) e.stopPropagation();
+        setFee(row.original.deliveryFee ?? 0);
+        setIsEditing(false);
+    };
+
+    if (isEditing) {
+        return (
+            <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                <input
+                    type="number"
+                    value={fee}
+                    onChange={(e) => setFee(e.target.value)}
+                    className="w-20 px-2 py-1 text-sm border border-primary/50 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/40 bg-white dark:bg-gray-800 text-foreground"
+                    autoFocus
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter') handleSave(e);
+                        if (e.key === 'Escape') handleCancel(e);
+                    }}
+                />
+                {loading ? (
+                    <Loader2 className="w-4 h-4 animate-spin text-primary shrink-0" />
+                ) : (
+                    <div className="flex items-center gap-1">
+                        <button
+                            type="button"
+                            onClick={handleSave}
+                            className="p-1 text-green-600 hover:bg-green-50 rounded transition-colors"
+                            title={t('save', { defaultValue: 'Save' })}
+                        >
+                            <Check className="w-4 h-4" />
+                        </button>
+                        <button
+                            type="button"
+                            onClick={handleCancel}
+                            className="p-1 text-red-600 hover:bg-red-50 rounded transition-colors"
+                            title={t('cancel', { defaultValue: 'Cancel' })}
+                        >
+                            <X className="w-4 h-4" />
+                        </button>
+                    </div>
+                )}
+            </div>
+        );
+    }
+
+    return (
+        <div className="flex items-center gap-2 group">
+            <span className="font-semibold text-green-600">{currentFee} EGP</span>
+            <button
+                type="button"
+                onClick={(e) => {
+                    e.stopPropagation();
+                    setFee(currentFee);
+                    setIsEditing(true);
+                }}
+                className="p-1 text-gray-400 hover:text-primary hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors"
+                title={t('edit', { defaultValue: 'Edit' })}
+            >
+                <Pencil className="w-3.5 h-3.5" />
+            </button>
+        </div>
+    );
+}
 
 export default function DeliveryZone() {
     const navigate = useNavigate();
@@ -89,7 +185,7 @@ export default function DeliveryZone() {
         }
     }, [location.state, deliveryFees, pagination.pageSize, navigate, location.pathname]);
 
-    // 2. تعريف الأعمدة (شملت عمود الفرع Branch Column)
+    // 2. تعريف الأعمدة (تم ربط عمود deliveryFee بمكون التعديل السريع)
     const columns = [
         {
             id: 'branch',
@@ -133,11 +229,7 @@ export default function DeliveryZone() {
         {
             accessorKey: 'deliveryFee',
             header: t('deliveryFee'),
-            cell: ({ row }) => (
-                <div className="flex items-center gap-1 font-semibold text-green-600">
-                    <span>{row.original.deliveryFee} EGP</span>
-                </div>
-            )
+            cell: ({ row }) => <EditableDeliveryFeeCell row={row} t={t} />
         },
         {
             accessorKey: 'status',

@@ -11,8 +11,6 @@ import Country from "./Pages/Country/Country";
 import CountryAdd from "./Pages/Country/CountryAdd";
 import City from "./Pages/City/City";
 import CityAdd from "./Pages/City/CityAdd";
-import Zone from "./Pages/Zone/Zone";
-import ZoneAdd from "./Pages/Zone/ZoneAdd";
 import CategoryAdd from "./Pages/Category/CategoryAdd";
 import Category from "./Pages/Category/Category";
 import SubCategoryAdd from "./Pages/SubCategory/SubCategoryAdd";
@@ -187,18 +185,6 @@ const router = createBrowserRouter([
       {
         path: "cities/edit/:id",
         element: <CityAdd />,
-      },
-      {
-        path: "zones",
-        element: <Zone />,
-      },
-      {
-        path: "zones/add",
-        element: <ZoneAdd />,
-      },
-      {
-        path: "zones/edit/:id",
-        element: <ZoneAdd />,
       },
       {
         path: "categories",
