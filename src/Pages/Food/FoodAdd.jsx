@@ -452,6 +452,7 @@ const FoodAdd = () => {
                   <Label>{t("basePriceLabel")} *</Label>
                   <Input
                     type="number"
+                    step="any"
                     {...register("price", { required: t("priceRequired"), valueAsNumber: true })}
                     className={errors.price ? "border-destructive" : ""}
                   />
@@ -581,7 +582,7 @@ const FoodAdd = () => {
 
                 <div className="space-y-2">
                   <Label>{t("discountValueLabel")}</Label>
-                  <Input type="number" {...register("discount_value", { valueAsNumber: true })} />
+                  <Input type="number" step="any" {...register("discount_value", { valueAsNumber: true })} />
                 </div>
 
                 <div className="space-y-2">
