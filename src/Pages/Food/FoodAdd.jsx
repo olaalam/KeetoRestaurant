@@ -24,6 +24,26 @@ const toBase64 = (file) =>
 
 const serializeAllergens = (arr) => arr.join(" | ");
 
+const weightVariationFields = new Set([
+  "isWeightGroup",
+  "is_weight_group",
+  "priceMode",
+  "price_mode",
+  "weightValue",
+  "weight_value",
+]);
+
+const omitWeightVariationFields = (value) => {
+  if (Array.isArray(value)) return value.map(omitWeightVariationFields);
+  if (!value || typeof value !== "object") return value;
+
+  return Object.fromEntries(
+    Object.entries(value)
+      .filter(([key]) => !weightVariationFields.has(key))
+      .map(([key, nestedValue]) => [key, omitWeightVariationFields(nestedValue)]),
+  );
+};
+
 const FoodAdd = () => {
   const { id } = useParams();
   const { state } = useLocation();
@@ -117,6 +137,7 @@ const FoodAdd = () => {
     const { addonsId: addonsArr, branches, price, discount_type, discount_value, sold_by, weight_unit, allow_custom_weight, ...rest } = formData;
 
     const hasDiscount = discount_type && discount_type !== "none" && Number(discount_value) > 0;
+    const isWeightBased = sold_by === "weight";
 
     let formattedBranches = undefined;
 
@@ -150,11 +171,14 @@ const FoodAdd = () => {
       ...rest,
       price,
       sold_by: sold_by || "unit",
-      ...(sold_by === "weight"
+      ...(isWeightBased
         ? {
             weight_unit: weight_unit || "kg",
             allow_custom_weight: Boolean(allow_custom_weight),
           }
+        : {}),
+      ...(!isWeightBased && rest.variations != null
+        ? { variations: omitWeightVariationFields(rest.variations) }
         : {}),
       discount_type: hasDiscount ? discount_type : "none",
       discount_value: hasDiscount ? Number(discount_value) : null,
