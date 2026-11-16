@@ -155,7 +155,7 @@ const FoodAdd = () => {
             weight_unit: weight_unit || "kg",
             allow_custom_weight: Boolean(allow_custom_weight),
           }
-        : { allow_custom_weight: false }),
+        : {}),
       discount_type: hasDiscount ? discount_type : "none",
       discount_value: hasDiscount ? Number(discount_value) : null,
       ...(formattedBranches ? { branches: formattedBranches } : {}),
