@@ -17,7 +17,6 @@ import { useTranslation } from "@/hooks/useTranslation";
 export const BASE = "/api/restaurant/weight-requests";
 export const KEY = "weight-requests";
 
-// الألوان بس هنا، والنصوص في weightRequestsI18n.js (status.<key>)
 export const STATUS = {
   awaiting_weighing: { cls: "bg-amber-50 text-amber-600" },
   awaiting_customer_approval: { cls: "bg-blue-50 text-blue-600" },
@@ -26,10 +25,34 @@ export const STATUS = {
   expired: { cls: "bg-slate-100 text-slate-500" },
 };
 
-// عدّل الـ normalizers دي حسب شكل الـ response الفعلي
-export const toArray = (res) =>
-  Array.isArray(res) ? res : res?.data?.items ?? res?.data ?? res?.items ?? [];
-export const toObject = (res) => res?.data ?? res ?? null;
+export const toArray = (res) => {
+  let value = res;
+
+  for (let depth = 0; depth < 6; depth += 1) {
+    if (Array.isArray(value)) return value;
+    if (!value || typeof value !== "object") return [];
+    if (Array.isArray(value.items)) return value.items;
+    if (Array.isArray(value.foods)) return value.foods;
+    if (Array.isArray(value.data)) return value.data;
+
+    value = value.items ?? value.foods ?? value.data;
+  }
+
+  return [];
+};
+
+export const toObject = (res) => {
+  let value = res;
+
+  for (let depth = 0; depth < 6; depth += 1) {
+    if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+    if (!value.data || typeof value.data !== "object" || Array.isArray(value.data)) return value;
+
+    value = value.data;
+  }
+
+  return value;
+};
 
 export const StatusBadge = ({ status }) => {
   const { t } = useTranslation();
@@ -52,13 +75,10 @@ export default function WeightRequest() {
   const location = useLocation();
   const [status, setStatus] = useState("all");
   const [pagination, setPagination] = useState({
-    // الرجوع من صفحة التعديل بيبعت pageIndex (AddPage.handleCancel)
     pageIndex: location.state?.pageIndex ?? 0,
     pageSize: Number(localStorage.getItem("tablePageSize")) || 15,
   });
 
-  // GenericDataTable بيعيد ضبط الصفحة من location.state مع كل تغيير في الداتا،
-  // وده بيبوّظ الـ pagination من السيرفر. فبنقرأ القيمة مرة وننضّف الـ state.
   useEffect(() => {
     if (location.state) navigate(location.pathname, { replace: true, state: null });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -72,10 +92,11 @@ export default function WeightRequest() {
 
   const { data: res, isLoading } = useGet(KEY, BASE, params);
   const rows = toArray(res);
+  const paginationData = res?.data?.data?.pagination ?? res?.pagination;
   const pageCount =
-    res?.pagination?.totalPages ??
+    paginationData?.totalPages ??
     res?.meta?.totalPages ??
-    Math.max(1, Math.ceil((res?.total ?? rows.length) / pagination.pageSize));
+    Math.max(1, Math.ceil((paginationData?.total ?? rows.length) / pagination.pageSize));
 
   const columns = useMemo(
     () => [
@@ -87,14 +108,14 @@ export default function WeightRequest() {
         ),
       },
       {
-        accessorKey: "customerName",
+        accessorKey: "userName",
         header: t("customer"),
-        cell: ({ row }) => row.original.customerName ?? row.original.customer?.name ?? "—",
+        cell: ({ row }) => row.original.userName ?? row.original.customerName ?? row.original.customer?.name ?? "—",
       },
       {
         accessorKey: "total",
         header: t("total"),
-        cell: ({ row }) => row.original.total ?? row.original.totalAmount ?? "—",
+        cell: ({ row }) => row.original.total ?? row.original.totalAmount ?? row.original.totals?.subtotal ?? "—",
       },
       {
         accessorKey: "status",
