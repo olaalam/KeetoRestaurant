@@ -24,24 +24,29 @@ const toBase64 = (file) =>
 
 const serializeAllergens = (arr) => arr.join(" | ");
 
-const weightVariationFields = new Set([
-  "isWeightGroup",
-  "is_weight_group",
-  "priceMode",
-  "price_mode",
-  "weightValue",
-  "weight_value",
-]);
+const cleanVariationsPayload = (variations = [], isWeightBased = false) => {
+  return variations.map((variation) => {
+    const { isWeightGroup, is_weight_group, options = [], ...restVariation } = variation;
+    const activeWeightGroup = isWeightBased && Boolean(isWeightGroup);
 
-const omitWeightVariationFields = (value) => {
-  if (Array.isArray(value)) return value.map(omitWeightVariationFields);
-  if (!value || typeof value !== "object") return value;
+    const cleanedOptions = options.map((opt) => {
+      const { weightValue, weight_value, priceMode, price_mode, ...restOption } = opt;
+      if (!activeWeightGroup) {
+        return restOption;
+      }
+      return {
+        ...restOption,
+        weightValue,
+        priceMode: priceMode || "fixed",
+      };
+    });
 
-  return Object.fromEntries(
-    Object.entries(value)
-      .filter(([key]) => !weightVariationFields.has(key))
-      .map(([key, nestedValue]) => [key, omitWeightVariationFields(nestedValue)]),
-  );
+    return {
+      ...restVariation,
+      ...(isWeightBased ? { isWeightGroup: Boolean(isWeightGroup) } : {}),
+      options: cleanedOptions,
+    };
+  });
 };
 
 const FoodAdd = () => {
@@ -85,6 +90,7 @@ const FoodAdd = () => {
         weight_unit: raw.weight_unit || "kg",
         allow_custom_weight: Boolean(raw.allow_custom_weight),
         points: raw.points != null ? Number(raw.points) : "",
+        order_level: raw.order_level != null ? Number(raw.order_level) : "",
         discount_type: raw.discount_type || "none",
         discount_value: raw.discount_value ? Number(raw.discount_value) : "",
         Maximum_Purchase: raw.Maximum_Purchase ? Number(raw.Maximum_Purchase) : 5,
@@ -134,7 +140,17 @@ const FoodAdd = () => {
   }
 
   const transformBeforeSubmit = (formData) => {
-    const { addonsId: addonsArr, branches, price, discount_type, discount_value, sold_by, weight_unit, allow_custom_weight, ...rest } = formData;
+    const {
+      addonsId: addonsArr,
+      branches,
+      price,
+      discount_type,
+      discount_value,
+      sold_by,
+      weight_unit,
+      allow_custom_weight,
+      ...rest
+    } = formData;
 
     const hasDiscount = discount_type && discount_type !== "none" && Number(discount_value) > 0;
     const isWeightBased = sold_by === "weight";
@@ -177,8 +193,8 @@ const FoodAdd = () => {
             allow_custom_weight: Boolean(allow_custom_weight),
           }
         : {}),
-      ...(!isWeightBased && rest.variations != null
-        ? { variations: omitWeightVariationFields(rest.variations) }
+      ...(rest.variations != null
+        ? { variations: cleanVariationsPayload(rest.variations, isWeightBased) }
         : {}),
       discount_type: hasDiscount ? discount_type : "none",
       discount_value: hasDiscount ? Number(discount_value) : null,
@@ -206,14 +222,14 @@ const FoodAdd = () => {
             category: state?.category,
             subCategory: state?.subCategory,
             pageIndex: state?.fromPage,
-          }
+          },
         });
       }}
     >
       {({ register, control, formState: { errors, submitCount }, setValue, watch }) => {
         const imagePreview = watch("image");
         const selectedCategoryId = watch("categoryid");
-        const soldByValue = watch("sold_by");
+        const soldByValue = watch("sold_by") || "unit";
 
         const [activeTab, setActiveTab] = useState("basic");
 
@@ -615,6 +631,11 @@ const FoodAdd = () => {
                 </div>
 
                 <div className="space-y-2">
+                  <Label>{t("orderLevel") || "Order Level (ترتيب العرض)"}</Label>
+                  <Input type="number" {...register("order_level", { valueAsNumber: true })} placeholder="0" />
+                </div>
+
+                <div className="space-y-2">
                   <Label>{t("maxPurchaseLabel")}</Label>
                   <Input type="number" {...register("Maximum_Purchase", { valueAsNumber: true })} />
                 </div>
@@ -661,7 +682,13 @@ const FoodAdd = () => {
 
             {/* Tab 4: Variations */}
             <TabsContent value="variations">
-              <VariationsSection control={control} register={register} setValue={setValue} watch={watch} />
+              <VariationsSection
+                control={control}
+                register={register}
+                setValue={setValue}
+                watch={watch}
+                isWeightBased={soldByValue === "weight"}
+              />
             </TabsContent>
 
             {/* Tab 5: Addons */}
@@ -675,7 +702,7 @@ const FoodAdd = () => {
   );
 };
 
-const VariationsSection = ({ control, register, setValue, watch }) => {
+const VariationsSection = ({ control, register, setValue, watch, isWeightBased }) => {
   const { fields, append, remove } = useFieldArray({ control, name: "variations" });
   const { t } = useTranslation();
 
@@ -695,7 +722,17 @@ const VariationsSection = ({ control, register, setValue, watch }) => {
               min: 1,
               max: 1,
               isWeightGroup: false,
-              options: [{ optionName: "", optionNameAr: "", optionNameFr: "", weightValue: "", additionalPrice: 0, priceMode: "fixed", status: true }],
+              options: [
+                {
+                  optionName: "",
+                  optionNameAr: "",
+                  optionNameFr: "",
+                  weightValue: "",
+                  additionalPrice: 0,
+                  priceMode: "fixed",
+                  status: true,
+                },
+              ],
             })
           }
           className="bg-orange-500 hover:bg-orange-600"
@@ -706,10 +743,13 @@ const VariationsSection = ({ control, register, setValue, watch }) => {
 
       {fields.map((item, index) => {
         const selectionType = watch(`variations.${index}.selectionType`);
+        const isWeightGroup = Boolean(watch(`variations.${index}.isWeightGroup`));
+        const showWeightOptionFields = isWeightBased && isWeightGroup;
+
         return (
           <div key={item.id} className="p-6 border-2 rounded-xl bg-white relative space-y-4 shadow-sm">
             <input type="hidden" {...register(`variations.${index}.id`)} />
-            
+
             <Button
               type="button"
               variant="ghost"
@@ -770,16 +810,18 @@ const VariationsSection = ({ control, register, setValue, watch }) => {
               </div>
 
               {/* Is Weight Group Switch */}
-              <div className="flex items-center space-x-2 pt-8">
-                <Controller
-                  name={`variations.${index}.isWeightGroup`}
-                  control={control}
-                  render={({ field }) => (
-                    <Switch checked={!!field.value} onCheckedChange={field.onChange} />
-                  )}
-                />
-                <Label>{t("isWeightGroup") || "مجموعة أوزان (Is Weight Group)"}</Label>
-              </div>
+              {isWeightBased && (
+                <div className="flex items-center space-x-2 pt-8">
+                  <Controller
+                    name={`variations.${index}.isWeightGroup`}
+                    control={control}
+                    render={({ field }) => (
+                      <Switch checked={!!field.value} onCheckedChange={field.onChange} />
+                    )}
+                  />
+                  <Label>{t("isWeightGroup") || "مجموعة أوزان (Is Weight Group)"}</Label>
+                </div>
+              )}
             </div>
 
             {selectionType === "multiple" && (
@@ -796,7 +838,12 @@ const VariationsSection = ({ control, register, setValue, watch }) => {
             )}
 
             <div className="mt-4 pt-4 border-t">
-              <OptionsSection nestIndex={index} control={control} register={register} />
+              <OptionsSection
+                nestIndex={index}
+                control={control}
+                register={register}
+                showWeightOptionFields={showWeightOptionFields}
+              />
             </div>
           </div>
         );
@@ -805,7 +852,7 @@ const VariationsSection = ({ control, register, setValue, watch }) => {
   );
 };
 
-const OptionsSection = ({ nestIndex, control, register }) => {
+const OptionsSection = ({ nestIndex, control, register, showWeightOptionFields }) => {
   const { fields, append, remove } = useFieldArray({ control, name: `variations.${nestIndex}.options` });
   const { t } = useTranslation();
 
@@ -830,16 +877,17 @@ const OptionsSection = ({ nestIndex, control, register }) => {
             <Input {...register(`variations.${nestIndex}.options.${k}.optionNameFr`)} className="bg-white" />
           </div>
 
-          {/* Weight Value Input */}
-          <div className="w-28 space-y-1">
-            <Label className="text-xs">{t("weightValue") || "الوزن (كجم)"}</Label>
-            <Input
-              type="text"
-              {...register(`variations.${nestIndex}.options.${k}.weightValue`)}
-              placeholder="0.250"
-              className="bg-white"
-            />
-          </div>
+          {showWeightOptionFields && (
+            <div className="w-28 space-y-1">
+              <Label className="text-xs">{t("weightValue") || "الوزن (كجم)"}</Label>
+              <Input
+                type="text"
+                {...register(`variations.${nestIndex}.options.${k}.weightValue`)}
+                placeholder="0.250"
+                className="bg-white"
+              />
+            </div>
+          )}
 
           <div className="w-28 space-y-1">
             <Label className="text-xs">{t("extraPriceLabel")}</Label>
@@ -850,28 +898,28 @@ const OptionsSection = ({ nestIndex, control, register }) => {
             />
           </div>
 
-          {/* Price Mode Selection */}
-          <div className="w-36 space-y-1">
-            <Label className="text-xs">{t("priceMode") || "Price Mode"}</Label>
-            <Controller
-              name={`variations.${nestIndex}.options.${k}.priceMode`}
-              control={control}
-              defaultValue="fixed"
-              render={({ field }) => (
-                <SearchableSelect
-                  options={[
-                    { value: "fixed", label: t("fixed") || "Fixed (ثابت)" },
-                    { value: "per_weight", label: t("perWeight") || "Per Weight (حسب الوزن)" },
-                  ]}
-                  value={field.value || "fixed"}
-                  onChange={field.onChange}
-                  placeholder={t("selectPriceMode") || "Select Mode"}
-                />
-              )}
-            />
-          </div>
+          {showWeightOptionFields && (
+            <div className="w-36 space-y-1">
+              <Label className="text-xs">{t("priceMode") || "Price Mode"}</Label>
+              <Controller
+                name={`variations.${nestIndex}.options.${k}.priceMode`}
+                control={control}
+                defaultValue="fixed"
+                render={({ field }) => (
+                  <SearchableSelect
+                    options={[
+                      { value: "fixed", label: t("fixed") || "Fixed (ثابت)" },
+                      { value: "per_weight", label: t("perWeight") || "Per Weight (حسب الوزن)" },
+                    ]}
+                    value={field.value || "fixed"}
+                    onChange={field.onChange}
+                    placeholder={t("selectPriceMode") || "Select Mode"}
+                  />
+                )}
+              />
+            </div>
+          )}
 
-          {/* Status Switch */}
           <div className="flex flex-col items-center justify-center space-y-1 pb-1">
             <Label className="text-xs">{t("statusLabel") || "Status"}</Label>
             <Controller
@@ -884,23 +932,33 @@ const OptionsSection = ({ nestIndex, control, register }) => {
             />
           </div>
 
-          <Button
-            type="button"
-            variant="destructive"
-            size="icon"
-            onClick={() => remove(k)}
-            disabled={fields.length === 1}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
-      ))}
+        <Button
+          type="button"
+          variant="destructive"
+          size="icon"
+          onClick={() => remove(k)}
+          disabled={fields.length === 1}
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      </div>
+    ))}
 
       <Button
         type="button"
         variant="outline"
         size="sm"
-        onClick={() => append({ optionName: "", optionNameAr: "", optionNameFr: "", weightValue: "", additionalPrice: 0, priceMode: "fixed", status: true })}
+        onClick={() =>
+          append({
+            optionName: "",
+            optionNameAr: "",
+            optionNameFr: "",
+            weightValue: "",
+            additionalPrice: 0,
+            priceMode: "fixed",
+            status: true,
+          })
+        }
         className="mt-2 text-primary border-primary"
       >
         {t("addOptionBtn")}

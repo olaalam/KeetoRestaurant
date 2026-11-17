@@ -606,6 +606,10 @@ const Foods = () => {
             accessorKey: 'price',
             header: t('price'),
         },
+                {
+            accessorKey: 'order_level',
+            header: t('orderLevel'),
+        },
         {
             accessorKey: 'points',
             header: t('points'),

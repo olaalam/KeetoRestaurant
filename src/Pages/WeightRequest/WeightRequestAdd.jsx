@@ -88,29 +88,17 @@ export default function WeightRequestAdd() {
   const backToList = () =>
     navigate("/weight-requests", { state: { pageIndex: location.state?.fromPage } });
 
-  // الداتا اللي بتدخل الفورم (أصناف الطلب)
+  // جعل الـ initialData لـ ItemsEditor فارغة تماماً حتى لا تظهر منتجات الباك هنا ولا تُرسل في الريكويست
   const initialData = useMemo(() => {
-    if (!request) return null;
     return {
       id,
-      items: (itemsList ?? []).map((i) => ({
-        cartItemId: i.cartItemId ?? i.id,
-        foodId: i.foodId,
-        foodName: localizedName(i, language) || i.foodName || "",
-        quantity: i.quantity ?? 1,
-        weight: i.finalWeight ?? i.orderedWeight ?? "",
-        unitPrice: i.unitPrice ?? "",
-        note: i.note ?? "",
-        variations: (i.variations ?? []).map((v) => ({ optionId: v.optionId ?? v.id })),
-        addons: (i.addons ?? []).map((a) => ({ addonId: a.addonId ?? a.id })),
-      })),
+      items: [],
     };
-  }, [request, itemsList, id, language]);
+  }, [id]);
 
-  // الـ payload النهائي لـ PUT /weight-requests/{id}
+  // الـ payload النهائي لـ PUT /weight-requests/{id}/items (للأصناف الجديدة فقط)
   const transformPayload = (data) => ({
     items: (data.items ?? []).map((i) => ({
-      ...(i.cartItemId && { cartItemId: i.cartItemId }),
       foodId: i.foodId,
       quantity: Number(i.quantity) || 1,
       ...(isNum(i.weight) && { weight: Number(i.weight) }),
@@ -220,10 +208,12 @@ export default function WeightRequestAdd() {
 
       {editable && <DecisionBar requestId={id} onDone={backToList} />}
 
+      {/* سكشن تعديل/إضافة الأصناف (Edit Order items) مع الحفاظ عليه فارغاً من منتجات الباك */}
       {editable && (
         <AddPage
           title={t("orderItems")}
-          apiUrl={BASE}
+          apiUrl={`${BASE}/${id}/items`}
+          bypassIdInEdit
           queryKey={KEY}
           method="PUT"
           initialData={initialData}
