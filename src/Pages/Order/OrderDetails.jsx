@@ -216,11 +216,16 @@ export default function OrderDetails() {
   const nextOrder =
     currentOrderIndex > 0 ? ordersList[currentOrderIndex - 1] : null;
 
-  const updateStatusMutation = useMutation({
+const updateStatusMutation = useMutation({
     mutationFn: async ({ status, cancelReasonId, customReason }) => {
       const payload = { status };
       if (cancelReasonId) payload.cancelReasonId = cancelReasonId;
       if (customReason) payload.customReason = customReason;
+      
+      // إضافة cancelledAt في حالة الإلغاء
+      if (status === "cancelled") {
+        payload.cancelledAt = new Date().toISOString();
+      }
 
       const res = await api.put(`/api/restaurant/order/${orderId}`, payload);
       return res.data;
@@ -1350,47 +1355,59 @@ export default function OrderDetails() {
               </div>
 
 {(order.status === "cancelled" || order.status === "refund" || order.cancelReason || order.cancel_reason) && (
-                <div className="p-3 bg-red-50/70 border border-red-100 rounded-xl flex items-start gap-2.5 text-sm mt-2">
-                  <XCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
-                  <div className="flex flex-col gap-1 w-full">
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      <span className="text-red-600 font-bold">
-                        {order.cancelReasonType === "restaurant" || order.cancel_reason_type === "restaurant"
-                          ? (document.documentElement.dir === "rtl" ? "ملغي بواسطة المطعم" : "Cancelled by Restaurant")
-                          : order.cancelReasonType === "user" || order.cancel_reason_type === "user"
-                          ? (document.documentElement.dir === "rtl" ? "ملغي بواسطة المستخدم" : "Cancelled by User")
-                          : (document.documentElement.dir === "rtl" ? "ملغي" : "Cancelled")}
-                      </span>
+  <div className="p-3 bg-red-50/70 border border-red-100 rounded-xl flex items-start gap-2.5 text-sm mt-2">
+    <XCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+    <div className="flex flex-col gap-1 w-full">
+      <div className="flex flex-wrap items-center gap-1.5">
+        <span className="text-red-600 font-bold">
+          {order.cancelReasonType === "restaurant" || order.cancel_reason_type === "restaurant"
+            ? (document.documentElement.dir === "rtl" ? "ملغي بواسطة المطعم" : "Cancelled by Restaurant")
+            : order.cancelReasonType === "user" || order.cancel_reason_type === "user"
+            ? (document.documentElement.dir === "rtl" ? "ملغي بواسطة المستخدم" : "Cancelled by User")
+            : (document.documentElement.dir === "rtl" ? "ملغي" : "Cancelled")}
+        </span>
 
-                      {((order.cancelReasonType === "restaurant" || order.cancel_reason_type === "restaurant")) && (() => {
-                        let adminName = "";
-                        try {
-                          const authStorage = JSON.parse(localStorage.getItem("auth-storage") || "{}");
-                          adminName = authStorage?.state?.user?.name || "";
-                        } catch (e) {}
-                        return adminName ? (
-                          <span className="text-xs font-semibold bg-red-100 text-red-800 px-2 py-0.5 rounded-md">
-                            {document.documentElement.dir === "rtl" ? `الأدمن: ${adminName}` : `Admin: ${adminName}`}
-                          </span>
-                        ) : null;
-                      })()}
-                    </div>
+        {((order.cancelReasonType === "restaurant" || order.cancel_reason_type === "restaurant")) && (() => {
+          let adminName = "";
+          try {
+            const authStorage = JSON.parse(localStorage.getItem("auth-storage") || "{}");
+            adminName = authStorage?.state?.user?.name || "";
+          } catch (e) {}
+          return adminName ? (
+            <span className="text-xs font-semibold bg-red-100 text-red-800 px-2 py-0.5 rounded-md">
+              {document.documentElement.dir === "rtl" ? `الأدمن: ${adminName}` : `Admin: ${adminName}`}
+            </span>
+          ) : null;
+        })()}
+      </div>
 
-                    <div className="flex flex-wrap items-center gap-1">
-                      <span className="text-red-600 font-medium shrink-0">
-                        {t("cancelReason") || "سبب الإلغاء"}:
-                      </span>
-                      <span className="font-semibold text-red-700">
-                        {typeof (order.cancelReason || order.cancel_reason) === "object"
-                          ? (document.documentElement.dir === "rtl"
-                            ? (order.cancelReason?.nameAr || order.cancelReason?.name || order.cancel_reason?.nameAr || order.cancel_reason?.name)
-                            : (order.cancelReason?.name || order.cancel_reason?.name))
-                          : (order.cancelReason || order.cancel_reason || t("notSpecified"))}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              )}
+      <div className="flex flex-wrap items-center gap-1">
+        <span className="text-red-600 font-medium shrink-0">
+          {t("cancelReason") || "سبب الإلغاء"}:
+        </span>
+        <span className="font-semibold text-red-700">
+          {typeof (order.cancelReason || order.cancel_reason) === "object"
+            ? (document.documentElement.dir === "rtl"
+              ? (order.cancelReason?.nameAr || order.cancelReason?.name || order.cancel_reason?.nameAr || order.cancel_reason?.name)
+              : (order.cancelReason?.name || order.cancel_reason?.name))
+            : (order.cancelReason || order.cancel_reason || t("notSpecified"))}
+        </span>
+      </div>
+
+      {/* عرض وقت الإلغاء cancelledAt لو موجود في بيانات الطلب */}
+      {(order.cancelledAt || order.cancelled_at) && (
+        <div className="flex flex-wrap items-center gap-1">
+          <span className="text-red-600 font-medium shrink-0">
+            {t("cancelledAt") || "وقت الإلغاء"}:
+          </span>
+          <span className="font-semibold text-red-700 dir-ltr">
+            {new Date(order.cancelledAt || order.cancelled_at).toLocaleString()}
+          </span>
+        </div>
+      )}
+    </div>
+  </div>
+)}
               {["preparing", "out_for_delivery", "delivered"].includes(order.status) && (
                 <div className="pt-2">
                   <Button

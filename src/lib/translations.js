@@ -857,6 +857,7 @@ const translations = {
     "operationalOverview": "Operational Overview",
     "avgOrderValue": "Avg Order Value",
     "cancellationRate": "Cancellation Rate",
+    cancelledAt: "Cancelled At",
 
     "netRevenueAfterCommission": "Net Revenue (After Commission)",
     "netRevenueDescription": "Total revenue minus app commission & expenses",
@@ -1181,6 +1182,14 @@ const translations = {
     freedelivery: "Free Delivery",
     offers: "Offers",
     //rating
+    "Total Revenue": "Total Revenue",
+  "Total Orders": "Total Orders",
+  "Avg. Order Value": "Avg. Order Value",
+  "Total Users": "Total Users",
+  "Canceled Orders %": "Canceled Orders %",
+  "Total Canceled Orders": "Total Canceled Orders",
+  "Total Canceled Amount": "Total Canceled Amount",
+  "Total Amount (Incl. Canceled)": "Total Amount (Incl. Canceled)",
 
     "restaurantRate": "Restaurant Rate",
     "orderRate": "Order Rate",
@@ -2456,6 +2465,15 @@ const translations = {
     assignDeliveryError: "فشل في تعيين مندوب توصيل",
     searchDeliveryMan: "بحث بالاسم أو رقم الهاتف...",
     noResultsFound: "لا توجد نتائج مطابقة",
+    "Total Revenue": "إجمالي الأرباح",
+  "Total Orders": "إجمالي الطلبات",
+  "Avg. Order Value": "متوسط قيمة الطلب",
+  "Total Users": "إجمالي المستخدمين",
+  "Canceled Orders %": "نسبة الطلبات الملغاة",
+  "Total Canceled Orders": "عدد الطلبات الملغاة",
+  "Total Canceled Amount": "إجمالي المبالغ الملغاة",
+  "Total Amount (Incl. Canceled)": "الإجمالي (شامل الملغي)",
+  cancelledAt: "تم الإلغاء في",
 
     // Preparation Duration Section
     orderDuration: "مدة التحضير",

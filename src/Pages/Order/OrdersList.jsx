@@ -303,6 +303,31 @@ const handleExportExcel = async () => {
         </span>
       ),
     },
+    {
+      accessorKey: "cancelledAt",
+      header: t("cancelledAt") || "وقت الإلغاء",
+      cell: ({ row }) => {
+        const order = row.original;
+        const cancelledTime = order.cancelledAt || order.cancelled_at;
+
+        // إذا لم يكن الطلب ملغياً أو ليس لديه وقت إلغاء
+        if (order.status !== "cancelled" && !cancelledTime) {
+          return <span className="text-gray-400">-</span>;
+        }
+
+        if (!cancelledTime) {
+          return <span className="text-gray-400">-</span>;
+        }
+
+        const date = new Date(cancelledTime);
+        return (
+          <div className="flex flex-col text-sm">
+            <span className="font-medium text-gray-800 dark:text-gray-200">{date.toLocaleDateString()}</span>
+            <span className="text-xs text-gray-500 dir-ltr text-right">{date.toLocaleTimeString()}</span>
+          </div>
+        );
+      },
+    },
 {
       accessorKey: "cancelReason",
       header: t("cancelReason") || "Cancel Reason",

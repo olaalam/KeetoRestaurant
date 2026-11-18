@@ -13,9 +13,10 @@ import {
     Cell,
     ScatterChart,
     Scatter,
+
     ZAxis
 } from 'recharts';
-import { DollarSign, ShoppingCart, TrendingUp, Star, Filter, Calendar as CalendarIcon, User } from 'lucide-react';
+import { DollarSign, ShoppingCart, TrendingUp, Star, Filter, Calendar as CalendarIcon, User ,Percent,XCircle } from 'lucide-react';
 import { useGet } from '@/hooks/useGet';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -264,62 +265,114 @@ export default function Dashboard() {
                 </div>
             </div>
 
-            {/* البطاقات العلوية المتجاوبة (Responsive Cards) */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
-                
-                {/* كارت Total Revenue */}
-                <div className="bg-white dark:bg-slate-900 p-4 md:p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 flex items-center gap-3.5 min-w-0">
-                    <div className="p-3 bg-yellow-50 dark:bg-yellow-950/40 rounded-xl text-yellow-500 shrink-0">
-                        <DollarSign size={22} />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                        <p className="text-xs md:text-sm text-gray-500 font-medium truncate mb-0.5">{t("Total Revenue")}</p>
-                        <h3 className="text-xl md:text-2xl xl:text-3xl font-bold text-gray-900 dark:text-gray-100 truncate">
-                            {parseFloat(cards.totalRevenue || 0).toLocaleString()} <span className="text-xs md:text-sm font-semibold">EGP</span>
-                        </h3>
-                    </div>
-                </div>
+{/* البطاقات العلوية المتجاوبة (Responsive Cards) */}
+<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6 mb-8">
+    
+    {/* 1. Total Revenue */}
+    <div className="bg-white dark:bg-slate-900 p-4 md:p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 flex items-center gap-3.5 min-w-0">
+        <div className="p-3 bg-yellow-50 dark:bg-yellow-950/40 rounded-xl text-yellow-500 shrink-0">
+            <DollarSign size={22} />
+        </div>
+        <div className="min-w-0 flex-1">
+            <p className="text-xs md:text-sm text-gray-500 font-medium truncate mb-0.5">{t("Total Revenue")}</p>
+            <h3 className="text-xl md:text-2xl xl:text-3xl font-bold text-gray-900 dark:text-gray-100 truncate">
+                {parseFloat(cards.totalRevenue || 0).toLocaleString()} <span className="text-xs md:text-sm font-semibold">EGP</span>
+            </h3>
+        </div>
+    </div>
 
-                {/* كارت Total Orders */}
-                <div className="bg-white dark:bg-slate-900 p-4 md:p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 flex items-center gap-3.5 min-w-0">
-                    <div className="p-3 bg-gray-100 dark:bg-slate-800 rounded-xl text-gray-600 dark:text-gray-300 shrink-0">
-                        <ShoppingCart size={22} />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                        <p className="text-xs md:text-sm text-gray-500 font-medium truncate mb-0.5">{t("Total Orders")}</p>
-                        <h3 className="text-xl md:text-2xl xl:text-3xl font-bold text-gray-900 dark:text-gray-100 truncate">
-                            {cards.numberOfOrders || 0}
-                        </h3>
-                    </div>
-                </div>
+    {/* 2. Total Orders */}
+    <div className="bg-white dark:bg-slate-900 p-4 md:p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 flex items-center gap-3.5 min-w-0">
+        <div className="p-3 bg-gray-100 dark:bg-slate-800 rounded-xl text-gray-600 dark:text-gray-300 shrink-0">
+            <ShoppingCart size={22} />
+        </div>
+        <div className="min-w-0 flex-1">
+            <p className="text-xs md:text-sm text-gray-500 font-medium truncate mb-0.5">{t("Total Orders")}</p>
+            <h3 className="text-xl md:text-2xl xl:text-3xl font-bold text-gray-900 dark:text-gray-100 truncate">
+                {cards.numberOfOrders || 0}
+            </h3>
+        </div>
+    </div>
 
-                {/* كارت Avg. Order Value */}
-                <div className="bg-white dark:bg-slate-900 p-4 md:p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 flex items-center gap-3.5 min-w-0">
-                    <div className="p-3 bg-orange-50 dark:bg-orange-950/40 rounded-xl text-orange-500 shrink-0">
-                        <TrendingUp size={22} />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                        <p className="text-xs md:text-sm text-gray-500 font-medium truncate mb-0.5">{t("Avg. Order Value")}</p>
-                        <h3 className="text-xl md:text-2xl xl:text-3xl font-bold text-gray-900 dark:text-gray-100 truncate">
-                            {parseFloat(cards.averageOrderValue || 0).toFixed(2)} <span className="text-xs md:text-sm font-semibold">EGP</span>
-                        </h3>
-                    </div>
-                </div>
+    {/* 3. Avg. Order Value */}
+    <div className="bg-white dark:bg-slate-900 p-4 md:p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 flex items-center gap-3.5 min-w-0">
+        <div className="p-3 bg-orange-50 dark:bg-orange-950/40 rounded-xl text-orange-500 shrink-0">
+            <TrendingUp size={22} />
+        </div>
+        <div className="min-w-0 flex-1">
+            <p className="text-xs md:text-sm text-gray-500 font-medium truncate mb-0.5">{t("Avg. Order Value")}</p>
+            <h3 className="text-xl md:text-2xl xl:text-3xl font-bold text-gray-900 dark:text-gray-100 truncate">
+                {parseFloat(cards.averageOrderValue || 0).toFixed(2)} <span className="text-xs md:text-sm font-semibold">EGP</span>
+            </h3>
+        </div>
+    </div>
 
-                {/* كارت Total Users */}
-                <div className="bg-white dark:bg-slate-900 p-4 md:p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 flex items-center gap-3.5 min-w-0">
-                    <div className="p-3 bg-blue-50 dark:bg-blue-950/40 rounded-xl text-blue-500 shrink-0">
-                        <User size={22} />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                        <p className="text-xs md:text-sm text-gray-500 font-medium truncate mb-0.5">{t("Total Users")}</p>
-                        <h3 className="text-xl md:text-2xl xl:text-3xl font-bold text-gray-900 dark:text-gray-100 truncate">
-                            {cards.totalUsers || 0}
-                        </h3>
-                    </div>
-                </div>
+    {/* 4. Total Users */}
+    <div className="bg-white dark:bg-slate-900 p-4 md:p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 flex items-center gap-3.5 min-w-0">
+        <div className="p-3 bg-blue-50 dark:bg-blue-950/40 rounded-xl text-blue-500 shrink-0">
+            <User size={22} />
+        </div>
+        <div className="min-w-0 flex-1">
+            <p className="text-xs md:text-sm text-gray-500 font-medium truncate mb-0.5">{t("Total Users")}</p>
+            <h3 className="text-xl md:text-2xl xl:text-3xl font-bold text-gray-900 dark:text-gray-100 truncate">
+                {cards.totalUsers || 0}
+            </h3>
+        </div>
+    </div>
 
-            </div>
+    {/* 5. Canceled Orders Percentage */}
+    <div className="bg-white dark:bg-slate-900 p-4 md:p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 flex items-center gap-3.5 min-w-0">
+        <div className="p-3 bg-red-50 dark:bg-red-950/40 rounded-xl text-red-500 shrink-0">
+            <Percent size={22} />
+        </div>
+        <div className="min-w-0 flex-1">
+            <p className="text-xs md:text-sm text-gray-500 font-medium truncate mb-0.5">{t("Canceled Orders %")}</p>
+            <h3 className="text-xl md:text-2xl xl:text-3xl font-bold text-gray-900 dark:text-gray-100 truncate">
+                {parseFloat(cards.canceledOrdersPercentage || 0).toFixed(2)}%
+            </h3>
+        </div>
+    </div>
+
+    {/* 6. Total Canceled Orders */}
+    <div className="bg-white dark:bg-slate-900 p-4 md:p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 flex items-center gap-3.5 min-w-0">
+        <div className="p-3 bg-rose-50 dark:bg-rose-950/40 rounded-xl text-rose-500 shrink-0">
+            <XCircle size={22} />
+        </div>
+        <div className="min-w-0 flex-1">
+            <p className="text-xs md:text-sm text-gray-500 font-medium truncate mb-0.5">{t("Total Canceled Orders")}</p>
+            <h3 className="text-xl md:text-2xl xl:text-3xl font-bold text-gray-900 dark:text-gray-100 truncate">
+                {cards.totalCanceledOrders || 0}
+            </h3>
+        </div>
+    </div>
+
+    {/* 7. Total Canceled Amount */}
+    <div className="bg-white dark:bg-slate-900 p-4 md:p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 flex items-center gap-3.5 min-w-0">
+        <div className="p-3 bg-amber-50 dark:bg-amber-950/40 rounded-xl text-amber-600 shrink-0">
+            <DollarSign size={22} />
+        </div>
+        <div className="min-w-0 flex-1">
+            <p className="text-xs md:text-sm text-gray-500 font-medium truncate mb-0.5">{t("Total Canceled Amount")}</p>
+            <h3 className="text-xl md:text-2xl xl:text-3xl font-bold text-gray-900 dark:text-gray-100 truncate">
+                {parseFloat(cards.totalCanceledAmount || 0).toLocaleString()} <span className="text-xs md:text-sm font-semibold">EGP</span>
+            </h3>
+        </div>
+    </div>
+
+    {/* 8. Total Amount Including Canceled */}
+    <div className="bg-white dark:bg-slate-900 p-4 md:p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 flex items-center gap-3.5 min-w-0">
+        <div className="p-3 bg-purple-50 dark:bg-purple-950/40 rounded-xl text-purple-500 shrink-0">
+            <DollarSign size={22} />
+        </div>
+        <div className="min-w-0 flex-1">
+            <p className="text-xs md:text-sm text-gray-500 font-medium truncate mb-0.5">{t("Total Amount (Incl. Canceled)")}</p>
+            <h3 className="text-xl md:text-2xl xl:text-3xl font-bold text-gray-900 dark:text-gray-100 truncate">
+                {parseFloat(cards.totalAmountIncludingCanceled || 0).toLocaleString()} <span className="text-xs md:text-sm font-semibold">EGP</span>
+            </h3>
+        </div>
+    </div>
+
+</div>
 
             {/* صفحة المخططات الرئيسية - عمودين */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">

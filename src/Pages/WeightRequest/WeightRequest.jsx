@@ -100,13 +100,7 @@ export default function WeightRequest() {
 
   const columns = useMemo(
     () => [
-      {
-        accessorKey: "id",
-        header: t("orderNo"),
-        cell: ({ row }) => (
-          <span className="font-mono text-xs">{String(row.original.id).slice(0, 8)}</span>
-        ),
-      },
+
       {
         accessorKey: "userName",
         header: t("customer"),
