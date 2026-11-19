@@ -38,6 +38,7 @@ export default function Coupon() {
         { accessorKey: 'name', header: t('categoryName') },
         { accessorKey: 'discountType', header: t('discountType') },
         { accessorKey: 'discountValue', header: t('discountValue') },
+        { accessorKey: 'usersCount', header: t('usersCount') },
         {
             accessorKey: 'foodIds',
             header: t('foods') || 'الأطعمة',
