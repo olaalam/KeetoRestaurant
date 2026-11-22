@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/api/axios';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { useTranslation } from "@/hooks/useTranslation";
-import { Plus, Trash2, Save, ArrowLeft, ImagePlus, X, ChevronDown, Check, Search } from 'lucide-react'; 
+import { Plus, Trash2, Save, ArrowLeft, ImagePlus, X, ChevronDown, Check, Search } from 'lucide-react';
 
 const FoodMultiSelect = ({ foods, selectedIds, onChange }) => {
     const [isOpen, setIsOpen] = useState(false);
@@ -31,7 +31,7 @@ const FoodMultiSelect = ({ foods, selectedIds, onChange }) => {
     };
 
     // تصفية الأطعمة بناءً على نص البحث
-    const filteredFoods = foods.filter(food => 
+    const filteredFoods = foods.filter(food =>
         food.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
@@ -41,7 +41,7 @@ const FoodMultiSelect = ({ foods, selectedIds, onChange }) => {
 
     return (
         <div className="relative" ref={dropdownRef}>
-            <div 
+            <div
                 onClick={() => setIsOpen(!isOpen)}
                 className="w-full border border-gray-300 rounded-lg p-2.5 bg-white cursor-pointer flex items-center justify-between min-h-[46px] hover:border-primary transition-colors"
             >
@@ -79,7 +79,7 @@ const FoodMultiSelect = ({ foods, selectedIds, onChange }) => {
                             filteredFoods.map(food => {
                                 const isChecked = selectedIds.includes(String(food.id));
                                 return (
-                                    <div 
+                                    <div
                                         key={food.id}
                                         onClick={() => handleToggleSelect(food.id)}
                                         className={`flex items-center justify-between p-2 rounded-lg cursor-pointer transition-colors ${
@@ -115,8 +115,15 @@ const DiscountAdd = () => {
     const [activeTab, setActiveTab] = useState('basic');
     const [imagePreview, setImagePreview] = useState(null);
 
+    const channelOptions = [
+        { label: t('All') || 'الكل (All)', value: 'all' },
+        { label: t('online') || 'اونلاين', value: 'online' },
+        { label: t('Pos') || 'الكاشير (POS)', value: 'pos' },
+    ];
+
     const [basicData, setBasicData] = useState({
         name: '', nameAr: '', nameFr: '',
+        channel: 'all',
         minOrderAmount: '', usageLimit: '',
         startDate: '', endDate: '', logo: null,
         isActive: true
@@ -140,6 +147,7 @@ const DiscountAdd = () => {
             const { data } = await api.get(`/api/restaurant/discounts/${id}`);
             return data.data.data;
         },
+        enabled: !!id && !state?.DiscountData,
     });
 
     const initialData = state?.DiscountData || DiscountData;
@@ -150,6 +158,7 @@ const DiscountAdd = () => {
                 name: initialData.name || '',
                 nameAr: initialData.nameAr || '',
                 nameFr: initialData.nameFr || '',
+                channel: initialData.channel || 'all',
                 minOrderAmount: initialData.minOrderAmount || '',
                 usageLimit: initialData.usageLimit || '',
                 startDate: initialData.startDate?.split('T')[0] || '',
@@ -157,12 +166,12 @@ const DiscountAdd = () => {
                 logo: initialData.logo || null,
                 isActive: initialData.isActive ?? true
             });
-            
+
             if (initialData.logo) {
                 setImagePreview(initialData.logo);
             }
 
-            const existingDetails = initialData.groups || initialData.foodGroups || initialData.discountDetails;            
+            const existingDetails = initialData.groups || initialData.foodGroups || initialData.discountDetails;
             if (existingDetails && existingDetails.length > 0) {
                 const formattedDetails = existingDetails.map(d => ({
                     ...d,
@@ -222,8 +231,9 @@ const DiscountAdd = () => {
                 name: basicData.name,
                 nameAr: basicData.nameAr,
                 nameFr: basicData.nameFr,
+                channel: basicData.channel || 'all',
                 minOrderAmount: basicData.minOrderAmount ? Number(basicData.minOrderAmount) : 0,
-                usageLimit: basicData.usageLimit ? Number(basicData.usageLimit) : 0, 
+                usageLimit: basicData.usageLimit ? Number(basicData.usageLimit) : 0,
                 startDate: basicData.startDate ? new Date(basicData.startDate).toISOString() : null,
                 endDate: basicData.endDate ? new Date(basicData.endDate).toISOString() : null,
                 isActive: basicData.isActive,
@@ -234,7 +244,7 @@ const DiscountAdd = () => {
                         discountValue: Number(group.discountValue),
                         foodIds: group.foodIds
                     };
-                    
+
                     if (group.maxDiscount !== '' && group.maxDiscount !== null) {
                         groupData.maxDiscount = Number(group.maxDiscount);
                     }
@@ -254,7 +264,7 @@ const DiscountAdd = () => {
             navigate(-1);
         }
     });
-    
+
     const handleSubmit = (e) => {
         e.preventDefault();
         mutation.mutate();
@@ -271,8 +281,8 @@ const DiscountAdd = () => {
                     <h1 className="text-3xl font-bold text-gray-900">{id ? t('editDiscount') : t('addDiscount')}</h1>
                     <p className="text-gray-500 mt-1 text-sm">{t('manageYourDiscountDetails')}</p>
                 </div>
-                <button 
-                    onClick={() => navigate(-1)} 
+                <button
+                    onClick={() => navigate(-1)}
                     className="flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-all shadow-sm"
                 >
                     <ArrowLeft className="w-4 h-4 mr-2 rtl:ml-2 rtl:mr-0" /> {t('back')}
@@ -286,8 +296,8 @@ const DiscountAdd = () => {
                             type="button"
                             onClick={() => setActiveTab('basic')}
                             className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 ${
-                                activeTab === 'basic' 
-                                ? 'bg-white text-primary shadow-sm border border-gray-200' 
+                                activeTab === 'basic'
+                                ? 'bg-white text-primary shadow-sm border border-gray-200'
                                 : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
                             }`}
                         >
@@ -297,8 +307,8 @@ const DiscountAdd = () => {
                             type="button"
                             onClick={() => setActiveTab('variable')}
                             className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 ${
-                                activeTab === 'variable' 
-                                ? 'bg-white text-primary shadow-sm border border-gray-200' 
+                                activeTab === 'variable'
+                                ? 'bg-white text-primary shadow-sm border border-gray-200'
                                 : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
                             }`}
                         >
@@ -354,6 +364,21 @@ const DiscountAdd = () => {
                                     <label className="block text-sm font-medium text-gray-700 mb-1">{t('nameFr')} *</label>
                                     <input required type="text" className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all" value={basicData.nameFr} onChange={e => setBasicData({...basicData, nameFr: e.target.value})} />
                                 </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('channel') || 'القناة'} *</label>
+                                    <select
+                                        required
+                                        className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-primary focus:border-primary outline-none bg-white transition-all"
+                                        value={basicData.channel}
+                                        onChange={e => setBasicData({ ...basicData, channel: e.target.value })}
+                                    >
+                                        {channelOptions.map(option => (
+                                            <option key={option.value} value={option.value}>
+                                                {option.label}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
 
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">{t('minOrderAmount')}</label>
@@ -387,8 +412,8 @@ const DiscountAdd = () => {
                                             Product Configuration
                                         </h3>
                                         {variableData.length > 1 && (
-                                            <button 
-                                                type="button" 
+                                            <button
+                                                type="button"
                                                 onClick={() => handleRemoveVariableRow(index)}
                                                 className="text-gray-400 hover:text-red-500 hover:bg-red-50 p-1.5 rounded-lg transition-all"
                                             >
@@ -400,7 +425,7 @@ const DiscountAdd = () => {
                                     <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-start">
                                         <div className="md:col-span-4">
                                             <label className="block text-sm font-medium text-gray-700 mb-1">{t('food')} *</label>
-                                            <FoodMultiSelect 
+                                            <FoodMultiSelect
                                                 foods={selectData?.foods || []}
                                                 selectedIds={row.foodIds}
                                                 onChange={(newIds) => handleVariableChange(index, 'foodIds', newIds)}
@@ -409,7 +434,7 @@ const DiscountAdd = () => {
 
                                         <div className="md:col-span-3">
                                             <label className="block text-sm font-medium text-gray-700 mb-1">{t('discountType')} *</label>
-                                            <select 
+                                            <select
                                                 className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-primary focus:border-primary outline-none bg-white"
                                                 value={row.discountType}
                                                 onChange={(e) => handleVariableChange(index, 'discountType', e.target.value)}
@@ -422,10 +447,10 @@ const DiscountAdd = () => {
                                         <div className="md:col-span-2">
                                             <label className="block text-sm font-medium text-gray-700 mb-1">{t('discountValue')} *</label>
                                             <div className="relative">
-                                                <input 
-                                                    required 
-                                                    type="number" 
-                                                    className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-primary focus:border-primary outline-none" 
+                                                <input
+                                                    required
+                                                    type="number"
+                                                    className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-primary focus:border-primary outline-none"
                                                     value={row.discountValue}
                                                     onChange={(e) => handleVariableChange(index, 'discountValue', e.target.value)}
                                                     placeholder="0.00"
@@ -437,14 +462,14 @@ const DiscountAdd = () => {
                                                 </div>
                                             </div>
                                         </div>
-                                        
+
                                         <div className="md:col-span-3">
                                             <label className="block text-sm font-medium text-gray-700 mb-1">{t('maxDiscount')}</label>
-                                            <input 
-                                                type="number" 
-                                                className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all bg-white" 
-                                                value={row.maxDiscount} 
-                                                onChange={e => handleVariableChange(index, 'maxDiscount', e.target.value)} 
+                                            <input
+                                                type="number"
+                                                className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all bg-white"
+                                                value={row.maxDiscount}
+                                                onChange={e => handleVariableChange(index, 'maxDiscount', e.target.value)}
                                                 placeholder="e.g. 50"
                                             />
                                         </div>
@@ -453,8 +478,8 @@ const DiscountAdd = () => {
                             ))}
 
                             <div className="flex justify-center mt-6">
-                                <button 
-                                    type="button" 
+                                <button
+                                    type="button"
                                     onClick={handleAddVariableRow}
                                     className="flex items-center px-5 py-2.5 bg-primary/10 text-primary font-medium rounded-lg hover:bg-primary/20 transition-all border border-primary/20"
                                 >
@@ -465,23 +490,23 @@ const DiscountAdd = () => {
                     )}
 
                     <div className="flex items-center justify-end gap-3 mt-10 pt-6 border-t border-gray-100">
-                        <button 
-                            type="button" 
+                        <button
+                            type="button"
                             onClick={() => navigate(-1)}
                             className="px-6 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 border border-transparent hover:border-gray-200 transition-all"
                         >
                             {t('cancel')}
                         </button>
-                        <button 
-                            type="submit" 
+                        <button
+                            type="submit"
                             disabled={mutation.isLoading}
                             className="flex items-center justify-center px-8 py-2.5 rounded-lg text-sm font-medium text-white bg-primary hover:opacity-90 shadow-md hover:shadow-lg transition-all disabled:opacity-70 disabled:cursor-not-allowed"
                         >
                             {mutation.isLoading ? (
-                                <LoadingSpinner className="w-5 h-5" /> 
+                                <LoadingSpinner className="w-5 h-5" />
                             ) : (
                                 <>
-                                    <Save className="w-4 h-4 mr-2 rtl:ml-2 rtl:mr-0" /> 
+                                    <Save className="w-4 h-4 mr-2 rtl:ml-2 rtl:mr-0" />
                                     {t('save')}
                                 </>
                             )}

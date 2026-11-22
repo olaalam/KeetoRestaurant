@@ -14,6 +14,13 @@ export default function FirstOrderDiscounts() {
 
     const apiUrl = "/api/restaurant/first-order-discounts";
 
+    const channelLabels = {
+        all: t('All') || 'الكل (All)',
+        app: t('App') || 'التطبيق (App)',
+        web: t('Web') || 'الموقع (Web)',
+        pos: t('Pos') || 'الكاشير (POS)',
+    };
+
     // جلب البيانات للجدول
     const { data: discounts = [], isLoading } = useQuery({
         queryKey: queryKey,
@@ -36,6 +43,14 @@ export default function FirstOrderDiscounts() {
     const columns = [
         { accessorKey: 'name', header: t('name') || 'الاسم' },
         { accessorKey: 'nameAr', header: t('nameAr') || 'الاسم بالعربية' },
+        {
+            accessorKey: 'channel',
+            header: t('channel') || 'القناة',
+            cell: ({ row }) => {
+                const channel = row.original.channel || 'all';
+                return channelLabels[channel] || channel;
+            }
+        },
         { accessorKey: 'firstOrderCount', header: t('firstOrderCount') || 'عدد الطلبات الأولى' },
         { accessorKey: 'discountValue', header: t('discountValue') || 'قيمة الخصم' },
         { accessorKey: 'maxUsage', header: t('maxUsage') || 'الحد الأقصى للاستخدام' },

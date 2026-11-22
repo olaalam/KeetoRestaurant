@@ -24,13 +24,32 @@ const FirstOrderDiscountAdd = () => {
         enabled: !!id && !state?.editData,
     });
 
-    const initialData = state?.editData || fetchedData;
+    const rawInitialData = state?.editData || fetchedData;
+    const initialData = rawInitialData
+        ? {
+              ...rawInitialData,
+              channel: rawInitialData.channel || 'all',
+          }
+        : { channel: 'all' };
 
     // حقول النموذج بناءً على هيكل الـ JSON المطلوب
     const fields = [
         { name: 'name', label: t('name') || 'الاسم بالإنجليزية', required: true },
         { name: 'nameAr', label: t('nameAr') || 'الاسم بالعربية', required: true },
         { name: 'nameFr', label: t('nameFr') || 'الاسم بالفرنسية', required: true },
+        {
+            name: 'channel',
+            label: t('channel') || 'القناة',
+            type: 'select',
+            defaultValue: 'all',
+            options: [
+                { label: t('All') || 'الكل (All)', value: 'all' },
+                { label: t('App') || 'التطبيق (App)', value: 'app' },
+                { label: t('Web') || 'الموقع (Web)', value: 'web' },
+                { label: t('Pos') || 'الكاشير (POS)', value: 'pos' },
+            ],
+            required: true
+        },
         { name: 'firstOrderCount', label: t('firstOrderCount') || 'عدد الطلبات الأولى', type: 'number', required: true },
         {
             name: 'discountType',
@@ -71,6 +90,8 @@ const FirstOrderDiscountAdd = () => {
             initialData={initialData}
             transformPayload={(data) => ({
                 ...data,
+                channel: data.channel || 'all',
+
                 // 💡 تحويل القيم العددية إلى Numbers صريحة بدلاً من Strings
                 firstOrderCount: data.firstOrderCount !== undefined && data.firstOrderCount !== '' ? Number(data.firstOrderCount) : null,
                 discountValue: data.discountValue !== undefined && data.discountValue !== '' ? Number(data.discountValue) : null,

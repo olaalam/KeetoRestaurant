@@ -62,6 +62,13 @@ export default function PricingProduct({ branchId: branchIdProp }) {
     hasExplicitPermission(user, "restaurantsetting", "open") &&
     hasExplicitPermission(user, "restaurantsetting", "close");
 
+  const channelLabels = {
+    all: t('All') || 'الكل (All)',
+    app: t('App') || 'التطبيق (App)',
+    web: t('Web') || 'الموقع (Web)',
+    pos: t('Pos') || 'الكاشير (POS)',
+  };
+
   const [search, setSearch] = useState("");
   const currentBranchId = branchIdProp || user?.branchId || getStoredBranchId();
 
@@ -72,7 +79,7 @@ export default function PricingProduct({ branchId: branchIdProp }) {
   );
 
   const branchId = user?.branchId;
-  
+
   const [isOnline, setIsOnline] = useState(
     branchId ? user?.status !== "inactive" : !settingsRes?.data?.settings?.isTemporarilyClosed
   );
@@ -414,10 +421,6 @@ export default function PricingProduct({ branchId: branchIdProp }) {
       toast.error(t('selectSubCategoryFirst') || 'من فضلك اختر قسم فرعي أولاً');
       return;
     }
-    // if (!branchId) {
-    //   toast.error(t('selectSpecificBranchFirst') || 'من فضلك اختر فرع محدد أولاً');
-    //   return;
-    // }
 
     try {
       await api.put(
@@ -432,7 +435,7 @@ export default function PricingProduct({ branchId: branchIdProp }) {
     }
   };
 
-const toggleFoodStatus = async (foodId, checked) => {
+  const toggleFoodStatus = async (foodId, checked) => {
     try {
       if (isAllBranches && isAllModules) {
         // استخدام الـ Endpoint العام لو البرانش All والـ Modules All
@@ -458,6 +461,7 @@ const toggleFoodStatus = async (foodId, checked) => {
       toast.error(t('failedToUpdateStatus') || 'فشل تحديث الحالة');
     }
   };
+
   const toggleSubCategoryOutOfStock = async (checked) => {
     const branchId = getBranchIdForSubCategoryAction();
 
@@ -465,10 +469,6 @@ const toggleFoodStatus = async (foodId, checked) => {
       toast.error(t('selectSubCategoryFirst') || 'من فضلك اختر قسم فرعي أولاً');
       return;
     }
-    // if (!branchId) {
-    //   toast.error(t('selectSpecificBranchFirst') || 'من فضلك اختر فرع محدد أولاً');
-    //   return;
-    // }
 
     try {
       await api.put(
@@ -694,6 +694,9 @@ const toggleFoodStatus = async (foodId, checked) => {
                     {t("productName") || "Product Name"}
                   </TableHead>
                   <TableHead className="h-14 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 py-4 px-6 text-center">
+                    {t("channel") || "القناة"}
+                  </TableHead>
+                  <TableHead className="h-14 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 py-4 px-6 text-center">
                     {t("price") || "Price"}
                   </TableHead>
                   <TableHead className="h-14 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 py-4 px-6 text-center">
@@ -726,7 +729,7 @@ const toggleFoodStatus = async (foodId, checked) => {
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center h-48">
+                    <TableCell colSpan={7} className="text-center h-48">
                       <div className="flex items-center justify-center">
                         <LoadingSpinner className="h-6 w-6 text-primary" />
                       </div>
@@ -737,6 +740,7 @@ const toggleFoodStatus = async (foodId, checked) => {
                     const rowId = item.id;
                     // اختيار الاسم بناءً على اللغة (العربية أولاً لو متاح)
                     const name = isRTL ? (item.nameAr || item.name || "-") : (item.name || item.nameAr || "-");
+                    const channel = item.channel || 'all';
 
                     return (
                       <TableRow
@@ -748,6 +752,9 @@ const toggleFoodStatus = async (foodId, checked) => {
                         </TableCell>
                         <TableCell className="py-4 px-6 text-center text-sm font-medium text-slate-700 dark:text-slate-200">
                           {name}
+                        </TableCell>
+                        <TableCell className="py-4 px-6 text-center text-sm font-medium text-slate-700 dark:text-slate-200">
+                          {channelLabels[channel] || channel}
                         </TableCell>
                         <TableCell className="py-4 px-6">
                           <div className="flex items-center justify-center gap-2">
@@ -826,7 +833,7 @@ const toggleFoodStatus = async (foodId, checked) => {
                 ) : (
                   <TableRow>
                     <TableCell
-                      colSpan={6}
+                      colSpan={7}
                       className="text-center h-48 text-sm text-slate-400 font-medium"
                     >
                       {t("noDataFound") || "No data found"}
@@ -984,7 +991,7 @@ const toggleFoodStatus = async (foodId, checked) => {
             <Button variant="outline" onClick={() => setBranchInactiveModalOpen(false)}>
               {t("cancel") || "إلغاء"}
             </Button>
-            <Button 
+            <Button
               onClick={() => executeStatusUpdate(false, inactiveReason)}
               disabled={!inactiveReason.trim()}
               className="bg-red-600 hover:bg-red-700 text-white"

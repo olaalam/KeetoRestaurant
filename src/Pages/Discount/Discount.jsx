@@ -14,6 +14,12 @@ export default function Discount() {
     
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [selectedFoods, setSelectedFoods] = useState([]); 
+    
+    const channelLabels = {
+        all: t('All') || 'الكل (All)',
+        app: t('online') || 'اونلاين',
+        pos: t('Pos') || 'الكاشير (POS)',
+    };
 
     const { data: discounts = [], isLoading } = useQuery({
         queryKey: ['discounts'],
@@ -70,6 +76,14 @@ export default function Discount() {
         },
         { accessorKey: 'nameAr', header: t('Name (Ar)') },
         { accessorKey: 'nameFr', header: t('Name (Fr)') },
+        {
+            accessorKey: 'channel',
+            header: t('channel') || 'القناة',
+            cell: ({ row }) => {
+                const channel = row.original.channel || 'all';
+                return channelLabels[channel] || channel;
+            }
+        },
         {
             accessorKey: 'foods', 
             header: t('Foods'), 

@@ -72,6 +72,18 @@ export default function Setting() {
             )
         },
         {
+            accessorKey: "enableOnlinePayment",
+            header: t("enableOnlinePayment", { defaultValue: "Online Payment" }),
+            cell: ({ getValue }) => {
+                const isEnabled = getValue() ?? true;
+                return (
+                    <span className={`px-2 py-1 rounded text-xs ${isEnabled ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                        {isEnabled ? t("enabled", { defaultValue: "Enabled" }) : t("disabled", { defaultValue: "Disabled" })}
+                    </span>
+                );
+            }
+        },
+        {
             accessorKey: "productView",
             header: t("productView", { defaultValue: "Product View" }),
             cell: ({ getValue }) => (
@@ -129,7 +141,7 @@ export default function Setting() {
             cell: ({ getValue }) => `${getValue() ?? 15} min`
         },
         {
-            accessorKey: "resetDailyOrderNumberTime", 
+            accessorKey: "resetDailyOrderNumberTime",
             header: t("resetDailyOrderNumberTime", { defaultValue: "Reset Order Time" }),
             cell: ({ getValue }) => getValue() ? getValue().substring(0, 5) : '-'
         },
