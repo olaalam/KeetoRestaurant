@@ -19,9 +19,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 import { useGet } from "@/hooks/useGet";
-import { useUpdate } from "@/hooks/useUpdate";
-import { useQuery } from "@tanstack/react-query";
-import api from "@/api/axios";
 import LanguageSwitcher from "./LanguageSwitcher";
 import { useTranslation } from "@/hooks/useTranslation";
 import { getModules } from "@/config/modules";
@@ -34,6 +31,7 @@ import {
 import { cn } from "@/lib/utils";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
+import { useNotifications } from "@/context/NotificationContext";
 
 export default function Layout() {
   const storedModule = useSidebarStore((state) => state.activeModule);
@@ -137,7 +135,7 @@ export default function Layout() {
     hasExplicitPermission(user, "restaurantsetting", "open") &&
     hasExplicitPermission(user, "restaurantsetting", "close");
 
-  // ---- Notification Sound ----
+  // ── Notification Sound ───────────────────────────────────────────────────
   const audioRef = useRef(null);
   const cancelAudioRef = useRef(null);
 
@@ -199,24 +197,22 @@ export default function Layout() {
     }
   };
 
-  const NOTIFICATIONS_QUERY_KEY = 'restaurant-notifications';
+  // ── Notification state from context (Socket.IO + REST) ───────────────────
+  const {
+    notifications,
+    unreadCount,
+    isLoading: isLoadingNotifications,
+    markAsRead: ctxMarkAsRead,
+    markAllAsRead: ctxMarkAllAsRead,
+  } = useNotifications();
 
-  const { data: notificationsResponse, isLoading: isLoadingNotifications } = useQuery({
-    queryKey: [NOTIFICATIONS_QUERY_KEY],
-    queryFn: async () => {
-      const { data } = await api.get('/api/restaurant/notifications');
-      return data;
-    },
-    enabled: canViewNotifications,
-    refetchInterval: canViewNotifications ? 30000 : false,
-    refetchIntervalInBackground: true,
-  });
+  const totalItems = unreadCount;
+  const isMarkingAll = false; // optimistic via context
 
-  const notifications = notificationsResponse?.data?.data || [];
-  const pagination = notificationsResponse?.data?.pagination;
-  const totalItems = pagination?.totalItems ?? notifications.length;
-  const unreadCount = pagination?.unreadCount ?? totalItems;
+  const handleMarkAllRead = () => ctxMarkAllAsRead();
+  const handleMarkAsRead  = (id) => ctxMarkAsRead(id);
 
+  // ── Live socket popup: listen for the custom event emitted by context ────
   const [newOrderPopup, setNewOrderPopup] = useState({
     open: false,
     count: 0,
@@ -224,52 +220,22 @@ export default function Layout() {
   });
 
   useEffect(() => {
-    if (!canViewNotifications) {
-      setNewOrderPopup((current) =>
-        current.open || current.count !== 0 || current.latestNotification !== null
-          ? { open: false, count: 0, latestNotification: null }
-          : current,
-      );
-      return;
-    }
+    if (!canViewNotifications) return;
 
-    if (isLoadingNotifications || !notifications || notifications.length === 0) return;
-
-    const newestNotification = notifications.reduce((latest, current) => {
-      return new Date(current.createdAt) > new Date(latest.createdAt) ? current : latest;
-    }, notifications[0]);
-
-    const newestId = newestNotification.id || newestNotification._id;
-    const lastSeenId = localStorage.getItem("lastSeenNotifId");
-
-    if (newestId !== lastSeenId && !newestNotification.isRead) {
+    const handler = (e) => {
+      const n = e.detail;
       setNewOrderPopup({
         open: true,
-        count: totalItems,
-        latestNotification: newestNotification
+        count: unreadCount + 1,
+        latestNotification: n,
       });
-      playNotificationSound(newestNotification);
-      localStorage.setItem("lastSeenNotifId", newestId);
-    }
-  }, [canViewNotifications, notifications, isLoadingNotifications, totalItems]);
+      playNotificationSound(n);
+    };
 
-  const { mutate: markAllAsRead, isPending: isMarkingAll } = useUpdate(
-    '/api/restaurant/notifications/read-all',
-    NOTIFICATIONS_QUERY_KEY
-  );
-
-  const { mutate: markSingleAsRead } = useUpdate(
-    '/api/restaurant',
-    NOTIFICATIONS_QUERY_KEY
-  );
-
-  const handleMarkAllRead = () => {
-    markAllAsRead({ payload: {} });
-  };
-
-  const handleMarkAsRead = (id) => {
-    markSingleAsRead({ id: `notifications/${id}/read`, payload: {} });
-  };
+    window.addEventListener("keeto:notification", handler);
+    return () => window.removeEventListener("keeto:notification", handler);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canViewNotifications, unreadCount]);
 
   const handleBack = () => {
     const branchSettingMatch = location.pathname.match(/^(\/branches\/setting)\/edit\/([^/]+)$/);
@@ -761,6 +727,15 @@ export default function Layout() {
                             </div>
                           ))
                         )}
+                      </div>
+                      {/* View all link */}
+                      <div className="px-4 py-2 border-t bg-slate-50/50 rounded-b-xl">
+                        <button
+                          onClick={() => navigate("/notifications")}
+                          className="w-full text-xs font-medium text-blue-600 hover:text-blue-800 transition-colors text-center"
+                        >
+                          {t("viewAllNotifications") || "View all notifications →"}
+                        </button>
                       </div>
                     </DropdownMenuContent>
                   </DropdownMenu>}

@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Toaster } from 'sonner'
 import './index.css'
 import App from './App.jsx'
+import { NotificationProvider } from './context/NotificationContext.jsx'
 
 // تطبيق اللغة المحفوظة عند أول تحميل
 const savedLang = JSON.parse(localStorage.getItem("keeto-language") || '{}')?.state?.language || "en";
@@ -29,8 +30,10 @@ const queryClient = new QueryClient({
 createRoot(document.getElementById('root')).render(
 
   <QueryClientProvider client={queryClient}>
-    <App />
-    <Toaster position="top-right" richColors />
+    <NotificationProvider>
+      <App />
+      <Toaster position="top-right" richColors />
+    </NotificationProvider>
   </QueryClientProvider>
 
 )

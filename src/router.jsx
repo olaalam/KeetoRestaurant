@@ -116,6 +116,7 @@ import OrderSetting from "./Pages/OrderSetting/OrderSetting";
 import OrderSettingAdd from "./Pages/OrderSetting/OrderSettingAdd";
 import WeightRequest from "./Pages/WeightRequest/WeightRequest";
 import WeightRequestAdd from "./Pages/WeightRequest/WeightRequestAdd";
+import Notifications from "./Pages/Notifications/Notifications";
 const router = createBrowserRouter([
   {
     path: "/login",
@@ -752,6 +753,10 @@ const router = createBrowserRouter([
       {
         path: "weight-requests/edit/:id",
         element: <WeightRequestAdd />,
+      },
+      {
+        path: "notifications",
+        element: <Notifications />,
       },
 
 
