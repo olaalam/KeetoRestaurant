@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 import { useGet } from "@/hooks/useGet";
+import api from "@/api/axios";
 import LanguageSwitcher from "./LanguageSwitcher";
 import { useTranslation } from "@/hooks/useTranslation";
 import { getModules } from "@/config/modules";
@@ -819,7 +820,7 @@ export default function Layout() {
             </label>
             <Input
               value={inactiveReason}
-              onChange={(e) => setHeaderReason(e.target.value)}
+              onChange={(e) => setInactiveReason(e.target.value)}
               placeholder={t("enterReasonPlaceholder") || "اكتب سبب إغلاق الفرع هنا..."}
             />
           </div>
