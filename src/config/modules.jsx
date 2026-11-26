@@ -91,6 +91,7 @@ export const getModules = (t, orderCounts = {}) => {
         { title: t("OutOfStock"), url: "/out-of-stock", icon: Library },
         { title: t("PricingProduct"), url: "/pricing-product", icon: Library },
 
+
       ],
     },
 
@@ -109,6 +110,7 @@ export const getModules = (t, orderCounts = {}) => {
       items: [
         { title: t("social"), url: "/social", icon: ShoppingBag },
         { title: t("offers"), url: "/discount", icon: ShoppingBag },
+        { title: t("taxes"), url: "/taxes", icon: ShoppingBag },
         { title: t("coupon"), url: "/coupon", icon: ShoppingBag },
         { title: t("freedelivery"), url: "/free-delivery", icon: ShoppingBag },
         { title: t("rating"), url: "/rating", icon: ShoppingBag },

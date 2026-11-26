@@ -117,6 +117,8 @@ import OrderSettingAdd from "./Pages/OrderSetting/OrderSettingAdd";
 import WeightRequest from "./Pages/WeightRequest/WeightRequest";
 import WeightRequestAdd from "./Pages/WeightRequest/WeightRequestAdd";
 import Notifications from "./Pages/Notifications/Notifications";
+import Taxes from "./Pages/Taxes/Taxes";
+import TaxesAdd from "./Pages/Taxes/TaxesAdd";
 const router = createBrowserRouter([
   {
     path: "/login",
@@ -757,6 +759,18 @@ const router = createBrowserRouter([
       {
         path: "notifications",
         element: <Notifications />,
+      },
+      {
+        path: "taxes",
+        element: <Taxes />
+      },
+      {
+        path: "taxes/add",
+        element: <TaxesAdd />
+      },
+      {
+        path: "taxes/edit/:id",
+        element: <TaxesAdd />
       },
 
 

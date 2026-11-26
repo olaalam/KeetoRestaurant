@@ -1,15 +1,22 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useGet } from '@/hooks/useGet';
 import GenericDataTable from '@/components/GenericDataTable';
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 import { useQueryClient } from '@tanstack/react-query';
 import api from '@/api/axios';
 import UsersAdd from './UsersAdd';
 import { useTranslation } from '@/hooks/useTranslation';
-import { Mail, Phone, Copy, Check, ArrowUpDown, Filter, RotateCcw } from 'lucide-react';
+import { Mail, Phone, Copy, Check, ArrowUpDown, Filter, RotateCcw, Search } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const UserContactCell = ({ email, phone }) => {
@@ -67,27 +74,40 @@ const UserContactCell = ({ email, phone }) => {
 export default function Users() {
     const [editingUser, setEditingUser] = useState(null);
     const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 15 });
+    const [searchInput, setSearchInput] = useState('');
+    const [debouncedSearch, setDebouncedSearch] = useState('');
+    const [searchField, setSearchField] = useState('search'); // search | name | email | phone
+    const [statusFilter, setStatusFilter] = useState('all'); // all | active | blocked
     const [totalSpendingFilter, setTotalSpendingFilter] = useState('');
-    const [startDate, setStartDate] = useState('');
-    const [endDate, setEndDate] = useState('');
 
     const queryClient = useQueryClient();
-    const { t } = useTranslation();
+    const { t, isRTL } = useTranslation();
     const navigate = useNavigate();
 
-    const { data, isLoading } = useGet('restaurant-users', '/api/restaurant/restaurant-users', {
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearch(searchInput.trim());
+            setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+        }, 400);
+
+        return () => clearTimeout(timer);
+    }, [searchInput]);
+
+    const queryParams = {
         page: pagination.pageIndex + 1,
         limit: pagination.pageSize,
-        ...(totalSpendingFilter ? { totalSpending: totalSpendingFilter } : {}),
-        ...(startDate ? { startDate } : {}),
-        ...(endDate ? { endDate } : {}),
-    });
+        ...(debouncedSearch ? { [searchField]: debouncedSearch } : {}),
+        ...(statusFilter && statusFilter !== 'all' ? { status: statusFilter } : {}),
+        ...(totalSpendingFilter !== '' ? { totalSpending: totalSpendingFilter } : {}),
+    };
+
+    const { data, isLoading } = useGet('restaurant-users', '/api/restaurant/restaurant-users', queryParams);
 
     const rawList = data?.data?.data || data?.data || [];
 
     const totalPages = data?.data?.pagination?.totalPages || data?.data?.totalPages || 1;
 
-    const formattedData = rawList.map(item => ({
+    const formattedData = rawList.map((item) => ({
         id: item.id,
         userId: item.userId,
         name: item.name,
@@ -112,10 +132,12 @@ export default function Users() {
     };
 
     const handleClearFilters = () => {
+        setSearchInput('');
+        setDebouncedSearch('');
+        setSearchField('search');
+        setStatusFilter('all');
         setTotalSpendingFilter('');
-        setStartDate('');
-        setEndDate('');
-        setPagination(prev => ({ ...prev, pageIndex: 0 }));
+        setPagination((prev) => ({ ...prev, pageIndex: 0 }));
     };
 
     const columns = [
@@ -243,35 +265,64 @@ export default function Users() {
     return (
         <div className="p-6 w-full space-y-4">
             <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-100 shadow-sm flex flex-wrap items-center justify-between gap-4">
-                <div className="flex flex-wrap items-center gap-3">
-                    <div className="flex items-center gap-1.5">
-                        <span className="text-xs font-semibold text-slate-600">{t('startDate', { defaultValue: 'From' })}:</span>
+                <div className="flex flex-wrap items-center gap-3 flex-1 min-w-[260px]">
+                    <Select
+                        value={searchField}
+                        onValueChange={(value) => {
+                            setSearchField(value);
+                            setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+                        }}
+                    >
+                        <SelectTrigger className="w-32 h-9 text-xs rounded-xl bg-white border-slate-200">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="search">{t('allFields', { defaultValue: 'All (Search)' })}</SelectItem>
+                            <SelectItem value="name">{t('nameHeader', { defaultValue: 'Name' })}</SelectItem>
+                            <SelectItem value="email">{t('emailHeader', { defaultValue: 'Email' })}</SelectItem>
+                            <SelectItem value="phone">{t('phoneHeader', { defaultValue: 'Phone' })}</SelectItem>
+                        </SelectContent>
+                    </Select>
+
+                    <div className="relative flex-1 min-w-[200px] max-w-xs">
+                        <Search
+                            className={`absolute top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 ${
+                                isRTL ? 'right-3' : 'left-3'
+                            }`}
+                        />
                         <Input
-                            type="date"
-                            value={startDate}
-                            onChange={(e) => {
-                                setStartDate(e.target.value);
-                                setPagination(prev => ({ ...prev, pageIndex: 0 }));
-                            }}
-                            className="w-36 h-9 text-xs rounded-xl"
+                            type="text"
+                            placeholder={t('searchPlaceholder', { defaultValue: 'Search in backend...' })}
+                            value={searchInput}
+                            onChange={(e) => setSearchInput(e.target.value)}
+                            className={`h-9 text-xs rounded-xl ${isRTL ? 'pr-9 pl-3' : 'pl-9 pr-3'}`}
                         />
                     </div>
 
                     <div className="flex items-center gap-1.5">
-                        <span className="text-xs font-semibold text-slate-600">{t('endDate', { defaultValue: 'To' })}:</span>
-                        <Input
-                            type="date"
-                            value={endDate}
-                            onChange={(e) => {
-                                setEndDate(e.target.value);
-                                setPagination(prev => ({ ...prev, pageIndex: 0 }));
+                        <span className="text-xs font-semibold text-slate-600">
+                            {t('statusHeader', { defaultValue: 'Status' })}:
+                        </span>
+                        <Select
+                            value={statusFilter}
+                            onValueChange={(value) => {
+                                setStatusFilter(value);
+                                setPagination((prev) => ({ ...prev, pageIndex: 0 }));
                             }}
-                            className="w-36 h-9 text-xs rounded-xl"
-                        />
+                        >
+                            <SelectTrigger className="w-32 h-9 text-xs rounded-xl bg-white border-slate-200">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">{t('allStatus', { defaultValue: 'All' })}</SelectItem>
+                                <SelectItem value="active">{t('activeStatus', { defaultValue: 'Active' })}</SelectItem>
+                                <SelectItem value="blocked">{t('blockedStatus', { defaultValue: 'Blocked' })}</SelectItem>
+                            </SelectContent>
+                        </Select>
                     </div>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                     <div className="flex items-center gap-1 text-slate-700 font-semibold text-xs">
                         <Filter className="w-3.5 h-3.5 text-primary" />
                         <span>{t('filterBySpending', { defaultValue: 'Min Spending' })}:</span>
@@ -282,21 +333,21 @@ export default function Users() {
                         value={totalSpendingFilter}
                         onChange={(e) => {
                             setTotalSpendingFilter(e.target.value);
-                            setPagination(prev => ({ ...prev, pageIndex: 0 }));
+                            setPagination((prev) => ({ ...prev, pageIndex: 0 }));
                         }}
                         className="w-28 h-9 text-xs rounded-xl"
                     />
-                </div>
 
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleClearFilters}
-                    className="h-9 px-3 rounded-xl gap-1 text-slate-500 hover:text-slate-700"
-                >
-                    <RotateCcw className="h-4 w-4" />
-                    <span className="text-xs">{t('reset', { defaultValue: 'Reset' })}</span>
-                </Button>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleClearFilters}
+                        className="h-9 px-3 rounded-xl gap-1 text-slate-500 hover:text-slate-700"
+                    >
+                        <RotateCcw className="h-4 w-4" />
+                        <span className="text-xs">{t('reset', { defaultValue: 'Reset' })}</span>
+                    </Button>
+                </div>
             </div>
 
             <GenericDataTable
@@ -311,6 +362,7 @@ export default function Users() {
                 pagination={pagination}
                 setPagination={setPagination}
                 pageCount={totalPages}
+                hideSearch={true}
             />
 
             <Dialog open={!!editingUser} onOpenChange={() => setEditingUser(null)}>
